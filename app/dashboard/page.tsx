@@ -209,11 +209,13 @@ export default function DashboardPage() {
   
   // Create a controlled setDateRange with cooldown - NO persistence to ensure fresh defaults
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
-    if (!range || isDateRangeLoading) {
-      return // Prevent changes during loading
+    if (!range || isDateRangeLoading || isLoading || initialDataLoad) {
+      // 🚨 PROTECTION: Prevent date changes during ANY loading state
+      console.log('[Dashboard] Blocked date change - still loading:', { isDateRangeLoading, isLoading, initialDataLoad })
+      return
     }
     
-    
+    console.log('[Dashboard] Date range changing to:', range.from?.toDateString(), '-', range.to?.toDateString())
     setIsDateRangeLoading(true)
     setDateRange(range)
     
@@ -225,8 +227,8 @@ export default function DashboardPage() {
     // Set a minimum cooldown period
     setTimeout(() => {
       setIsDateRangeLoading(false)
-    }, 1500) // 1.5 second minimum cooldown
-  }, [isDateRangeLoading])
+    }, 2000) // Increased to 2 seconds minimum cooldown
+  }, [isDateRangeLoading, isLoading, initialDataLoad])
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("agency")

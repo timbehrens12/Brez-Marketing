@@ -312,6 +312,7 @@ export function UnifiedDashboardHeader({
                 dateRange={dateRange}
                 setDateRange={setDateRange}
                 disabled={isDateRangeLoading}
+                loading={isDateRangeLoading}
               />
             </div>
             

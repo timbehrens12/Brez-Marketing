@@ -138,6 +138,9 @@ export function MetaTab2({
   // Unified loading state for all Meta widgets
   const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(!!metaConnection);
   
+  // Global loading state to prevent date switching during loads
+  const [isGloballyLoading, setIsGloballyLoading] = useState(!!metaConnection);
+  
   // State for Meta metrics
   const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>({
     adSpend: 0,
@@ -463,9 +466,9 @@ export function MetaTab2({
       }
       
 
-      // Add cache busting for date range changes
-      const cacheBuster = `t=${Date.now()}&dateRange=${localFromDate || 'none'}-${localToDate || 'none'}&refresh=${forceRefresh ? 'true' : 'false'}`;
-      const finalUrl = url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+      // Add cache busting only for force refresh to prevent spam refreshing
+      const cacheBuster = forceRefresh ? `t=${Date.now()}` : '';
+      const finalUrl = cacheBuster ? (url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`) : url;
       
       const response = await fetch(finalUrl, {
         cache: 'no-store',
@@ -1108,6 +1111,7 @@ export function MetaTab2({
           isManuallyRefreshing={false}
           disableAutoFetch={isLoadingAllMetaWidgets}
           unifiedLoading={isLoadingAllMetaWidgets}
+          forceRefresh={true}
         />
 
         {/* Total Reach */}

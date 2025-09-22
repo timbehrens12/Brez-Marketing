@@ -36,6 +36,7 @@ interface DateRangePickerProps {
   };
   setDateRange: (range: { from: Date; to: Date }) => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 // Get user's timezone - the backend can handle any timezone
@@ -208,7 +209,7 @@ function isAfterOrSameMonth(date1: Date, date2: Date): boolean {
   return date1.getMonth() >= date2.getMonth();
 }
 
-export function DateRangePicker({ dateRange, setDateRange, disabled = false }: DateRangePickerProps) {
+export function DateRangePicker({ dateRange, setDateRange, disabled = false, loading = false }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
@@ -314,7 +315,7 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
   }
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
-    if (disabled) return; // Prevent changes when disabled
+    if (disabled || loading) return; // Prevent changes when disabled or loading
     
     // Get the date range from the preset
     const newRange = preset.getDate()
@@ -417,14 +418,14 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
 
   return (
     <div className="grid gap-2">
-      <Popover open={isOpen && !disabled} onOpenChange={(open) => !disabled && setIsOpen(open)}>
+      <Popover open={isOpen && !disabled && !loading} onOpenChange={(open) => !disabled && !loading && setIsOpen(open)}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            disabled={disabled}
+            disabled={disabled || loading}
             className={cn(
               "min-w-[260px] w-auto max-w-[320px] justify-between text-left font-normal bg-[#1A1A1A] text-gray-400 border-[#333]",
-              disabled 
+              (disabled || loading)
                 ? "opacity-60 cursor-not-allowed" 
                 : "hover:bg-[#222] hover:text-white"
             )}
@@ -439,7 +440,7 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
                 )}
               </span>
             </div>
-            {disabled && (
+            {(disabled || loading) && (
               <span className="ml-2 text-xs text-gray-500 flex-shrink-0">(Loading...)</span>
             )}
           </Button>
