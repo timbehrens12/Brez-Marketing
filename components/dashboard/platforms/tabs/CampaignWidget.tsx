@@ -1629,6 +1629,14 @@ const CampaignWidget = ({
 
     // 🚨 CRITICAL FIX: If currentBudgets API hasn't loaded yet AND campaign props are empty,
     // wait for the API instead of showing $0.00 immediately
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 currentBudgets check:`, {
+      currentBudgets_exists: !!currentBudgets,
+      currentBudgets_keys_length: currentBudgets ? Object.keys(currentBudgets).length : 'N/A',
+      currentBudgets_type: typeof currentBudgets,
+      campaign_budget: campaign.budget,
+      campaign_adset_budget_total: campaign.adset_budget_total
+    });
+    
     if (!currentBudgets || Object.keys(currentBudgets).length === 0) {
       if ((!campaign.budget || campaign.budget === 0) && (!campaign.adset_budget_total || campaign.adset_budget_total === 0)) {
         console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Both currentBudgets API and campaign props are empty - waiting for API...`);
