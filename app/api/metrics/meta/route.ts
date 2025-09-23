@@ -95,9 +95,6 @@ function cleanupExpiredCache(): void {
 setInterval(cleanupExpiredCache, 30000);
 
 export async function GET(request: NextRequest) {
-  console.log('🔥🔥🔥 META METRICS API CALLED - DEBUG VERSION 2025-09-23-12:02 🔥🔥🔥')
-  console.log('🔥 Request URL:', request.url)
-  
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
@@ -681,9 +678,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     const uniqueAdData = new Map<string, any>()
     
     dayItems.forEach(item => {
-      console.log(`🔥🔥 [DEBUG] Raw item.ad_id: "${item.ad_id}" (type: ${typeof item.ad_id}, truthy: ${!!item.ad_id})`)
       const adId = item.ad_id || 'unknown'
-      console.log(`🔥🔥 [DEBUG] Processed adId: "${adId}"`);
       
       // Parse spent value from either spent or spend column
       let spentValue = 0;
