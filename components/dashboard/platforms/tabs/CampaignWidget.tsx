@@ -1686,6 +1686,17 @@ const CampaignWidget = ({
     
     // 🔧 ULTIMATE FIX: If no budget from APIs, try to get it from adsets (like dropdown does)
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
+      // 🚨 CRITICAL FIX: If budget API is still loading, show loading state instead of $0
+      if (isLoadingBudgets) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Budget API still loading, showing loading state`);
+        return {
+          budget: 0,
+          formatted_budget: '...',
+          budget_type: 'unknown',
+          budget_source: 'loading'
+        };
+      }
+
       // Check if we have cached adsets for this campaign (from previous expansions)
       const cachedAdSets = allCampaignAdSets.get(campaign.campaign_id);
       if (cachedAdSets && cachedAdSets.length > 0) {
@@ -1703,8 +1714,8 @@ const CampaignWidget = ({
         }
       }
 
-      // 🚨 EMERGENCY FALLBACK: No auto-fetch, show $0 immediately
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available - showing $0 (auto-fetch disabled)`);
+      // 🚨 FINAL FALLBACK: Budget API completed but no data found
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available after API completion`);
       return {
         budget: 0,
         formatted_budget: formatCurrency(0),
@@ -2575,7 +2586,6 @@ const CampaignWidget = ({
                                 const budgetInfo = getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null);
                                 
                                 // Show loading skeleton if still loading or budget source is loading/unavailable
-                                // 🔍 DEBUG: Log what's causing the loading skeleton to show
                                 const shouldShowSkeleton = budgetInfo.budget_source === 'loading' || isLoading || isSyncing;
                                 if (shouldShowSkeleton) {
                                   console.log(`[CampaignWidget] 🔍 Showing skeleton for campaign ${campaign.campaign_id}:`, {
