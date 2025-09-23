@@ -35,20 +35,23 @@ export async function GET(request: NextRequest) {
     )
     
     try {
-      // Try to get real-time budget data from Meta API
-      const result = await fetchMetaCampaignBudgets(brandId, true)
+      // 🚨 TEMPORARY: Force database fallback to test if issue is with Meta API
+      console.log(`[API] TEMPORARILY FORCING DATABASE FALLBACK FOR TESTING`)
       
-      if (result.success) {
-        return NextResponse.json({
-          success: true,
-          message: 'Campaign budgets fetched successfully',
-          budgets: result.budgets,
-          timestamp: new Date().toISOString(),
-          refreshMethod: 'meta-api'
-        })
-      } else {
-        console.warn(`[API] Meta API failed, falling back to database:`, result.error)
-      }
+      // Try to get real-time budget data from Meta API
+      // const result = await fetchMetaCampaignBudgets(brandId, true)
+      // 
+      // if (result.success) {
+      //   return NextResponse.json({
+      //     success: true,
+      //     message: 'Campaign budgets fetched successfully',
+      //     budgets: result.budgets,
+      //     timestamp: new Date().toISOString(),
+      //     refreshMethod: 'meta-api'
+      //   })
+      // } else {
+      //   console.warn(`[API] Meta API failed, falling back to database:`, result.error)
+      // }
     } catch (metaError) {
       console.warn(`[API] Meta API error, falling back to database:`, metaError)
     }
