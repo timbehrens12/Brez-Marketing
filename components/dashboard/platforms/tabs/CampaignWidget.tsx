@@ -319,6 +319,29 @@ const CampaignWidget = ({
       adset_budget_total: c.adset_budget_total 
     })));
   }, [campaigns]);
+
+  // 🔧 FORCE RE-RENDER FIX: When campaigns get budget data, clear loading state
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      const hasBudgetData = campaigns.some(c => (c.budget && c.budget > 0) || (c.adset_budget_total && c.adset_budget_total > 0));
+      if (hasBudgetData && isLoadingBudgets) {
+        console.log(`[CampaignWidget] 🔄 Campaigns now have budget data, clearing loading state`);
+        setIsLoadingBudgets(false);
+      }
+    }
+  }, [campaigns, isLoadingBudgets]);
+
+  // 🔧 TIMEOUT FIX: Clear loading skeleton after 3 seconds to prevent infinite loading
+  useEffect(() => {
+    if (isLoadingBudgets) {
+      const timeout = setTimeout(() => {
+        console.log(`[CampaignWidget] 🕐 Timeout: Force clearing isLoadingBudgets after 3 seconds`);
+        setIsLoadingBudgets(false);
+      }, 3000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoadingBudgets]);
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
@@ -1658,12 +1681,11 @@ const CampaignWidget = ({
       currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
-    // 🚨 FINAL FIX: Show loading skeleton briefly when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading skeleton`);
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading state`);
       return {
         budget: 0,
-        formatted_budget: '...', // Show loading skeleton while waiting for any budget data
+        formatted_budget: '...', // Show loading while waiting for any budget data
         budget_type: 'unknown',
         budget_source: 'no_data_available'
       };
