@@ -460,6 +460,12 @@ export async function POST(request: NextRequest) {
     // 🚀 TRIGGER BACKGROUND SYNC: Run without awaiting to return immediately
     runBackgroundSync().catch(error => {
       console.error('[Meta Exchange] Critical: Background sync completely failed:', error)
+      console.error('[Meta Exchange] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        brandId: state,
+        connectionId: connectionData.id
+      })
     })
 
     return NextResponse.json({ success: true })
