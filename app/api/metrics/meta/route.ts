@@ -95,6 +95,9 @@ function cleanupExpiredCache(): void {
 setInterval(cleanupExpiredCache, 30000);
 
 export async function GET(request: NextRequest) {
+  console.log('🔥🔥🔥 META METRICS API CALLED - DEBUG VERSION 2025-09-23-12:02 🔥🔥🔥')
+  console.log('🔥 Request URL:', request.url)
+  
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
