@@ -7,9 +7,17 @@ import { createClient } from '@/lib/supabase/server'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // 🚨 ALLOW INTERNAL CALLS: Check for internal auth or user auth
+    const authHeader = request.headers.get('Authorization')
+    const isInternalCall = authHeader?.includes('Bearer internal') || authHeader?.includes('Bearer ' + process.env.INTERNAL_API_KEY)
+    
+    let userId = null
+    if (!isInternalCall) {
+      const authResult = await auth()
+      userId = authResult.userId
+      if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
     }
 
     const { brandId } = await request.json()
@@ -17,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID required' }, { status: 400 })
     }
 
-    console.log(`[Test Background Sync] Starting manual test for brand ${brandId}`)
+    console.log(`[Test Background Sync] Starting ${isInternalCall ? 'INTERNAL' : 'USER'} sync for brand ${brandId}`)
 
     const supabase = createClient()
 
