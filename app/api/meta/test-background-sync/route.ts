@@ -72,42 +72,145 @@ export async function POST(request: NextRequest) {
     // Import the proven Meta service method
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
 
-    // Extended sync: Last 3 months to avoid timeout but get more data
+    // 🚀 PRODUCTION REQUIREMENT: Full 12-month background queue sync
+    console.log(`[Test Background Sync] 🎯 TRIGGERING FULL 12-MONTH QUEUE SYNC FOR PRODUCTION`)
+    
+    // Import background queue system
+    const { Queue } = await import('bullmq')
+    const Redis = require('ioredis')
+    
+    // Initialize Redis connection for queue
+    const redis = new Redis(process.env.UPSTASH_REDIS_REST_URL?.replace('https://', 'redis://') || 'redis://localhost:6379', {
+      password: process.env.UPSTASH_REDIS_REST_TOKEN,
+      maxRetriesPerRequest: 3,
+      retryDelayOnFailover: 100,
+    })
+    
+    // Create Meta sync queue
+    const metaSyncQueue = new Queue('meta-full-sync', { connection: redis })
+    
+    // Generate 12 monthly jobs for full historical sync
     const now = new Date()
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // End of current month
-    const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1) // Start 3 months ago
-
-    console.log(`[Test Background Sync] Extended sync for 3 months: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-
-    // 🎯 PROVEN METHOD: fetchMetaAdInsights for 3-month period
-    const insightsResult = await fetchMetaAdInsights(
-      brandId,
-      startDate,
-      endDate,
-      false, // dryRun = false
-      false  // skipDemographics = false
+    const jobs = []
+    
+    for (let i = 11; i >= 0; i--) { // 12 months back to current
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+      
+      const jobData = {
+        brandId,
+        adAccountId,
+        month: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        startDate: monthStart.toISOString(),
+        endDate: monthEnd.toISOString(),
+        chunkNumber: 12 - i,
+        totalChunks: 12
+      }
+      
+      // Add job to queue with delay to prevent rate limiting
+      const job = await metaSyncQueue.add(
+        `sync-month-${12-i}`,
+        jobData,
+        {
+          delay: i * 10000, // 10 second delay between jobs
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+        }
+      )
+      
+      jobs.push(job.id)
+      console.log(`[Test Background Sync] ✅ Queued ${jobData.month} (Job ${job.id})`)
+    }
+    
+    // Also queue budget + adsets + ads creative sync job
+    const budgetJob = await metaSyncQueue.add(
+      'sync-budgets',
+      {
+        brandId,
+        adAccountId,
+        type: 'budget_sync'
+      },
+      {
+        delay: 2000, // Start budget sync after 2 seconds
+        attempts: 3
+      }
     )
+    
+    // Queue ads creative sync job (images, headlines, CTAs)
+    const creativeJob = await metaSyncQueue.add(
+      'sync-creative',
+      {
+        brandId,
+        adAccountId,
+        type: 'creative_sync'
+      },
+      {
+        delay: 5000, // Start creative sync after 5 seconds
+        attempts: 3
+      }
+    )
+    
+    console.log(`[Test Background Sync] ✅ Queued budget sync (Job ${budgetJob.id})`)
+    console.log(`[Test Background Sync] ✅ Queued creative sync (Job ${creativeJob.id})`)
+    
+    // 🚀 START QUEUE PROCESSOR: Trigger the worker to process all jobs
+    console.log(`[Test Background Sync] 🚀 Starting queue processor...`)
+    
+    try {
+      const processorResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/process-full-sync-queue`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'User-Agent': 'node', // Mark as server call
+        },
+        body: JSON.stringify({ trigger: 'start_processing' })
+      })
+      
+      const processorResult = await processorResponse.json()
+      console.log(`[Test Background Sync] ✅ Queue processor started:`, processorResult)
+    } catch (processorError) {
+      console.warn(`[Test Background Sync] ⚠️ Failed to start queue processor (jobs will still process):`, processorError)
+    }
+    
+    // Return immediate success - jobs will process in background
+    const insightsResult = {
+      success: true,
+      message: `Queued 12-month historical sync + budget + creative sync`,
+      count: jobs.length + 2, // 12 months + 1 budget + 1 creative job
+      jobsQueued: jobs.concat([budgetJob.id, creativeJob.id]),
+      type: 'background_queue'
+    }
 
     console.log(`[Test Background Sync] Result:`, insightsResult)
 
     if (insightsResult.success) {
       return NextResponse.json({
         success: true,
-        message: 'Extended 3-month sync completed successfully',
+        message: 'Full 12-month background sync queued successfully',
         result: insightsResult,
         syncPeriod: {
-          from: startDate.toISOString().split('T')[0],
-          to: endDate.toISOString().split('T')[0]
+          from: new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0], // 12 months ago
+          to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0] // End of current month
+        },
+        queueInfo: {
+          totalJobs: jobs.length + 2,
+          monthlyJobs: jobs.length,
+          budgetJobs: 1,
+          creativeJobs: 1,
+          estimatedCompletion: '15-20 minutes'
         }
       })
     } else {
       return NextResponse.json({
         success: false,
-        error: 'Extended sync failed',
-        details: insightsResult.error,
+        error: 'Background queue sync failed',
+        details: insightsResult.message || 'Unknown error',
         syncPeriod: {
-          from: startDate.toISOString().split('T')[0],
-          to: endDate.toISOString().split('T')[0]
+          from: new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0],
+          to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
         }
       }, { status: 500 })
     }
