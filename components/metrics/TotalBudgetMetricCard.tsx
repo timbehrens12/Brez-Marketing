@@ -18,6 +18,9 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [rateLimited, setRateLimited] = useState(false)
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
+  const [nextRetryAfter, setNextRetryAfter] = useState<string | null>(null)
   const hasInitialLoadRef = useRef(false)
   const fetchInProgressRef = useRef(false) // Prevent multiple simultaneous fetches
 
@@ -82,6 +85,27 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
         setTotalBudget(data.totalBudget)
         setAdSetCount(data.adSetCount)
         hasInitialLoadRef.current = true
+        
+        // Handle rate limit notifications
+        if (data.rateLimited) {
+          setRateLimited(true)
+          setRateLimitMessage(data.rateLimitMessage || 'Meta API rate limit exceeded')
+          setNextRetryAfter(data.nextRetryAfter)
+          
+          // Show user-friendly notification
+          toast.warning(
+            '⏱️ Meta API Rate Limited',
+            {
+              description: 'Budget data may be delayed. Showing cached values. Please try again in a few minutes.',
+              duration: 8000,
+            }
+          )
+        } else {
+          // Clear rate limit state if successful
+          setRateLimited(false)
+          setRateLimitMessage(null)
+          setNextRetryAfter(null)
+        }
       } else {
         throw new Error(data.error || 'Unknown error')
       }
@@ -200,9 +224,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     <MetricCard
       title={
         <div className="flex items-center gap-1.5 w-full">
-            <DollarSign className="h-4 w-4 text-green-500" />
+            <DollarSign className={`h-4 w-4 ${rateLimited ? 'text-orange-500' : 'text-green-500'}`} />
             <span className="ml-0.5">Total Meta Budget</span>
-            {adSetCount > 0 && <span className="text-xs text-gray-400 ml-1">({adSetCount} ad sets)</span>}
+            {rateLimited && <span className="text-xs text-orange-400 ml-1">(Rate Limited)</span>}
+            {!rateLimited && adSetCount > 0 && <span className="text-xs text-gray-400 ml-1">({adSetCount} ad sets)</span>}
         </div>
       }
       value={totalBudget ?? 0}
@@ -212,7 +237,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       valueFormat="currency"
       prefix="$"
       hideGraph={true}
-      infoTooltip="Shows the total budget for all active Meta ad sets. This value automatically updates when campaigns or ad sets change."
+      infoTooltip={rateLimited 
+        ? `Rate Limited: ${rateLimitMessage}. Budget data may be delayed. Try again later.`
+        : "Shows the total budget for all active Meta ad sets. This value automatically updates when campaigns or ad sets change."
+      }
       className="h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
       nullChangeText="N/A"
       nullChangeTooltip="No data for previous period"
