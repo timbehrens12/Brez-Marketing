@@ -75,104 +75,36 @@ export async function POST(request: NextRequest) {
     // 🚀 PRODUCTION REQUIREMENT: Full 12-month background queue sync
     console.log(`[Test Background Sync] 🎯 TRIGGERING FULL 12-MONTH QUEUE SYNC FOR PRODUCTION`)
     
-    // 🚀 USE EXISTING META QUEUE SERVICE (proven working setup)
-    const { metaQueue } = await import('@/lib/services/metaQueueService')
+    // 🚀 USE EXISTING PROVEN MetaQueueService FOR 12-MONTH SYNC
+    const { MetaQueueService } = await import('@/lib/services/metaQueueService')
     
-    console.log(`[Test Background Sync] 🔧 Using existing metaQueue service for 12-month sync`)
+    console.log(`[Test Background Sync] 🔧 Using proven MetaQueueService.queueCompleteHistoricalSync`)
     
-    // Generate 12 monthly jobs for full historical sync
-    const now = new Date()
-    const jobs = []
-    
-    for (let i = 11; i >= 0; i--) { // 12 months back to current
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
-      
-      const jobData = {
-        brandId,
-        adAccountId,
-        month: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        startDate: monthStart.toISOString(),
-        endDate: monthEnd.toISOString(),
-        chunkNumber: 12 - i,
-        totalChunks: 12
-      }
-      
-      // Add job to queue with delay to prevent rate limiting
-      const job = await metaQueue.add(
-        `sync-month-${12-i}`,
-        jobData,
-        {
-          delay: i * 10000, // 10 second delay between jobs
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
-        }
-      )
-      
-      jobs.push(job.id)
-      console.log(`[Test Background Sync] ✅ Queued ${jobData.month} (Job ${job.id})`)
-    }
-    
-    // Also queue budget + adsets + ads creative sync job
-    const budgetJob = await metaQueue.add(
-      'sync-budgets',
-      {
-        brandId,
-        adAccountId,
-        type: 'budget_sync'
-      },
-      {
-        delay: 2000, // Start budget sync after 2 seconds
-        attempts: 3
-      }
+    // Get connection details for the queue service
+    const result = await MetaQueueService.queueCompleteHistoricalSync(
+      brandId,
+      connection.id,
+      connection.access_token!,
+      adAccountId,
+      undefined // Let it default to 12 months
     )
     
-    // Queue ads creative sync job (images, headlines, CTAs)
-    const creativeJob = await metaQueue.add(
-      'sync-creative',
-      {
-        brandId,
-        adAccountId,
-        type: 'creative_sync'
-      },
-      {
-        delay: 5000, // Start creative sync after 5 seconds
-        attempts: 3
-      }
-    )
+    console.log(`[Test Background Sync] ✅ Complete historical sync queued:`, result)
     
-    console.log(`[Test Background Sync] ✅ Queued budget sync (Job ${budgetJob.id})`)
-    console.log(`[Test Background Sync] ✅ Queued creative sync (Job ${creativeJob.id})`)
+    // Note: Budget and creative data will be synced by the background queue jobs
+    console.log(`[Test Background Sync] 💰🎨 Budget and creative data will be synced by background queue jobs`)
+    console.log(`[Test Background Sync] ✅ Immediate sync skipped - background jobs will handle all data types`)
     
-    // 🚀 START QUEUE PROCESSOR: Trigger the worker to process all jobs
-    console.log(`[Test Background Sync] 🚀 Starting queue processor...`)
-    
-    try {
-      const processorResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/process-full-sync-queue`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'User-Agent': 'node', // Mark as server call
-        },
-        body: JSON.stringify({ trigger: 'start_processing' })
-      })
-      
-      const processorResult = await processorResponse.json()
-      console.log(`[Test Background Sync] ✅ Queue processor started:`, processorResult)
-    } catch (processorError) {
-      console.warn(`[Test Background Sync] ⚠️ Failed to start queue processor (jobs will still process):`, processorError)
-    }
-    
-    // Return immediate success - jobs will process in background
+    // Return result from the proven queue service
     const insightsResult = {
-      success: true,
-      message: `Queued 12-month historical sync + budget + creative sync`,
-      count: jobs.length + 2, // 12 months + 1 budget + 1 creative job
-      jobsQueued: jobs.concat([budgetJob.id, creativeJob.id]),
-      type: 'background_queue'
+      success: result.success,
+      message: result.success 
+        ? `Queued complete 12-month historical sync (${result.totalJobs} jobs including budget/creative data)`
+        : `Failed to queue background sync: ${result.estimatedCompletion}`,
+      count: result.totalJobs,
+      jobsQueued: result.totalJobs > 0 ? Array.from({length: result.totalJobs}, (_, i) => `historical-${i+1}`) : [],
+      type: 'proven_queue_service',
+      estimatedCompletion: result.estimatedCompletion
     }
 
     console.log(`[Test Background Sync] Result:`, insightsResult)
@@ -183,15 +115,14 @@ export async function POST(request: NextRequest) {
         message: 'Full 12-month background sync queued successfully',
         result: insightsResult,
         syncPeriod: {
-          from: new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0], // 12 months ago
-          to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0] // End of current month
+          from: new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1).toISOString().split('T')[0], // 12 months ago
+          to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0] // End of current month
         },
         queueInfo: {
-          totalJobs: jobs.length + 2,
-          monthlyJobs: jobs.length,
-          budgetJobs: 1,
-          creativeJobs: 1,
-          estimatedCompletion: '15-20 minutes'
+          totalJobs: result.totalJobs,
+          estimatedCompletion: result.estimatedCompletion,
+          usingProvenQueueService: true,
+          backgroundDataSync: true
         }
       })
     } else {
@@ -200,8 +131,8 @@ export async function POST(request: NextRequest) {
         error: 'Background queue sync failed',
         details: insightsResult.message || 'Unknown error',
         syncPeriod: {
-          from: new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0],
-          to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+          from: new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1).toISOString().split('T')[0],
+          to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
         }
       }, { status: 500 })
     }
