@@ -342,6 +342,7 @@ const CampaignWidget = ({
       return () => clearTimeout(timeout);
     }
   }, [isLoadingBudgets]);
+
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted

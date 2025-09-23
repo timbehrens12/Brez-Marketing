@@ -119,18 +119,18 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
   }, [unifiedLoading, disableAutoFetch, brandId])
   
-  // 🚨 ADDED: Refresh budget data when page gains focus (user might have changed budgets in Meta)
-  useEffect(() => {
-    const handleFocus = () => {
-      if (brandId && hasInitialLoadRef.current) {
-        console.log('[TotalMetaBudget] Page focus - refreshing budget data');
-        fetchTotalBudget(true);
-      }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [brandId])
+  // 🚨 REMOVED: Annoying page focus refresh - only refresh on manual refresh button or mount
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (brandId && hasInitialLoadRef.current) {
+  //       console.log('[TotalMetaBudget] Page focus - refreshing budget data');
+  //       fetchTotalBudget(true);
+  //     }
+  //   };
+  //   
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => window.removeEventListener('focus', handleFocus);
+  // }, [brandId])
 
   // Handle forceRefresh prop - fetch fresh data when forceRefresh is true
   // 🚨 FIXED: forceRefresh should work regardless of disableAutoFetch
