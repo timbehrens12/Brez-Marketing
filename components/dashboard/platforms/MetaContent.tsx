@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { MetaTab2 } from "./tabs/MetaTab2"
 import { PlatformConnection } from "@/types/platformConnection"
 
@@ -15,26 +14,6 @@ interface MetaContentProps {
 }
 
 export function MetaContent({ brandId, dateRange, connections, brands }: MetaContentProps) {
-  // 🚨 AUTO-REFRESH: Trigger fresh budget data when Meta tab loads
-  useEffect(() => {
-    if (brandId) {
-      // Add a small delay to ensure components are mounted
-      const timeoutId = setTimeout(() => {
-        console.log('[MetaContent] Triggering automatic budget refresh on Meta tab load');
-        // Dispatch globalRefresh event to refresh all budget widgets
-        window.dispatchEvent(new CustomEvent('globalRefresh', {
-          detail: { 
-            source: 'meta-tab-mount',
-            brandId: brandId,
-            reason: 'auto-refresh-on-load'
-          }
-        }));
-      }, 1000); // 1 second delay to ensure everything is mounted
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [brandId]);
-
   if (!brandId) {
     return (
       <div className="flex items-center justify-center h-96">
