@@ -322,9 +322,10 @@ const CampaignWidget = ({
     // 🚨 ENSURE FRESH BUDGET: When new campaign data comes in, refresh budgets to get latest values
     if (campaigns && campaigns.length > 0 && brandId) {
       console.log(`[CampaignWidget] New campaign data received - refreshing budget data to ensure current values`);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       fetchCurrentBudgets(true); // Force refresh to get latest budget data
     }
-  }, [campaigns, brandId, fetchCurrentBudgets]);
+  }, [campaigns, brandId]); // fetchCurrentBudgets excluded to avoid hoisting issues
 
   // 🔧 FORCE RE-RENDER FIX: When campaigns get budget data, clear loading state
   useEffect(() => {
