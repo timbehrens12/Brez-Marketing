@@ -1672,12 +1672,9 @@ const CampaignWidget = ({
     }
     
     // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
-    // 🔍 DEBUG: Check key mismatch between campaign.id and campaign.campaign_id
-    console.log(`[CampaignWidget] 🔍 KEY CHECK - campaign.id: "${campaign.id}", campaign.campaign_id: "${campaign.campaign_id}"`);
-    console.log(`[CampaignWidget] 🔍 currentBudgets keys:`, Object.keys(currentBudgets || {}));
-    
-    // Try both campaign.id and campaign.campaign_id
-    const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
+    // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
+    // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
+    const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
@@ -1702,7 +1699,7 @@ const CampaignWidget = ({
     
     // 🚨 FINAL FIX: If ALL budget sources are empty/zero, show loading (regardless of isLoadingBudgets)
     const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && 
-      ((currentBudgets[campaign.id]?.budget > 0) || (currentBudgets[campaign.campaign_id]?.budget > 0));
+      ((currentBudgets[campaign.campaign_id]?.budget > 0) || (currentBudgets[campaign.id]?.budget > 0));
     const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
     
     console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 Budget sources:`, {
