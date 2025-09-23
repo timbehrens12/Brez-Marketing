@@ -86,20 +86,11 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
         setAdSetCount(data.adSetCount)
         hasInitialLoadRef.current = true
         
-        // Handle rate limit notifications
+        // Handle rate limit notifications (simplified - no toast spam)
         if (data.rateLimited) {
           setRateLimited(true)
-          setRateLimitMessage(data.rateLimitMessage || 'Meta API rate limit exceeded')
+          setRateLimitMessage(data.rateLimitMessage || 'Budget may be delayed if changes were made recently')
           setNextRetryAfter(data.nextRetryAfter)
-          
-          // Show user-friendly notification
-          toast.warning(
-            '⏱️ Meta API Rate Limited',
-            {
-              description: 'Budget data may be delayed. Showing cached values. Please try again in a few minutes.',
-              duration: 8000,
-            }
-          )
         } else {
           // Clear rate limit state if successful
           setRateLimited(false)
@@ -238,8 +229,8 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       prefix="$"
       hideGraph={true}
       infoTooltip={rateLimited 
-        ? `Rate Limited: ${rateLimitMessage}. Budget data may be delayed. Try again later.`
-        : "Shows the total budget for all active Meta ad sets. This value automatically updates when campaigns or ad sets change."
+        ? `${rateLimitMessage}`
+        : "Shows the total budget for all active Meta ad sets. Budget may be delayed if changes were made recently."
       }
       className="h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
       nullChangeText="N/A"
