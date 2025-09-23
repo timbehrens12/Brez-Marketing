@@ -532,6 +532,7 @@ export async function GET(request: NextRequest) {
       cpc: stat.cpc?.toString() || "0",
       actions: stat.actions || [], 
       action_values: stat.action_values || [],
+      ad_id: stat.ad_id, // ✅ CRITICAL FIX: Include ad_id in transformation
       connection_id: connection.id 
     }));
     
