@@ -318,7 +318,13 @@ const CampaignWidget = ({
       budget: c.budget, 
       adset_budget_total: c.adset_budget_total 
     })));
-  }, [campaigns]);
+    
+    // 🚨 ENSURE FRESH BUDGET: When new campaign data comes in, refresh budgets to get latest values
+    if (campaigns && campaigns.length > 0 && brandId) {
+      console.log(`[CampaignWidget] New campaign data received - refreshing budget data to ensure current values`);
+      fetchCurrentBudgets(true); // Force refresh to get latest budget data
+    }
+  }, [campaigns, brandId, fetchCurrentBudgets]);
 
   // 🔧 FORCE RE-RENDER FIX: When campaigns get budget data, clear loading state
   useEffect(() => {
@@ -1232,6 +1238,12 @@ const CampaignWidget = ({
       setTimeout(() => {
         if (isMountedRef.current && typeof onRefresh === 'function') {
           onRefresh();
+          
+          // 🚨 ENSURE BUDGET REFRESH: Also refresh budget data on global refresh
+          if (forceRefresh || event.type === 'globalRefresh') {
+            console.log(`[CampaignWidget] Global refresh triggered - also refreshing budget data`);
+            fetchCurrentBudgets(true); // Force refresh budget data
+          }
           
           // Clear refreshing state after minimum time
       setTimeout(() => {
