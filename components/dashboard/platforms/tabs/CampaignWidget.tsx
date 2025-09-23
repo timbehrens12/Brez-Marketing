@@ -1683,14 +1683,28 @@ const CampaignWidget = ({
       currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
+    // 🔧 TIMEOUT FIX: Show budget data even if it's 0, don't show infinite loading for date range changes
+    // Budget data should be static and not depend on date ranges
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading state`);
-      return {
-        budget: 0,
-        formatted_budget: '...', // Show loading while waiting for any budget data
-        budget_type: 'unknown',
-        budget_source: 'no_data_available'
-      };
+      // Only show loading state if we're actually in an initial loading state (isLoadingBudgets = true)
+      if (isLoadingBudgets) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source AND still loading - showing loading state`);
+        return {
+          budget: 0,
+          formatted_budget: '...', // Show loading while waiting for any budget data
+          budget_type: 'unknown',
+          budget_source: 'no_data_available'
+        };
+      } else {
+        // If not loading, show $0 instead of infinite loading skeleton
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available but not loading - showing $0`);
+        return {
+          budget: 0,
+          formatted_budget: formatCurrency(0),
+          budget_type: 'unknown',
+          budget_source: 'no_data_zero'
+        };
+      }
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
