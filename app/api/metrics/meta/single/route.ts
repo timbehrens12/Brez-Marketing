@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`SINGLE METRIC API (from meta_ad_daily_insights): Fetching ${metric} for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`SINGLE METRIC API: Fetching ${metric} for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -68,12 +68,12 @@ export async function GET(request: NextRequest) {
       console.log(`SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
     
-    // 🔧 FIXED: Use meta_ad_daily_insights for complete data (includes all adsets)
-    // This matches other widgets and ensures total consistency
+    // Query meta_ad_insights for just the data we need
+    // This is a much more focused query than the full metrics endpoint
     const { data: insights, error } = await supabase
-      .from('meta_ad_daily_insights')
-      .select('date, spent')
-      .eq('brand_id', brandId)
+      .from('meta_ad_insights')
+      .select('date, spend')
+      .eq('connection_id', connection.id)
       .gte('date', fromDate)
       .lte('date', toDate)
     
@@ -107,9 +107,9 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate the sum for ad spend (using 'spent' field from meta_ad_daily_insights)
+    // Calculate the sum for ad spend
     const totalSpend = filteredInsights.reduce((sum, item) => {
-      const spend = typeof item.spent === 'string' ? parseFloat(item.spent) : item.spent
+      const spend = typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend
       return sum + (isNaN(spend) ? 0 : spend)
     }, 0)
     

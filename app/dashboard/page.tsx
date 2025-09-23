@@ -1155,16 +1155,34 @@ export default function DashboardPage() {
     
     try {
       let startDateStr, endDateStr;
-      
-      // 🔥🔥🔥 CRITICAL FIX: ALWAYS use the current dateRange state, never fallback to today
       if (dateRange?.from && dateRange?.to) {
+        // Use format() here as well
         startDateStr = format(dateRange.from, 'yyyy-MM-dd');
         endDateStr = format(dateRange.to, 'yyyy-MM-dd');
-        console.log(`[Dashboard] fetchMetaMetrics using current dateRange: ${startDateStr} to ${endDateStr}`);
       } else {
-        // If no dateRange state, this is a bug - log it and return early
-        console.error('[Dashboard] 🚨 fetchMetaMetrics called without dateRange state - this should never happen!');
-        return;
+        // 🔥🔥🔥 CRITICAL FIX: Try to get dateRange from global variable before defaulting
+        let fallbackDateRange = null;
+        
+        if (typeof window !== 'undefined' && (window as any)._currentDateRange) {
+          try {
+            const globalDateRange = (window as any)._currentDateRange;
+            fallbackDateRange = {
+              from: new Date(globalDateRange.from),
+              to: new Date(globalDateRange.to)
+            };
+          } catch (error) {
+          }
+        }
+        
+        if (fallbackDateRange) {
+          startDateStr = format(fallbackDateRange.from, 'yyyy-MM-dd');
+          endDateStr = format(fallbackDateRange.to, 'yyyy-MM-dd');
+        } else {
+          // Only use default if no global dateRange available
+          const now = new Date();
+          startDateStr = format(now, 'yyyy-MM-dd');
+          endDateStr = format(now, 'yyyy-MM-dd');
+        }
       }
       
       // Use consistent format with URLSearchParams
