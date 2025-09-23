@@ -238,6 +238,29 @@ export async function GET(req: NextRequest) {
         }
       } catch (error) {
         console.error('[Total Meta Budget] Error fetching from Meta API, falling back to database:', error);
+        
+        // 🚨 SMART RATE LIMIT HANDLING: Check if we have recent database updates
+        if (error?.message?.includes('User request limit reached')) {
+          console.log('[Total Meta Budget] Rate limit detected - checking for recent database updates...');
+          
+          // Check for updates in the last 30 minutes (more recent than typical cache)
+          const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+          const { data: recentBudgetUpdates } = await supabase
+            .from('meta_adsets')
+            .select('updated_at, budget')
+            .eq('brand_id', brandId)
+            .eq('status', 'ACTIVE')
+            .gte('updated_at', thirtyMinutesAgo.toISOString())
+            .order('updated_at', { ascending: false })
+            .limit(1);
+          
+          if (recentBudgetUpdates && recentBudgetUpdates.length > 0) {
+            console.log(`[Total Meta Budget] Found recent budget update at ${recentBudgetUpdates[0].updated_at}, using fresh database data`);
+          } else {
+            console.log('[Total Meta Budget] No recent budget updates found, using existing database data');
+          }
+        }
+        
         // Fall through to database query
       }
     }

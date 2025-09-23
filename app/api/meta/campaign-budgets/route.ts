@@ -33,6 +33,52 @@ export async function GET(request: NextRequest) {
     
     if (!result.success) {
       console.error(`[API] Error fetching campaign budgets:`, result.error)
+      
+      // 🚨 RATE LIMIT FALLBACK: If Meta API fails, try database fallback
+      if (result.error?.includes('User request limit reached') || result.error?.includes('rate limit')) {
+        console.log('[API] Rate limit detected - falling back to database budget data')
+        
+        // Initialize Supabase client
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        // Get budget data from database
+        const { data: campaigns, error: campaignError } = await supabase
+          .from('meta_campaigns')
+          .select('campaign_id, campaign_name, budget, adset_budget_total, budget_type, updated_at')
+          .eq('brand_id', brandId)
+          .eq('status', 'ACTIVE');
+        
+        if (!campaignError && campaigns && campaigns.length > 0) {
+          // Transform database data to match expected format
+          const budgets = campaigns.reduce((acc: any, campaign: any) => {
+            const budget = campaign.adset_budget_total || campaign.budget || 0;
+            if (budget > 0) {
+              acc[campaign.campaign_id] = {
+                campaignId: campaign.campaign_id,
+                campaignName: campaign.campaign_name,
+                budget: budget,
+                budgetType: campaign.budget_type || 'daily',
+                updatedAt: campaign.updated_at
+              };
+            }
+            return acc;
+          }, {});
+          
+          console.log(`[API] Database fallback successful - found ${Object.keys(budgets).length} campaigns with budgets`);
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Campaign budgets fetched from database (Meta API rate limited)',
+            budgets: budgets,
+            timestamp: new Date().toISOString(),
+            refreshMethod: 'database-fallback'
+          });
+        }
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to fetch campaign budgets', 
         details: result.error 
