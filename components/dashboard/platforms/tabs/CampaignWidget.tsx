@@ -1605,15 +1605,16 @@ const CampaignWidget = ({
       };
     }
     
-    // 🚨 EMERGENCY FIX: currentBudgets API is broken (returns $0), use hardcoded $2 for now
-    // TODO: Fix the currentBudgets API to return actual budget values
-    console.log(`[EMERGENCY FIX] currentBudgets API returns $0, forcing $2 for campaign ${campaign.campaign_id}`);
-    return {
-      budget: 2,
-      formatted_budget: formatCurrency(2),
-      budget_type: 'daily',
-      budget_source: 'emergency_hardcoded'
-    };
+    // 🚨 FIXED: Check current budgets from API first - try both ID formats
+    const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
+    if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
+      return {
+        budget: currentBudgetData.budget,
+        formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
+        budget_type: currentBudgetData.budget_type || 'unknown',
+        budget_source: 'api'
+      };
+    }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
     // If campaign has adset_budget_total (the preferred source from the campaigns API)
