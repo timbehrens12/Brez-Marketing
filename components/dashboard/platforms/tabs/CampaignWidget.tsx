@@ -1684,28 +1684,48 @@ const CampaignWidget = ({
       currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
-    // 🔧 SMART BUDGET FIX: Wait for real budget data, but don't wait forever
+    // 🔧 ULTIMATE FIX: If no budget from APIs, try to get it from adsets (like dropdown does)
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      // Show loading if we're in initial loading OR if we just got campaigns but they don't have budget yet
-      // (campaigns API might return before budget API completes)
-      if (isLoadingBudgets || !lastBudgetRefresh) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source AND (loading OR no budget API call yet) - showing loading state`);
+      // Check if we have cached adsets for this campaign (from previous expansions)
+      const cachedAdSets = allCampaignAdSets.get(campaign.campaign_id);
+      if (cachedAdSets && cachedAdSets.length > 0) {
+        const activeAdSets = cachedAdSets.filter(adSet => adSet.status === 'ACTIVE');
+        const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+        
+        if (totalAdSetBudget > 0) {
+          console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using cached adsets budget: $${totalAdSetBudget} from ${activeAdSets.length} active adsets`);
+          return {
+            budget: totalAdSetBudget,
+            formatted_budget: formatCurrency(totalAdSetBudget),
+            budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+            budget_source: 'cached_adsets'
+          };
+        }
+      }
+      
+      // If no cached adsets with budget, trigger adset fetch for this campaign
+      if (!campaignsWithAdSets.has(campaign.campaign_id)) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget from APIs, fetching adsets to get real budget`);
+        // Trigger adset fetch in background without opening dropdown
+        fetchAdSets(campaign.campaign_id, false);
+        
+        // Show loading while adsets are being fetched
         return {
           budget: 0,
-          formatted_budget: '...', // Show loading while waiting for any budget data
+          formatted_budget: '...', // Show loading while fetching adsets
           budget_type: 'unknown',
-          budget_source: 'no_data_available'
-        };
-      } else {
-        // Budget API has completed but still no data - show $0
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available and budget API completed - showing $0`);
-        return {
-          budget: 0,
-          formatted_budget: formatCurrency(0),
-          budget_type: 'unknown',
-          budget_source: 'no_data_zero'
+          budget_source: 'fetching_adsets'
         };
       }
+      
+      // Adsets have been fetched but still no budget - show $0
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Adsets fetched but no budget data - showing $0`);
+      return {
+        budget: 0,
+        formatted_budget: formatCurrency(0),
+        budget_type: 'unknown',
+        budget_source: 'no_data_zero'
+      };
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
