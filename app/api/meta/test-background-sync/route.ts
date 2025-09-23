@@ -11,13 +11,22 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('Authorization')
     const isInternalCall = authHeader?.includes('Bearer internal') || authHeader?.includes('Bearer ' + process.env.INTERNAL_API_KEY)
     
+    console.log(`[Test Background Sync] 🔍 AUTH DEBUG:`)
+    console.log(`[Test Background Sync] - Authorization header: ${authHeader}`)
+    console.log(`[Test Background Sync] - INTERNAL_API_KEY: ${process.env.INTERNAL_API_KEY ? 'SET' : 'NOT SET'}`)
+    console.log(`[Test Background Sync] - isInternalCall: ${isInternalCall}`)
+    
     let userId = null
     if (!isInternalCall) {
+      console.log(`[Test Background Sync] - Not internal call, checking user auth...`)
       const authResult = await auth()
       userId = authResult.userId
       if (!userId) {
+        console.log(`[Test Background Sync] - No user ID found, returning 401`)
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
+    } else {
+      console.log(`[Test Background Sync] - Internal call authorized, proceeding without user auth`)
     }
 
     const { brandId } = await request.json()
