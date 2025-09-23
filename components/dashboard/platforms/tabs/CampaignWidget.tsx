@@ -336,12 +336,13 @@ const CampaignWidget = ({
     if (isLoadingBudgets) {
       const timeout = setTimeout(() => {
         console.log(`[CampaignWidget] 🕐 Timeout: Force clearing isLoadingBudgets after 3 seconds`);
+        console.log(`[CampaignWidget] 🔍 Current loading states:`, { isLoading, isSyncing, isLoadingBudgets });
         setIsLoadingBudgets(false);
       }, 3000);
       
       return () => clearTimeout(timeout);
     }
-  }, [isLoadingBudgets]);
+  }, [isLoadingBudgets, isLoading, isSyncing]);
 
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
@@ -2531,7 +2532,16 @@ const CampaignWidget = ({
                                 const budgetInfo = getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null);
                                 
                                 // Show loading skeleton if still loading or budget source is loading/unavailable
-                                if (budgetInfo.budget_source === 'loading' || budgetInfo.budget_source === 'no_data_available' || isLoading || isSyncing) {
+                                // 🔍 DEBUG: Log what's causing the loading skeleton to show
+                                const shouldShowSkeleton = budgetInfo.budget_source === 'loading' || budgetInfo.budget_source === 'no_data_available' || isLoading || isSyncing;
+                                if (shouldShowSkeleton) {
+                                  console.log(`[CampaignWidget] 🔍 Showing skeleton for campaign ${campaign.campaign_id}:`, {
+                                    budget_source: budgetInfo.budget_source,
+                                    isLoading,
+                                    isSyncing,
+                                    isLoadingBudgets,
+                                    budgetInfo
+                                  });
                                   return (
                                     <div className="h-5 w-20 animate-pulse bg-gray-700/30 rounded"></div>
                                   );
