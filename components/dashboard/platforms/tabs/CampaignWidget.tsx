@@ -1714,8 +1714,25 @@ const CampaignWidget = ({
         }
       }
 
-      // 🚨 FINAL FALLBACK: Budget API completed but no data found
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available after API completion`);
+      // 🚨 AGGRESSIVE FALLBACK: Budget API failed, fetch adsets to get budget (like dropdown does)
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Budget API failed, attempting to fetch adsets for budget`);
+      
+      // Trigger adset fetch for this campaign to get budget data (same as opening dropdown)
+      if (brandId && campaign.campaign_id) {
+        // Use the same logic as fetchAdSets but just for budget calculation
+        fetchAdSets(campaign.campaign_id, false); // Don't open dropdown, just fetch data
+        
+        // Return loading state while we fetch adsets
+        return {
+          budget: 0,
+          formatted_budget: '...',
+          budget_type: 'unknown',
+          budget_source: 'loading'
+        };
+      }
+      
+      // Final fallback if no brandId
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available after all attempts`);
       return {
         budget: 0,
         formatted_budget: formatCurrency(0),
