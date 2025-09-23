@@ -716,14 +716,14 @@ export async function GET(request: NextRequest) {
               
             if (!adSetsError && adSetsData) {
               adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
-                // FIXED: Use the correct field name 'budget' not 'daily_budget' or 'lifetime_budget'
-                const budget = adSet.budget || 0;
-                return total + Number(budget);
+                const dailyBudget = adSet.daily_budget || 0;
+                const lifetimeBudget = adSet.lifetime_budget || 0;
+                return total + Math.max(dailyBudget, lifetimeBudget);
               }, 0);
               
-              // FIXED: Use the budget_type field directly from adsets
-              const budgetTypes = adSetsData.map((adSet: any) => adSet.budget_type).filter(Boolean);
-              adsetBudgetType = budgetTypes.length > 0 ? budgetTypes[0] : 'unknown';
+              const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
+              const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
+              adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
               
               console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
                 adSetsCount: adSetsData.length,
@@ -1309,14 +1309,14 @@ export async function GET(request: NextRequest) {
              
            if (!adSetsError && adSetsData) {
              adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
-               // FIXED: Use the correct field name 'budget' not 'daily_budget' or 'lifetime_budget'
-               const budget = adSet.budget || 0;
-               return total + Number(budget);
+               const dailyBudget = adSet.daily_budget || 0;
+               const lifetimeBudget = adSet.lifetime_budget || 0;
+               return total + Math.max(dailyBudget, lifetimeBudget);
              }, 0);
              
-             // FIXED: Use the budget_type field directly from adsets
-             const budgetTypes = adSetsData.map((adSet: any) => adSet.budget_type).filter(Boolean);
-             adsetBudgetType = budgetTypes.length > 0 ? budgetTypes[0] : 'unknown';
+             const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
+             const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
+             adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
              
              console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
                adSetsCount: adSetsData.length,
