@@ -6,15 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log(`[Process Full Sync Queue] 🚀 Starting queue processor...`)
 
-    // Initialize Redis connection
-    const { Queue, Worker } = await import('bullmq')
-    const Redis = require('ioredis')
-    
-    const redis = new Redis(process.env.UPSTASH_REDIS_REST_URL?.replace('https://', 'redis://') || 'redis://localhost:6379', {
-      password: process.env.UPSTASH_REDIS_REST_TOKEN,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
-    })
+    // 🚀 USE EXISTING META QUEUE SERVICE (proven working setup)
+    const { metaQueue } = await import('@/lib/services/metaQueueService')
 
     // Import Meta service functions
     const { fetchMetaAdInsights, fetchMetaAdSets } = await import('@/lib/services/meta-service')
@@ -25,8 +18,10 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Create worker to process Meta sync jobs
-    const worker = new Worker('meta-full-sync', async (job) => {
+    console.log(`[Process Full Sync Queue] 🔧 Using existing metaQueue service for processing`)
+
+    // Process jobs from the existing metaQueue (using Bull's built-in processor)
+    metaQueue.process(2, async (job) => { // Process 2 jobs concurrently
       const { brandId, adAccountId, month, startDate, endDate, chunkNumber, totalChunks, type } = job.data
       
       console.log(`[Queue Worker] 🔄 Processing ${type || 'insights'} job: ${month || type?.toUpperCase() || 'Unknown'}`)
@@ -142,31 +137,25 @@ export async function POST(request: NextRequest) {
         console.error(`[Queue Worker] ❌ Job failed:`, jobError)
         throw jobError
       }
-    }, { 
-      connection: redis,
-      concurrency: 2, // Process 2 jobs at once to prevent rate limiting
     })
 
-    // Handle worker events
-    worker.on('completed', (job, result) => {
+    // Handle queue events
+    metaQueue.on('completed', (job, result) => {
       console.log(`[Queue Worker] ✅ Job ${job.id} completed:`, result)
     })
 
-    worker.on('failed', (job, err) => {
+    metaQueue.on('failed', (job, err) => {
       console.error(`[Queue Worker] ❌ Job ${job?.id} failed:`, err)
     })
 
-    worker.on('error', (err) => {
-      console.error(`[Queue Worker] ❌ Worker error:`, err)
+    metaQueue.on('error', (err) => {
+      console.error(`[Queue Worker] ❌ Queue error:`, err)
     })
 
-    console.log(`[Process Full Sync Queue] ✅ Worker started and listening for jobs`)
+    console.log(`[Process Full Sync Queue] ✅ Queue processor started and listening for jobs`)
 
-    // Keep worker alive for 10 minutes (enough to process 12 monthly jobs)
-    setTimeout(() => {
-      console.log(`[Process Full Sync Queue] ⏰ Shutting down worker after 10 minutes`)
-      worker.close()
-    }, 10 * 60 * 1000)
+    // Return success immediately - the queue processor is now active
+    console.log(`[Process Full Sync Queue] 📋 Jobs in queue will be processed automatically`)
 
     return NextResponse.json({
       success: true,

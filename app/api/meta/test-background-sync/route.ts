@@ -75,19 +75,10 @@ export async function POST(request: NextRequest) {
     // 🚀 PRODUCTION REQUIREMENT: Full 12-month background queue sync
     console.log(`[Test Background Sync] 🎯 TRIGGERING FULL 12-MONTH QUEUE SYNC FOR PRODUCTION`)
     
-    // Import background queue system
-    const { Queue } = await import('bullmq')
-    const Redis = require('ioredis')
+    // 🚀 USE EXISTING META QUEUE SERVICE (proven working setup)
+    const { metaQueue } = await import('@/lib/services/metaQueueService')
     
-    // Initialize Redis connection for queue
-    const redis = new Redis(process.env.UPSTASH_REDIS_REST_URL?.replace('https://', 'redis://') || 'redis://localhost:6379', {
-      password: process.env.UPSTASH_REDIS_REST_TOKEN,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
-    })
-    
-    // Create Meta sync queue
-    const metaSyncQueue = new Queue('meta-full-sync', { connection: redis })
+    console.log(`[Test Background Sync] 🔧 Using existing metaQueue service for 12-month sync`)
     
     // Generate 12 monthly jobs for full historical sync
     const now = new Date()
@@ -108,7 +99,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Add job to queue with delay to prevent rate limiting
-      const job = await metaSyncQueue.add(
+      const job = await metaQueue.add(
         `sync-month-${12-i}`,
         jobData,
         {
@@ -126,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Also queue budget + adsets + ads creative sync job
-    const budgetJob = await metaSyncQueue.add(
+    const budgetJob = await metaQueue.add(
       'sync-budgets',
       {
         brandId,
@@ -140,7 +131,7 @@ export async function POST(request: NextRequest) {
     )
     
     // Queue ads creative sync job (images, headlines, CTAs)
-    const creativeJob = await metaSyncQueue.add(
+    const creativeJob = await metaQueue.add(
       'sync-creative',
       {
         brandId,
