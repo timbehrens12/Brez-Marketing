@@ -1093,6 +1093,7 @@ const CampaignWidget = ({
       removeAbortController(controller);
       if (isMountedRef.current) {
         setIsLoadingBudgets(false);
+        setLastBudgetRefresh(new Date());  // Mark that budget API has completed
       }
       // Clear the fetch flag
       delete (window as any)[fetchKey];
@@ -1683,12 +1684,12 @@ const CampaignWidget = ({
       currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
-    // 🔧 TIMEOUT FIX: Show budget data even if it's 0, don't show infinite loading for date range changes
-    // Budget data should be static and not depend on date ranges
+    // 🔧 SMART BUDGET FIX: Wait for real budget data, but don't wait forever
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      // Only show loading state if we're actually in an initial loading state (isLoadingBudgets = true)
-      if (isLoadingBudgets) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source AND still loading - showing loading state`);
+      // Show loading if we're in initial loading OR if we just got campaigns but they don't have budget yet
+      // (campaigns API might return before budget API completes)
+      if (isLoadingBudgets || !lastBudgetRefresh) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source AND (loading OR no budget API call yet) - showing loading state`);
         return {
           budget: 0,
           formatted_budget: '...', // Show loading while waiting for any budget data
@@ -1696,8 +1697,8 @@ const CampaignWidget = ({
           budget_source: 'no_data_available'
         };
       } else {
-        // If not loading, show $0 instead of infinite loading skeleton
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available but not loading - showing $0`);
+        // Budget API has completed but still no data - show $0
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available and budget API completed - showing $0`);
         return {
           budget: 0,
           formatted_budget: formatCurrency(0),
