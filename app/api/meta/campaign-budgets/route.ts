@@ -53,28 +53,69 @@ export async function GET(request: NextRequest) {
       console.warn(`[API] Meta API error, falling back to database:`, metaError)
     }
     
-    // 🚨 FALLBACK: Get budget data from database
-    console.log(`[API] Fetching campaign budgets from database`)
+    // 🚨 FALLBACK: Get budget data from database by aggregating from adsets
+    console.log(`[API] Fetching campaign budgets from database (aggregating from adsets)`)
+    
+    // First get active campaigns
     const { data: campaigns, error: campaignError } = await supabase
       .from('meta_campaigns')
-      .select('campaign_id, campaign_name, budget, adset_budget_total')
+      .select('campaign_id, campaign_name')
       .eq('brand_id', brandId)
       .eq('status', 'ACTIVE')
     
     if (campaignError) {
-      console.error(`[API] Database fallback failed:`, campaignError)
+      console.error(`[API] Database fallback failed (campaigns):`, campaignError)
       return NextResponse.json({ 
-        error: 'Failed to fetch campaign budgets from database', 
+        error: 'Failed to fetch campaigns from database', 
         details: campaignError.message 
       }, { status: 500 })
     }
     
-    // Format database data as budgets
+    if (!campaigns || campaigns.length === 0) {
+      console.log(`[API] No active campaigns found`)
+      return NextResponse.json({
+        success: true,
+        message: 'No active campaigns found',
+        budgets: {},
+        timestamp: new Date().toISOString(),
+        refreshMethod: 'database-fallback'
+      })
+    }
+    
+    const campaignIds = campaigns.map(c => c.campaign_id)
+    
+    // Get adsets for these campaigns and aggregate their budgets
+    const { data: adsets, error: adsetsError } = await supabase
+      .from('meta_adsets')
+      .select('campaign_id, budget, status')
+      .eq('brand_id', brandId)
+      .in('campaign_id', campaignIds)
+      .eq('status', 'ACTIVE')
+    
+    if (adsetsError) {
+      console.error(`[API] Database fallback failed (adsets):`, adsetsError)
+      return NextResponse.json({ 
+        error: 'Failed to fetch adsets from database', 
+        details: adsetsError.message 
+      }, { status: 500 })
+    }
+    
+    // Aggregate budgets by campaign
     const budgets: { [campaignId: string]: number } = {}
-    campaigns?.forEach(campaign => {
-      const budget = campaign.adset_budget_total || campaign.budget || 0
-      budgets[campaign.campaign_id] = budget
+    
+    // Initialize all campaigns with 0
+    campaigns.forEach(campaign => {
+      budgets[campaign.campaign_id] = 0
     })
+    
+    // Sum up adset budgets per campaign
+    adsets?.forEach(adset => {
+      if (adset.budget && adset.budget > 0) {
+        budgets[adset.campaign_id] = (budgets[adset.campaign_id] || 0) + adset.budget
+      }
+    })
+    
+    console.log(`[API] Aggregated campaign budgets:`, budgets)
     
     return NextResponse.json({
       success: true,
