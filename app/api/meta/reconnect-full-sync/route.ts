@@ -119,7 +119,59 @@ export async function POST(request: NextRequest) {
 
         if (chunkResult.success) {
           completedChunks++
-          console.log(`✅ [Meta Reconnect] Completed ${chunk.description} (${completedChunks}/${chunks.length})`)
+          console.log(`✅ [Meta Reconnect] Completed insights for ${chunk.description} (${completedChunks}/${chunks.length})`)
+          
+          // 🚨 ALSO SYNC ADS CREATIVE DATA: Get campaigns and adsets, then sync ads for each
+          // Only sync creative data once (not for each chunk) to avoid duplicates
+          if (completedChunks === 1) { // Only on first successful chunk
+            console.log(`🎨 [Meta Reconnect] Syncing ads creative data (images, headlines, etc.)...`)
+            
+            try {
+              // Get all campaigns for this brand
+              const { data: campaigns } = await supabase
+                .from('meta_campaigns')
+                .select('campaign_id')
+                .eq('brand_id', brandId)
+                .eq('status', 'ACTIVE')
+              
+              if (campaigns && campaigns.length > 0) {
+                console.log(`🎨 [Meta Reconnect] Found ${campaigns.length} campaigns, syncing adsets and ads...`)
+                
+                for (const campaign of campaigns) {
+                  // Get adsets for this campaign
+                  const { data: adsets } = await supabase
+                    .from('meta_adsets')
+                    .select('adset_id')
+                    .eq('brand_id', brandId)
+                    .eq('campaign_id', campaign.campaign_id)
+                    .eq('status', 'ACTIVE')
+                  
+                  if (adsets && adsets.length > 0) {
+                    console.log(`🎨 [Meta Reconnect] Syncing ads for ${adsets.length} adsets in campaign ${campaign.campaign_id}`)
+                    
+                    // Import the fetchMetaAds function
+                    const { fetchMetaAds } = await import('@/lib/services/meta-service')
+                    
+                    for (const adset of adsets) {
+                      try {
+                        await fetchMetaAds(brandId, adset.adset_id, true) // forceSave = true
+                        console.log(`🎨 [Meta Reconnect] Synced ads for adset ${adset.adset_id}`)
+                      } catch (adsError) {
+                        console.warn(`⚠️ [Meta Reconnect] Failed to sync ads for adset ${adset.adset_id}:`, adsError)
+                      }
+                      
+                      // Small delay to prevent rate limiting
+                      await new Promise(resolve => setTimeout(resolve, 1000))
+                    }
+                  }
+                }
+                
+                console.log(`✅ [Meta Reconnect] Completed ads creative sync`)
+              }
+            } catch (adsSyncError) {
+              console.warn(`⚠️ [Meta Reconnect] Ads creative sync failed (non-critical):`, adsSyncError)
+            }
+          }
         } else {
           console.log(`⚠️ [Meta Reconnect] Failed ${chunk.description}: ${chunkResult.error}`)
           errors.push(`${chunk.description}: ${chunkResult.error}`)
