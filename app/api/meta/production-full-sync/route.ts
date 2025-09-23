@@ -45,8 +45,7 @@ export async function POST(request: NextRequest) {
         sync_status: 'in_progress',
         access_token: accessToken,
         metadata: { ad_account_id: adAccountId },
-        updated_at: new Date().toISOString(),
-        sync_progress: 0
+        updated_at: new Date().toISOString()
       })
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
@@ -91,13 +90,9 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`🔄 [Production Sync] Processing ${chunk.month}...`)
         
-        // Update progress
-        const progressPct = Math.round((completedChunks / chunks.length) * 100)
-        await supabase
-          .from('platform_connections')
-          .update({ sync_progress: progressPct })
-          .eq('brand_id', brandId)
-          .eq('platform_type', 'meta')
+          // Update progress (progress tracking removed - column doesn't exist)
+          const progressPct = Math.round((completedChunks / chunks.length) * 100)
+          console.log(`[Production Sync] Progress: ${progressPct}% (${completedChunks}/${chunks.length} chunks)`)
 
         // Sync insights for this month (PROVEN METHOD)
         const insightsResult = await fetchMetaAdInsights(
@@ -176,13 +171,11 @@ export async function POST(request: NextRequest) {
     const syncSuccess = successRate >= 70 // 70%+ success rate considered good
     
     const finalStatus = syncSuccess ? 'completed' : 'failed'
-    const finalProgress = syncSuccess ? 100 : Math.round((completedChunks / chunks.length) * 100)
 
     await supabase
       .from('platform_connections')
       .update({
         sync_status: finalStatus,
-        sync_progress: finalProgress,
         last_synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
