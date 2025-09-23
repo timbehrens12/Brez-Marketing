@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // 🚨 TEMPORARY: Disable Meta API fetch as it returns stale budget data ($3 instead of $2)
-    if (false && forceRefresh) {
+    // 🚨 FORCE META API SYNC: Database has stale budget amounts, need fresh data
+    if (forceRefresh) {
       console.log('[Total Meta Budget] Force refresh requested, fetching fresh ad set data from Meta API');
       
       try {
