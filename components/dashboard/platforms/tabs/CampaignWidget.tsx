@@ -319,12 +319,11 @@ const CampaignWidget = ({
       adset_budget_total: c.adset_budget_total 
     })));
     
-    // 🚨 ENSURE FRESH BUDGET: When new campaign data comes in, refresh budgets to get latest values
-    if (campaigns && campaigns.length > 0 && brandId) {
-      console.log(`[CampaignWidget] New campaign data received - refreshing budget data to ensure current values`);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      fetchCurrentBudgets(true); // Force refresh to get latest budget data
-    }
+    // 🚨 EMERGENCY DISABLED: This was causing spam refreshing loops
+    // if (campaigns && campaigns.length > 0 && brandId) {
+    //   console.log(`[CampaignWidget] New campaign data received - refreshing budget data to ensure current values`);
+    //   fetchCurrentBudgets(true); // Force refresh to get latest budget data
+    // }
   }, [campaigns, brandId]); // fetchCurrentBudgets excluded to avoid hoisting issues
 
   // 🔧 FORCE RE-RENDER FIX: When campaigns get budget data, clear loading state
@@ -1727,22 +1726,19 @@ const CampaignWidget = ({
         }
       }
 
-      // 🚨 AGGRESSIVE FALLBACK: Budget API failed, fetch adsets to get budget (like dropdown does)
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Budget API failed, attempting to fetch adsets for budget`);
+      // 🚨 EMERGENCY DISABLED: Aggressive fallback was causing infinite loops
+      // console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Budget API failed, attempting to fetch adsets for budget`);
       
-      // Trigger adset fetch for this campaign to get budget data (same as opening dropdown)
-      if (brandId && campaign.campaign_id) {
-        // Use the same logic as fetchAdSets but just for budget calculation
-        fetchAdSets(campaign.campaign_id, false); // Don't open dropdown, just fetch data
-        
-        // Return loading state while we fetch adsets
-        return {
-          budget: 0,
-          formatted_budget: '...',
-          budget_type: 'unknown',
-          budget_source: 'loading'
-        };
-      }
+      // DISABLED: This was causing infinite loops by calling fetchAdSets which triggers more budget refreshes
+      // if (brandId && campaign.campaign_id) {
+      //   fetchAdSets(campaign.campaign_id, false); // Don't open dropdown, just fetch data
+      //   return {
+      //     budget: 0,
+      //     formatted_budget: '...',
+      //     budget_type: 'unknown',
+      //     budget_source: 'loading'
+      //   };
+      // }
       
       // Final fallback if no brandId
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available after all attempts`);
