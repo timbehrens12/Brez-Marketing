@@ -72,18 +72,18 @@ export async function POST(request: NextRequest) {
     // Import the proven Meta service method
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
 
-    // Test with just one month (current month)
+    // Extended sync: Last 3 months to avoid timeout but get more data
     const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // End of current month
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1) // Start 3 months ago
 
-    console.log(`[Test Background Sync] Testing sync for ${monthStart.toISOString().split('T')[0]} to ${monthEnd.toISOString().split('T')[0]}`)
+    console.log(`[Test Background Sync] Extended sync for 3 months: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
 
-    // 🎯 PROVEN METHOD: fetchMetaAdInsights for current month
+    // 🎯 PROVEN METHOD: fetchMetaAdInsights for 3-month period
     const insightsResult = await fetchMetaAdInsights(
       brandId,
-      monthStart,
-      monthEnd,
+      startDate,
+      endDate,
       false, // dryRun = false
       false  // skipDemographics = false
     )
@@ -93,21 +93,21 @@ export async function POST(request: NextRequest) {
     if (insightsResult.success) {
       return NextResponse.json({
         success: true,
-        message: 'Background sync test completed successfully',
+        message: 'Extended 3-month sync completed successfully',
         result: insightsResult,
-        testPeriod: {
-          from: monthStart.toISOString().split('T')[0],
-          to: monthEnd.toISOString().split('T')[0]
+        syncPeriod: {
+          from: startDate.toISOString().split('T')[0],
+          to: endDate.toISOString().split('T')[0]
         }
       })
     } else {
       return NextResponse.json({
         success: false,
-        error: 'Background sync test failed',
+        error: 'Extended sync failed',
         details: insightsResult.error,
-        testPeriod: {
-          from: monthStart.toISOString().split('T')[0],
-          to: monthEnd.toISOString().split('T')[0]
+        syncPeriod: {
+          from: startDate.toISOString().split('T')[0],
+          to: endDate.toISOString().split('T')[0]
         }
       }, { status: 500 })
     }

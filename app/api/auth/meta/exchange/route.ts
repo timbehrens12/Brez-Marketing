@@ -93,20 +93,16 @@ export async function POST(request: NextRequest) {
     // 🚀 TRIGGER BACKGROUND SYNC: Call the full 12-month sync endpoint
     const triggerBackgroundSync = async () => {
       try {
-        console.log(`[Meta Exchange Simple] Triggering FULL 12-month sync via production endpoint`)
+        console.log(`[Meta Exchange Simple] Triggering extended sync via proven test endpoint`)
         
-        // Make internal call to the production full sync endpoint with all required data
-        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/production-full-sync`, {
+        // Make internal call to the proven test endpoint (avoid timeout issues)
+        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/test-background-sync`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.INTERNAL_API_KEY || 'internal'}`
           },
-          body: JSON.stringify({ 
-            brandId: state,
-            accessToken: tokenData.access_token,
-            adAccountId: accountId
-          })
+          body: JSON.stringify({ brandId: state })
         })
 
         const syncResult = await syncResponse.json()
