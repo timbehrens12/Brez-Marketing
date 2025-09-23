@@ -1062,6 +1062,7 @@ const CampaignWidget = ({
         if (data.budgets && Array.isArray(data.budgets)) {
           data.budgets.forEach((budget: any) => {
             console.log(`[CampaignWidget] 🔍 Processing budget:`, budget);
+            console.log(`[CampaignWidget] 🔍 Budget details - campaign_id: ${budget.campaign_id}, budget: ${budget.budget}, type: ${budget.budget_type}, source: ${budget.budget_source}`);
             budgetMap[budget.campaign_id] = {
               budget: budget.budget,
               budget_type: budget.budget_type,

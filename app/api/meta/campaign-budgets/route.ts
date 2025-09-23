@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
       
       if (result.success && result.budgets && result.budgets.length > 0) {
         console.log(`[API] ✅ Meta API succeeded, returning fresh budget data:`, result.budgets)
+        // 🔍 DEBUG: Log each budget value
+        result.budgets.forEach((budget: any) => {
+          console.log(`[API] 🔍 Meta API budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, source: ${budget.budget_source}`)
+        })
         return NextResponse.json({
           success: true,
           message: 'Campaign budgets fetched successfully',
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
           refreshMethod: 'meta-api'
         })
       } else {
-        console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result.error)
+        console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
       }
     } catch (metaError) {
       console.warn(`[API] Meta API error, falling back to database:`, metaError)
@@ -112,8 +116,10 @@ export async function GET(request: NextRequest) {
     
     // Sum up adset budgets per campaign
     adsets?.forEach(adset => {
+      console.log(`[API] 🔍 Processing adset - campaign: ${adset.campaign_id}, budget: ${adset.budget}, status: ${adset.status}`)
       if (adset.budget && adset.budget > 0) {
         budgets[adset.campaign_id] = (budgets[adset.campaign_id] || 0) + adset.budget
+        console.log(`[API] 🔍 Added to campaign ${adset.campaign_id}: +$${adset.budget} = $${budgets[adset.campaign_id]}`)
       }
     })
     
@@ -127,6 +133,12 @@ export async function GET(request: NextRequest) {
       formatted_budget: `$${budget.toFixed(2)}`,
       budget_source: 'database-adsets'
     }))
+    
+    console.log(`[API] Returning database aggregated budgets:`, formattedBudgets)
+    // 🔍 DEBUG: Log each formatted budget
+    formattedBudgets.forEach(budget => {
+      console.log(`[API] 🔍 Database budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, formatted: ${budget.formatted_budget}`)
+    })
     
     return NextResponse.json({
       success: true,
