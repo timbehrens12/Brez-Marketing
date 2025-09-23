@@ -1045,29 +1045,37 @@ const CampaignWidget = ({
     const controller = createAbortController();
     
     try {
-      const response = await fetch(
-        `/api/meta/campaign-budgets?brandId=${brandId}${forceRefresh ? '&forceRefresh=true' : ''}`,
-        { signal: controller.signal }
-      );
+      const url = `/api/meta/campaign-budgets?brandId=${brandId}${forceRefresh ? '&forceRefresh=true' : ''}`;
+      console.log(`[CampaignWidget] 🚀 Calling campaign budget API:`, url);
+      
+      const response = await fetch(url, { signal: controller.signal });
       
       if (!isMountedRef.current) return;
       
       if (response.ok) {
         const data = await response.json();
+        console.log(`[CampaignWidget] 🔍 Campaign budget API response:`, data);
         
         // Create a map of campaign_id to budget data
         const budgetMap: Record<string, any> = {};
-        data.budgets.forEach((budget: any) => {
-          budgetMap[budget.campaign_id] = {
-            budget: budget.budget,
-            budget_type: budget.budget_type,
-            formatted_budget: budget.formatted_budget,
-            budget_source: budget.budget_source
-          };
-        });
+        
+        if (data.budgets && Array.isArray(data.budgets)) {
+          data.budgets.forEach((budget: any) => {
+            console.log(`[CampaignWidget] 🔍 Processing budget:`, budget);
+            budgetMap[budget.campaign_id] = {
+              budget: budget.budget,
+              budget_type: budget.budget_type,
+              formatted_budget: budget.formatted_budget,
+              budget_source: budget.budget_source
+            };
+          });
+        } else {
+          console.warn(`[CampaignWidget] ⚠️ Invalid budget data format:`, data);
+        }
         
         if (isMountedRef.current) {
           setCurrentBudgets(budgetMap);
+          console.log(`[CampaignWidget] ✅ Set currentBudgets:`, budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
         }
         
@@ -1076,6 +1084,8 @@ const CampaignWidget = ({
           toast.success(`Updated budget data for ${Object.keys(budgetMap).length} campaigns`);
         }
       } else {
+        const errorText = await response.text();
+        console.error(`[CampaignWidget] ❌ Campaign budget API failed:`, response.status, errorText);
         logger.error("[CampaignWidget] Failed to fetch current budgets");
         
         // Show error toast
