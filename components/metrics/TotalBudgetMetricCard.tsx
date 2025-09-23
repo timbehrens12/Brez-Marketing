@@ -171,7 +171,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
 
     const handleGlobalRefresh = (event: CustomEvent) => {
       // Global refresh triggered, refresh budget data
-      console.log("[TotalMetaBudget] Received globalRefresh event, refreshing budget data")
+      console.log("[TotalMetaBudget] Received global refresh event, refreshing budget data")
       fetchTotalBudget(true) // Force refresh for global refresh
     }
 
@@ -179,14 +179,20 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
     window.addEventListener('campaignStatusChanged', handleCampaignStatusChanged as EventListener)
     window.addEventListener('adSetStatusChanged', handleAdSetStatusChanged as EventListener)
-    window.addEventListener('globalRefresh', handleGlobalRefresh as EventListener)
+    // 🚨 FIX: Listen for the correct global refresh events
+    window.addEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
+    window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
+    window.addEventListener('globalRefresh', handleGlobalRefresh as EventListener) // Keep legacy for compatibility
 
     // Cleanup on component unmount
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
       window.removeEventListener('campaignStatusChanged', handleCampaignStatusChanged as EventListener)
       window.removeEventListener('adSetStatusChanged', handleAdSetStatusChanged as EventListener)
-      window.removeEventListener('globalRefresh', handleGlobalRefresh as EventListener)
+      // 🚨 FIX: Remove the correct global refresh events
+      window.removeEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
+      window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
+      window.removeEventListener('globalRefresh', handleGlobalRefresh as EventListener) // Keep legacy for compatibility
     }
   }, [brandId])
   
