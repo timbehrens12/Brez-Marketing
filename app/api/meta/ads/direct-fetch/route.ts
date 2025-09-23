@@ -93,17 +93,33 @@ export async function POST(request: NextRequest) {
       accountId = 'unknown'; // Fallback for rate limiter
     }
     
-    // Check for rate limiting (using account ID to rate limit per account)
+    // 🚨 NEW APPROACH: Always check database first (like adsets endpoint)
+    console.log(`[Meta Ads Direct] Checking database for cached ads first...`);
+    
+    // Check if we have cached ads for this ad set
+    const { data: cachedAds, error: cacheError } = await supabase
+      .from('meta_ads')
+      .select('*')
+      .eq('adset_id', data.adsetId)
+      .eq('brand_id', data.brandId)
+      .order('updated_at', { ascending: false });
+    
+    // If we have cached ads and not forcing refresh, return them
+    if (!data.forceRefresh && cachedAds && cachedAds.length > 0) {
+      console.log(`[Meta Ads Direct] Returning ${cachedAds.length} cached ads from database`);
+      return NextResponse.json({
+        success: true,
+        source: 'database',
+        message: 'Loaded from cached database',
+        ads: cachedAds,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Check for rate limiting before hitting Meta API
     if (isRateLimited(accountId)) {
-      console.log(`[Meta Ads Direct] Rate limited for account ${accountId}`);
+      console.log(`[Meta Ads Direct] Rate limited for account ${accountId}, using cached data if available`);
       
-      // Check if we have cached ads for this ad set
-      const { data: cachedAds } = await supabase
-        .from('meta_ads')
-        .select('*')
-        .eq('adset_id', data.adsetId)
-        .eq('brand_id', data.brandId);
-        
       if (cachedAds && cachedAds.length > 0) {
         console.log(`[Meta Ads Direct] Returning ${cachedAds.length} cached ads due to rate limiting`);
         return NextResponse.json({
@@ -285,12 +301,62 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Ads Direct] Finished processing ${processedAds.length} ads with insights.`);
     
-    // TODO: Consider storing these processed ads with insights into Supabase `meta_ads` table
+    // 🚨 SAVE TO DATABASE: Store processed ads in meta_ads table for future cache use
+    if (processedAds.length > 0) {
+      try {
+        console.log(`[Meta Ads Direct] Saving ${processedAds.length} ads to database...`);
+        
+        // Save each ad to the database
+        for (const ad of processedAds) {
+          const { error: saveError } = await supabase
+            .from('meta_ads')
+            .upsert({
+              brand_id: data.brandId,
+              ad_id: ad.ad_id,
+              ad_name: ad.ad_name,
+              adset_id: ad.adset_id,
+              campaign_id: ad.campaign_id,
+              status: ad.status,
+              effective_status: ad.effective_status,
+              creative_id: ad.creative_id,
+              preview_url: ad.preview_url,
+              thumbnail_url: ad.thumbnail_url,
+              image_url: ad.image_url,
+              headline: ad.headline,
+              body: ad.body,
+              cta_type: ad.cta_type,
+              link_url: ad.link_url,
+              spent: ad.spent,
+              impressions: ad.impressions,
+              clicks: ad.clicks,
+              reach: ad.reach,
+              ctr: ad.ctr,
+              cpc: ad.cpc,
+              conversions: ad.conversions,
+              cost_per_conversion: ad.cost_per_conversion,
+              updated_at: new Date().toISOString(),
+              last_refresh_date: new Date().toISOString()
+            }, {
+              onConflict: 'ad_id'
+            });
+          
+          if (saveError) {
+            console.error(`[Meta Ads Direct] Error saving ad ${ad.ad_id}:`, saveError);
+          }
+        }
+        
+        console.log(`[Meta Ads Direct] Successfully saved ${processedAds.length} ads to database`);
+      } catch (saveError) {
+        console.error(`[Meta Ads Direct] Error saving ads to database:`, saveError);
+        // Don't fail the request if saving fails, just log it
+      }
+    }
     
     return NextResponse.json({
       success: true,
       ads: processedAds,
-      source: 'meta_api_direct_with_insights' // Indicate source
+      source: 'meta_api_with_database_save',
+      timestamp: new Date().toISOString()
     });
   } catch (error: any) {
     console.error('[Meta Ads Direct] General Error:', error);
