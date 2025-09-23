@@ -58,8 +58,9 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       
       // console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true, forceRefresh=${forceRefresh}`)
       
-      // Add cache busting for fresh data when refreshing
-      const url = forceRefresh 
+      // 🚨 RATE LIMIT FIX: Only force refresh from Meta API on manual refresh, not automatic
+      const isManualRefresh = forceRefresh && isRefreshing; // Only if explicitly refreshing
+      const url = isManualRefresh 
         ? `/api/meta/total-budget?brandId=${brandId}&activeOnly=true&forceRefresh=true&t=${Date.now()}`
         : `/api/meta/total-budget?brandId=${brandId}&activeOnly=true`
         

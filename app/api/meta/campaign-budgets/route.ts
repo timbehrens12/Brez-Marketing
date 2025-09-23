@@ -28,69 +28,60 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API] Fetching campaign budgets for brand ${brandId}, force refresh: ${forceRefresh}`)
     
-    // Get real-time budget data from Meta API
-    const result = await fetchMetaCampaignBudgets(brandId, true)
+    // Initialize Supabase client for fallback
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     
-    if (!result.success) {
-      console.error(`[API] Error fetching campaign budgets:`, result.error)
+    try {
+      // Try to get real-time budget data from Meta API
+      const result = await fetchMetaCampaignBudgets(brandId, true)
       
-      // 🚨 RATE LIMIT FALLBACK: If Meta API fails, try database fallback
-      if (result.error?.includes('User request limit reached') || result.error?.includes('rate limit')) {
-        console.log('[API] Rate limit detected - falling back to database budget data')
-        
-        // Initialize Supabase client
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-        
-        // Get budget data from database
-        const { data: campaigns, error: campaignError } = await supabase
-          .from('meta_campaigns')
-          .select('campaign_id, campaign_name, budget, adset_budget_total, budget_type, updated_at')
-          .eq('brand_id', brandId)
-          .eq('status', 'ACTIVE');
-        
-        if (!campaignError && campaigns && campaigns.length > 0) {
-          // Transform database data to match expected format
-          const budgets = campaigns.reduce((acc: any, campaign: any) => {
-            const budget = campaign.adset_budget_total || campaign.budget || 0;
-            if (budget > 0) {
-              acc[campaign.campaign_id] = {
-                campaignId: campaign.campaign_id,
-                campaignName: campaign.campaign_name,
-                budget: budget,
-                budgetType: campaign.budget_type || 'daily',
-                updatedAt: campaign.updated_at
-              };
-            }
-            return acc;
-          }, {});
-          
-          console.log(`[API] Database fallback successful - found ${Object.keys(budgets).length} campaigns with budgets`);
-          
-          return NextResponse.json({
-            success: true,
-            message: 'Campaign budgets fetched from database (Meta API rate limited)',
-            budgets: budgets,
-            timestamp: new Date().toISOString(),
-            refreshMethod: 'database-fallback'
-          });
-        }
+      if (result.success) {
+        return NextResponse.json({
+          success: true,
+          message: 'Campaign budgets fetched successfully',
+          budgets: result.budgets,
+          timestamp: new Date().toISOString(),
+          refreshMethod: 'meta-api'
+        })
+      } else {
+        console.warn(`[API] Meta API failed, falling back to database:`, result.error)
       }
-      
+    } catch (metaError) {
+      console.warn(`[API] Meta API error, falling back to database:`, metaError)
+    }
+    
+    // 🚨 FALLBACK: Get budget data from database
+    console.log(`[API] Fetching campaign budgets from database`)
+    const { data: campaigns, error: campaignError } = await supabase
+      .from('meta_campaigns')
+      .select('campaign_id, campaign_name, budget, adset_budget_total')
+      .eq('brand_id', brandId)
+      .eq('status', 'ACTIVE')
+    
+    if (campaignError) {
+      console.error(`[API] Database fallback failed:`, campaignError)
       return NextResponse.json({ 
-        error: 'Failed to fetch campaign budgets', 
-        details: result.error 
+        error: 'Failed to fetch campaign budgets from database', 
+        details: campaignError.message 
       }, { status: 500 })
     }
     
+    // Format database data as budgets
+    const budgets: { [campaignId: string]: number } = {}
+    campaigns?.forEach(campaign => {
+      const budget = campaign.adset_budget_total || campaign.budget || 0
+      budgets[campaign.campaign_id] = budget
+    })
+    
     return NextResponse.json({
       success: true,
-      message: 'Campaign budgets fetched successfully',
-      budgets: result.budgets,
+      message: 'Campaign budgets fetched from database',
+      budgets,
       timestamp: new Date().toISOString(),
-      refreshMethod: 'meta-api'
+      refreshMethod: 'database-fallback'
     })
     
   } catch (error) {
