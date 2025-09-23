@@ -680,7 +680,9 @@ function processMetaData(data: any[]): ProcessedMetaData {
     const uniqueAdData = new Map<string, any>()
     
     dayItems.forEach(item => {
+      console.log(`🔥🔥 [DEBUG] Raw item.ad_id: "${item.ad_id}" (type: ${typeof item.ad_id}, truthy: ${!!item.ad_id})`)
       const adId = item.ad_id || 'unknown'
+      console.log(`🔥🔥 [DEBUG] Processed adId: "${adId}"`);
       
       // Parse spent value from either spent or spend column
       let spentValue = 0;
