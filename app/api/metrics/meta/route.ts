@@ -711,20 +711,38 @@ function processMetaData(data: any[]): ProcessedMetaData {
       }
     })
     
-    // ✅ CRITICAL FIX: If we have BOTH account-level and ad-level data, use ONLY ad-level to avoid double counting
+    // ✅ FIXED: Smart aggregation - use ALL ad-level data, ignore account_level_data to avoid double counting
     let uniqueItems = Array.from(uniqueAdData.values())
     const hasAccountLevel = uniqueAdData.has('account_level_data')
-    const adLevelRecords = uniqueItems.filter(item => item.ad_id !== 'account_level_data')
+    const adLevelRecords = uniqueItems.filter(item => item.ad_id !== 'account_level_data' && item.ad_id !== 'unknown')
     
     if (hasAccountLevel && adLevelRecords.length > 0) {
-      // We have both - use ONLY ad-level data to avoid double counting
+      // We have both - use ONLY ad-level data to avoid double counting, but include ALL ad-level records
+      console.log(`[META API] ${dateStr}: Found ${adLevelRecords.length} ad-level records, excluding account_level_data to avoid double counting`)
       uniqueItems = adLevelRecords
+    } else if (hasAccountLevel && adLevelRecords.length === 0) {
+      // Only account-level data available - use it
+      console.log(`[META API] ${dateStr}: Only account_level_data available, using it`)
+      uniqueItems = [uniqueAdData.get('account_level_data')!]
+    } else {
+      // Only ad-level data or mixed unknown - use all non-account-level records
+      console.log(`[META API] ${dateStr}: Using ${adLevelRecords.length} ad-level records (no account_level_data)`)
+      uniqueItems = adLevelRecords.length > 0 ? adLevelRecords : uniqueItems
     }
     
+    // Calculate daily aggregates with detailed logging
     const daySpend = uniqueItems.reduce((sum, d) => sum + (d.spent_value || parseFloat(d.spent) || parseFloat(d.spend) || 0), 0)
     const dayImpressions = uniqueItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
     const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
+    
+    // Detailed logging for debugging aggregation
+    console.log(`[META API] ${dateStr}: Aggregated ${uniqueItems.length} unique records:`)
+    uniqueItems.forEach((item, index) => {
+      const spent = item.spent_value || parseFloat(item.spent) || parseFloat(item.spend) || 0
+      console.log(`  ${index + 1}. ad_id: ${item.ad_id}, spent: $${spent}, impressions: ${item.impressions}, clicks: ${item.clicks}`)
+    })
+    console.log(`[META API] ${dateStr}: DAILY TOTALS - spent: $${daySpend}, impressions: ${dayImpressions}, clicks: ${dayClicks}, reach: ${dayReach}`)
     
     // Calculate daily metrics
     
