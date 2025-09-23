@@ -117,10 +117,19 @@ export async function GET(request: NextRequest) {
     
     console.log(`[API] Aggregated campaign budgets:`, budgets)
     
+    // Format budgets as array of objects to match expected CampaignWidget format
+    const formattedBudgets = Object.entries(budgets).map(([campaignId, budget]) => ({
+      campaign_id: campaignId,
+      budget: budget,
+      budget_type: 'daily', // Assume daily for database fallback
+      formatted_budget: `$${budget.toFixed(2)}`,
+      budget_source: 'database-adsets'
+    }))
+    
     return NextResponse.json({
       success: true,
       message: 'Campaign budgets fetched from database',
-      budgets,
+      budgets: formattedBudgets, // Array format expected by CampaignWidget
       timestamp: new Date().toISOString(),
       refreshMethod: 'database-fallback'
     })
