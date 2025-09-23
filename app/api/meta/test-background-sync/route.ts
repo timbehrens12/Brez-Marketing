@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID required' }, { status: 400 })
     }
 
-    console.log(`[Test Background Sync] Starting ${isInternalCall ? 'INTERNAL' : 'USER'} sync for brand ${brandId}`)
+    console.log(`[Test Background Sync] Starting ${isServerCall ? 'SERVER' : 'USER'} sync for brand ${brandId}`)
 
     const supabase = createClient()
 
