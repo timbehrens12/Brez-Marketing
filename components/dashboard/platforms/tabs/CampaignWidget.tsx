@@ -344,28 +344,6 @@ const CampaignWidget = ({
     }
   }, [isLoadingBudgets, isLoading, isSyncing]);
 
-  // 🔧 AUTO-BUDGET FIX: Automatically fetch adsets for campaigns without budget data
-  useEffect(() => {
-    if (campaigns && campaigns.length > 0 && brandId) {
-      const campaignsWithoutBudget = campaigns.filter(c =>
-        !c.budget || c.budget === 0 &&
-        !c.adset_budget_total || c.adset_budget_total === 0 &&
-        !campaignsWithAdSets.has(c.campaign_id)
-      );
-
-      if (campaignsWithoutBudget.length > 0) {
-        console.log(`[CampaignWidget] 🔄 Auto-fetching adsets for ${campaignsWithoutBudget.length} campaigns without budget data`);
-
-        campaignsWithoutBudget.forEach(campaign => {
-          if (!campaignsWithAdSets.has(campaign.campaign_id)) {
-            console.log(`[CampaignWidget] Auto-fetching adsets for campaign ${campaign.campaign_id} to get real budget`);
-            fetchAdSets(campaign.campaign_id, false);
-          }
-        });
-      }
-    }
-  }, [campaigns, brandId, campaignsWithAdSets, fetchAdSets]);
-
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
@@ -1253,7 +1231,7 @@ const CampaignWidget = ({
       // Call refresh with slight delay
       setTimeout(() => {
         if (isMountedRef.current && typeof onRefresh === 'function') {
-          onRefresh(forceRefresh);
+          onRefresh();
           
           // Clear refreshing state after minimum time
       setTimeout(() => {
@@ -1857,6 +1835,28 @@ const CampaignWidget = ({
       toast.error("An error occurred while refreshing campaign status");
     }
   }, [brandId, expandedCampaign, fetchAdSets, onRefresh]);
+
+  // 🔧 AUTO-BUDGET FIX: Automatically fetch adsets for campaigns without budget data
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0 && brandId && fetchAdSets && campaignsWithAdSets) {
+      const campaignsWithoutBudget = campaigns.filter(c =>
+        (!c.budget || c.budget === 0) &&
+        (!c.adset_budget_total || c.adset_budget_total === 0) &&
+        !campaignsWithAdSets.has(c.campaign_id)
+      );
+
+      if (campaignsWithoutBudget.length > 0) {
+        console.log(`[CampaignWidget] 🔄 Auto-fetching adsets for ${campaignsWithoutBudget.length} campaigns without budget data`);
+
+        campaignsWithoutBudget.forEach(campaign => {
+          if (!campaignsWithAdSets.has(campaign.campaign_id)) {
+            console.log(`[CampaignWidget] Auto-fetching adsets for campaign ${campaign.campaign_id} to get real budget`);
+            fetchAdSets(campaign.campaign_id, false);
+          }
+        });
+      }
+    }
+  }, [campaigns, brandId, campaignsWithAdSets, fetchAdSets]);
 
   // Updated getCampaignReach to use preloaded data more safely
   // --> PRIORITIZE campaign.reach from props first!
