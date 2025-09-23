@@ -1703,28 +1703,13 @@ const CampaignWidget = ({
         }
       }
 
-      // If no cached adsets with budget, trigger adset fetch for this campaign
-      if (!campaignsWithAdSets.has(campaign.campaign_id)) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget from APIs, fetching adsets to get real budget`);
-        // Trigger adset fetch in background without opening dropdown
-        fetchAdSets(campaign.campaign_id, false);
-
-        // Show loading while adsets are being fetched
-        return {
-          budget: 0,
-          formatted_budget: '...', // Show loading while fetching adsets
-          budget_type: 'unknown',
-          budget_source: 'fetching_adsets'
-        };
-      }
-
-      // Adsets have been fetched but still no budget - show $0
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Adsets fetched but no budget data - showing $0`);
+      // 🚨 EMERGENCY FALLBACK: No auto-fetch, show $0 immediately
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available - showing $0 (auto-fetch disabled)`);
       return {
         budget: 0,
         formatted_budget: formatCurrency(0),
         budget_type: 'unknown',
-        budget_source: 'no_data_zero'
+        budget_source: 'no_data_available'
       };
     }
     
@@ -1836,27 +1821,28 @@ const CampaignWidget = ({
     }
   }, [brandId, expandedCampaign, fetchAdSets, onRefresh]);
 
-  // 🔧 AUTO-BUDGET FIX: Automatically fetch adsets for campaigns without budget data
-  useEffect(() => {
-    if (campaigns && campaigns.length > 0 && brandId && fetchAdSets && campaignsWithAdSets) {
-      const campaignsWithoutBudget = campaigns.filter(c =>
-        (!c.budget || c.budget === 0) &&
-        (!c.adset_budget_total || c.adset_budget_total === 0) &&
-        !campaignsWithAdSets.has(c.campaign_id)
-      );
+  // 🚨 EMERGENCY DISABLED: Auto-fetch was causing infinite loops
+  // TODO: Fix the infinite loop and re-enable
+  // useEffect(() => {
+  //   if (campaigns && campaigns.length > 0 && brandId && fetchAdSets && campaignsWithAdSets) {
+  //     const campaignsWithoutBudget = campaigns.filter(c =>
+  //       (!c.budget || c.budget === 0) &&
+  //       (!c.adset_budget_total || c.adset_budget_total === 0) &&
+  //       !campaignsWithAdSets.has(c.campaign_id)
+  //     );
 
-      if (campaignsWithoutBudget.length > 0) {
-        console.log(`[CampaignWidget] 🔄 Auto-fetching adsets for ${campaignsWithoutBudget.length} campaigns without budget data`);
+  //     if (campaignsWithoutBudget.length > 0) {
+  //       console.log(`[CampaignWidget] 🔄 Auto-fetching adsets for ${campaignsWithoutBudget.length} campaigns without budget data`);
 
-        campaignsWithoutBudget.forEach(campaign => {
-          if (!campaignsWithAdSets.has(campaign.campaign_id)) {
-            console.log(`[CampaignWidget] Auto-fetching adsets for campaign ${campaign.campaign_id} to get real budget`);
-            fetchAdSets(campaign.campaign_id, false);
-          }
-        });
-      }
-    }
-  }, [campaigns, brandId, campaignsWithAdSets, fetchAdSets]);
+  //       campaignsWithoutBudget.forEach(campaign => {
+  //         if (!campaignsWithAdSets.has(campaign.campaign_id)) {
+  //           console.log(`[CampaignWidget] Auto-fetching adsets for campaign ${campaign.campaign_id} to get real budget`);
+  //           fetchAdSets(campaign.campaign_id, false);
+  //         }
+  //       });
+  //     }
+  //   }
+  // }, [campaigns, brandId, campaignsWithAdSets, fetchAdSets]);
 
   // Updated getCampaignReach to use preloaded data more safely
   // --> PRIORITIZE campaign.reach from props first!
@@ -2590,7 +2576,7 @@ const CampaignWidget = ({
                                 
                                 // Show loading skeleton if still loading or budget source is loading/unavailable
                                 // 🔍 DEBUG: Log what's causing the loading skeleton to show
-                                const shouldShowSkeleton = budgetInfo.budget_source === 'loading' || budgetInfo.budget_source === 'no_data_available' || budgetInfo.budget_source === 'fetching_adsets' || isLoading || isSyncing;
+                                const shouldShowSkeleton = budgetInfo.budget_source === 'loading' || isLoading || isSyncing;
                                 if (shouldShowSkeleton) {
                                   console.log(`[CampaignWidget] 🔍 Showing skeleton for campaign ${campaign.campaign_id}:`, {
                                     budget_source: budgetInfo.budget_source,
