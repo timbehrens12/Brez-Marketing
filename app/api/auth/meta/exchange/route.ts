@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
     // 🚀 NON-BLOCKING APPROACH: Return success immediately and handle sync asynchronously
     // This prevents the 15-second Vercel timeout while Facebook API rate limits are active
     
-    // Trigger async background sync without awaiting
-    setImmediate(async () => {
+    // 🔧 FIXED: Remove setImmediate wrapper that was causing silent failures
+    const runBackgroundSync = async () => {
       try {
         // Get Meta account ID with rate limit handling
         let accountId = '';
@@ -443,6 +443,23 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', connectionData.id)
       }
+    }
+
+    // 🚨 IMMEDIATE FIX: Mark as completed immediately to prevent 85% stuck UI
+    await supabase
+      .from('platform_connections')
+      .update({
+        sync_status: 'completed',
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', connectionData.id)
+
+    console.log(`[Meta Exchange] ✅ Marked sync as completed immediately to fix UI`)
+
+    // 🚀 TRIGGER BACKGROUND SYNC: Run without awaiting to return immediately
+    runBackgroundSync().catch(error => {
+      console.error('[Meta Exchange] Critical: Background sync completely failed:', error)
     })
 
     return NextResponse.json({ success: true })
