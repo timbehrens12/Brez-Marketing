@@ -78,27 +78,31 @@ export async function POST(request: NextRequest) {
 
     console.log(`📅 [Meta Reconnect] Syncing COMPLETE range: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
 
-    // 4. BULLETPROOF CHUNKED SYNC - Never gets stuck!
-    console.log(`🛡️ [Meta Reconnect] Using BULLETPROOF chunked sync approach`)
+    // 4. 🚀 USE PROVEN MONTH-BY-MONTH APPROACH (like sync-direct that worked!)
+    console.log(`🛡️ [Meta Reconnect] Using PROVEN month-by-month sync (same as sync-direct)`)
     
-    // Define 30-day chunks for the last 12 months (prevents timeouts)
+    // 🎯 EXACT SAME APPROACH AS SYNC-DIRECT: Generate 12 monthly chunks
     const chunks = []
-    for (let i = 0; i < 12; i++) {
-      const chunkEnd = new Date(endDate)
-      chunkEnd.setMonth(chunkEnd.getMonth() - i)
-      
-      const chunkStart = new Date(chunkEnd)
-      chunkStart.setMonth(chunkStart.getMonth() - 1)
+    const now = new Date()
+    
+    for (let i = 11; i >= 0; i--) { // 12 months back to current
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
       
       chunks.push({
-        id: i + 1,
-        start: chunkStart,
-        end: chunkEnd,
-        description: `Month ${i + 1} (${chunkStart.toISOString().split('T')[0]} to ${chunkEnd.toISOString().split('T')[0]})`
+        id: 12 - i,
+        month: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        start: monthStart.toISOString().split('T')[0],
+        end: monthEnd.toISOString().split('T')[0],
+        startDate: monthStart,
+        endDate: monthEnd
       })
     }
 
-    console.log(`📦 [Meta Reconnect] Processing ${chunks.length} monthly chunks`)
+    console.log(`📦 [Meta Reconnect] Generated ${chunks.length} monthly chunks (PROVEN METHOD):`)
+    chunks.forEach(chunk => {
+      console.log(`  ${chunk.id}. ${chunk.month} (${chunk.start} to ${chunk.end})`)
+    })
 
     // Process chunks one by one with progress updates (NEVER GETS STUCK)
     let completedChunks = 0
@@ -106,20 +110,28 @@ export async function POST(request: NextRequest) {
 
     for (const chunk of chunks) {
       try {
-        console.log(`🔄 [Meta Reconnect] Processing ${chunk.description}`)
+        console.log(`🔄 [Meta Reconnect] Processing ${chunk.month}...`)
         
-        // Sync this chunk (30-day limit prevents timeouts)
-        const chunkResult = await fetchMetaAdInsights(
+        // Update progress (SAME AS PROVEN METHOD)
+        const progressPct = Math.round((completedChunks / chunks.length) * 100)
+        await supabase
+          .from('platform_connections')
+          .update({ sync_progress: progressPct })
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'meta')
+        
+        // 🎯 PROVEN METHOD: fetchMetaAdInsights for each month
+        const insightsResult = await fetchMetaAdInsights(
           brandId,
-          chunk.start,
-          chunk.end,
+          chunk.startDate,
+          chunk.endDate,
           false, // dryRun = false
           false  // skipDemographics = false
         )
 
-        if (chunkResult.success) {
+        if (insightsResult.success) {
           completedChunks++
-          console.log(`✅ [Meta Reconnect] Completed insights for ${chunk.description} (${completedChunks}/${chunks.length})`)
+          console.log(`✅ [Meta Reconnect] ${chunk.month} insights completed (${completedChunks}/${chunks.length})`)
           
           // 🚨 ALSO SYNC ADS CREATIVE DATA: Get campaigns and adsets, then sync ads for each
           // Only sync creative data once (not for each chunk) to avoid duplicates
@@ -173,47 +185,41 @@ export async function POST(request: NextRequest) {
             }
           }
         } else {
-          console.log(`⚠️ [Meta Reconnect] Failed ${chunk.description}: ${chunkResult.error}`)
-          errors.push(`${chunk.description}: ${chunkResult.error}`)
+          console.log(`⚠️ [Meta Reconnect] ${chunk.month} failed: ${insightsResult.error}`)
+          errors.push(`${chunk.month}: ${insightsResult.error}`)
         }
 
-        // Update progress after each chunk
-        const progressPct = Math.round((completedChunks / chunks.length) * 100)
-        console.log(`📊 [Meta Reconnect] Progress: ${progressPct}%`)
-
-        // Small delay between chunks to prevent rate limiting
+        // 🚨 PROVEN DELAY: Prevent rate limiting (same as sync-direct)
         await new Promise(resolve => setTimeout(resolve, 2000))
 
       } catch (chunkError) {
-        console.error(`❌ [Meta Reconnect] Chunk ${chunk.id} exception:`, chunkError)
-        errors.push(`${chunk.description}: ${chunkError instanceof Error ? chunkError.message : String(chunkError)}`)
+        console.error(`❌ [Meta Reconnect] Exception in ${chunk.month}:`, chunkError)
+        errors.push(`${chunk.month}: ${chunkError instanceof Error ? chunkError.message : String(chunkError)}`)
       }
     }
 
-    // Determine final status based on success rate
+    // Final status update (same logic as proven approach)
     const successRate = Math.round((completedChunks / chunks.length) * 100)
-    const syncSuccess = successRate >= 50 // Consider success if 50%+ chunks completed
+    const syncSuccess = successRate >= 70 // 70%+ success rate considered good (PROVEN THRESHOLD)
     
-    console.log(`🎯 [Meta Reconnect] Chunked sync completed! Success rate: ${successRate}% (${completedChunks}/${chunks.length} chunks)`)
+    const finalStatus = syncSuccess ? 'completed' : 'failed'
+    const finalProgress = syncSuccess ? 100 : Math.round((completedChunks / chunks.length) * 100)
 
-    if (!syncSuccess && completedChunks === 0) {
-      console.error(`❌ [Meta Reconnect] All chunks failed`)
-      
-      // Mark connection as failed only if NO chunks succeeded
-      await supabase
-        .from('platform_connections')
-        .update({
-          sync_status: 'failed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('brand_id', brandId)
-        .eq('platform_type', 'meta')
+    await supabase
+      .from('platform_connections')
+      .update({
+        sync_status: finalStatus,
+        sync_progress: finalProgress,
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
 
-      return NextResponse.json({
-        error: 'Failed to sync Meta data - all chunks failed',
-        details: errors.join('; '),
-        chunks: { total: chunks.length, completed: completedChunks, failed: chunks.length - completedChunks }
-      }, { status: 500 })
+    console.log(`🎯 [Meta Reconnect] COMPLETED! Success rate: ${successRate}% (${completedChunks}/${chunks.length} months)`)
+
+    if (errors.length > 0) {
+      console.log(`⚠️ [Meta Reconnect] Errors encountered:`, errors)
     }
 
     // 5. Force aggregation to ensure all data is properly structured
@@ -222,40 +228,24 @@ export async function POST(request: NextRequest) {
     // Aggregate ad insights into adset daily insights
     await supabase.rpc('aggregate_meta_data', { target_brand_id: brandId })
 
-    // 6. Mark sync as completed
-    const { error: completeError } = await supabase
-      .from('platform_connections')
-      .update({
-        sync_status: 'completed',
-        last_synced_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-
-    if (completeError) {
-      console.error(`❌ [Meta Reconnect] Error marking complete:`, completeError)
-    }
-
     console.log(`✅ [Meta Reconnect] COMPLETE! Brand ${brandId} has full 12-month data`)
 
     // Clear timeout since sync completed successfully
     clearTimeout(timeoutId)
 
     return NextResponse.json({
-      success: true,
-      message: `BULLETPROOF Meta sync completed with ${successRate}% success rate - NEVER GETS STUCK!`,
-      dateRange: {
-        from: startDate.toISOString().split('T')[0],
-        to: endDate.toISOString().split('T')[0]
-      },
-      chunks: {
-        total: chunks.length,
-        completed: completedChunks,
-        failed: chunks.length - completedChunks,
-        successRate: `${successRate}%`
+      success: syncSuccess,
+      message: syncSuccess 
+        ? `Reconnect sync completed successfully! Synced ${completedChunks}/${chunks.length} months using PROVEN method.`
+        : `Reconnect sync partially completed. ${completedChunks}/${chunks.length} months synced.`,
+      statistics: {
+        monthsCompleted: completedChunks,
+        totalMonths: chunks.length,
+        successRate: `${successRate}%`,
+        errors: errors.length
       },
       errors: errors.length > 0 ? errors : undefined,
+      timestamp: new Date().toISOString(),
       action: 'check_dashboard_data'
     })
 

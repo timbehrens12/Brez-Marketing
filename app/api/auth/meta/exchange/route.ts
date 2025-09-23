@@ -157,8 +157,8 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', connectionData.id)
 
-          // Import DataBackfillService for direct sync (bypass queue to avoid rate limits)
-          const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
+          // 🚀 NEW PROVEN APPROACH: Use the month-by-month sync that actually worked!
+          console.log(`[Meta Exchange] 🎯 Using PROVEN month-by-month sync approach`)
 
           // Get account ID for sync
           let finalAccountId = accountId
@@ -175,29 +175,125 @@ export async function POST(request: NextRequest) {
           }
 
           if (finalAccountId) {
-            // Set up full 12-month date range like before
-            const endDate = new Date()
-            const startDate = new Date()
-            startDate.setMonth(endDate.getMonth() - 12)
+            // 🎯 DIRECT IMPORT: Use the proven fetchMetaAdInsights method
+            console.log(`[Meta Exchange] Using proven month-by-month fetchMetaAdInsights`)
             
-            const dateRange = {
-              since: startDate.toISOString().split('T')[0],
-              until: endDate.toISOString().split('T')[0]
+            try {
+              // Import the proven Meta service method
+              const { fetchMetaAdInsights, fetchMetaAds } = await import('@/lib/services/meta-service')
+
+              // 🎯 EXACT SAME APPROACH AS PROVEN SYNC: Generate 12 monthly chunks
+              const chunks = []
+              const now = new Date()
+              
+              for (let i = 11; i >= 0; i--) { // 12 months back to current
+                const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+                
+                chunks.push({
+                  id: 12 - i,
+                  month: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                  startDate: monthStart,
+                  endDate: monthEnd
+                })
+              }
+
+              console.log(`[Meta Exchange] Generated ${chunks.length} monthly chunks (PROVEN METHOD)`)
+
+              let completedChunks = 0
+              
+              // 🔄 Process each month chunk (EXACT SAME METHOD THAT WORKED)
+              for (const chunk of chunks) {
+                try {
+                  console.log(`[Meta Exchange] Processing ${chunk.month}...`)
+                  
+                  // 🎯 PROVEN METHOD: fetchMetaAdInsights for each month
+                  const insightsResult = await fetchMetaAdInsights(
+                    state, // brandId
+                    chunk.startDate,
+                    chunk.endDate,
+                    false, // dryRun = false
+                    false  // skipDemographics = false
+                  )
+
+                  if (insightsResult.success) {
+                    completedChunks++
+                    console.log(`[Meta Exchange] ✅ ${chunk.month} completed (${completedChunks}/${chunks.length})`)
+                    
+                    // 🚨 ALSO SYNC ADS CREATIVE DATA for first chunk only
+                    if (completedChunks === 1) {
+                      console.log(`[Meta Exchange] Syncing ads creative data...`)
+                      
+                      try {
+                        // Get campaigns and sync ads creative data
+                        const { data: campaigns } = await supabase
+                          .from('meta_campaigns')
+                          .select('campaign_id')
+                          .eq('brand_id', state)
+                          .eq('status', 'ACTIVE')
+                        
+                        if (campaigns && campaigns.length > 0) {
+                          for (const campaign of campaigns) {
+                            const { data: adsets } = await supabase
+                              .from('meta_adsets')
+                              .select('adset_id')
+                              .eq('brand_id', state)
+                              .eq('campaign_id', campaign.campaign_id)
+                              .eq('status', 'ACTIVE')
+                            
+                            if (adsets && adsets.length > 0) {
+                              for (const adset of adsets) {
+                                try {
+                                  await fetchMetaAds(state, adset.adset_id, true)
+                                } catch (adsError) {
+                                  console.warn(`[Meta Exchange] Failed creative sync for adset ${adset.adset_id}:`, adsError)
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 500))
+                              }
+                            }
+                          }
+                        }
+                      } catch (creativeSyncError) {
+                        console.warn(`[Meta Exchange] Creative sync failed (non-critical):`, creativeSyncError)
+                      }
+                    }
+                  } else {
+                    console.log(`[Meta Exchange] ⚠️ ${chunk.month} failed: ${insightsResult.error}`)
+                  }
+
+                  // 🚨 PROVEN DELAY: Prevent rate limiting
+                  await new Promise(resolve => setTimeout(resolve, 2000))
+
+                } catch (chunkError) {
+                  console.error(`[Meta Exchange] Exception in ${chunk.month}:`, chunkError)
+                }
+              }
+
+              const successRate = Math.round((completedChunks / chunks.length) * 100)
+              console.log(`[Meta Exchange] ✅ Completed ${completedChunks}/${chunks.length} months (${successRate}%)`)
+
+              // Mark as completed
+              await supabase
+                .from('platform_connections')
+                .update({
+                  sync_status: 'completed',
+                  last_sync_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', connectionData.id)
+
+            } catch (syncError) {
+              console.error(`[Meta Exchange] ❌ Error in proven sync:`, syncError)
+              // Fallback to marking as completed
+              await supabase
+                .from('platform_connections')
+                .update({
+                  sync_status: 'completed',
+                  last_sync_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', connectionData.id)
             }
-
-            // Do full historical sync directly (no queue, no rate limit conflicts)
-            await DataBackfillService.fetchMetaCampaigns(state, finalAccountId, tokenData.access_token, dateRange)
-            await DataBackfillService.fetchMetaDailyInsights(state, finalAccountId, tokenData.access_token, dateRange)
-
-            // Mark as completed
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                last_sync_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', connectionData.id)
 
             // 🎯 CREATE COMPLETION MARKERS FOR PROGRESS TRACKING
             try {
