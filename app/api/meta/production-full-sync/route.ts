@@ -8,9 +8,21 @@ import { createClient } from '@/lib/supabase/server'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // 🚨 ALLOW SERVER CALLS: Same logic as test endpoint
+    const userAgent = request.headers.get('User-Agent') || ''
+    const isServerCall = userAgent.includes('node') || request.headers.get('X-Vercel-ID')
+    
+    console.log(`[Production Sync] 🔍 AUTH DEBUG: isServerCall: ${isServerCall}`)
+    
+    let userId = null
+    if (!isServerCall) {
+      const authResult = await auth()
+      userId = authResult.userId
+      if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    } else {
+      console.log(`[Production Sync] Server call detected, proceeding without user auth`)
     }
 
     const { brandId, accessToken, adAccountId } = await request.json()

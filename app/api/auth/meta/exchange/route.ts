@@ -90,19 +90,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange Simple] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🚀 TRIGGER BACKGROUND SYNC: Call the proven test endpoint
+    // 🚀 TRIGGER BACKGROUND SYNC: Call the full 12-month sync endpoint
     const triggerBackgroundSync = async () => {
       try {
-        console.log(`[Meta Exchange Simple] Triggering background sync via proven test endpoint`)
+        console.log(`[Meta Exchange Simple] Triggering FULL 12-month sync via production endpoint`)
         
-        // Make internal call to the test endpoint that we know works
-        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/test-background-sync`, {
+        // Make internal call to the production full sync endpoint with all required data
+        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/production-full-sync`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.INTERNAL_API_KEY || 'internal'}`
           },
-          body: JSON.stringify({ brandId: state })
+          body: JSON.stringify({ 
+            brandId: state,
+            accessToken: tokenData.access_token,
+            adAccountId: accountId
+          })
         })
 
         const syncResult = await syncResponse.json()
