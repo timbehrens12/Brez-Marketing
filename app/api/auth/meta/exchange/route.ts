@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabaseClient'
 import { auth } from '@clerk/nextjs'
 
 export async function POST(request: NextRequest) {
@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
     try {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-      const supabase = createClient()
       
       // Define critical months to sync (focus on recent + key periods)
       const criticalChunks = [
