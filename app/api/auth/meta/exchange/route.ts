@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start.toISOString().split('T')[0]} to ${chunk.end.toISOString().split('T')[0]})`)
           
-          const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end)
+          // Skip demographics during auth for speed - dashboard will fetch on-demand
+          const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, true)
           const count = insights?.length || 0
           syncedInsights += count
           
