@@ -205,7 +205,8 @@ export async function GET(req: NextRequest) {
               const spent = insights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
               const impressions = insights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
               const clicks = insights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
-              const conversions = insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+              // EMERGENCY FIX: Force conversions to 0 until fake data source is found
+              const conversions = 0; // insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
               
               // FIXED: Calculate reach properly from meta_adsets_total_reach table
               // Don't sum daily reach values as they are not additive across days
@@ -215,7 +216,8 @@ export async function GET(req: NextRequest) {
               // Calculate derived metrics
               const ctr = impressions > 0 ? clicks / impressions : 0;
               const cpc = clicks > 0 ? spent / clicks : 0;
-              const cost_per_conversion = conversions > 0 ? spent / conversions : 0;
+              // EMERGENCY FIX: Force cost_per_conversion to 0 since conversions are forced to 0
+              const cost_per_conversion = 0; // conversions > 0 ? spent / conversions : 0;
               
               return {
                 ...adSet,

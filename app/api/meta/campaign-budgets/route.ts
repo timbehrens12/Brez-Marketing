@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
     )
     
     try {
-      // 🚨 RE-ENABLED: Meta API to get fresh budget data (same as total budget endpoint)
-      if (forceRefresh) {
+      // DATABASE-FIRST: Disabled Meta API calls to prevent rate limiting
+      if (false && forceRefresh) { // EMERGENCY: Stop hitting Meta API
         console.log(`[API] Force refresh requested, attempting to fetch fresh budget data from Meta API`)
         const result = await fetchMetaCampaignBudgets(brandId, true)
         
