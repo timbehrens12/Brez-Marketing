@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
             .select('campaign_id, campaign_name')
             .eq('brand_id', state)
             .limit(1)
-            .single()
+            .maybeSingle()
           
           if (insightData) {
             const connectionId = connectionData.id
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Meta Exchange] 🚀 Triggering background completion job...`)
         try {
           // Trigger background job to complete any missing data (non-blocking)
-          fetch('/api/meta/background-complete', {
+          fetch('https://www.brezmarketingdashboard.com/api/meta/background-complete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'User-Agent': 'node' },
             body: JSON.stringify({ brandId: state, connectionId: connectionData.id, accountId })
