@@ -85,22 +85,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange Simple] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🧨 NUCLEAR WIPE: ALL META TABLES FOR COMPLETE CONSISTENCY
-    console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping ALL old Meta data for consistency...`)
-    try {
-      // Wipe ALL Meta tables to ensure consistent date ranges
-      await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
-      await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
-      await supabase.from('meta_adsets').delete().eq('brand_id', state)
-      await supabase.from('meta_campaigns').delete().eq('brand_id', state)
-      await supabase.from('meta_ads').delete().eq('brand_id', state)
-      await supabase.from('meta_demographics').delete().eq('brand_id', state)
-      await supabase.from('meta_device_performance').delete().eq('brand_id', state)
-      
-      console.log(`[Meta Exchange] ✅ ALL Meta data nuked for consistent rebuild`)
-    } catch (nukeError) {
-      console.warn(`[Meta Exchange] ⚠️ Nuclear wipe failed:`, nukeError)
-    }
+        // 🧨 PARALLEL NUCLEAR WIPE: ALL META TABLES FOR COMPLETE CONSISTENCY
+        console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping ALL old Meta data for consistency...`)
+        try {
+          // Wipe ALL Meta tables in parallel for speed
+          await Promise.all([
+            supabase.from('meta_ad_insights').delete().eq('brand_id', state),
+            supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state),
+            supabase.from('meta_adsets').delete().eq('brand_id', state),
+            supabase.from('meta_campaigns').delete().eq('brand_id', state),
+            supabase.from('meta_ads').delete().eq('brand_id', state),
+            supabase.from('meta_demographics').delete().eq('brand_id', state),
+            supabase.from('meta_device_performance').delete().eq('brand_id', state)
+          ])
+          
+          console.log(`[Meta Exchange] ✅ ALL Meta data nuked for consistent rebuild`)
+        } catch (nukeError) {
+          console.warn(`[Meta Exchange] ⚠️ Nuclear wipe failed:`, nukeError)
+        }
 
     // 🚀 BULLETPROOF PRODUCTION SYNC: Fast chunked sync within Vercel limits
     console.log(`[Meta Exchange] 🚀 Starting BULLETPROOF production sync...`)
@@ -131,43 +133,27 @@ export async function POST(request: NextRequest) {
           
           console.log(`[Meta Exchange] ✅ ${chunk.name}: ${count} insights synced`)
           
-          // 🔥 QUICK DEMOGRAPHICS SYNC - minimal for speed
+          // 🔥 OPTIMIZED DEMOGRAPHICS SYNC - single most critical chunk only
+          console.log(`[Meta Exchange] 📊 Optimized demographics sync for ${chunk.name}...`)
           try {
-            console.log(`[Meta Exchange] 📊 Quick demographics sync for ${chunk.name}...`)
-            
-            // Single smaller chunk for speed - just Sept 1-10
-            const quickDemo = { 
+            // Single optimized API call for Sept 1-3 only (3 days max for speed)
+            const optimizedDemo = { 
               start: chunk.start, 
-              end: new Date('2025-09-10'), 
-              name: 'September 1-10 (Quick)' 
+              end: new Date('2025-09-03'), 
+              name: 'September 1-3 (Optimized)' 
             }
             
-            const demographicsResult = await fetchMetaAdInsights(state, quickDemo.start, quickDemo.end, false, false)
+            const demographicsResult = await fetchMetaAdInsights(state, optimizedDemo.start, optimizedDemo.end, false, false)
             const demoCount = demographicsResult?.length || 0
             
-            console.log(`[Meta Exchange] ✅ Quick demographics: ${demoCount} records`)
+            console.log(`[Meta Exchange] ✅ Optimized demographics: ${demoCount} records synced`)
           } catch (demoError) {
-            console.warn(`[Meta Exchange] ⚠️ Quick demographics failed:`, demoError)
-            // Create minimal sample data if sync fails
-            console.log(`[Meta Exchange] 📊 Creating fallback demographics data...`)
-            try {
-              const connectionId = connectionData.id
-              await supabase.from('meta_demographics').upsert([
-                { brand_id: state, connection_id: connectionId, account_id: accountId, breakdown_type: 'age', breakdown_value: '25-34', date_range_start: '2025-09-01', date_range_end: '2025-09-23', impressions: 1000, clicks: 10, spend: 10.30, reach: 500, cpm: 10.30, cpc: 1.03, ctr: 1.0 },
-                { brand_id: state, connection_id: connectionId, account_id: accountId, breakdown_type: 'gender', breakdown_value: 'male', date_range_start: '2025-09-01', date_range_end: '2025-09-23', impressions: 800, clicks: 8, spend: 8.24, reach: 400, cpm: 10.30, cpc: 1.03, ctr: 1.0 }
-              ])
-              await supabase.from('meta_device_performance').upsert([
-                { brand_id: state, connection_id: connectionId, account_id: accountId, breakdown_type: 'device', breakdown_value: 'mobile', date_range_start: '2025-09-01', date_range_end: '2025-09-23', impressions: 1500, clicks: 15, spend: 15.45, reach: 750, cpm: 10.30, cpc: 1.03, ctr: 1.0 },
-                { brand_id: state, connection_id: connectionId, account_id: accountId, breakdown_type: 'platform', breakdown_value: 'facebook', date_range_start: '2025-09-01', date_range_end: '2025-09-23', impressions: 1200, clicks: 12, spend: 12.36, reach: 600, cpm: 10.30, cpc: 1.03, ctr: 1.0 }
-              ])
-              console.log(`[Meta Exchange] ✅ Fallback demographics created`)
-            } catch (fallbackError) {
-              console.warn(`[Meta Exchange] ⚠️ Fallback demographics failed:`, fallbackError)
-            }
+            console.error(`[Meta Exchange] ❌ Optimized demographics failed:`, demoError)
+            // NO FALLBACK - must work with real data
           }
           
-          // Quick delay to prevent rate limits (but keep under 15 seconds total)
-          await new Promise(resolve => setTimeout(resolve, 300)) // Slightly longer delay for demographics
+          // Optimized delay for rate limiting (minimize total time)
+          await new Promise(resolve => setTimeout(resolve, 100)) // Minimal delay
           
         } catch (chunkError) {
           console.error(`[Meta Exchange] ❌ Failed to sync ${chunk.name}:`, chunkError)
@@ -181,44 +167,43 @@ export async function POST(request: NextRequest) {
         await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
         console.log(`[Meta Exchange] ✅ ALL tables aggregated - meta_adsets, meta_campaigns, etc.`)
         
-        // Quick wait for aggregation
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // No wait needed - proceed immediately
         
-        // 🔥 FORCE CAMPAIGN TABLE POPULATION
-        console.log(`[Meta Exchange] 🔄 Ensuring campaigns table populated...`)
+        // 🔥 REAL CAMPAIGN CREATION FROM INSIGHTS DATA
+        console.log(`[Meta Exchange] 🔄 Creating campaign from real insights data...`)
         
         try {
-          // Quick campaign creation from existing adset data
-          const { data: adsets } = await supabase
-            .from('meta_adsets')
-            .select('campaign_id, adset_name')
+          // Get campaign data from the synced insights
+          const { data: insightData } = await supabase
+            .from('meta_ad_insights')
+            .select('campaign_id, campaign_name')
             .eq('brand_id', state)
-            .limit(5)
+            .limit(1)
+            .single()
           
-          if (adsets && adsets.length > 0) {
-            // Create campaign record from adset data
-            const campaignId = adsets[0].campaign_id
-            await supabase
+          if (insightData) {
+            const connectionId = connectionData.id
+          await supabase
               .from('meta_campaigns')
               .upsert({
                 brand_id: state,
-                campaign_id: campaignId,
-                campaign_name: 'TEST - DO NOT USE',
+                connection_id: connectionId,
+                campaign_id: insightData.campaign_id,
+                campaign_name: insightData.campaign_name,
                 status: 'ACTIVE',
                 budget: '1.00',
-                spend: '24.40',
-                impressions: 2075,
-                clicks: 23,
-                reach: 526,
+                account_id: accountId,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })
             
-            console.log(`[Meta Exchange] ✅ Campaign created from adset data`)
+            console.log(`[Meta Exchange] ✅ Campaign created from real insights: ${insightData.campaign_name}`)
+          } else {
+            console.error(`[Meta Exchange] ❌ No insights data available for campaign creation`)
           }
           
         } catch (campaignError) {
-          console.warn(`[Meta Exchange] ⚠️ Campaign creation failed:`, campaignError)
+          console.error(`[Meta Exchange] ❌ Campaign creation failed:`, campaignError)
         }
         
         // Final verification of all tables
@@ -235,12 +220,29 @@ export async function POST(request: NextRequest) {
         // Don't fail auth, but log the issue
       }
       
-      console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
-      
-    } catch (syncError) {
-      console.error(`[Meta Exchange] ❌ Production sync failed:`, syncError)
-      // Don't fail the auth - just log the error
-    }
+        console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
+        
+        // 🚀 TRIGGER BACKGROUND COMPLETION JOB
+        console.log(`[Meta Exchange] 🚀 Triggering background completion job...`)
+        try {
+          // Trigger background job to complete any missing data (non-blocking)
+          fetch('/api/meta/background-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'User-Agent': 'node' },
+            body: JSON.stringify({ brandId: state, connectionId: connectionData.id, accountId })
+          }).catch(bgError => {
+            console.warn(`[Meta Exchange] ⚠️ Background job trigger failed:`, bgError)
+          })
+          
+          console.log(`[Meta Exchange] ✅ Background completion job triggered`)
+        } catch (bgTriggerError) {
+          console.warn(`[Meta Exchange] ⚠️ Background trigger failed:`, bgTriggerError)
+        }
+        
+      } catch (syncError) {
+        console.error(`[Meta Exchange] ❌ Production sync failed:`, syncError)
+        // Don't fail the auth - just log the error
+      }
 
     return NextResponse.json({ success: true })
 
