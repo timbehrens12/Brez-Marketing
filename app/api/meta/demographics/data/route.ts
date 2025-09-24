@@ -64,6 +64,26 @@ export async function GET(request: NextRequest) {
     } else {
       console.log(`[Demographics API] Using provided date range: ${finalDateFrom} to ${finalDateTo}`)
     }
+    
+    // 🚨 META API RESTRICTION: Demographics data not available for last 3 days
+    // Adjust the end date if it's within the last 3 days
+    const today = new Date();
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(today.getDate() - 3);
+    const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
+    
+    if (finalDateTo > threeDaysAgoStr) {
+      console.log(`[Demographics API] 🚨 Adjusting date range: Meta API doesn't allow demographics for last 3 days. Changing ${finalDateTo} to ${threeDaysAgoStr}`)
+      finalDateTo = threeDaysAgoStr;
+      
+      // If the start date is also within the restricted period, adjust it too
+      if (finalDateFrom > threeDaysAgoStr) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        finalDateFrom = sevenDaysAgo.toISOString().split('T')[0];
+        console.log(`[Demographics API] 🚨 Start date also in restricted period, using 7 days ago: ${finalDateFrom} to ${finalDateTo}`)
+      }
+    }
 
     // Verify user has access to this brand (either as owner or through brand_access)
     const supabase = getSupabaseClient()
@@ -236,7 +256,7 @@ export async function GET(request: NextRequest) {
           .eq('brand_id', brandId)
           .eq('breakdown_type', breakdownType)
           .gte('date_range_start', finalDateFrom)
-          .lte('date_range_start', finalDateTo)
+          .lte('date_range_end', finalDateTo)
           .order('date_range_start', { ascending: false })
         
         if (matchedDataResult.data && matchedDataResult.data.length > 0) {

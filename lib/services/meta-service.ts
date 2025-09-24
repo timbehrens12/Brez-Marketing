@@ -1125,6 +1125,41 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
               budget = parseFloat(campaign.lifetime_budget) / 100;
               budgetType = 'lifetime';
             }
+            // 🚨 NEW: If no campaign-level budget, fetch from adsets
+            else {
+              console.log(`[Meta] Campaign ${campaign.id} has no campaign-level budget, fetching from adsets...`)
+              try {
+                const adsetsResponse = await fetch(
+                  `https://graph.facebook.com/v18.0/${campaign.id}/adsets?fields=id,name,daily_budget,lifetime_budget,status&access_token=${connection.access_token}`
+                )
+                const adsetsData = await adsetsResponse.json()
+                
+                if (adsetsData.data && adsetsData.data.length > 0) {
+                  let totalAdsetBudget = 0;
+                  let hasDaily = false;
+                  let hasLifetime = false;
+                  
+                  for (const adset of adsetsData.data) {
+                    if (adset.daily_budget && parseInt(adset.daily_budget) > 0) {
+                      totalAdsetBudget += parseFloat(adset.daily_budget) / 100;
+                      hasDaily = true;
+                    } else if (adset.lifetime_budget && parseInt(adset.lifetime_budget) > 0) {
+                      totalAdsetBudget += parseFloat(adset.lifetime_budget) / 100;
+                      hasLifetime = true;
+                    }
+                  }
+                  
+                  if (totalAdsetBudget > 0) {
+                    budget = totalAdsetBudget;
+                    budgetType = hasDaily ? 'daily' : hasLifetime ? 'lifetime' : 'unknown';
+                    budgetSource = 'adsets';
+                    console.log(`[Meta] Campaign ${campaign.id} budget from ${adsetsData.data.length} adsets: $${budget} (${budgetType})`)
+                  }
+                }
+              } catch (adsetError) {
+                console.warn(`[Meta] Failed to fetch adset budgets for campaign ${campaign.id}:`, adsetError)
+              }
+            }
             
             campaignBudgets.push({
               campaign_id: campaign.id,
