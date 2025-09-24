@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
           }
           
           // Quick delay to prevent rate limits (but keep under 15 seconds total)
-          await new Promise(resolve => setTimeout(resolve, 300)) // Slightly longer delay for demographics
+          await new Promise(resolve => setTimeout(resolve, 100)) // Reduced delay for speed
           
         } catch (chunkError) {
           console.error(`[Meta Exchange] ❌ Failed to sync ${chunk.name}:`, chunkError)
