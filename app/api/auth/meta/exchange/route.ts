@@ -92,10 +92,13 @@ export async function POST(request: NextRequest) {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-          // Define critical months to sync (2 most recent months to guarantee sub-15s completion)
+          // Define critical months to sync (2 most recent months + fix missing August end)
+          const today = new Date()
+          const currentMonth = today.toISOString().split('T')[0]
+          
           const criticalChunks = [
-            { start: new Date('2025-09-01'), end: new Date('2025-09-24'), name: 'September 2025' },
-            { start: new Date('2025-08-01'), end: new Date('2025-08-31'), name: 'August 2025' }
+            { start: new Date('2025-09-01'), end: today, name: 'September 2025 (up to today)' },
+            { start: new Date('2025-07-25'), end: new Date('2025-08-31'), name: 'August 2025 (full month + July end)' }
           ]
       
       let syncedInsights = 0
@@ -104,15 +107,29 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start.toISOString().split('T')[0]} to ${chunk.end.toISOString().split('T')[0]})`)
           
-          // Skip demographics during auth for speed - dashboard will fetch on-demand
+          // Sync insights first, then demographics for this date range
           const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, true)
           const count = insights?.length || 0
           syncedInsights += count
           
           console.log(`[Meta Exchange] ✅ ${chunk.name}: ${count} insights synced`)
           
+          // 🔥 SYNC DEMOGRAPHICS for this chunk too (2-month sync like general data)
+          try {
+            console.log(`[Meta Exchange] 📊 Syncing demographics for ${chunk.name}...`)
+            
+            // Use the same meta-service but WITH demographics this time (skipDemographics=false)
+            const demographicsResult = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, false)
+            const demoCount = demographicsResult?.length || 0
+            
+            console.log(`[Meta Exchange] ✅ Demographics synced for ${chunk.name}: ${demoCount} demographic records`)
+          } catch (demoError) {
+            console.error(`[Meta Exchange] ⚠️ Demographics sync failed for ${chunk.name}:`, demoError)
+            // Don't fail the whole auth process if demographics fail
+          }
+          
           // Quick delay to prevent rate limits (but keep under 15 seconds total)
-          await new Promise(resolve => setTimeout(resolve, 200))
+          await new Promise(resolve => setTimeout(resolve, 300)) // Slightly longer delay for demographics
           
         } catch (chunkError) {
           console.error(`[Meta Exchange] ❌ Failed to sync ${chunk.name}:`, chunkError)
@@ -145,4 +162,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+} 
