@@ -92,20 +92,20 @@ export async function POST(request: NextRequest) {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // Define critical months to sync (focus on recent + key periods)
+      // Define critical months to sync (focus on recent + key periods)  
       const criticalChunks = [
-        { start: '2025-09-01', end: '2025-09-24', name: 'September 2025' },
-        { start: '2025-08-01', end: '2025-08-31', name: 'August 2025' },
-        { start: '2025-07-01', end: '2025-07-31', name: 'July 2025' },
-        { start: '2025-06-01', end: '2025-06-30', name: 'June 2025' },
-        { start: '2025-05-01', end: '2025-05-31', name: 'May 2025' }
+        { start: new Date('2025-09-01'), end: new Date('2025-09-24'), name: 'September 2025' },
+        { start: new Date('2025-08-01'), end: new Date('2025-08-31'), name: 'August 2025' },
+        { start: new Date('2025-07-01'), end: new Date('2025-07-31'), name: 'July 2025' },
+        { start: new Date('2025-06-01'), end: new Date('2025-06-30'), name: 'June 2025' },
+        { start: new Date('2025-05-01'), end: new Date('2025-05-31'), name: 'May 2025' }
       ]
       
       let syncedInsights = 0
       
       for (const chunk of criticalChunks) {
         try {
-          console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start} to ${chunk.end})`)
+          console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start.toISOString().split('T')[0]} to ${chunk.end.toISOString().split('T')[0]})`)
           
           const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end)
           const count = insights?.length || 0
