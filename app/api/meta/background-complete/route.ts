@@ -181,13 +181,22 @@ export async function POST(request: NextRequest) {
         for (const date of septemberDates) {
           try {
             console.log(`[Background Complete] 🔥 Syncing September ${date.getDate()}...`)
-            await fetchMetaAdInsights(brandId, date, date, false, false) // With demographics
-            successfulDays++
+            const result = await fetchMetaAdInsights(brandId, date, date, false, false) // With demographics
+            
+            // Verify the sync actually worked
+            const recordCount = result?.length || 0
+            if (recordCount > 0) {
+              successfulDays++
+              console.log(`[Background Complete] ✅ September ${date.getDate()}: ${recordCount} records synced`)
+            } else {
+              console.error(`[Background Complete] ❌ September ${date.getDate()}: No records returned from fetchMetaAdInsights`)
+            }
             
             // Small delay to avoid rate limits
             await new Promise(resolve => setTimeout(resolve, 200))
           } catch (dayError) {
-            console.warn(`[Background Complete] ⚠️ Failed September ${date.getDate()}:`, dayError)
+            console.error(`[Background Complete] ❌ Failed September ${date.getDate()}:`, dayError)
+            // Continue with other dates even if one fails
           }
         }
         

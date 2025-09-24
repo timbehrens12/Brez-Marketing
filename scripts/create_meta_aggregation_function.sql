@@ -46,7 +46,7 @@ BEGIN
     cost_per_conversion = EXCLUDED.cost_per_conversion,
     updated_at = NOW();
 
-  -- 2. Populate meta_adsets summary table
+  -- 2. Populate meta_adsets summary table WITH BUDGET DATA
   INSERT INTO meta_adsets (
     brand_id,
     adset_id,
@@ -56,7 +56,9 @@ BEGIN
     reach,
     impressions,
     clicks,
-    spent
+    spent,
+    budget,
+    budget_type
   )
   SELECT 
     daily.brand_id,
@@ -67,7 +69,9 @@ BEGIN
     MAX(daily.reach) as reach,  -- Total reach = max reach across all days
     SUM(daily.impressions) as impressions,
     SUM(daily.clicks) as clicks,
-    SUM(daily.spent) as spent
+    SUM(daily.spent) as spent,
+    '1.00' as budget,  -- Default realistic budget - will be updated by API calls
+    'daily' as budget_type
   FROM meta_adset_daily_insights daily
   LEFT JOIN (
     SELECT DISTINCT adset_id, adset_name, campaign_id
@@ -81,6 +85,9 @@ BEGIN
     impressions = EXCLUDED.impressions,
     clicks = EXCLUDED.clicks,
     spent = EXCLUDED.spent,
+    -- Only update budget if it's currently 0 or null
+    budget = CASE WHEN COALESCE(meta_adsets.budget, '0') = '0' THEN EXCLUDED.budget ELSE meta_adsets.budget END,
+    budget_type = CASE WHEN meta_adsets.budget_type IS NULL THEN EXCLUDED.budget_type ELSE meta_adsets.budget_type END,
     updated_at = NOW();
 
   RAISE NOTICE 'Meta data aggregation completed for brand %', target_brand_id;
