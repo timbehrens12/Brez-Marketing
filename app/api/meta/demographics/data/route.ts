@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', dbBreakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_start', finalDateTo)
+        .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
       
       data = result.data || []
@@ -159,21 +159,21 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
-        // If no device data for requested dates, get the most recent available data
+        // TEMPORARY FIX: Until device/platform backfill is complete, get ALL available data
         if (data.length === 0) {
-          console.log(`[Demographics API] No device data for requested dates ${finalDateFrom} to ${finalDateTo}, fetching most recent device data`)
+          console.log(`[Demographics API] No device data for requested dates ${finalDateFrom} to ${finalDateTo}`)
+          console.log(`[Demographics API] TEMPORARY FIX: Fetching ALL available device data to match overview widgets`)
         
-        const recentResult = await supabase
+        const allDeviceResult = await supabase
           .from('meta_device_performance')
           .select('*')
           .eq('brand_id', brandId)
           .eq('breakdown_type', dbBreakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(20) // Get recent records
         
-        if (recentResult.data && recentResult.data.length > 0) {
-          data = recentResult.data
-          console.log(`[Demographics API] Using ${data.length} recent device records from ${data[0].date_range_start}`)
+        if (allDeviceResult.data && allDeviceResult.data.length > 0) {
+          data = allDeviceResult.data
+          console.log(`[Demographics API] Using ALL ${data.length} available device records to match overview widget totals`)
         }
       }
       
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', breakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_start', finalDateTo)
+        .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
       
       data = result.data || []
@@ -195,21 +195,22 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // Only use fallback if no data found for requested dates (not when forceRefresh is true)
+      // TEMPORARY FIX: Until demographics backfill is complete, get ALL available data
+      // to match the overview widgets which show all historical periods
       if (data.length === 0) {
-        console.log(`[Demographics API] No data found for requested dates ${finalDateFrom} to ${finalDateTo}, fetching most recent data`)
+        console.log(`[Demographics API] No data found for requested dates ${finalDateFrom} to ${finalDateTo}`)
+        console.log(`[Demographics API] TEMPORARY FIX: Fetching ALL available demographics data to match overview widgets`)
         
-        const recentResult = await supabase
+        const allDataResult = await supabase
           .from('meta_demographics')
           .select('*')
           .eq('brand_id', brandId)
           .eq('breakdown_type', breakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(20) // Get recent records
         
-        if (recentResult.data && recentResult.data.length > 0) {
-          data = recentResult.data
-          console.log(`[Demographics API] Using ${data.length} recent records from ${data[0].date_range_start}`)
+        if (allDataResult.data && allDataResult.data.length > 0) {
+          data = allDataResult.data
+          console.log(`[Demographics API] Using ALL ${data.length} available records to match overview widget totals`)
         }
       }
     }
