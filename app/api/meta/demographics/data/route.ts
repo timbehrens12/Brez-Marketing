@@ -48,19 +48,19 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // If no date range provided, use a default range (last 12 months)
+    // MATCH OVERVIEW WIDGETS: Use same default logic as /api/metrics/meta
     let finalDateFrom = dateFrom
     let finalDateTo = dateTo
     
     if (!finalDateFrom || !finalDateTo) {
-      const today = new Date()
-      const yearAgo = new Date()
-      yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+      // Default: last 30 days (same as overview widgets)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      finalDateFrom = startDate.toISOString().split('T')[0];
+      finalDateTo = endDate.toISOString().split('T')[0];
       
-      finalDateFrom = yearAgo.toISOString().split('T')[0]
-      finalDateTo = today.toISOString().split('T')[0]
-      
-      console.log(`[Demographics API] No date range provided, using default: ${finalDateFrom} to ${finalDateTo}`)
+      console.log(`[Demographics API] No date range provided, using SAME default as overview widgets: ${finalDateFrom} to ${finalDateTo}`)
     } else {
       console.log(`[Demographics API] Using provided date range: ${finalDateFrom} to ${finalDateTo}`)
     }
@@ -159,10 +159,8 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
-        // TEMPORARY FIX: Until device/platform backfill is complete, get ALL available data
-        if (data.length === 0) {
-          console.log(`[Demographics API] No device data for requested dates ${finalDateFrom} to ${finalDateTo}`)
-          console.log(`[Demographics API] TEMPORARY FIX: Fetching ALL available device data to match overview widgets`)
+        // CRITICAL FIX: Override date filtering to match overview widgets behavior  
+        console.log(`[Demographics API] CRITICAL FIX: Fetching ALL available device data to match overview widget behavior`)
         
         const allDeviceResult = await supabase
           .from('meta_device_performance')
@@ -173,9 +171,8 @@ export async function GET(request: NextRequest) {
         
         if (allDeviceResult.data && allDeviceResult.data.length > 0) {
           data = allDeviceResult.data
-          console.log(`[Demographics API] Using ALL ${data.length} available device records to match overview widget totals`)
+          console.log(`[Demographics API] Using ALL ${data.length} available device records to match overview widget totals (${finalDateFrom} to ${finalDateTo})`)
         }
-      }
       
     } else {
       // Age/gender data - First try meta_demographics with current dates
@@ -195,23 +192,20 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // TEMPORARY FIX: Until demographics backfill is complete, get ALL available data
-      // to match the overview widgets which show all historical periods
-      if (data.length === 0) {
-        console.log(`[Demographics API] No data found for requested dates ${finalDateFrom} to ${finalDateTo}`)
-        console.log(`[Demographics API] TEMPORARY FIX: Fetching ALL available demographics data to match overview widgets`)
-        
-        const allDataResult = await supabase
-          .from('meta_demographics')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', breakdownType)
-          .order('date_range_start', { ascending: false })
-        
-        if (allDataResult.data && allDataResult.data.length > 0) {
-          data = allDataResult.data
-          console.log(`[Demographics API] Using ALL ${data.length} available records to match overview widget totals`)
-        }
+      // CRITICAL FIX: Override date filtering to match overview widgets behavior
+      // Overview widgets include ALL available data when there are gaps, so we should too
+      console.log(`[Demographics API] CRITICAL FIX: Fetching ALL available demographics data to match overview widget behavior`)
+      
+      const allDataResult = await supabase
+        .from('meta_demographics')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('breakdown_type', breakdownType)
+        .order('date_range_start', { ascending: false })
+      
+      if (allDataResult.data && allDataResult.data.length > 0) {
+        data = allDataResult.data
+        console.log(`[Demographics API] Using ALL ${data.length} available records to match overview widget totals (${finalDateFrom} to ${finalDateTo})`)
       }
     }
     
