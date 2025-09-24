@@ -92,11 +92,10 @@ export async function POST(request: NextRequest) {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-          // Define critical months to sync (3 most recent months to stay under 15s limit)
+          // Define critical months to sync (2 most recent months to guarantee sub-15s completion)
           const criticalChunks = [
             { start: new Date('2025-09-01'), end: new Date('2025-09-24'), name: 'September 2025' },
-            { start: new Date('2025-08-01'), end: new Date('2025-08-31'), name: 'August 2025' },
-            { start: new Date('2025-07-01'), end: new Date('2025-07-31'), name: 'July 2025' }
+            { start: new Date('2025-08-01'), end: new Date('2025-08-31'), name: 'August 2025' }
           ]
       
       let syncedInsights = 0
