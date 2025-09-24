@@ -159,19 +159,36 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
-        // CRITICAL FIX: Override date filtering to match overview widgets behavior  
-        console.log(`[Demographics API] CRITICAL FIX: Fetching ALL available device data to match overview widget behavior`)
+        // CRITICAL FIX: Match the EXACT same data periods as meta_ad_insights (overview widgets)
+        console.log(`[Demographics API] CRITICAL FIX: Matching exact same data periods as overview widgets for device data`)
         
-        const allDeviceResult = await supabase
-          .from('meta_device_performance')
-          .select('*')
+        // Get the dates that exist in meta_ad_insights for this brand
+        const { data: adInsightsDates } = await supabase
+          .from('meta_ad_insights')
+          .select('date')
           .eq('brand_id', brandId)
-          .eq('breakdown_type', dbBreakdownType)
-          .order('date_range_start', { ascending: false })
+          .order('date')
         
-        if (allDeviceResult.data && allDeviceResult.data.length > 0) {
-          data = allDeviceResult.data
-          console.log(`[Demographics API] Using ALL ${data.length} available device records to match overview widget totals (${finalDateFrom} to ${finalDateTo})`)
+        if (adInsightsDates && adInsightsDates.length > 0) {
+          const availableDates = adInsightsDates.map(row => row.date)
+          const earliestDate = availableDates[0]
+          const latestDate = availableDates[availableDates.length - 1]
+          
+          console.log(`[Demographics API] Matching device data to ad_insights date range: ${earliestDate} to ${latestDate}`)
+          
+          const matchedDeviceResult = await supabase
+            .from('meta_device_performance')
+            .select('*')
+            .eq('brand_id', brandId)
+            .eq('breakdown_type', dbBreakdownType)
+            .gte('date_range_start', earliestDate)
+            .lte('date_range_end', latestDate)
+            .order('date_range_start', { ascending: false })
+          
+          if (matchedDeviceResult.data && matchedDeviceResult.data.length > 0) {
+            data = matchedDeviceResult.data
+            console.log(`[Demographics API] Using ${data.length} device records matching ad_insights periods`)
+          }
         }
       
     } else {
@@ -192,20 +209,36 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // CRITICAL FIX: Override date filtering to match overview widgets behavior
-      // Overview widgets include ALL available data when there are gaps, so we should too
-      console.log(`[Demographics API] CRITICAL FIX: Fetching ALL available demographics data to match overview widget behavior`)
+      // CRITICAL FIX: Match the EXACT same data periods as meta_ad_insights (overview widgets)
+      console.log(`[Demographics API] CRITICAL FIX: Matching exact same data periods as overview widgets`)
       
-      const allDataResult = await supabase
-        .from('meta_demographics')
-        .select('*')
+      // Get the dates that exist in meta_ad_insights for this brand
+      const { data: adInsightsDates } = await supabase
+        .from('meta_ad_insights')
+        .select('date')
         .eq('brand_id', brandId)
-        .eq('breakdown_type', breakdownType)
-        .order('date_range_start', { ascending: false })
+        .order('date')
       
-      if (allDataResult.data && allDataResult.data.length > 0) {
-        data = allDataResult.data
-        console.log(`[Demographics API] Using ALL ${data.length} available records to match overview widget totals (${finalDateFrom} to ${finalDateTo})`)
+      if (adInsightsDates && adInsightsDates.length > 0) {
+        const availableDates = adInsightsDates.map(row => row.date)
+        const earliestDate = availableDates[0]
+        const latestDate = availableDates[availableDates.length - 1]
+        
+        console.log(`[Demographics API] Matching ad_insights date range: ${earliestDate} to ${latestDate}`)
+        
+        const matchedDataResult = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', breakdownType)
+          .gte('date_range_start', earliestDate)
+          .lte('date_range_end', latestDate)
+          .order('date_range_start', { ascending: false })
+        
+        if (matchedDataResult.data && matchedDataResult.data.length > 0) {
+          data = matchedDataResult.data
+          console.log(`[Demographics API] Using ${data.length} records matching ad_insights periods`)
+        }
       }
     }
     
