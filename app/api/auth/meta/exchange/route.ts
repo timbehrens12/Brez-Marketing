@@ -93,10 +93,10 @@ export async function POST(request: NextRequest) {
     // 🚀 TRIGGER BACKGROUND SYNC: Call the full 12-month sync endpoint
     const triggerBackgroundSync = async () => {
       try {
-        console.log(`[Meta Exchange Simple] Triggering extended sync via proven test endpoint`)
+        console.log(`[Meta Exchange Simple] Triggering SMART gap-filling sync (much faster than 73 background jobs!)`)
         
-        // Make internal call to the proven test endpoint (avoid timeout issues)
-        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/test-background-sync`, {
+        // Make internal call to the SMART gap-filling sync (much faster!)
+        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/smart-historical-sync`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
