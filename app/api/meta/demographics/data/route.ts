@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
           const availableDates = adInsightsDates.map(row => row.date)
           console.log(`[Demographics API] Found ${availableDates.length} ad_insights dates in device range: ${availableDates[0]} to ${availableDates[availableDates.length - 1]}`)
           
-          // Query device data for the INTERSECTION of requested range AND available ad_insights dates
+          // Query device data for the requested date range (simplified - removed overly strict .in() filter)
           const matchedDeviceResult = await supabase
             .from('meta_device_performance')
             .select('*')
@@ -183,7 +183,6 @@ export async function GET(request: NextRequest) {
             .eq('breakdown_type', dbBreakdownType)
             .gte('date_range_start', finalDateFrom)
             .lte('date_range_end', finalDateTo)
-            .in('date_range_start', availableDates)
             .order('date_range_start', { ascending: false })
           
           if (matchedDeviceResult.data && matchedDeviceResult.data.length > 0) {
@@ -230,7 +229,7 @@ export async function GET(request: NextRequest) {
         const availableDates = adInsightsDates.map(row => row.date)
         console.log(`[Demographics API] Found ${availableDates.length} ad_insights dates in range: ${availableDates[0]} to ${availableDates[availableDates.length - 1]}`)
         
-        // Query demographics for the INTERSECTION of requested range AND available ad_insights dates
+        // Query demographics for the requested date range (simplified - removed overly strict .in() filter)
         const matchedDataResult = await supabase
           .from('meta_demographics')
           .select('*')
@@ -238,7 +237,6 @@ export async function GET(request: NextRequest) {
           .eq('breakdown_type', breakdownType)
           .gte('date_range_start', finalDateFrom)
           .lte('date_range_end', finalDateTo)
-          .in('date_range_start', availableDates)
           .order('date_range_start', { ascending: false })
         
         if (matchedDataResult.data && matchedDataResult.data.length > 0) {
