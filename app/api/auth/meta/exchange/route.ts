@@ -85,6 +85,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange Simple] ✅ Stored connection with ID: ${connectionData.id}`)
 
+    // 🧨 NUCLEAR DEMOGRAPHICS WIPE FIRST
+    console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping old demographics data...`)
+    try {
+      await supabase
+        .from('meta_demographics')
+        .delete()
+        .eq('brand_id', state)
+      
+      await supabase
+        .from('meta_device_performance')
+        .delete()
+        .eq('brand_id', state)
+      
+      console.log(`[Meta Exchange] ✅ Old demographics data nuked`)
+    } catch (nukeError) {
+      console.warn(`[Meta Exchange] ⚠️ Demographics nuke failed:`, nukeError)
+    }
+
     // 🚀 BULLETPROOF PRODUCTION SYNC: Fast chunked sync within Vercel limits
     console.log(`[Meta Exchange] 🚀 Starting BULLETPROOF production sync...`)
     
@@ -129,7 +147,7 @@ export async function POST(request: NextRequest) {
           }
           
           // Quick delay to prevent rate limits (but keep under 15 seconds total)
-          await new Promise(resolve => setTimeout(resolve, 100)) // Reduced delay for speed
+          await new Promise(resolve => setTimeout(resolve, 300)) // Slightly longer delay for demographics
           
         } catch (chunkError) {
           console.error(`[Meta Exchange] ❌ Failed to sync ${chunk.name}:`, chunkError)
