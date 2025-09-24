@@ -90,37 +90,54 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange Simple] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🚀 TRIGGER BACKGROUND SYNC: Call the full 12-month sync endpoint
-    const triggerBackgroundSync = async () => {
-      try {
-        console.log(`[Meta Exchange Simple] Triggering SMART gap-filling sync (much faster than 73 background jobs!)`)
-        
-        // Make internal call to the SMART gap-filling sync (much faster!)
-        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/smart-historical-sync`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.INTERNAL_API_KEY || 'internal'}`
-          },
-          body: JSON.stringify({ brandId: state })
-        })
-
-        const syncResult = await syncResponse.json()
-        
-        if (syncResult.success) {
-          console.log(`[Meta Exchange Simple] ✅ Background sync completed successfully`)
-          console.log(`[Meta Exchange Simple] Sync stats:`, syncResult.result)
-        } else {
-          console.error(`[Meta Exchange Simple] ❌ Background sync failed:`, syncResult.error)
+    // 🚀 BULLETPROOF PRODUCTION SYNC: Fast chunked sync within Vercel limits
+    console.log(`[Meta Exchange] 🚀 Starting BULLETPROOF production sync...`)
+    
+    try {
+      // Import the service we need
+      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+      
+      // Define critical months to sync (focus on recent + key periods)
+      const criticalChunks = [
+        { start: '2025-09-01', end: '2025-09-24', name: 'September 2025' },
+        { start: '2025-08-01', end: '2025-08-31', name: 'August 2025' },
+        { start: '2025-07-01', end: '2025-07-31', name: 'July 2025' },
+        { start: '2025-06-01', end: '2025-06-30', name: 'June 2025' },
+        { start: '2025-05-01', end: '2025-05-31', name: 'May 2025' }
+      ]
+      
+      let syncedInsights = 0
+      
+      for (const chunk of criticalChunks) {
+        try {
+          console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start} to ${chunk.end})`)
+          
+          const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end)
+          const count = insights?.length || 0
+          syncedInsights += count
+          
+          console.log(`[Meta Exchange] ✅ ${chunk.name}: ${count} insights synced`)
+          
+          // Quick delay to prevent rate limits (but keep under 15 seconds total)
+          await new Promise(resolve => setTimeout(resolve, 200))
+          
+        } catch (chunkError) {
+          console.error(`[Meta Exchange] ❌ Failed to sync ${chunk.name}:`, chunkError)
+          // Continue with other chunks even if one fails
         }
-      } catch (syncError) {
-        console.error(`[Meta Exchange Simple] ❌ Background sync call failed:`, syncError)
       }
+      
+      // Force aggregation
+      console.log(`[Meta Exchange] 🔄 Forcing data aggregation...`)
+      const supabase = createClient()
+      await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
+      
+      console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
+      
+    } catch (syncError) {
+      console.error(`[Meta Exchange] ❌ Production sync failed:`, syncError)
+      // Don't fail the auth - just log the error
     }
-
-    // 🚨 SKIP BACKGROUND SYNC: Avoiding timeout issues - use on-demand sync instead
-    console.log(`[Meta Exchange Simple] ✅ Auth exchange completed - background sync SKIPPED (use on-demand sync on dashboard)`)
-    console.log(`[Meta Exchange Simple] 💡 Data will populate when dashboard widgets make API calls`)
 
     return NextResponse.json({ success: true })
 
