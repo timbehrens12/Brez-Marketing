@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
     );
     
     // DATABASE-FIRST: Disabled Meta API calls to prevent rate limiting
-    if (false && forceRefresh) { // EMERGENCY: Stop hitting Meta API
+    if (forceRefresh) { // Re-enabled Meta API for real budget data
       console.log('[Total Meta Budget] Force refresh requested, fetching fresh ad set data from Meta API');
       
       try {

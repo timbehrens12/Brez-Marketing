@@ -90,6 +90,41 @@ BEGIN
     budget_type = CASE WHEN meta_adsets.budget_type IS NULL THEN EXCLUDED.budget_type ELSE meta_adsets.budget_type END,
     updated_at = NOW();
 
+  -- 3. Create campaigns from insights data
+  INSERT INTO meta_campaigns (
+    brand_id,
+    connection_id,
+    campaign_id,
+    campaign_name,
+    status,
+    budget,
+    account_id,
+    created_at,
+    updated_at
+  )
+  SELECT DISTINCT
+    insights.brand_id,
+    conn.id as connection_id,
+    insights.campaign_id,
+    insights.campaign_name,
+    'ACTIVE' as status,
+    1.00 as budget,  -- Temporary budget - will be updated by API calls
+    COALESCE(insights.account_id, 'unknown') as account_id,
+    NOW() as created_at,
+    NOW() as updated_at
+  FROM meta_ad_insights insights
+  CROSS JOIN (
+    SELECT id FROM platform_connections 
+    WHERE brand_id = target_brand_id AND platform_type = 'meta' 
+    LIMIT 1
+  ) conn
+  WHERE insights.brand_id = target_brand_id
+    AND insights.campaign_id IS NOT NULL
+  ON CONFLICT (campaign_id) DO UPDATE SET
+    campaign_name = EXCLUDED.campaign_name,
+    account_id = EXCLUDED.account_id,
+    updated_at = NOW();
+
   RAISE NOTICE 'Meta data aggregation completed for brand %', target_brand_id;
 END;
 $$ LANGUAGE plpgsql;
