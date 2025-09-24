@@ -118,12 +118,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Trigger background sync without awaiting
-    triggerBackgroundSync().catch(error => {
-      console.error('[Meta Exchange Simple] Background sync trigger failed:', error)
-    })
-
-    console.log(`[Meta Exchange Simple] ✅ Auth exchange completed, background sync triggered`)
+    // 🚨 SKIP BACKGROUND SYNC: Avoiding timeout issues - use on-demand sync instead
+    console.log(`[Meta Exchange Simple] ✅ Auth exchange completed - background sync SKIPPED (use on-demand sync on dashboard)`)
+    console.log(`[Meta Exchange Simple] 💡 Data will populate when dashboard widgets make API calls`)
 
     return NextResponse.json({ success: true })
 
