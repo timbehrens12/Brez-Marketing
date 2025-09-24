@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import { auth } from '@clerk/nextjs'
 
 export async function POST(request: NextRequest) {
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
     try {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+      const supabase = createClient()
       
       // Define critical months to sync (focus on recent + key periods)
       const criticalChunks = [
@@ -129,8 +130,12 @@ export async function POST(request: NextRequest) {
       
       // Force aggregation
       console.log(`[Meta Exchange] 🔄 Forcing data aggregation...`)
-      const supabase = createClient()
-      await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
+      try {
+        await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
+        console.log(`[Meta Exchange] ✅ Data aggregation completed`)
+      } catch (aggError) {
+        console.error(`[Meta Exchange] ❌ Aggregation failed:`, aggError)
+      }
       
       console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
       
