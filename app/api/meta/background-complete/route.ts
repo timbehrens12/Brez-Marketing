@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { brandId, connectionId, accountId } = await request.json()
+    const { brandId, connectionId, accountId, syncMode, priority } = await request.json()
     
     if (!brandId || !connectionId || !accountId) {
       return NextResponse.json(
@@ -26,10 +26,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[Background Complete] 🚀 Starting background completion for brand ${brandId}`)
+    const isAggressiveMode = syncMode === 'full-september'
+    console.log(`[Background Complete] 🚀 Starting ${isAggressiveMode ? 'AGGRESSIVE SEPTEMBER' : 'standard'} completion for brand ${brandId}`)
 
-    // Wait a bit for the main auth to fully complete
-    await new Promise(resolve => setTimeout(resolve, 5000))
+    // Different strategies based on mode
+    if (isAggressiveMode) {
+      // AGGRESSIVE: Full September sync immediately  
+      console.log(`[Background Complete] 🔥 AGGRESSIVE MODE: Full September sync starting...`)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Minimal wait
+    } else {
+      // STANDARD: Wait for auth to complete
+      await new Promise(resolve => setTimeout(resolve, 5000))
+    }
 
     // Check what tables need completion
     const checks = await Promise.all([
@@ -153,6 +161,44 @@ export async function POST(request: NextRequest) {
         }
       } catch (deviceError) {
         console.error(`[Background Complete] ❌ Device performance check failed:`, deviceError)
+      }
+    }
+
+    // 🔥 AGGRESSIVE SEPTEMBER SYNC MODE 
+    if (isAggressiveMode) {
+      console.log(`[Background Complete] 🔥 AGGRESSIVE: Starting complete September sync...`)
+      try {
+        // Import the sync service
+        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+        
+        // Sync ALL of September with demographics day by day
+        const septemberDates = []
+        for (let day = 1; day <= 24; day++) {
+          septemberDates.push(new Date(`2025-09-${day.toString().padStart(2, '0')}`))
+        }
+        
+        let successfulDays = 0
+        for (const date of septemberDates) {
+          try {
+            console.log(`[Background Complete] 🔥 Syncing September ${date.getDate()}...`)
+            await fetchMetaAdInsights(brandId, date, date, false, false) // With demographics
+            successfulDays++
+            
+            // Small delay to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, 200))
+          } catch (dayError) {
+            console.warn(`[Background Complete] ⚠️ Failed September ${date.getDate()}:`, dayError)
+          }
+        }
+        
+        console.log(`[Background Complete] 🎉 AGGRESSIVE COMPLETE: ${successfulDays}/24 September days synced`)
+        
+        // Force final aggregation
+        await supabase.rpc('aggregate_meta_data', { brand_id_param: brandId })
+        console.log(`[Background Complete] ✅ Final aggregation complete`)
+        
+      } catch (aggressiveError) {
+        console.error(`[Background Complete] ❌ Aggressive September sync failed:`, aggressiveError)
       }
     }
 

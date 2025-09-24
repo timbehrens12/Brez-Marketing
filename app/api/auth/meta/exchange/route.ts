@@ -126,41 +126,25 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start.toISOString().split('T')[0]} to ${chunk.end.toISOString().split('T')[0]})`)
           
-          // 🚀 PRODUCTION FIX: Sync COMPLETE September with ALL demographics in chunks
-          console.log(`[Meta Exchange] 🔥 PRODUCTION: Syncing COMPLETE September with demographics`)
-          
-          // Strategy: Weekly chunks to avoid timeouts but get COMPLETE data
-          const weeklyChunks = [
-            { start: new Date('2025-09-01'), end: new Date('2025-09-07'), name: 'September Week 1' },
-            { start: new Date('2025-09-08'), end: new Date('2025-09-14'), name: 'September Week 2' },
-            { start: new Date('2025-09-15'), end: new Date('2025-09-21'), name: 'September Week 3' },
-            { start: new Date('2025-09-22'), end: chunk.end, name: 'September Week 4' }
-          ]
-          
-          let totalInsights = 0
-          
-          for (const weekChunk of weeklyChunks) {
-            try {
-              console.log(`[Meta Exchange] 📅 Syncing ${weekChunk.name} WITH demographics...`)
-              
-              // Sync with demographics included (false = include demographics)
-              const insights = await fetchMetaAdInsights(state, weekChunk.start, weekChunk.end, false, false)
-              const count = insights?.length || 0
-              totalInsights += count
-              
-              console.log(`[Meta Exchange] ✅ ${weekChunk.name}: ${count} insights + demographics synced`)
-              
-              // Small delay between chunks to avoid rate limits
-              await new Promise(resolve => setTimeout(resolve, 500))
-              
-            } catch (weekError) {
-              console.error(`[Meta Exchange] ❌ ${weekChunk.name} failed:`, weekError)
-              // Continue with other weeks even if one fails
-            }
-          }
-          
-          syncedInsights = totalInsights
-          console.log(`[Meta Exchange] 🎉 COMPLETE September sync: ${totalInsights} total insights with demographics`)
+        // 🚀 BULLETPROOF MINIMAL SYNC: Core data only for fast completion
+        console.log(`[Meta Exchange] ⚡ BULLETPROOF: Minimal critical sync for production`)
+        
+        // Strategy: ONLY sync what's absolutely critical within timeout
+        // 1. Recent 3 days of insights + demographics (fast)
+        // 2. Force aggregation to create campaigns/adsets
+        // 3. Background job handles the rest
+        
+        const today = new Date()
+        const threeDaysAgo = new Date()
+        threeDaysAgo.setDate(today.getDate() - 3)
+        
+        console.log(`[Meta Exchange] 📅 Critical sync: ${threeDaysAgo.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]}`)
+        
+        // Sync recent 3 days WITH demographics (most likely to succeed)
+        const insights = await fetchMetaAdInsights(state, threeDaysAgo, today, false, false)
+        syncedInsights = insights?.length || 0
+        
+        console.log(`[Meta Exchange] ✅ Critical sync complete: ${syncedInsights} insights + demographics`)
           
           // Optimized delay for rate limiting (minimize total time)
           await new Promise(resolve => setTimeout(resolve, 100)) // Minimal delay
@@ -171,49 +155,40 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // 🔥 CRITICAL: Force aggregation to populate ALL tables consistently
-      console.log(`[Meta Exchange] 🔄 CRITICAL: Forcing complete data aggregation for ALL tables...`)
+      // 🔥 GUARANTEED: Fast aggregation + campaign creation 
+      console.log(`[Meta Exchange] 🔄 GUARANTEED: Fast aggregation + campaign creation...`)
       try {
+        // 1. Force aggregation first
         await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
-        console.log(`[Meta Exchange] ✅ ALL tables aggregated - meta_adsets, meta_campaigns, etc.`)
+        console.log(`[Meta Exchange] ✅ Aggregation complete`)
         
-        // No wait needed - proceed immediately
+        // 2. GUARANTEED campaign creation with direct SQL
+        const { data: insightData } = await supabase
+          .from('meta_ad_insights')
+          .select('campaign_id, campaign_name, account_id')
+          .eq('brand_id', state)
+          .limit(1)
+          .single()
         
-        // 🔥 REAL CAMPAIGN CREATION FROM INSIGHTS DATA
-        console.log(`[Meta Exchange] 🔄 Creating campaign from real insights data...`)
-        
-        try {
-          // Get campaign data from the synced insights
-          const { data: insightData } = await supabase
-            .from('meta_ad_insights')
-            .select('campaign_id, campaign_name')
-            .eq('brand_id', state)
-            .limit(1)
-            .maybeSingle()
-          
-          if (insightData) {
-            const connectionId = connectionData.id
+        if (insightData) {
+          // Direct campaign creation with all required fields
           await supabase
-              .from('meta_campaigns')
-              .upsert({
-                brand_id: state,
-                connection_id: connectionId,
-                campaign_id: insightData.campaign_id,
-                campaign_name: insightData.campaign_name,
-                status: 'ACTIVE',
-                budget: '1.00',
-                account_id: accountId,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-            
-            console.log(`[Meta Exchange] ✅ Campaign created from real insights: ${insightData.campaign_name}`)
-          } else {
-            console.error(`[Meta Exchange] ❌ No insights data available for campaign creation`)
-          }
+            .from('meta_campaigns')
+            .upsert({
+              brand_id: state,
+              connection_id: connectionData.id,
+              campaign_id: insightData.campaign_id,
+              campaign_name: insightData.campaign_name,
+              status: 'ACTIVE',
+              budget: '1.00',
+              account_id: insightData.account_id || accountId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
           
-        } catch (campaignError) {
-          console.error(`[Meta Exchange] ❌ Campaign creation failed:`, campaignError)
+          console.log(`[Meta Exchange] ✅ GUARANTEED campaign created: ${insightData.campaign_name}`)
+        } else {
+          console.warn(`[Meta Exchange] ⚠️ No insights for campaign creation - will retry in background`)
         }
         
         // Final verification of all tables
@@ -232,19 +207,29 @@ export async function POST(request: NextRequest) {
       
         console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
         
-        // 🚀 TRIGGER BACKGROUND COMPLETION JOB
-        console.log(`[Meta Exchange] 🚀 Triggering background completion job...`)
+        // 🚀 AGGRESSIVE BACKGROUND COMPLETION FOR SEPTEMBER
+        console.log(`[Meta Exchange] 🚀 Triggering AGGRESSIVE September completion...`)
         try {
-          // Trigger background job to complete any missing data (non-blocking)
+          // Trigger aggressive background job for complete September sync
           fetch('https://www.brezmarketingdashboard.com/api/meta/background-complete', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'User-Agent': 'node' },
-            body: JSON.stringify({ brandId: state, connectionId: connectionData.id, accountId })
+            headers: { 
+              'Content-Type': 'application/json', 
+              'User-Agent': 'node',
+              'X-Sync-Mode': 'aggressive-september' // Flag for full September sync
+            },
+            body: JSON.stringify({ 
+              brandId: state, 
+              connectionId: connectionData.id, 
+              accountId,
+              syncMode: 'full-september',
+              priority: 'high'
+            })
           }).catch(bgError => {
             console.warn(`[Meta Exchange] ⚠️ Background job trigger failed:`, bgError)
           })
           
-          console.log(`[Meta Exchange] ✅ Background completion job triggered`)
+          console.log(`[Meta Exchange] ✅ AGGRESSIVE September sync job triggered`)
         } catch (bgTriggerError) {
           console.warn(`[Meta Exchange] ⚠️ Background trigger failed:`, bgTriggerError)
         }
