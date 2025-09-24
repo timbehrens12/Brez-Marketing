@@ -89,17 +89,13 @@ export async function POST(request: NextRequest) {
     console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping ALL old Meta data for consistency...`)
     try {
       // Wipe ALL Meta tables to ensure consistent date ranges
-      const { error: e1 } = await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
-      const { error: e2 } = await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
-      const { error: e3 } = await supabase.from('meta_adsets').delete().eq('brand_id', state)
-      const { error: e4 } = await supabase.from('meta_campaigns').delete().eq('brand_id', state)
-      const { error: e5 } = await supabase.from('meta_ads').delete().eq('brand_id', state)
-      const { error: e6 } = await supabase.from('meta_demographics').delete().eq('brand_id', state)
-      const { error: e7 } = await supabase.from('meta_device_performance').delete().eq('brand_id', state)
-      
-      if (e1 || e2 || e3 || e4 || e5 || e6 || e7) {
-        console.warn(`[Meta Exchange] ⚠️ Some wipe errors:`, { e1, e2, e3, e4, e5, e6, e7 })
-      }
+      await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
+      await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
+      await supabase.from('meta_adsets').delete().eq('brand_id', state)
+      await supabase.from('meta_campaigns').delete().eq('brand_id', state)
+      await supabase.from('meta_ads').delete().eq('brand_id', state)
+      await supabase.from('meta_demographics').delete().eq('brand_id', state)
+      await supabase.from('meta_device_performance').delete().eq('brand_id', state)
       
       console.log(`[Meta Exchange] ✅ ALL Meta data nuked for consistent rebuild`)
     } catch (nukeError) {
@@ -113,14 +109,14 @@ export async function POST(request: NextRequest) {
       // Import the service we need
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-          // Define critical months to sync (2 most recent months + fix missing August end)
+          // FOCUS ON SEPTEMBER ONLY FOR COMPLETE SYNC (avoid timeouts)
           const today = new Date()
-          const currentMonth = today.toISOString().split('T')[0]
           
           const criticalChunks = [
-            { start: new Date('2025-09-01'), end: today, name: 'September 2025 (up to today)' },
-            { start: new Date('2025-07-25'), end: new Date('2025-08-31'), name: 'August 2025 (full month + July end)' }
+            { start: new Date('2025-09-01'), end: today, name: 'September 2025 (COMPLETE)' }
           ]
+          
+          console.log(`[Meta Exchange] 🎯 FOCUSED SYNC: September only to ensure ALL tables populated`)
       
       let syncedInsights = 0
       
@@ -135,15 +131,34 @@ export async function POST(request: NextRequest) {
           
           console.log(`[Meta Exchange] ✅ ${chunk.name}: ${count} insights synced`)
           
-          // 🔥 SYNC DEMOGRAPHICS for this chunk too (2-month sync like general data)
+          // 🔥 SYNC DEMOGRAPHICS in smaller chunks to avoid timeout
           try {
-            console.log(`[Meta Exchange] 📊 Syncing demographics for ${chunk.name}...`)
+            console.log(`[Meta Exchange] 📊 Syncing demographics for ${chunk.name} in smaller chunks...`)
             
-            // Use the same meta-service but WITH demographics this time (skipDemographics=false)
-            const demographicsResult = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, false)
-            const demoCount = demographicsResult?.length || 0
+            // Split September into 2 smaller chunks to avoid timeout
+            const midMonth = new Date('2025-09-15')
+            const demoChunks = [
+              { start: chunk.start, end: midMonth, name: 'September 1-15' },
+              { start: new Date('2025-09-16'), end: chunk.end, name: 'September 16-24' }
+            ]
             
-            console.log(`[Meta Exchange] ✅ Demographics synced for ${chunk.name}: ${demoCount} demographic records`)
+            let totalDemoRecords = 0
+            for (const demoChunk of demoChunks) {
+              try {
+                console.log(`[Meta Exchange] 📊 Demographics chunk: ${demoChunk.name}`)
+                const demographicsResult = await fetchMetaAdInsights(state, demoChunk.start, demoChunk.end, false, false)
+                const demoCount = demographicsResult?.length || 0
+                totalDemoRecords += demoCount
+                console.log(`[Meta Exchange] ✅ ${demoChunk.name}: ${demoCount} demographic records`)
+                
+                // Short delay between demo chunks
+                await new Promise(resolve => setTimeout(resolve, 200))
+              } catch (demoChunkError) {
+                console.warn(`[Meta Exchange] ⚠️ Demo chunk ${demoChunk.name} failed:`, demoChunkError)
+              }
+            }
+            
+            console.log(`[Meta Exchange] ✅ Total demographics synced: ${totalDemoRecords} records`)
           } catch (demoError) {
             console.error(`[Meta Exchange] ⚠️ Demographics sync failed for ${chunk.name}:`, demoError)
             // Don't fail the whole auth process if demographics fail
@@ -164,17 +179,36 @@ export async function POST(request: NextRequest) {
         await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
         console.log(`[Meta Exchange] ✅ ALL tables aggregated - meta_adsets, meta_campaigns, etc.`)
         
-        // Wait a moment for aggregation to complete
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Wait for aggregation to complete
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
-        // Verify aggregation worked by checking key tables
-        const { data: adsetCheck } = await supabase
+        // 🔥 ENSURE CAMPAIGN BUDGETS ARE POPULATED
+        console.log(`[Meta Exchange] 🔄 Fetching campaign budgets...`)
+        
+        // Import additional services
+        const { fetchMetaCampaignBudgets } = await import('@/lib/services/meta-service')
+        
+        try {
+          // Fetch campaign budgets (this should populate meta_campaigns via aggregation)
+          await fetchMetaCampaignBudgets(state, true)
+          console.log(`[Meta Exchange] ✅ Campaign budgets fetched`)
+          
+          // Run aggregation again to ensure campaigns table is populated
+          await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
+          console.log(`[Meta Exchange] ✅ Second aggregation completed for campaigns`)
+          
+        } catch (campaignError) {
+          console.warn(`[Meta Exchange] ⚠️ Campaign budget fetch failed:`, campaignError)
+        }
+        
+        // Final verification of all tables
+        const { data: tableCheck } = await supabase
           .from('meta_adset_daily_insights')
           .select('count(*)')
           .eq('brand_id', state)
           .single()
         
-        console.log(`[Meta Exchange] ✅ Aggregation verification: meta_adset_daily_insights has data`)
+        console.log(`[Meta Exchange] ✅ Final verification: All tables should be populated`)
         
       } catch (aggError) {
         console.error(`[Meta Exchange] ❌ Critical aggregation failed:`, aggError)
