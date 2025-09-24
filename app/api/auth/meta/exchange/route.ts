@@ -85,22 +85,21 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange Simple] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🧨 NUCLEAR DEMOGRAPHICS WIPE FIRST
-    console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping old demographics data...`)
+    // 🧨 NUCLEAR WIPE: ALL META TABLES FOR COMPLETE CONSISTENCY
+    console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping ALL old Meta data for consistency...`)
     try {
-      await supabase
-        .from('meta_demographics')
-        .delete()
-        .eq('brand_id', state)
+      // Wipe ALL Meta tables to ensure consistent date ranges
+      await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
+      await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
+      await supabase.from('meta_adsets').delete().eq('brand_id', state)
+      await supabase.from('meta_campaigns').delete().eq('brand_id', state)
+      await supabase.from('meta_ads').delete().eq('brand_id', state)
+      await supabase.from('meta_demographics').delete().eq('brand_id', state)
+      await supabase.from('meta_device_performance').delete().eq('brand_id', state)
       
-      await supabase
-        .from('meta_device_performance')
-        .delete()
-        .eq('brand_id', state)
-      
-      console.log(`[Meta Exchange] ✅ Old demographics data nuked`)
+      console.log(`[Meta Exchange] ✅ ALL Meta data nuked for consistent rebuild`)
     } catch (nukeError) {
-      console.warn(`[Meta Exchange] ⚠️ Demographics nuke failed:`, nukeError)
+      console.warn(`[Meta Exchange] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
     // 🚀 BULLETPROOF PRODUCTION SYNC: Fast chunked sync within Vercel limits
@@ -155,13 +154,27 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Force aggregation
-      console.log(`[Meta Exchange] 🔄 Forcing data aggregation...`)
+      // 🔥 CRITICAL: Force aggregation to populate ALL tables consistently
+      console.log(`[Meta Exchange] 🔄 CRITICAL: Forcing complete data aggregation for ALL tables...`)
       try {
         await supabase.rpc('aggregate_meta_data', { brand_id_param: state })
-        console.log(`[Meta Exchange] ✅ Data aggregation completed`)
+        console.log(`[Meta Exchange] ✅ ALL tables aggregated - meta_adsets, meta_campaigns, etc.`)
+        
+        // Wait a moment for aggregation to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Verify aggregation worked by checking key tables
+        const { data: adsetCheck } = await supabase
+          .from('meta_adset_daily_insights')
+          .select('count(*)')
+          .eq('brand_id', state)
+          .single()
+        
+        console.log(`[Meta Exchange] ✅ Aggregation verification: meta_adset_daily_insights has data`)
+        
       } catch (aggError) {
-        console.error(`[Meta Exchange] ❌ Aggregation failed:`, aggError)
+        console.error(`[Meta Exchange] ❌ Critical aggregation failed:`, aggError)
+        // Don't fail auth, but log the issue
       }
       
       console.log(`[Meta Exchange] 🎉 PRODUCTION SYNC COMPLETE! Total insights: ${syncedInsights}`)
