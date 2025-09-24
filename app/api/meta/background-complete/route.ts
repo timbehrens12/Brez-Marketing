@@ -77,52 +77,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Complete missing demographics
-    if (demoCount < 10) {
-      console.log(`[Background Complete] 🔄 Enhancing demographics data...`)
+    // Complete missing demographics - FILL SEPTEMBER GAPS
+    if (demoCount < 50) { // Need full September coverage like platform data
+      console.log(`[Background Complete] 🔄 Filling September demographics gaps...`)
       try {
-        // Try to fetch real demographics from Meta API
+        // Try to fetch real demographics from Meta API for missing dates
         const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
         
         try {
-          // Aggressive real demographics sync with multiple retry strategies
+          // Fill gaps strategy: sync the missing September 17-20 dates
           let demoSuccess = false
           
-          // Strategy 1: Try Sept 1-5 (5 days)
+          // Strategy 1: Try Sept 17-24 (full week to match platform coverage)
           try {
-            await fetchMetaAdInsights(brandId, new Date('2025-09-01'), new Date('2025-09-05'), false, false)
+            await fetchMetaAdInsights(brandId, new Date('2025-09-17'), new Date('2025-09-24'), false, false)
             demoSuccess = true
-            console.log(`[Background Complete] ✅ Real demographics synced (5 days)`)
+            console.log(`[Background Complete] ✅ Demographics gaps filled for Sept 17-24 (full week)`)
           } catch (error1) {
-            console.warn(`[Background Complete] ⚠️ 5-day sync failed, trying 3 days:`, error1)
+            console.warn(`[Background Complete] ⚠️ Full week sync failed, trying missing dates only:`, error1)
             
-            // Strategy 2: Try Sept 1-3 (3 days)
+            // Strategy 2: Try Sept 17-20 only (the missing dates)
             try {
-              await fetchMetaAdInsights(brandId, new Date('2025-09-01'), new Date('2025-09-03'), false, false)
+              await fetchMetaAdInsights(brandId, new Date('2025-09-17'), new Date('2025-09-20'), false, false)
               demoSuccess = true
-              console.log(`[Background Complete] ✅ Real demographics synced (3 days)`)
+              console.log(`[Background Complete] ✅ Demographics gaps filled for Sept 17-20 (missing dates)`)
             } catch (error2) {
-              console.warn(`[Background Complete] ⚠️ 3-day sync failed, trying 1 day:`, error2)
+              console.warn(`[Background Complete] ⚠️ Missing dates batch failed, trying individual days:`, error2)
               
-              // Strategy 3: Try Sept 1 only (1 day)
-              try {
-                await fetchMetaAdInsights(brandId, new Date('2025-09-01'), new Date('2025-09-01'), false, false)
-                demoSuccess = true
-                console.log(`[Background Complete] ✅ Real demographics synced (1 day)`)
-              } catch (error3) {
-                console.error(`[Background Complete] ❌ All demographics sync strategies failed:`, error3)
+              // Strategy 3: Try individual missing days
+              const missingDates = ['2025-09-17', '2025-09-18', '2025-09-19', '2025-09-20']
+              for (const dateStr of missingDates) {
+                try {
+                  const date = new Date(dateStr)
+                  await fetchMetaAdInsights(brandId, date, date, false, false)
+                  console.log(`[Background Complete] ✅ Filled demographics gap for ${dateStr}`)
+                  demoSuccess = true
+                } catch (dayError) {
+                  console.warn(`[Background Complete] ⚠️ Failed to fill gap for ${dateStr}:`, dayError)
+                }
+                // Small delay between individual day syncs
+                await new Promise(resolve => setTimeout(resolve, 500))
               }
             }
           }
           
           if (!demoSuccess) {
-            console.error(`[Background Complete] ❌ NO FALLBACK DATA - Demographics sync must be fixed`)
+            console.error(`[Background Complete] ❌ NO FALLBACK DATA - Demographics gap filling must be fixed`)
           }
         } catch (outerDemoError) {
-          console.error(`[Background Complete] ❌ Demographics sync completely failed:`, outerDemoError)
+          console.error(`[Background Complete] ❌ Demographics gap filling completely failed:`, outerDemoError)
         }
       } catch (demoError) {
-        console.warn(`[Background Complete] ⚠️ Demographics enhancement failed:`, demoError)
+        console.warn(`[Background Complete] ⚠️ Demographics gap filling failed:`, demoError)
       }
     }
 
