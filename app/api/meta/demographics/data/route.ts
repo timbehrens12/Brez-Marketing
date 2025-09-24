@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', dbBreakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_end', finalDateTo)
+        .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
       data = result.data || []
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
             .eq('brand_id', brandId)
             .eq('breakdown_type', dbBreakdownType)
             .gte('date_range_start', finalDateFrom)
-            .lte('date_range_end', finalDateTo)
+            .lte('date_range_start', finalDateTo)
             .order('date_range_start', { ascending: false })
           
           if (matchedDeviceResult.data && matchedDeviceResult.data.length > 0) {
@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', breakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_end', finalDateTo)
+        .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
       data = result.data || []
