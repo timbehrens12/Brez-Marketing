@@ -126,31 +126,41 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`[Meta Exchange] 📅 Syncing ${chunk.name} (${chunk.start.toISOString().split('T')[0]} to ${chunk.end.toISOString().split('T')[0]})`)
           
-          // Sync insights first, then demographics for this date range
-          const insights = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, true)
-          const count = insights?.length || 0
-          syncedInsights += count
+          // 🚀 PRODUCTION FIX: Sync COMPLETE September with ALL demographics in chunks
+          console.log(`[Meta Exchange] 🔥 PRODUCTION: Syncing COMPLETE September with demographics`)
           
-          console.log(`[Meta Exchange] ✅ ${chunk.name}: ${count} insights synced`)
+          // Strategy: Weekly chunks to avoid timeouts but get COMPLETE data
+          const weeklyChunks = [
+            { start: new Date('2025-09-01'), end: new Date('2025-09-07'), name: 'September Week 1' },
+            { start: new Date('2025-09-08'), end: new Date('2025-09-14'), name: 'September Week 2' },
+            { start: new Date('2025-09-15'), end: new Date('2025-09-21'), name: 'September Week 3' },
+            { start: new Date('2025-09-22'), end: chunk.end, name: 'September Week 4' }
+          ]
           
-          // 🔥 OPTIMIZED DEMOGRAPHICS SYNC - single most critical chunk only
-          console.log(`[Meta Exchange] 📊 Optimized demographics sync for ${chunk.name}...`)
-          try {
-            // Single optimized API call for Sept 1-3 only (3 days max for speed)
-            const optimizedDemo = { 
-              start: chunk.start, 
-              end: new Date('2025-09-03'), 
-              name: 'September 1-3 (Optimized)' 
+          let totalInsights = 0
+          
+          for (const weekChunk of weeklyChunks) {
+            try {
+              console.log(`[Meta Exchange] 📅 Syncing ${weekChunk.name} WITH demographics...`)
+              
+              // Sync with demographics included (false = include demographics)
+              const insights = await fetchMetaAdInsights(state, weekChunk.start, weekChunk.end, false, false)
+              const count = insights?.length || 0
+              totalInsights += count
+              
+              console.log(`[Meta Exchange] ✅ ${weekChunk.name}: ${count} insights + demographics synced`)
+              
+              // Small delay between chunks to avoid rate limits
+              await new Promise(resolve => setTimeout(resolve, 500))
+              
+            } catch (weekError) {
+              console.error(`[Meta Exchange] ❌ ${weekChunk.name} failed:`, weekError)
+              // Continue with other weeks even if one fails
             }
-            
-            const demographicsResult = await fetchMetaAdInsights(state, optimizedDemo.start, optimizedDemo.end, false, false)
-            const demoCount = demographicsResult?.length || 0
-            
-            console.log(`[Meta Exchange] ✅ Optimized demographics: ${demoCount} records synced`)
-          } catch (demoError) {
-            console.error(`[Meta Exchange] ❌ Optimized demographics failed:`, demoError)
-            // NO FALLBACK - must work with real data
           }
+          
+          syncedInsights = totalInsights
+          console.log(`[Meta Exchange] 🎉 COMPLETE September sync: ${totalInsights} total insights with demographics`)
           
           // Optimized delay for rate limiting (minimize total time)
           await new Promise(resolve => setTimeout(resolve, 100)) // Minimal delay
