@@ -89,13 +89,17 @@ export async function POST(request: NextRequest) {
     console.log(`[Meta Exchange] 🧨 NUCLEAR: Wiping ALL old Meta data for consistency...`)
     try {
       // Wipe ALL Meta tables to ensure consistent date ranges
-      await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
-      await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
-      await supabase.from('meta_adsets').delete().eq('brand_id', state)
-      await supabase.from('meta_campaigns').delete().eq('brand_id', state)
-      await supabase.from('meta_ads').delete().eq('brand_id', state)
-      await supabase.from('meta_demographics').delete().eq('brand_id', state)
-      await supabase.from('meta_device_performance').delete().eq('brand_id', state)
+      const { error: e1 } = await supabase.from('meta_ad_insights').delete().eq('brand_id', state)
+      const { error: e2 } = await supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state)
+      const { error: e3 } = await supabase.from('meta_adsets').delete().eq('brand_id', state)
+      const { error: e4 } = await supabase.from('meta_campaigns').delete().eq('brand_id', state)
+      const { error: e5 } = await supabase.from('meta_ads').delete().eq('brand_id', state)
+      const { error: e6 } = await supabase.from('meta_demographics').delete().eq('brand_id', state)
+      const { error: e7 } = await supabase.from('meta_device_performance').delete().eq('brand_id', state)
+      
+      if (e1 || e2 || e3 || e4 || e5 || e6 || e7) {
+        console.warn(`[Meta Exchange] ⚠️ Some wipe errors:`, { e1, e2, e3, e4, e5, e6, e7 })
+      }
       
       console.log(`[Meta Exchange] ✅ ALL Meta data nuked for consistent rebuild`)
     } catch (nukeError) {
