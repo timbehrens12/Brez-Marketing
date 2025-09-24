@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
           if (!demoSuccess) {
             console.error(`[Background Complete] ❌ NO FALLBACK DATA - Demographics sync must be fixed`)
           }
+        } catch (outerDemoError) {
+          console.error(`[Background Complete] ❌ Demographics sync completely failed:`, outerDemoError)
         }
       } catch (demoError) {
         console.warn(`[Background Complete] ⚠️ Demographics enhancement failed:`, demoError)
