@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
           .eq('brand_id', brandId)
           .eq('breakdown_type', breakdownType)
           .gte('date_range_start', finalDateFrom)
-          .lte('date_range_end', finalDateTo)
+          .lte('date_range_start', finalDateTo)
           .order('date_range_start', { ascending: false })
         
         if (matchedDataResult.data && matchedDataResult.data.length > 0) {
