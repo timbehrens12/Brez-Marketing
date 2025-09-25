@@ -47,10 +47,45 @@ async function handleBudgetRequest(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Check if we need to refresh based on data freshness
-    let shouldFetchFromMeta = forceRefresh;
+    // 🔥 FORCE REFRESH: Always use Meta API when forceRefresh=true (like Total Budget API)
+    if (forceRefresh) {
+      console.log(`[Campaign Budget API] 🔥 forceRefresh=true - bypassing database and fetching fresh Meta API data`);
+      
+      // Import the Meta budget fetching function
+      const { fetchMetaCampaignBudgets } = await import('@/lib/services/meta-campaign-budgets');
+      
+      try {
+        const metaResult = await fetchMetaCampaignBudgets(brandId, true);
+        
+        if (metaResult.success && metaResult.budgets && metaResult.budgets.length > 0) {
+          // Check if Meta API returns non-zero budgets
+          const hasNonZeroBudgets = metaResult.budgets.some((budget: any) => budget.budget > 0);
+          
+          if (hasNonZeroBudgets) {
+            console.log(`[Campaign Budget API] ✅ Meta API forceRefresh success - returning fresh data`);
+            return NextResponse.json({
+              success: true,
+              message: 'Campaign budgets fetched from Meta API (forceRefresh)',
+              budgets: metaResult.budgets,
+              timestamp: new Date().toISOString(),
+              refreshMethod: 'meta-api-force-refresh'
+            });
+          } else {
+            console.log(`[Campaign Budget API] ⚠️ Meta API returned $0 budgets during forceRefresh - falling back to fresh database query`);
+          }
+        } else {
+          console.log(`[Campaign Budget API] ⚠️ Meta API failed during forceRefresh - falling back to fresh database query`);
+        }
+      } catch (metaError) {
+        console.error(`[Campaign Budget API] ❌ Meta API error during forceRefresh:`, metaError);
+        console.log(`[Campaign Budget API] 📊 Falling back to fresh database query`);
+      }
+    }
+
+    // Check if we need to refresh based on data freshness (only when not forceRefresh)
+    let shouldFetchFromMeta = false;
     
-    if (!shouldFetchFromMeta) {
+    if (!forceRefresh) {
       // Check when we last updated campaign budgets
       const { data: lastUpdateCheck } = await supabase
         .from('meta_adsets')
@@ -72,11 +107,11 @@ async function handleBudgetRequest(request: NextRequest) {
       } else {
         console.log(`[API] Budget data is fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database`);
       }
-      } else {
-        console.log(`[API] No recent budget data found, fetching from Meta API`);
-        shouldFetchFromMeta = true;
-      }
+    } else {
+      console.log(`[API] No recent budget data found, fetching from Meta API`);
+      shouldFetchFromMeta = true;
     }
+  }
 
     try {
         // META API FIRST: Fetch real budget data when requested or when data is stale
