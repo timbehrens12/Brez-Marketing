@@ -1080,15 +1080,22 @@ const CampaignWidget = ({
       const url = `/api/meta/campaign-budgets?brandId=${brandId}${cacheBuster}`;
       console.log(`[CampaignWidget] 🚀 Calling campaign budget API with EXTREME cache buster:`, url);
       
+      // 🚨 NUCLEAR OPTION: Use POST method which cannot be cached by any proxy/CDN
       const response = await fetch(url, { 
+        method: 'POST', // POST requests cannot be cached
         signal: controller.signal,
-        cache: 'no-store', // Always bypass cache due to caching issues
         headers: {
+          'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
           'Pragma': 'no-cache',
-          'Expires': '0',
-          'If-None-Match': '*'
-        }
+          'Expires': '0'
+        },
+        body: JSON.stringify({
+          brandId,
+          forceRefresh,
+          timestamp: Date.now(),
+          nonce: Math.random().toString(36)
+        })
       });
       
       if (!isMountedRef.current) return;

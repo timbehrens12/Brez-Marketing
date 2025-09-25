@@ -9,7 +9,16 @@ export const dynamic = 'force-dynamic'
  * API endpoint to get current budgets for all Meta campaigns
  * This always returns the most up-to-date budget values directly from the database
  */
+// Support both GET and POST to bypass caching issues
 export async function GET(request: NextRequest) {
+  return handleBudgetRequest(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleBudgetRequest(request);
+}
+
+async function handleBudgetRequest(request: NextRequest) {
   try {
     const { userId } = auth()
     
@@ -22,6 +31,8 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const forceRefresh = url.searchParams.get('forceRefresh') === 'true'
     
+    // Log request method for debugging
+    console.log(`[Campaign Budget API] 🔍 ${request.method} request received for brandId: ${brandId}`)
     console.log(`[Campaign Budget API] 🚀 START - brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
     
     if (!brandId) {
