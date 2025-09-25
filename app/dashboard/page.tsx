@@ -638,11 +638,18 @@ export default function DashboardPage() {
       }
     }, 60000); // Check every minute
     
-    // Also check when the page becomes visible (user switches back to tab)
+    // Check when the page becomes visible (only for actual tab switches, not mouse movement)
+    let lastVisibilityState = document.visibilityState;
     const handleVisibilityChange = () => {
-      if (!document.hidden && selectedBrandId && !cancelled) {
+      const currentVisibility = document.visibilityState;
+      
+      // Only trigger on actual visibility state changes (not mouse movements)
+      if (currentVisibility === 'visible' && lastVisibilityState === 'hidden' && selectedBrandId && !cancelled) {
+        console.log('[Dashboard] Tab became visible after being hidden - checking for new day');
         checkForNewDay();
       }
+      
+      lastVisibilityState = currentVisibility;
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
