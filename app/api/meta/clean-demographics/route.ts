@@ -38,28 +38,40 @@ export async function POST(request: NextRequest) {
     console.log(`[Clean Demographics] Date ranges found:`, 
       [...new Set(beforeClean?.map(d => d.date_range_start))].slice(0, 10))
 
-    // Delete ALL demographics data that's NOT September 2025
-    const { data: deletedDemo, error: demoError } = await supabase
+    // Delete demographics data BEFORE September 1st
+    const { data: deletedDemoBefore, error: demoErrorBefore } = await supabase
       .from('meta_demographics')
       .delete()
       .eq('brand_id', brandId)
-      .not('date_range_start', 'gte', '2025-09-01')
-      .or('date_range_start.lt.2025-09-01,date_range_start.gt.2025-09-30')
+      .lt('date_range_start', '2025-09-01')
 
-    if (demoError) {
-      console.error('[Clean Demographics] Error deleting old demographics:', demoError)
+    // Delete demographics data AFTER September 30th  
+    const { data: deletedDemoAfter, error: demoErrorAfter } = await supabase
+      .from('meta_demographics')
+      .delete()
+      .eq('brand_id', brandId)
+      .gt('date_range_start', '2025-09-30')
+
+    if (demoErrorBefore || demoErrorAfter) {
+      console.error('[Clean Demographics] Error deleting old demographics:', demoErrorBefore || demoErrorAfter)
     }
 
-    // Delete ALL device performance data that's NOT September 2025  
-    const { data: deletedDevice, error: deviceError } = await supabase
+    // Delete device data BEFORE September 1st
+    const { data: deletedDeviceBefore, error: deviceErrorBefore } = await supabase
       .from('meta_device_performance')
       .delete()
       .eq('brand_id', brandId)
-      .not('date_range_start', 'gte', '2025-09-01')
-      .or('date_range_start.lt.2025-09-01,date_range_start.gt.2025-09-30')
+      .lt('date_range_start', '2025-09-01')
 
-    if (deviceError) {
-      console.error('[Clean Demographics] Error deleting old device data:', deviceError)
+    // Delete device data AFTER September 30th
+    const { data: deletedDeviceAfter, error: deviceErrorAfter } = await supabase
+      .from('meta_device_performance')
+      .delete()
+      .eq('brand_id', brandId)
+      .gt('date_range_start', '2025-09-30')
+
+    if (deviceErrorBefore || deviceErrorAfter) {
+      console.error('[Clean Demographics] Error deleting old device data:', deviceErrorBefore || deviceErrorAfter)
     }
 
     // Check what remains after cleaning
