@@ -34,10 +34,41 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
+    // Check if we need to refresh based on data freshness
+    let shouldFetchFromMeta = forceRefresh;
+    
+    if (!shouldFetchFromMeta) {
+      // Check when we last updated campaign budgets
+      const { data: lastUpdateCheck } = await supabase
+        .from('meta_adsets')
+        .select('updated_at')
+        .eq('brand_id', brandId)
+        .eq('status', 'ACTIVE')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+        
+      if (lastUpdateCheck && lastUpdateCheck.length > 0) {
+        const lastUpdate = new Date(lastUpdateCheck[0].updated_at);
+        const now = new Date();
+        const minutesSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+        
+        // If data is older than 5 minutes, fetch fresh data
+        if (minutesSinceUpdate > 5) {
+          console.log(`[API] Budget data is ${minutesSinceUpdate.toFixed(1)} minutes old, fetching fresh data from Meta API`);
+          shouldFetchFromMeta = true;
+        } else {
+          console.log(`[API] Budget data is fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database`);
+        }
+      } else {
+        console.log(`[API] No recent budget data found, fetching from Meta API`);
+        shouldFetchFromMeta = true;
+      }
+    }
+
     try {
-      // META API FIRST: Fetch real budget data when requested
-      if (forceRefresh) { // Re-enabled Meta API for real budget data
-        console.log(`[API] Force refresh requested, attempting to fetch fresh budget data from Meta API`)
+      // META API FIRST: Fetch real budget data when requested or when data is stale
+      if (shouldFetchFromMeta) {
+        console.log(`[API] Fetching fresh budget data from Meta API (forceRefresh: ${forceRefresh}, shouldFetch: ${shouldFetchFromMeta})`)
         const result = await fetchMetaCampaignBudgets(brandId, true)
         
         if (result.success && result.budgets && result.budgets.length > 0) {
@@ -57,7 +88,7 @@ export async function GET(request: NextRequest) {
           console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
         }
       } else {
-        console.log(`[API] No force refresh requested, using database fallback for performance`)
+        console.log(`[API] Using database data (fresh enough)`)
       }
     } catch (metaError) {
       console.warn(`[API] Meta API error, falling back to database:`, metaError)
