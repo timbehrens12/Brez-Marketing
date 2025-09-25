@@ -323,6 +323,28 @@ export async function GET(request: NextRequest) {
           .order('updated_at', { ascending: false }) // Get newest records first
           .limit(1000); // Ensure no limits
 
+        // 🔍 CONVERSIONS DEBUG - Meta Metrics API
+        console.group('🔍 META METRICS API - Conversions Data Debug');
+        console.log('📊 Daily Insights Query Result:', {
+          brandId,
+          dateRange: `${fromDate} to ${toDate}`,
+          recordCount: dailyStatsData?.length || 0,
+          hasError: !!dailyStatsError
+        });
+        if (dailyStatsData && dailyStatsData.length > 0) {
+          const conversionsData = dailyStatsData.map(insight => ({
+            adId: insight.ad_id,
+            date: insight.date,
+            conversions: insight.conversions,
+            spent: insight.spent,
+            updatedAt: insight.updated_at
+          }));
+          console.log('📈 Conversions by Ad/Date:', conversionsData);
+          const totalConversions = dailyStatsData.reduce((sum, insight) => sum + (Number(insight.conversions) || 0), 0);
+          console.log('🎯 Total Conversions Across All Ads:', totalConversions);
+        }
+        console.groupEnd();
+
         if (dailyStatsError) {
           console.error(`[API /api/metrics/meta] Error fetching from meta_ad_daily_insights:`, dailyStatsError);
       error = dailyStatsError;

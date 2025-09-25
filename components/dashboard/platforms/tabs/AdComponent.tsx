@@ -651,9 +651,25 @@ export function AdComponent({
                       break;
                     case 'conversions':
                       value = ad.conversions;
+                      // 🔍 CONVERSIONS DEBUG - Individual Ad
+                      console.log(`🔍 Ad ${ad.ad_name} (${ad.ad_id}) Conversions:`, {
+                        rawConversions: ad.conversions,
+                        displayValue: value,
+                        spent: ad.spent,
+                        costPerConversion: ad.cost_per_conversion,
+                        adsetId: ad.adset_id
+                      });
                       break;
                     case 'cost_per_conversion':
                       value = ad.cost_per_conversion;
+                      // 🔍 CONVERSIONS DEBUG - Ad Cost Per Conversion
+                      console.log(`🔍 Ad ${ad.ad_name} Cost/Conv:`, {
+                        conversions: ad.conversions,
+                        spent: ad.spent,
+                        rawCostPerConversion: ad.cost_per_conversion,
+                        calculatedCostPerConversion: (ad.conversions || 0) > 0 ? (ad.spent || 0) / (ad.conversions || 1) : 0,
+                        displayValue: value
+                      });
                       break;
                     case 'reach':
                       value = ad.reach;

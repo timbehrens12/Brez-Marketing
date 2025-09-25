@@ -405,6 +405,18 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
+              // 🔍 CONVERSIONS DEBUG - Ad Creative Breakdown
+              console.log(`🔍 AdCreative ${ad.ad_name} (${ad.ad_id}) Debug:`, {
+                conversions: ad.conversions,
+                spent: ad.spent,
+                costPerConversion: ad.cost_per_conversion,
+                calculatedROAS: roas,
+                campaignId: ad.campaign_id,
+                adsetId: ad.adset_id,
+                status: ad.status,
+                effectiveStatus: ad.effective_status
+              });
+              
               return (
                 <Card key={ad.ad_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
                                               shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col">

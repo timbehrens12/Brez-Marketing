@@ -1554,6 +1554,28 @@ const CampaignWidget = ({
         
         // 🔧 FIXED: For date-filtered views, use aggregated data consistently
         // If no insights in range, all metrics should be 0 to avoid showing stale data
+        // 🔍 CONVERSIONS DEBUG - Campaign Level
+        console.group(`🔍 CONVERSIONS DEBUG - Campaign: ${campaign.campaign_name} (${campaign.campaign_id})`);
+        console.log('📊 Raw Campaign Data:', {
+          originalConversions: campaign.conversions,
+          originalSpent: campaign.spent,
+          originalCostPerConversion: campaign.cost_per_conversion
+        });
+        console.log('📈 Daily Insights Aggregation:', {
+          insightsCount: campaign.daily_insights?.length || 0,
+          insightsInRange,
+          aggregatedConversions,
+          aggregatedSpent,
+          calculatedCostPerConversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0
+        });
+        console.log('🎯 Final Campaign Metrics:', {
+          finalConversions: aggregatedConversions,
+          finalSpent: insightsInRange > 0 ? aggregatedSpent : 0,
+          finalCostPerConversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+          hasDataInRange: insightsInRange > 0
+        });
+        console.groupEnd();
+
         return {
           ...campaign,
           spent: insightsInRange > 0 ? aggregatedSpent : 0,
@@ -2594,6 +2616,23 @@ const CampaignWidget = ({
                         const aggregateCpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
                         const aggregateCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) : 0; // Removed * 100
                         const aggregateCostPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0; // 🎯 FIXED: Already correct
+
+                        // 🔍 CONVERSIONS DEBUG - AdSet Aggregation Level
+                        console.group(`🔍 CONVERSIONS DEBUG - AdSets for Campaign: ${campaign.campaign_id}`);
+                        console.log('📊 AdSet Individual Conversions:', adSets.map(adSet => ({
+                          adSetId: adSet.id,
+                          adSetName: adSet.adset_name,
+                          conversions: adSet.conversions,
+                          spent: adSet.spent,
+                          costPerConversion: adSet.cost_per_conversion
+                        })));
+                        console.log('📈 AdSet Aggregation Results:', {
+                          adSetCount: adSets.length,
+                          totalConversions,
+                          totalSpent,
+                          aggregateCostPerConversion
+                        });
+                        console.groupEnd();
                         const aggregateRoas = 0; // Needs value calculation
 
                         aggregateMetrics = {
@@ -2883,6 +2922,15 @@ const CampaignWidget = ({
                                                       break;
                                                     case 'conversions':
                                                       value = adSet.conversions || 0; // Use adSet
+                                                      // 🔍 CONVERSIONS DEBUG - Individual AdSet
+                                                      if (metricId === 'conversions') {
+                                                        console.log(`🔍 AdSet ${adSet.adset_name} (${adSet.id}) Conversions:`, {
+                                                          rawConversions: adSet.conversions,
+                                                          displayValue: value,
+                                                          spent: adSet.spent,
+                                                          costPerConversion: adSet.cost_per_conversion
+                                                        });
+                                                      }
                                                       break;
                                                     case 'cost_per_conversion':
                                                       // 🎯 FIXED: Only show cost per conversion if there are actual conversions
@@ -2891,6 +2939,14 @@ const CampaignWidget = ({
                                                       } else {
                                                         value = 0; // No conversions = $0.00 cost per conversion
                                                       }
+                                                      // 🔍 CONVERSIONS DEBUG - Cost Per Conversion
+                                                      console.log(`🔍 AdSet ${adSet.adset_name} Cost/Conv:`, {
+                                                        conversions: adSet.conversions,
+                                                        spent: adSet.spent,
+                                                        rawCostPerConversion: adSet.cost_per_conversion,
+                                                        calculatedCostPerConversion: (adSet.conversions || 0) > 0 ? (adSet.spent || 0) / (adSet.conversions || 1) : 0,
+                                                        displayValue: value
+                                                      });
                                                       break;
                                                     case 'reach':
                                                       value = adSet.reach || 0; // Use adSet

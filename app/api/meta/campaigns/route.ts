@@ -384,6 +384,27 @@ export async function GET(request: NextRequest) {
         .order('date', { ascending: true }) // Force fresh ordering
         .limit(1000); // Ensure no row limits
       
+      // 🔍 CONVERSIONS DEBUG - Campaign Daily Stats API
+      console.group('🔍 CAMPAIGNS API - Conversions Data Debug');
+      console.log('📊 Campaign Daily Stats Query Result:', {
+        brandId,
+        dateRange: `${normalizedFromDate} to ${normalizedToDate}`,
+        recordCount: dailyAdStats?.length || 0,
+        hasError: !!statsError
+      });
+      if (dailyAdStats && dailyAdStats.length > 0) {
+        const conversionsData = dailyAdStats.map(stat => ({
+          campaignId: stat.campaign_id,
+          date: stat.date,
+          conversions: stat.conversions,
+          spend: stat.spend
+        }));
+        console.log('📈 Conversions by Campaign/Date:', conversionsData);
+        const totalConversions = dailyAdStats.reduce((sum, stat) => sum + (Number(stat.conversions) || 0), 0);
+        console.log('🎯 Total Conversions Across All Campaigns:', totalConversions);
+      }
+      console.groupEnd();
+      
       if (statsError) {
         console.error('Error fetching daily campaign stats:', statsError)
         return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
