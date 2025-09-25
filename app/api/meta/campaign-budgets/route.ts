@@ -78,10 +78,11 @@ async function handleBudgetRequest(request: NextRequest) {
         }
       } catch (metaError) {
         console.error(`[Campaign Budget API] ❌ Meta API error during forceRefresh:`, metaError);
-        console.log(`[Campaign Budget API] 📊 Falling back to fresh adset data fetch`);
+        console.log(`[Campaign Budget API] 📊 Will try fresh insights sync instead`);
       }
 
-      // 🔥 FORCE REFRESH FALLBACK: If campaign-level budgets are $0, fetch fresh Meta data
+      // 🔥 CONSOLIDATED FALLBACK: Always try fresh insights sync when forceRefresh=true
+      // This handles both $0 budget cases and rate limit cases
       console.log(`[Campaign Budget API] 🔄 forceRefresh fallback - fetching fresh Meta insights to update adset data`);
       console.log(`[Campaign Budget API] 🚨 This will sync fresh adset statuses and budgets from Meta API`);
       try {
@@ -96,6 +97,7 @@ async function handleBudgetRequest(request: NextRequest) {
         console.log(`[Campaign Budget API] 🔄 Database should now have correct adset statuses and budgets`);
       } catch (insightsError) {
         console.error(`[Campaign Budget API] ❌ Error fetching fresh Meta insights:`, insightsError);
+        console.log(`[Campaign Budget API] ⚠️ Proceeding with database aggregation using existing data`);
       }
     }
 
