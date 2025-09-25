@@ -1111,7 +1111,7 @@ export function MetaTab2({
           isManuallyRefreshing={false}
           disableAutoFetch={isLoadingAllMetaWidgets}
           unifiedLoading={isLoadingAllMetaWidgets}
-          forceRefresh={true}
+          forceRefresh={false}
         />
 
         {/* Total Reach */}
