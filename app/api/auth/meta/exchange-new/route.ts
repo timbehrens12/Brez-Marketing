@@ -90,29 +90,63 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange NEW] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🧨 NUCLEAR WIPE: Delete all existing Meta data
+    // 🧨 NUCLEAR WIPE: Delete all existing Meta data (including hidden tables)
     console.log(`[Meta Exchange NEW] 🧨 NUCLEAR WIPE: Deleting all old Meta data...`)
     try {
       await Promise.all([
         supabase.from('meta_ad_insights').delete().eq('brand_id', state),
+        supabase.from('meta_ad_daily_insights').delete().eq('brand_id', state), // This was missing!
         supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state),
         supabase.from('meta_adsets').delete().eq('brand_id', state),
         supabase.from('meta_campaigns').delete().eq('brand_id', state),
         supabase.from('meta_ads').delete().eq('brand_id', state),
         supabase.from('meta_demographics').delete().eq('brand_id', state),
-        supabase.from('meta_device_performance').delete().eq('brand_id', state)
+        supabase.from('meta_device_performance').delete().eq('brand_id', state),
+        supabase.from('meta_campaign_daily_stats').delete().eq('brand_id', state)
       ])
-      console.log(`[Meta Exchange NEW] ✅ All Meta data wiped`)
+      console.log(`[Meta Exchange NEW] ✅ All Meta data wiped (including hidden tables)`)
     } catch (nukeError) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🔥 WORKING SYNC: Use emergency sync logic that actually works
-    console.log(`[Meta Exchange NEW] 🔥 WORKING SYNC: Using proven emergency sync logic`)
+    // 🎯 COMPLETE SEPTEMBER SYNC: Use the same logic that worked in nuclear reset
+    console.log(`[Meta Exchange NEW] 🎯 COMPLETE SEPTEMBER SYNC: Using proven nuclear reset logic`)
     
     let syncedInsights = 0
     try {
-      // Sync current month only (last 30 days)
+      // Import the SAME Meta service that worked in nuclear reset
+      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+      
+      // Use SAME date range as nuclear reset: September 1-24
+      const startDate = new Date('2025-09-01')
+      const endDate = new Date('2025-09-24') // Up to today
+      
+      console.log(`[Meta Exchange NEW] 🎯 Syncing September 1-24 WITH demographics: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+      
+      // Call the SAME Meta service that worked perfectly in nuclear reset
+      const result = await fetchMetaAdInsights(
+        state, // brandId
+        startDate, 
+        endDate,
+        false, // dryRun = false (actually sync)
+        false  // skipDemographics = false (include demographics)
+      )
+      
+      console.log(`[Meta Exchange NEW] 📊 Complete sync result:`, result)
+      
+      if (result && result.success) {
+        syncedInsights = result.count || 0
+        console.log(`[Meta Exchange NEW] ✅ COMPLETE SYNC SUCCESS: ${syncedInsights} insights + demographics + device data`)
+      } else {
+        console.error(`[Meta Exchange NEW] ❌ Complete sync failed:`, result?.error || 'Unknown error')
+        // Fall back to basic sync if the advanced sync fails
+        throw new Error(`Advanced sync failed: ${result?.error || 'Unknown error'}`)
+      }
+      
+    } catch (syncError) {
+      console.error(`[Meta Exchange NEW] ❌ Complete sync failed, falling back to basic sync:`, syncError)
+      
+      // FALLBACK: Basic insights sync (same as before)
       const today = new Date()
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(today.getDate() - 30)
@@ -120,63 +154,41 @@ export async function POST(request: NextRequest) {
       const since = thirtyDaysAgo.toISOString().split('T')[0]
       const until = today.toISOString().split('T')[0]
       
-      console.log(`[Meta Exchange NEW] 📅 Syncing current month: ${since} to ${until}`)
+      console.log(`[Meta Exchange NEW] 📅 FALLBACK: Basic sync ${since} to ${until}`)
       
-      // Use the WORKING Meta API call
       const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?fields=impressions,clicks,spend,reach,date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,account_id,ctr,cpc,conversions&time_range={"since":"${since}","until":"${until}"}&level=ad&access_token=${tokenData.access_token}`
       
-      console.log('[Meta Exchange NEW] 🔄 Fetching insights from Meta API...')
       const insightsResponse = await fetch(insightsUrl)
       const insightsData = await insightsResponse.json()
       
-      if (insightsData.error) {
-        console.error('[Meta Exchange NEW] ❌ Meta API error:', insightsData.error)
-      } else if (insightsData.data && insightsData.data.length > 0) {
-        console.log(`[Meta Exchange NEW] ✅ Found ${insightsData.data.length} insights from Meta API`)
+      if (insightsData.data && insightsData.data.length > 0) {
+        // Store basic insights
+        const insightRecords = insightsData.data.map(insight => ({
+          brand_id: state,
+          connection_id: connectionData.id,
+          campaign_id: insight.campaign_id,
+          campaign_name: insight.campaign_name,
+          adset_id: insight.adset_id,
+          adset_name: insight.adset_name,
+          ad_id: insight.ad_id,
+          ad_name: insight.ad_name,
+          account_id: insight.account_id || accountId.replace('act_', ''),
+          date: insight.date_start,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          spend: parseFloat(insight.spend) || 0,
+          reach: parseInt(insight.reach) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          conversions: parseFloat(insight.conversions) || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
         
-        // Store insights in database
-        const insightRecords = []
-        for (const insight of insightsData.data) {
-          insightRecords.push({
-            brand_id: state,
-            connection_id: connectionData.id,
-            campaign_id: insight.campaign_id,
-            campaign_name: insight.campaign_name,
-            adset_id: insight.adset_id,
-            adset_name: insight.adset_name,
-            ad_id: insight.ad_id,
-            ad_name: insight.ad_name,
-            account_id: insight.account_id || accountId.replace('act_', ''),
-            date: insight.date_start,
-            impressions: parseInt(insight.impressions) || 0,
-            clicks: parseInt(insight.clicks) || 0,
-            spend: parseFloat(insight.spend) || 0,
-            reach: parseInt(insight.reach) || 0,
-            ctr: parseFloat(insight.ctr) || 0,
-            cpc: parseFloat(insight.cpc) || 0,
-            conversions: parseFloat(insight.conversions) || 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-        }
-        
-        console.log('[Meta Exchange NEW] 💾 Storing insights in database...')
-        const { error: insertError } = await supabase
-          .from('meta_ad_insights')
-          .insert(insightRecords)
-
-        if (insertError) {
-          console.error('[Meta Exchange NEW] ❌ Failed to store insights:', insertError)
-        } else {
-          syncedInsights = insightRecords.length
-          console.log(`[Meta Exchange NEW] ✅ Stored ${syncedInsights} insights`)
-        }
-      } else {
-        console.log('[Meta Exchange NEW] ⚠️ No insights data found from Meta API')
+        await supabase.from('meta_ad_insights').insert(insightRecords)
+        syncedInsights = insightRecords.length
+        console.log(`[Meta Exchange NEW] ✅ FALLBACK: Stored ${syncedInsights} basic insights`)
       }
-      
-    } catch (syncError) {
-      console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
     }
 
     // 🔄 CREATE CAMPAIGNS AND ADSETS: Manual creation (aggregation function is broken)
