@@ -204,13 +204,63 @@ export async function GET(request: NextRequest) {
     
     console.log(`[API] Aggregated campaign budgets:`, budgets)
     
-    // 🔍 DEBUG: Check if any budget is 0 and we should try refreshing from Meta
-    const hasZeroBudgets = Object.values(budgets).some(budget => budget.total === 0)
-    if (hasZeroBudgets && adsets && adsets.length > 0) {
-      console.warn(`[API] 🚨 Found campaigns with $0 budget but adsets exist - database might be stale:`)
-      adsets.forEach(adset => {
-        console.log(`  Adset: ${adset.adset_name}, Budget: $${adset.budget}, Status: ${adset.status}, Campaign: ${adset.campaign_id}`)
-      })
+    // 🔍 DEBUG: Check if we should fetch fresh adset data from Meta API
+    const hasMultipleAdsets = Object.values(budgets).some(budget => budget.count > 1)
+    if (hasMultipleAdsets && shouldFetchFromMeta) {
+      console.warn(`[Campaign Budget API] 🔄 Found ${Object.values(budgets)[0]?.count} adsets, fetching fresh status from Meta API to ensure accuracy`)
+      
+      try {
+        // Import the meta service function
+        const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
+        
+        // Fetch fresh adset data for each campaign to get current statuses
+        for (const [campaignId, budget] of Object.entries(budgets)) {
+          if (budget.count > 1) {
+            console.log(`[Campaign Budget API] 🔄 Fetching fresh adsets for campaign ${campaignId}`)
+            await fetchMetaAdSets(brandId, campaignId, true)
+          }
+        }
+        
+        // Re-query database with fresh data
+        console.log(`[Campaign Budget API] 🔄 Re-querying database after Meta sync`)
+        const { data: freshAdsets, error: freshError } = await supabase
+          .from('meta_adsets')
+          .select('campaign_id, budget, budget_type, status, adset_name')
+          .eq('brand_id', brandId)
+          .in('campaign_id', campaignIds)
+          .eq('status', 'ACTIVE')
+        
+        if (!freshError && freshAdsets) {
+          console.log(`[Campaign Budget API] 🔄 Fresh query found ${freshAdsets.length} active adsets`)
+          
+          // Recalculate budgets with fresh data
+          const freshBudgets: { [campaignId: string]: { total: number, type: string, count: number } } = {}
+          
+          // Initialize all campaigns with 0
+          campaigns.forEach(campaign => {
+            freshBudgets[campaign.campaign_id] = { total: 0, type: 'daily', count: 0 }
+          })
+          
+          // Sum up fresh adset budgets
+          freshAdsets.forEach(adset => {
+            const adsetBudget = parseFloat(adset.budget) || 0
+            console.log(`[Campaign Budget API] 🔍 Fresh adset ${adset.adset_name} - campaign: ${adset.campaign_id}, budget: $${adsetBudget}, status: ${adset.status}`)
+            
+            if (adsetBudget > 0) {
+              freshBudgets[adset.campaign_id].total += adsetBudget
+              freshBudgets[adset.campaign_id].count += 1
+              freshBudgets[adset.campaign_id].type = adset.budget_type || 'daily'
+            }
+          })
+          
+          // Use fresh budgets
+          Object.assign(budgets, freshBudgets)
+          console.log(`[Campaign Budget API] 🔄 Updated budgets with fresh data:`, budgets)
+        }
+      } catch (metaSyncError) {
+        console.warn(`[Campaign Budget API] ⚠️ Failed to fetch fresh adset data:`, metaSyncError)
+        // Continue with database data
+      }
     }
     
     // Format budgets as array of objects to match expected CampaignWidget format
