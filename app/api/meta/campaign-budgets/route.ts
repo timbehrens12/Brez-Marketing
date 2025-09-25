@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
             })
           } else {
             console.warn(`[API] Meta API returned all $0 budgets - budgets are likely at adset level, falling back to adset aggregation`)
+            console.log(`[API] 🔍 About to query database fallback for brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
           }
         } else {
           console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
@@ -199,6 +200,15 @@ export async function GET(request: NextRequest) {
     })
     
     console.log(`[API] Aggregated campaign budgets:`, budgets)
+    
+    // 🔍 DEBUG: Check if any budget is 0 and we should try refreshing from Meta
+    const hasZeroBudgets = Object.values(budgets).some(budget => budget.total === 0)
+    if (hasZeroBudgets && adsets && adsets.length > 0) {
+      console.warn(`[API] 🚨 Found campaigns with $0 budget but adsets exist - database might be stale:`)
+      adsets.forEach(adset => {
+        console.log(`  Adset: ${adset.adset_name}, Budget: $${adset.budget}, Status: ${adset.status}, Campaign: ${adset.campaign_id}`)
+      })
+    }
     
     // Format budgets as array of objects to match expected CampaignWidget format
     const formattedBudgets = Object.entries(budgets).map(([campaignId, budget]) => ({
