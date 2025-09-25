@@ -1276,6 +1276,7 @@ const CampaignWidget = ({
       setTimeout(() => {
         if (isMountedRef.current && typeof onRefresh === 'function') {
           // Close any open dropdowns when global refresh is triggered to prevent UI issues
+          console.log('[CampaignWidget] Global refresh - closing dropdowns');
           setExpandedCampaign(null);
           setExpandedAdSet(null);
           
@@ -1372,16 +1373,15 @@ const CampaignWidget = ({
     }
   }, [brandId, fetchAdSets, campaignsWithAdSets, isMountedRef, isLoadingAdSets, expandedCampaign, refreshing, refreshInProgressRef]);
 
+  // Track previous date range to detect actual changes
+  const prevDateRangeRef = useRef<string>('');
+  
   // Add event listeners for date range changes
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
-    
-    // Close any open dropdowns when date range changes to prevent UI issues
-    setExpandedCampaign(null);
-    setExpandedAdSet(null);
     
     // Clear cached ad sets data for all campaigns when date range changes
     // console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
@@ -1398,6 +1398,22 @@ const CampaignWidget = ({
       return () => clearTimeout(timeoutId);
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
+
+  // Separate effect to close dropdowns only when date range actually changes
+  useEffect(() => {
+    if (!dateRange?.from || !dateRange?.to) return;
+    
+    const currentDateRange = `${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
+    
+    // Only close dropdowns if the date range actually changed
+    if (prevDateRangeRef.current && prevDateRangeRef.current !== currentDateRange) {
+      console.log('[CampaignWidget] Date range actually changed - closing dropdowns');
+      setExpandedCampaign(null);
+      setExpandedAdSet(null);
+    }
+    
+    prevDateRangeRef.current = currentDateRange;
+  }, [dateRange?.from, dateRange?.to]);
 
   // Add this function to update campaign statuses regularly
   useEffect(() => {
