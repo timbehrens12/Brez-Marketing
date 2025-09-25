@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const forceRefresh = url.searchParams.get('forceRefresh') === 'true'
     
+    console.log(`[Campaign Budget API] 🚀 START - brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
+    
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
@@ -66,10 +68,11 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      // META API FIRST: Fetch real budget data when requested or when data is stale
-      if (shouldFetchFromMeta) {
-        console.log(`[API] Fetching fresh budget data from Meta API (forceRefresh: ${forceRefresh}, shouldFetch: ${shouldFetchFromMeta})`)
-        const result = await fetchMetaCampaignBudgets(brandId, true)
+        // META API FIRST: Fetch real budget data when requested or when data is stale
+        if (shouldFetchFromMeta) {
+          console.log(`[Campaign Budget API] 🔄 Fetching fresh budget data from Meta API (forceRefresh: ${forceRefresh}, shouldFetch: ${shouldFetchFromMeta})`)
+          const result = await fetchMetaCampaignBudgets(brandId, true)
+          console.log(`[Campaign Budget API] 📊 Meta API result:`, { success: result.success, budgetCount: result.budgets?.length || 0 })
         
         if (result.success && result.budgets && result.budgets.length > 0) {
           // 🚨 CHECK: If Meta API returns $0 budgets, this means budgets are at adset level, not campaign level
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
           console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
         }
       } else {
-        console.log(`[API] Using database data (fresh enough)`)
+        console.log(`[Campaign Budget API] 📊 Using database data (fresh enough)`)
       }
     } catch (metaError) {
       console.warn(`[API] Meta API error, falling back to database:`, metaError)
@@ -222,10 +225,10 @@ export async function GET(request: NextRequest) {
       adset_count: budget.count
     }))
     
-    console.log(`[API] Returning database aggregated budgets:`, formattedBudgets)
+    console.log(`[Campaign Budget API] 📤 RETURNING database aggregated budgets:`, formattedBudgets)
     // 🔍 DEBUG: Log each formatted budget
     formattedBudgets.forEach(budget => {
-      console.log(`[API] 🔍 Database budget - campaign: ${budget.campaign_id}, budget: $${budget.budget}, formatted: ${budget.formatted_budget}, adsets: ${budget.adset_count}`)
+      console.log(`[Campaign Budget API] 🔍 Final budget - campaign: ${budget.campaign_id}, budget: $${budget.budget}, formatted: ${budget.formatted_budget}, adsets: ${budget.adset_count}`)
     })
     
     return NextResponse.json({
