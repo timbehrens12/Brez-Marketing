@@ -1165,7 +1165,7 @@ const CampaignWidget = ({
       console.log('[CampaignWidget] Fetching budget data on mount/brandId change (using cache first)');
       // 🚨 CRITICAL FIX: Don't show budget until API completes
       setIsLoadingBudgets(true);
-      fetchCurrentBudgets(false); // Changed from true to false - use cache first
+      fetchCurrentBudgets(true); // Force refresh to get latest Meta budget data
     } else {
       // If no brandId, no need to load budgets
       console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');

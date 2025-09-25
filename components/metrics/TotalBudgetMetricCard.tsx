@@ -118,7 +118,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     if (brandId && !hasInitialLoadRef.current) {
       console.log('[TotalMetaBudget] Initial mount - fetching budget data');
       // Use cached data on mount, force refresh only when forceRefresh prop is true
-      fetchTotalBudget(false) // Changed from true to false
+      fetchTotalBudget(true) // Force refresh to get latest Meta budget data
     }
   }, [brandId])
 
