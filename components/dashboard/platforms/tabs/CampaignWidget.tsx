@@ -710,28 +710,31 @@ const CampaignWidget = ({
             }
           }
           
-          // Dispatch events for budgets to update regardless of ad set count
-          logger.debug('[CampaignWidget] Dispatching status changed events');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          setTimeout(() => {
+          // Only dispatch events for budget updates when force refreshing (global refresh)
+          // Not when just fetching ad sets for dropdown expansion
+          if (forceRefresh) {
+            logger.debug('[CampaignWidget] Dispatching status changed events (force refresh)');
             window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
+              new CustomEvent('adSetStatusChanged', {
                 detail: {
                   brandId,
+                  campaignId,
                   timestamp: new Date().toISOString()
                 }
               })
             );
-          }, 100);
+            
+            setTimeout(() => {
+              window.dispatchEvent(
+                new CustomEvent('campaignStatusChanged', {
+                  detail: {
+                    brandId,
+                    timestamp: new Date().toISOString()
+                  }
+                })
+              );
+            }, 100);
+          }
         }
       } else {
         // Check if this is a rate limit error response
@@ -1703,7 +1706,7 @@ const CampaignWidget = ({
   };
 
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
-  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
+  const getCampaignBudget = useCallback((campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
     // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
     //   campaign_budget: campaign.budget,
     //   adset_budget_total: campaign.adset_budget_total,
@@ -1900,7 +1903,7 @@ const CampaignWidget = ({
       budget_type: 'daily',
       budget_source: 'fallback_estimate'
     };
-  };
+  }, [currentBudgets, expandedCampaign, isLoading, isSyncing, isLoadingBudgets, allCampaignAdSets]);
 
   // Function to refresh single campaign status
   const refreshCampaignStatus = useCallback(async (campaignId: string, force: boolean = false): Promise<void> => {
@@ -2653,9 +2656,11 @@ const CampaignWidget = ({
 
                         // 🔍 CONVERSIONS DEBUG - AdSet Aggregation Level
                         // DEBUG: Force conversions to 0 for adsets in this brand
+                        let adjustedTotalConversions = totalConversions;
+                        let adjustedAdSets = adSets;
                         if (brandId === '1a30f34b-b048-4f80-b880-6c61bd12c720') {
-                          totalConversions = 0;
-                          adSets = adSets.map(adSet => ({
+                          adjustedTotalConversions = 0;
+                          adjustedAdSets = adSets.map(adSet => ({
                             ...adSet,
                             conversions: 0,
                             cost_per_conversion: 0
@@ -2668,7 +2673,7 @@ const CampaignWidget = ({
                             clicks: totalClicks,
                             impressions: totalImpressions,
                             reach: totalReach, 
-                            conversions: totalConversions,
+                            conversions: adjustedTotalConversions,
                             cpc: aggregateCpc,
                             ctr: aggregateCtr,
                             cost_per_conversion: aggregateCostPerConversion,
