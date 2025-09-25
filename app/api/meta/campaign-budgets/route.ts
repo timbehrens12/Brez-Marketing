@@ -83,6 +83,7 @@ async function handleBudgetRequest(request: NextRequest) {
 
       // 🔥 FORCE REFRESH FALLBACK: If campaign-level budgets are $0, fetch fresh Meta data
       console.log(`[Campaign Budget API] 🔄 forceRefresh fallback - fetching fresh Meta insights to update adset data`);
+      console.log(`[Campaign Budget API] 🚨 This will sync fresh adset statuses and budgets from Meta API`);
       try {
         const { fetchMetaAdInsights } = await import('@/lib/services/meta-service');
         const today = new Date();
@@ -92,6 +93,7 @@ async function handleBudgetRequest(request: NextRequest) {
         // Fetch fresh insights for the last 2 days to update adset statuses and budgets
         await fetchMetaAdInsights(brandId, yesterday, today, false, true);
         console.log(`[Campaign Budget API] ✅ Fresh Meta insights fetched, adset data should now be updated`);
+        console.log(`[Campaign Budget API] 🔄 Database should now have correct adset statuses and budgets`);
       } catch (insightsError) {
         console.error(`[Campaign Budget API] ❌ Error fetching fresh Meta insights:`, insightsError);
       }
