@@ -1476,20 +1476,7 @@ export async function fetchMetaAdSets(
                 const daySpent = parseFloat(day.spend || 0);
                 const dayImpressions = parseInt(day.impressions || 0, 10);
                 const dayClicks = parseInt(day.clicks || 0, 10);
-                // 🎯 FIXED: Only count actual purchase/conversion actions, not link clicks
-                let dayConversions = 0;
-                if (day.actions && Array.isArray(day.actions)) {
-                  day.actions.forEach((action: any) => {
-                    if (
-                      action.action_type === 'purchase' || 
-                      action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-                      action.action_type === 'omni_purchase' ||
-                      action.action_type === 'conversions'
-                    ) {
-                      dayConversions += parseInt(action.value || 0, 10);
-                    }
-                  });
-                }
+                const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
                 
                 // Update totals
                 totalSpent += daySpent;
@@ -1848,20 +1835,7 @@ export async function fetchMetaAds(
               const daySpent = parseFloat(day.spend || 0);
               const dayImpressions = parseInt(day.impressions || 0, 10);
               const dayClicks = parseInt(day.clicks || 0, 10);
-              // 🎯 FIXED: Only count actual purchase/conversion actions, not link clicks
-              let dayConversions = 0;
-              if (day.actions && Array.isArray(day.actions)) {
-                day.actions.forEach((action: any) => {
-                  if (
-                    action.action_type === 'purchase' || 
-                    action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-                    action.action_type === 'omni_purchase' ||
-                    action.action_type === 'conversions'
-                  ) {
-                    dayConversions += parseInt(action.value || 0, 10);
-                  }
-                });
-              }
+              const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
               const dayReach = parseInt(day.reach || 0, 10);
               
               // Update totals
