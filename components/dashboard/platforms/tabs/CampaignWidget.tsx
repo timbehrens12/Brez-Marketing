@@ -318,6 +318,7 @@ const CampaignWidget = ({
   const [sortBy, setSortBy] = useState(DEFAULT_PREFERENCES.sortBy);
   const [sortOrder, setSortOrder] = useState<SortOrderType>(DEFAULT_PREFERENCES.sortOrder as SortOrderType);
   const [showInactive, setShowInactive] = useState(DEFAULT_PREFERENCES.showInactive);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [expandedAdSet, setExpandedAdSet] = useState<string | null>(null);
   const [adSets, setAdSets] = useState<AdSet[]>([]);
@@ -1258,6 +1259,9 @@ const CampaignWidget = ({
       // Update last refresh time immediately to block other events
       lastRefresh.current = now;
       
+      // Close dropdown when refresh occurs
+      setDropdownOpen(false);
+      
       // First, set loading states to prevent repeated calls
       setRefreshing(true);
       refreshInProgressRef.current = true;
@@ -1371,6 +1375,9 @@ const CampaignWidget = ({
   // Add event listeners for date range changes
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
+    
+    // Close dropdown when date range changes
+    setDropdownOpen(false);
     
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
@@ -2504,7 +2511,7 @@ const CampaignWidget = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <DropdownMenu>
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20">
                   <Settings className="h-3.5 w-3.5 mr-1.5" />
