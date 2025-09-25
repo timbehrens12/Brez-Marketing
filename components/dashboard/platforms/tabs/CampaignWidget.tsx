@@ -1564,7 +1564,7 @@ const CampaignWidget = ({
           roas: calculatedRoas > 0 ? calculatedRoas : 0,
           ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) : 0,
           cpc: aggregatedClicks > 0 ? aggregatedSpent / aggregatedClicks : 0,
-          cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+          cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0, // 🎯 FIXED: Already correct - only shows cost when conversions exist
           has_data_in_range: insightsInRange > 0
         };
       }
@@ -1648,33 +1648,39 @@ const CampaignWidget = ({
 
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
-    // 🔧 FIXED: Always use consistent budget calculation logic
-    // Priority: adset_budget_total (pre-calculated) > campaign budget > fallback to 0
+    // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
+    //   campaign_budget: campaign.budget,
+    //   adset_budget_total: campaign.adset_budget_total,
+    //   budget_type: campaign.budget_type,
+    //   isLoading,
+    //   isSyncing
+    // });
     
-    // Check if we have pre-calculated adset budget total (most reliable)
+    // 🎯 FIXED: Always use campaign.adset_budget_total for consistency (expanded or collapsed)
+    // This ensures the same budget value is shown regardless of dropdown state
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: campaign.budget_type || 'daily',
-        budget_source: campaign.budget_source || 'adsets'
+        budget_type: 'daily', // adset totals are always daily budgets
+        budget_source: 'campaign_adset_total_consistent'
       };
     }
     
-    // If we have ad sets for this campaign (from expansion), use their combined budget
-    if (campaignAdSets && campaignAdSets.length > 0) {
-      // Only sum up ACTIVE ad sets
+    // Only fall back to expanded ad sets if no adset_budget_total available
+    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
+      // Corrected filter: Only sum up ACTIVE ad sets for the expanded view
       const activeAdSets = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE');
       const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       
-      if (totalAdSetBudget > 0) {
-        return {
-          budget: totalAdSetBudget,
-          formatted_budget: formatCurrency(totalAdSetBudget),
-          budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-          budget_source: 'adsets'
-        };
-      }
+      // console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
+      
+      return {
+        budget: totalAdSetBudget,
+        formatted_budget: formatCurrency(totalAdSetBudget),
+        budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        budget_source: 'adsets'
+      };
     }
     
     // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
@@ -2589,7 +2595,7 @@ const CampaignWidget = ({
                         const totalConversions = adSets.reduce((sum, adSet) => sum + (Number(adSet.conversions) || 0), 0);
                         const aggregateCpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
                         const aggregateCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) : 0; // Removed * 100
-                        const aggregateCostPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0;
+                        const aggregateCostPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0; // 🎯 FIXED: Already correct
                         const aggregateRoas = 0; // Needs value calculation
 
                         aggregateMetrics = {
@@ -2881,7 +2887,12 @@ const CampaignWidget = ({
                                                       value = adSet.conversions || 0; // Use adSet
                                                       break;
                                                     case 'cost_per_conversion':
-                                                      value = adSet.cost_per_conversion || 0; // Use adSet
+                                                      // 🎯 FIXED: Only show cost per conversion if there are actual conversions
+                                                      if ((adSet.conversions || 0) > 0) {
+                                                        value = adSet.cost_per_conversion || 0;
+                                                      } else {
+                                                        value = 0; // No conversions = $0.00 cost per conversion
+                                                      }
                                                       break;
                                                     case 'reach':
                                                       value = adSet.reach || 0; // Use adSet
