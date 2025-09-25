@@ -128,13 +128,51 @@ export function DevicePerformanceWidget({
   }, [connectionId])
 
   const formatBreakdownValue = (value: string) => {
-    // Clean up common device/placement names
-    if (selectedBreakdown === 'device') {
+    // Handle placement data with • separator (from API)
+    if (value.includes('•')) {
+      const [platform, placement] = value.split(' • ')
+      // Clean up platform names
+      if (platform.toLowerCase() === 'facebook') return 'Facebook'
+      if (platform.toLowerCase() === 'instagram') return 'Instagram'
+      // If placement is meaningful, show both, otherwise just platform
+      if (placement && placement !== 'Undefined' && placement !== 'undefined') {
+        const cleanPlacement = placement.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        return `${platform} ${cleanPlacement}`
+      }
+      return platform.charAt(0).toUpperCase() + platform.slice(1)
+    }
+
+    // Handle device names
+    if (selectedBreakdown === 'device_platform' || selectedBreakdown === 'device') {
+      // Clean up common device names
+      if (value.toLowerCase().includes('android_smartphone')) return 'Android'
+      if (value.toLowerCase().includes('iphone')) return 'iPhone'
+      if (value.toLowerCase().includes('android_tablet')) return 'Android Tablet'
+      if (value.toLowerCase().includes('ipad')) return 'iPad'
+      if (value.toLowerCase().includes('desktop')) return 'Desktop'
+      if (value.toLowerCase().includes('mobile')) return 'Mobile'
+      // Fallback: clean up underscores and capitalize
       return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
+
+    // Handle placement names
     if (selectedBreakdown === 'placement') {
+      // Handle platform|placement format from database
+      if (value.includes('|')) {
+        const [platform, placement] = value.split('|')
+        if (platform.toLowerCase() === 'facebook') return 'Facebook'
+        if (platform.toLowerCase() === 'instagram') return 'Instagram'
+        if (placement && placement !== 'undefined') {
+          const cleanPlacement = placement.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+          return `${platform} ${cleanPlacement}`
+        }
+        return platform.charAt(0).toUpperCase() + platform.slice(1)
+      }
+      // Clean up placement names
       return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
+
+    // Default: capitalize first letter
     return value.charAt(0).toUpperCase() + value.slice(1)
   }
 
