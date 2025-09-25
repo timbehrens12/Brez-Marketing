@@ -1718,65 +1718,48 @@ const CampaignWidget = ({
         campaign_budget: campaign.budget
       });
       
-      // 🚨 FALLBACK: If Campaign Budget API returns 0, try Total Budget API
-      // This fixes the issue where Campaign Budget shows $0 but Total Budget shows $2
-      const tryTotalBudgetAPI = async () => {
-        try {
-          const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`);
-          if (response.ok) {
-            const totalBudgetData = await response.json();
-            if (totalBudgetData.success && totalBudgetData.totalBudget > 0) {
-              console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using Total Budget API fallback: $${totalBudgetData.totalBudget}`);
-              return {
-                budget: totalBudgetData.totalBudget,
-                formatted_budget: formatCurrency(totalBudgetData.totalBudget),
-                budget_type: 'daily',
-                budget_source: 'total_budget_api'
-              };
-            }
-          }
-        } catch (error) {
-          console.warn(`[CampaignWidget] Total Budget API fallback failed:`, error);
-        }
-        return null;
-      };
-      
-      // 🚨 ACTIVATE FALLBACK: Use Total Budget API when Campaign Budget API returns 0
+      // 🚨 FALLBACK LOGIC: When Campaign Budget API returns 0, use campaign props
       if (currentBudgetData?.budget === 0) {
-        try {
-          const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`);
-          if (response.ok) {
-            const totalBudgetData = await response.json();
-            if (totalBudgetData.success && totalBudgetData.totalBudget > 0) {
-              console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using Total Budget API fallback: $${totalBudgetData.totalBudget}`);
-              return {
-                budget: totalBudgetData.totalBudget,
-                formatted_budget: formatCurrency(totalBudgetData.totalBudget),
-                budget_type: 'daily',
-                budget_source: 'total_budget_fallback'
-              };
-            }
-          }
-        } catch (error) {
-          console.warn(`[CampaignWidget] Total Budget API fallback failed:`, error);
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Campaign Budget API returned 0, using campaign props as fallback`);
+        
+        // Priority: Use adset_budget_total from campaign props (this comes from Total Budget calculations)
+        if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+          console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.adset_budget_total fallback: $${campaign.adset_budget_total}`);
+          return {
+            budget: campaign.adset_budget_total,
+            formatted_budget: formatCurrency(campaign.adset_budget_total),
+            budget_type: 'daily',
+            budget_source: 'adset_total_fallback'
+          };
+        }
+        
+        // Secondary fallback: Use campaign.budget if available
+        if (campaign.budget && campaign.budget > 0) {
+          console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.budget fallback: $${campaign.budget}`);
+          return {
+            budget: campaign.budget,
+            formatted_budget: formatCurrency(campaign.budget),
+            budget_type: campaign.budget_type || 'daily',
+            budget_source: 'campaign_budget_fallback'
+          };
         }
       }
     }
 
-    // 🚨 TEMPORARY: Skip campaign.adset_budget_total as it contains stale data
-    // Use campaign.adset_budget_total only if API data is completely unavailable
-    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Skipping stale campaign.adset_budget_total: $${campaign.adset_budget_total} (API data preferred)`);
-    
-    // Only use campaign.adset_budget_total as absolute last resort if currentBudgets is completely empty
+    // 🚨 LAST RESORT: Only use campaign data if API is completely unavailable
     const hasAnyCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0;
-    if (!hasAnyCurrentBudgets && campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
-      return {
-        budget: campaign.adset_budget_total,
-        formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: 'daily',
-        budget_source: 'campaign_props_fallback'
-      };
+    if (!hasAnyCurrentBudgets) {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, using campaign props as last resort`);
+      
+      if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
+        return {
+          budget: campaign.adset_budget_total,
+          formatted_budget: formatCurrency(campaign.adset_budget_total),
+          budget_type: 'daily',
+          budget_source: 'campaign_props_last_resort'
+        };
+      }
     }
 
     // 🚨 SECOND FALLBACK: Use campaign.budget if available
