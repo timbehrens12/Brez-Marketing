@@ -650,13 +650,14 @@ export async function GET(request: NextRequest) {
                       }))
                     );
                     
+                    // 🎯 FIXED: For Meta API data, use proper budget fields
                     adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
                       const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
                       const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
                       return total + Math.max(dailyBudget, lifetimeBudget);
                     }, 0);
                     
-                    // Determine budget type
+                    // Determine budget type  
                     const hasDailyBudgets = activeAdSets.some((adSet: any) => adSet.daily_budget);
                     const hasLifetimeBudgets = activeAdSets.some((adSet: any) => adSet.lifetime_budget);
                     adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
@@ -710,15 +711,14 @@ export async function GET(request: NextRequest) {
               .eq('status', 'ACTIVE');
               
             if (!adSetsError && adSetsData) {
+              // 🎯 FIXED: Use 'budget' column instead of non-existent daily_budget/lifetime_budget
               adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
-                const dailyBudget = adSet.daily_budget || 0;
-                const lifetimeBudget = adSet.lifetime_budget || 0;
-                return total + Math.max(dailyBudget, lifetimeBudget);
+                const budget = Number(adSet.budget) || 0;
+                return total + budget;
               }, 0);
               
-              const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
-              const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
-              adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
+              // Budget type is typically daily for ad sets
+              adsetBudgetType = adsetBudgetTotal > 0 ? 'daily' : 'unknown';
               
               console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
                 adSetsCount: adSetsData.length,
@@ -1242,6 +1242,7 @@ export async function GET(request: NextRequest) {
                      }))
                    );
                    
+                   // 🎯 FIXED: For Meta API data, use proper budget fields
                    adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
                      const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
                      const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
@@ -1302,15 +1303,14 @@ export async function GET(request: NextRequest) {
              .eq('status', 'ACTIVE');
              
            if (!adSetsError && adSetsData) {
+             // 🎯 FIXED: Use 'budget' column instead of non-existent daily_budget/lifetime_budget  
              adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
-               const dailyBudget = adSet.daily_budget || 0;
-               const lifetimeBudget = adSet.lifetime_budget || 0;
-               return total + Math.max(dailyBudget, lifetimeBudget);
+               const budget = Number(adSet.budget) || 0;
+               return total + budget;
              }, 0);
              
-             const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
-             const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
-             adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
+             // Budget type is typically daily for ad sets
+             adsetBudgetType = adsetBudgetTotal > 0 ? 'daily' : 'unknown';
              
              console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
                adSetsCount: adSetsData.length,
