@@ -650,29 +650,12 @@ export function AdComponent({
                       value = ad.cpc;
                       break;
                     case 'conversions':
-                      value = ad.conversions;
-                      // 🔍 CONVERSIONS DEBUG - Individual Ad
-                      if (ad.conversions > 0) {
-                        console.warn(`🚨 AD WITH CONVERSIONS: ${ad.ad_name} (${ad.ad_id})`, {
-                          rawConversions: ad.conversions,
-                          displayValue: value,
-                          spent: ad.spent,
-                          costPerConversion: ad.cost_per_conversion,
-                          adsetId: ad.adset_id,
-                          calculatedCostPerConversion: ad.spent > 0 && ad.conversions > 0 ? ad.spent / ad.conversions : 0
-                        });
-                      }
+                      // Force conversions to 0 for this specific brand
+                      value = brandId === '1a30f34b-b048-4f80-b880-6c61bd12c720' ? 0 : ad.conversions;
                       break;
                     case 'cost_per_conversion':
-                      value = ad.cost_per_conversion;
-                      // 🔍 CONVERSIONS DEBUG - Ad Cost Per Conversion
-                      console.log(`🔍 Ad ${ad.ad_name} Cost/Conv:`, {
-                        conversions: ad.conversions,
-                        spent: ad.spent,
-                        rawCostPerConversion: ad.cost_per_conversion,
-                        calculatedCostPerConversion: (ad.conversions || 0) > 0 ? (ad.spent || 0) / (ad.conversions || 1) : 0,
-                        displayValue: value
-                      });
+                      // Force cost per conversion to 0 for this specific brand
+                      value = brandId === '1a30f34b-b048-4f80-b880-6c61bd12c720' ? 0 : ad.cost_per_conversion;
                       break;
                     case 'reach':
                       value = ad.reach;

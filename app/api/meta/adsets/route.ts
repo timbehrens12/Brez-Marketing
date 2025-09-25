@@ -146,17 +146,8 @@ export async function GET(req: NextRequest) {
     // This ensures we have a fallback in case of rate limiting
     let cachedAdSets: AdSet[] | null = null;
     
-    // 🔍 CONVERSIONS DEBUG - AdSets API Entry Point
-    console.group('🔍 ADSETS API - Entry Point Debug');
-    console.log('📊 Request Parameters:', {
-      brandId,
-      campaignId,
-      fromDate,
-      toDate,
-      hasDateRange,
-      forceRefresh
-    });
-    console.groupEnd();
+  // Force conversions to 0 for this specific brand
+  const shouldZeroConversions = brandId === '1a30f34b-b048-4f80-b880-6c61bd12c720';
       
     // If date range is provided, use a different query
       if (hasDateRange) {
@@ -274,12 +265,21 @@ export async function GET(req: NextRequest) {
     if (!forceRefresh && cachedAdSets && cachedAdSets.length > 0) {
       console.log(`[API] Returning ${cachedAdSets.length} cached ad sets`);
       
+      // Apply conversion zeroing if needed
+      const processedAdSets = shouldZeroConversions 
+        ? cachedAdSets.map(adSet => ({
+            ...adSet,
+            conversions: 0,
+            cost_per_conversion: 0
+          }))
+        : cachedAdSets;
+      
       return NextResponse.json(
         {
           success: true,
           source: 'database',
           timestamp: new Date().toISOString(),
-          adSets: cachedAdSets,
+          adSets: processedAdSets,
           dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined
         },
         { status: 200 }
@@ -316,12 +316,21 @@ export async function GET(req: NextRequest) {
         if (result.success) {
           console.log(`[API] Successfully fetched ${result.adSets?.length || 0} ad sets from Meta API`);
           
+          // Apply conversion zeroing if needed
+          const processedAdSets = shouldZeroConversions && result.adSets
+            ? result.adSets.map(adSet => ({
+                ...adSet,
+                conversions: 0,
+                cost_per_conversion: 0
+              }))
+            : result.adSets;
+          
           return NextResponse.json(
             {
               success: true,
               source: 'meta_api',
               timestamp: new Date().toISOString(),
-              adSets: result.adSets
+              adSets: processedAdSets
             },
             { status: 200 }
           );
@@ -339,6 +348,15 @@ export async function GET(req: NextRequest) {
             if (cachedAdSets && cachedAdSets.length > 0) {
               console.log(`[API] Returning ${cachedAdSets.length} cached ad sets due to Meta API rate limit`);
               
+              // Apply conversion zeroing if needed
+              const processedAdSets = shouldZeroConversions 
+                ? cachedAdSets.map(adSet => ({
+                    ...adSet,
+                    conversions: 0,
+                    cost_per_conversion: 0
+                  }))
+                : cachedAdSets;
+              
               return NextResponse.json(
                 {
                   success: true,
@@ -346,7 +364,7 @@ export async function GET(req: NextRequest) {
                   warning: 'Meta API rate limit reached',
                   message: 'Using cached data due to Meta API rate limits',
                   timestamp: new Date().toISOString(),
-                  adSets: cachedAdSets,
+                  adSets: processedAdSets,
                   dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined
                 },
                 { status: 200 }
@@ -372,6 +390,15 @@ export async function GET(req: NextRequest) {
 
           // If we have cached data, return it with a warning
           if (cachedAdSets && cachedAdSets.length > 0) {
+            // Apply conversion zeroing if needed
+            const processedAdSets = shouldZeroConversions 
+              ? cachedAdSets.map(adSet => ({
+                  ...adSet,
+                  conversions: 0,
+                  cost_per_conversion: 0
+                }))
+              : cachedAdSets;
+            
             return NextResponse.json(
               {
                 success: true,
@@ -379,7 +406,7 @@ export async function GET(req: NextRequest) {
                 warning: 'Exception occurred',
                 message: 'Using cached data due to an exception when fetching from Meta API',
                 timestamp: new Date().toISOString(),
-                adSets: cachedAdSets,
+                adSets: processedAdSets,
                 dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined
               },
               { status: 200 }
@@ -402,6 +429,15 @@ export async function GET(req: NextRequest) {
         
         // If we have cached data, return it with a warning
         if (cachedAdSets && cachedAdSets.length > 0) {
+          // Apply conversion zeroing if needed
+          const processedAdSets = shouldZeroConversions 
+            ? cachedAdSets.map(adSet => ({
+                ...adSet,
+                conversions: 0,
+                cost_per_conversion: 0
+              }))
+            : cachedAdSets;
+          
           return NextResponse.json(
             {
               success: true,
@@ -409,7 +445,7 @@ export async function GET(req: NextRequest) {
               warning: 'Exception occurred',
               message: 'Using cached data due to an exception when fetching from Meta API',
               timestamp: new Date().toISOString(),
-              adSets: cachedAdSets,
+              adSets: processedAdSets,
               dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined
             },
             { status: 200 }
