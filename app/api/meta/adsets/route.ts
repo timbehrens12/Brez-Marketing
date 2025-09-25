@@ -205,19 +205,16 @@ export async function GET(req: NextRequest) {
               const spent = insights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
               const impressions = insights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
               const clicks = insights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
-              // EMERGENCY FIX: Force conversions to 0 until fake data source is found
-              const conversions = 0; // insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+              const conversions = insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
               
-              // FIXED: Calculate reach properly from meta_adsets_total_reach table
-              // Don't sum daily reach values as they are not additive across days
-              // Instead, we'll get the correct reach after this loop from meta_adsets_total_reach
-              const reach = 0; // Will be corrected below from meta_adsets_total_reach
+              // Calculate reach for the date range (sum daily reach values)
+              // This matches the campaign-level calculation logic
+              const reach = insights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
               
               // Calculate derived metrics
               const ctr = impressions > 0 ? clicks / impressions : 0;
               const cpc = clicks > 0 ? spent / clicks : 0;
-              // EMERGENCY FIX: Force cost_per_conversion to 0 since conversions are forced to 0
-              const cost_per_conversion = 0; // conversions > 0 ? spent / conversions : 0;
+              const cost_per_conversion = conversions > 0 ? spent / conversions : 0;
               
               return {
                 ...adSet,
@@ -233,23 +230,6 @@ export async function GET(req: NextRequest) {
                 // Ensure all numeric fields are proper JavaScript numbers
                 budget: Number(adSet.budget),
                 bid_amount: adSet.bid_amount ? Number(adSet.bid_amount) : 0
-              };
-            });
-            
-            // FIXED: Now apply individual reach per adset from the insights we already processed
-            // Each adset should have its own reach, not the total brand reach
-            cachedAdSets = cachedAdSets.map(adSet => {
-              const insights = insightsByAdSet[adSet.adset_id] || [];
-              
-              // Calculate the total reach for this specific adset across the date range
-              // CORRECTED: For period reach calculation, sum the daily reach values for this adset
-              const adsetTotalReach = insights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
-              
-              console.log(`[API] Adset ${adSet.adset_id} individual total reach = ${adsetTotalReach} from ${insights.length} days of insights`);
-              
-              return {
-                ...adSet,
-                reach: adsetTotalReach // Use the individual adset reach, not total brand reach
               };
             });
             

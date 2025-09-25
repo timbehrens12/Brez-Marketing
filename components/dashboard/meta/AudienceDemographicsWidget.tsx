@@ -82,8 +82,6 @@ export function AudienceDemographicsWidget({
         // console.log('[AudienceDemographics] No date range, API will use 12-month default')
       }
 
-      // Only use forceRefresh if specifically needed (don't make it default)
-      
       const url = `/api/meta/demographics/data?${params}`
       console.log('[AudienceDemographics] Fetching from:', url)
 

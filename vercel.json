@@ -12,10 +12,6 @@
     {
       "path": "/api/cron/meta-sync-validator",
       "schedule": "*/30 * * * *"
-    },
-    {
-      "path": "/api/cron/auto-complete-stuck-syncs",
-      "schedule": "* * * * *"
     }
   ]
 }

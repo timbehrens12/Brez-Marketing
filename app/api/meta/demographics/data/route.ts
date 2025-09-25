@@ -48,41 +48,21 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // MATCH OVERVIEW WIDGETS: Use same default logic as /api/metrics/meta
+    // If no date range provided, use a default range (last 12 months)
     let finalDateFrom = dateFrom
     let finalDateTo = dateTo
     
     if (!finalDateFrom || !finalDateTo) {
-      // Default: last 30 days (same as overview widgets)
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-      finalDateFrom = startDate.toISOString().split('T')[0];
-      finalDateTo = endDate.toISOString().split('T')[0];
+      const today = new Date()
+      const yearAgo = new Date()
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1)
       
-      console.log(`[Demographics API] No date range provided, using SAME default as overview widgets: ${finalDateFrom} to ${finalDateTo}`)
+      finalDateFrom = yearAgo.toISOString().split('T')[0]
+      finalDateTo = today.toISOString().split('T')[0]
+      
+      console.log(`[Demographics API] No date range provided, using default: ${finalDateFrom} to ${finalDateTo}`)
     } else {
       console.log(`[Demographics API] Using provided date range: ${finalDateFrom} to ${finalDateTo}`)
-    }
-    
-    // 🚨 META API RESTRICTION: Demographics data not available for last 3 days
-    // Adjust the end date if it's within the last 3 days
-    const today = new Date();
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(today.getDate() - 3);
-    const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
-    
-    if (finalDateTo > threeDaysAgoStr) {
-      console.log(`[Demographics API] 🚨 Adjusting date range: Meta API doesn't allow demographics for last 3 days. Changing ${finalDateTo} to ${threeDaysAgoStr}`)
-      finalDateTo = threeDaysAgoStr;
-      
-      // If the start date is also within the restricted period, adjust it too
-      if (finalDateFrom > threeDaysAgoStr) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        finalDateFrom = sevenDaysAgo.toISOString().split('T')[0];
-        console.log(`[Demographics API] 🚨 Start date also in restricted period, using 7 days ago: ${finalDateFrom} to ${finalDateTo}`)
-      }
     }
 
     // Verify user has access to this brand (either as owner or through brand_access)
@@ -152,16 +132,17 @@ export async function GET(request: NextRequest) {
       console.log(`[Demographics API] No date ranges found in meta_demographics for brand ${brandId}`)
     }
 
-    // PROPER FIX: Use the right table for each breakdown type
+    // Get data from the correct tables (manual sync stored different data types in different tables)
     let data = []
     let error = null
     
+    // Device/platform data is in meta_device_performance table
     if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-      // Device/platform data is in meta_device_performance table
+      // Map frontend breakdown types to database breakdown types
       const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
                              : breakdownType === 'placement' ? 'platform'
                              : breakdownType === 'publisher_platform' ? 'platform'
-                             : breakdownType
+                             : breakdownType // 'device' and 'platform' map directly
       
       console.log(`[Demographics API] Querying meta_device_performance for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
       
@@ -174,49 +155,15 @@ export async function GET(request: NextRequest) {
         .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
-      data = result.data || []
+      console.log(`[Demographics API] meta_device_performance query result: ${result.data?.length || 0} records`)
+      if (result.data?.length > 0) {
+        console.log(`[Demographics API] Sample device record:`, result.data[0])
+      }
+      
+      data = result.data
       error = result.error
-      
-      console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
-      
-        // FIXED: Respect user's date range selection AND ensure data exists in ad_insights
-        console.log(`[Demographics API] FIXED: Respecting device date range ${finalDateFrom} to ${finalDateTo} AND matching ad_insights availability`)
-        
-        // Get the dates that exist in meta_ad_insights for this brand within the requested range
-        const { data: adInsightsDates } = await supabase
-          .from('meta_ad_insights')
-          .select('date')
-          .eq('brand_id', brandId)
-          .gte('date', finalDateFrom)
-          .lte('date', finalDateTo)
-          .order('date')
-        
-        if (adInsightsDates && adInsightsDates.length > 0) {
-          const availableDates = adInsightsDates.map(row => row.date)
-          console.log(`[Demographics API] Found ${availableDates.length} ad_insights dates in device range: ${availableDates[0]} to ${availableDates[availableDates.length - 1]}`)
-          
-          // Query device data for the requested date range (simplified - removed overly strict .in() filter)
-          const matchedDeviceResult = await supabase
-            .from('meta_device_performance')
-            .select('*')
-            .eq('brand_id', brandId)
-            .eq('breakdown_type', dbBreakdownType)
-            .gte('date_range_start', finalDateFrom)
-            .lte('date_range_start', finalDateTo)
-            .order('date_range_start', { ascending: false })
-          
-          if (matchedDeviceResult.data && matchedDeviceResult.data.length > 0) {
-            data = matchedDeviceResult.data
-            console.log(`[Demographics API] Using ${data.length} device records for date range ${finalDateFrom} to ${finalDateTo}`)
-          } else {
-            console.log(`[Demographics API] No device data found for requested range ${finalDateFrom} to ${finalDateTo}`)
-          }
-        } else {
-          console.log(`[Demographics API] No ad_insights data found for device range ${finalDateFrom} to ${finalDateTo}`)
-        }
-      
     } else {
-      // Age/gender data - First try meta_demographics with current dates
+      // Age/gender data is in meta_demographics table
       console.log(`[Demographics API] Querying meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
       
       const result = await supabase
@@ -228,17 +175,13 @@ export async function GET(request: NextRequest) {
         .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
-      data = result.data || []
-      error = result.error
-      
-      console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
-      
-      // Use the data from the first query - it's already properly filtered by date range
-      if (data && data.length > 0) {
-        console.log(`[Demographics API] Using ${data.length} demographics records for date range ${finalDateFrom} to ${finalDateTo}`)
-      } else {
-        console.log(`[Demographics API] No demographics data found for requested range ${finalDateFrom} to ${finalDateTo}`)
+      console.log(`[Demographics API] meta_demographics query result: ${result.data?.length || 0} records`)
+      if (result.data?.length > 0) {
+        console.log(`[Demographics API] Sample demographics record:`, result.data[0])
       }
+      
+      data = result.data
+      error = result.error
     }
     
     if (error) {
@@ -249,10 +192,43 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Already handled in the queries above, no need for additional fallback logic
+    // If no data found for the requested date range, try to get the most recent available data
+    if (!data || data.length === 0) {
+      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}, trying to get most recent data`)
+      
+      let fallbackResult
+      if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
+        const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
+                               : breakdownType === 'placement' ? 'platform'
+                               : breakdownType === 'publisher_platform' ? 'platform'
+                               : breakdownType
+        
+        fallbackResult = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', dbBreakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(50) // Get recent data
+      } else {
+        fallbackResult = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', breakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(50) // Get recent data
+      }
+      
+      if (fallbackResult.data && fallbackResult.data.length > 0) {
+        data = fallbackResult.data
+        console.log(`[Demographics API] Using fallback data: ${data.length} records from most recent available dates`)
+        console.log(`[Demographics API] Fallback date range: ${data[data.length-1]?.date_range_start} to ${data[0]?.date_range_start}`)
+      }
+    }
 
     // Process and format data for frontend (both tables use breakdown_value)
-    let convertedData = data?.map(item => ({
+    const convertedData = data?.map(item => ({
       breakdown_key: item.breakdown_value,
       breakdown_value: item.breakdown_value,
       date_value: item.date_range_start,
@@ -260,25 +236,12 @@ export async function GET(request: NextRequest) {
       clicks: item.clicks,
       spend: item.spend,
       reach: item.reach,
-      conversions: 0, // Demographics data doesn't include conversions
+      conversions: item.conversions || 0,
       ctr: item.ctr,
       cpc: item.cpc,
       cpm: item.cpm,
-      cost_per_conversion: 0,
-      id: item.id // Keep ID for deduplication
+      cost_per_conversion: 0
     })) || []
-    
-    // Deduplicate by breakdown_value + date - keep the latest record by ID
-    const dedupeMap = new Map();
-    convertedData.forEach(item => {
-      const key = `${item.breakdown_value}_${item.date_value}`;
-      if (!dedupeMap.has(key) || dedupeMap.get(key).id < item.id) {
-        dedupeMap.set(key, item);
-      }
-    });
-    convertedData = Array.from(dedupeMap.values());
-    
-    console.log(`[Demographics API] After deduplication: ${convertedData.length} unique records`);
     
     const formattedData = formatDataForWidget(convertedData, breakdownType)
 
@@ -304,7 +267,7 @@ export async function GET(request: NextRequest) {
     console.error('Demographics data API error:', error)
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message 
     }, { status: 500 })
   }
 }
@@ -372,7 +335,7 @@ function formatDataForWidget(data: any[], breakdownType: string): any[] {
     }
 
     // Sort dates for trend analysis
-    item.dates.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    item.dates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     return item
   })
