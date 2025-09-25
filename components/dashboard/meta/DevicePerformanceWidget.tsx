@@ -247,9 +247,9 @@ export function DevicePerformanceWidget({
               </div>
             </div>
             
-            <div className="h-64">
+            <div className="h-72 mb-6">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 80 }}>
                   <XAxis 
                     dataKey="name" 
                     axisLine={false}
