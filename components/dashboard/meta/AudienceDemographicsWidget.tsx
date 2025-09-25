@@ -28,7 +28,6 @@ interface AudienceDemographicsWidgetProps {
 }
 
 const BREAKDOWN_TYPES = [
-  { value: 'age_gender', label: 'Age + Gender' },
   { value: 'age', label: 'Age Groups' },
   { value: 'gender', label: 'Gender' }
 ]
@@ -45,7 +44,7 @@ export function AudienceDemographicsWidget({
 }: AudienceDemographicsWidgetProps) {
   const [data, setData] = useState<DemographicData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBreakdown, setSelectedBreakdown] = useState('age_gender')
+  const [selectedBreakdown, setSelectedBreakdown] = useState('age')
 
   const fetchData = async () => {
     if (!brandId) {
@@ -151,7 +150,7 @@ export function AudienceDemographicsWidget({
     if (value.includes('•')) {
       const [part1, part2] = value.split(' • ')
       if (part1 === 'Other' && part2 === 'Other') {
-        return selectedBreakdown === 'age_gender' ? 'Aggregated Demographics' : 'Other'
+        return 'Other'
       }
       // Format placement data nicely
       if (selectedBreakdown === 'placement') {
@@ -170,19 +169,9 @@ export function AudienceDemographicsWidget({
         const position = part2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
         return `${platform} ${position}`
       }
-      if (selectedBreakdown === 'age_gender') {
-        if (part1 === 'Other' && part2 === 'Other') {
-          return 'Aggregated Demographics'
-        }
-        return `${part1} • ${part2}`
-      }
     }
     
     // Legacy formatting for older formats
-    if (selectedBreakdown === 'age_gender') {
-      const [age, gender] = value.split('_')
-      return `${age}, ${gender}`
-    }
     if (selectedBreakdown === 'gender') {
       return value.charAt(0).toUpperCase() + value.slice(1)
     }
@@ -326,27 +315,10 @@ export function AudienceDemographicsWidget({
           <div className="text-center py-8">
             <p className="text-gray-400 mb-2">No {BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label.toLowerCase()} data available</p>
             <div className="text-sm text-gray-500 max-w-md mx-auto space-y-1">
-              {selectedBreakdown === 'age_gender' ? (
-                <>
-                  <p>Your campaigns have demographic data, but Meta returns it as aggregated "Other" for this period.</p>
-                  <div className="text-xs text-gray-600 mt-2 space-y-1">
-                    <p className="font-medium text-gray-500">This happens when:</p>
-                    <p>• Audience sizes are below Meta's privacy thresholds</p>
-                    <p>• Campaigns weren't targeted by specific age/gender</p>
-                    <p>• Meta aggregates small segments for privacy protection</p>
-                  </div>
-                  <div className="text-xs text-blue-400 mt-3 bg-blue-950/20 p-2 rounded border border-blue-800/30">
-                    <p className="font-medium">💡 Try switching to "Ad Placement" - it should have detailed data!</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>No breakdown data available for this date range and breakdown type.</p>
-                  <div className="text-xs text-blue-400 mt-3 bg-blue-950/20 p-2 rounded border border-blue-800/30">
-                    <p className="font-medium">💡 Try a different breakdown type or date range</p>
-                  </div>
-                </>
-              )}
+                <p>No breakdown data available for this date range and breakdown type.</p>
+              <div className="text-xs text-blue-400 mt-3 bg-blue-950/20 p-2 rounded border border-blue-800/30">
+                <p className="font-medium">💡 Try a different breakdown type or date range</p>
+              </div>
             </div>
           </div>
         )}
