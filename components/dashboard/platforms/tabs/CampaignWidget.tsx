@@ -319,11 +319,13 @@ const CampaignWidget = ({
   const [sortOrder, setSortOrder] = useState<SortOrderType>(DEFAULT_PREFERENCES.sortOrder as SortOrderType);
   const [showInactive, setShowInactive] = useState(DEFAULT_PREFERENCES.showInactive);
   const [dropdownKey, setDropdownKey] = useState(0);
+  const [dropdownDisabled, setDropdownDisabled] = useState(false);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
-  // Function to force close dropdown by resetting the key and DOM manipulation
-  const forceCloseDropdown = useCallback(() => {
-    console.log('[CampaignWidget] Force closing dropdown by resetting key');
+  // Function to temporarily disable dropdown during refreshes
+  const temporarilyDisableDropdown = useCallback(() => {
+    console.log('[CampaignWidget] Temporarily disabling dropdown during refresh');
+    setDropdownDisabled(true);
     
     // First try to close any open dropdown content by finding and clicking outside
     const dropdownContent = document.querySelector('[data-radix-popper-content-wrapper]');
@@ -331,6 +333,17 @@ const CampaignWidget = ({
       console.log('[CampaignWidget] Found dropdown content, attempting to close');
       // Try clicking outside
       document.body.click();
+      
+      // Dispatch escape key
+      const escapeEvent = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        keyCode: 27,
+        which: 27,
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(escapeEvent);
     }
     
     // Reset the dropdown component entirely
@@ -341,28 +354,11 @@ const CampaignWidget = ({
       dropdownTriggerRef.current.blur();
     }
     
-    // Additional DOM manipulation to ensure closure
+    // Re-enable dropdown after a short delay
     setTimeout(() => {
-      // Dispatch escape key to close any open dropdowns
-      const escapeEvent = new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        which: 27,
-        bubbles: true,
-        cancelable: true
-      });
-      document.dispatchEvent(escapeEvent);
-      
-      // Find and remove any dropdown portal elements
-      const portals = document.querySelectorAll('[data-radix-portal]');
-      portals.forEach(portal => {
-        if (portal.querySelector('[role="menu"]')) {
-          console.log('[CampaignWidget] Removing dropdown portal');
-          portal.remove();
-        }
-      });
-    }, 10);
+      console.log('[CampaignWidget] Re-enabling dropdown');
+      setDropdownDisabled(false);
+    }, 1000);
   }, []);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [expandedAdSet, setExpandedAdSet] = useState<string | null>(null);
@@ -1305,7 +1301,7 @@ const CampaignWidget = ({
       lastRefresh.current = now;
       
       // Close dropdown when refresh occurs
-      forceCloseDropdown();
+      temporarilyDisableDropdown();
       
       // First, set loading states to prevent repeated calls
       setRefreshing(true);
@@ -1365,7 +1361,7 @@ const CampaignWidget = ({
       window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
       document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     };
-  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, forceCloseDropdown]);
+  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, temporarilyDisableDropdown]);
   
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
@@ -1422,7 +1418,7 @@ const CampaignWidget = ({
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
     // Close dropdown when date range changes
-    forceCloseDropdown();
+    temporarilyDisableDropdown();
     
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
@@ -1441,7 +1437,7 @@ const CampaignWidget = ({
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [dateRange, brandId, expandedCampaign, fetchAdSets, forceCloseDropdown]);
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets, temporarilyDisableDropdown]);
 
   // Add this function to update campaign statuses regularly
   useEffect(() => {
@@ -2558,7 +2554,13 @@ const CampaignWidget = ({
           <div className="flex items-center gap-2">
             <DropdownMenu key={dropdownKey}>
               <DropdownMenuTrigger asChild>
-                <Button ref={dropdownTriggerRef} variant="outline" size="sm" className="h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20">
+                <Button 
+                  ref={dropdownTriggerRef} 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={dropdownDisabled}
+                  className={`h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20 ${dropdownDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
                   <Settings className="h-3.5 w-3.5 mr-1.5" />
                   Customize
                 </Button>
