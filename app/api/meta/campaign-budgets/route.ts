@@ -71,14 +71,29 @@ async function handleBudgetRequest(request: NextRequest) {
               refreshMethod: 'meta-api-force-refresh'
             });
           } else {
-            console.log(`[Campaign Budget API] ⚠️ Meta API returned $0 budgets during forceRefresh - falling back to fresh database query`);
+            console.log(`[Campaign Budget API] ⚠️ Meta API returned $0 budgets during forceRefresh - will fetch fresh adset data`);
           }
         } else {
-          console.log(`[Campaign Budget API] ⚠️ Meta API failed during forceRefresh - falling back to fresh database query`);
+          console.log(`[Campaign Budget API] ⚠️ Meta API failed during forceRefresh - falling back to fresh adset data fetch`);
         }
       } catch (metaError) {
         console.error(`[Campaign Budget API] ❌ Meta API error during forceRefresh:`, metaError);
-        console.log(`[Campaign Budget API] 📊 Falling back to fresh database query`);
+        console.log(`[Campaign Budget API] 📊 Falling back to fresh adset data fetch`);
+      }
+
+      // 🔥 FORCE REFRESH FALLBACK: If campaign-level budgets are $0, fetch fresh Meta data
+      console.log(`[Campaign Budget API] 🔄 forceRefresh fallback - fetching fresh Meta insights to update adset data`);
+      try {
+        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service');
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        
+        // Fetch fresh insights for the last 2 days to update adset statuses and budgets
+        await fetchMetaAdInsights(brandId, yesterday, today, false, true);
+        console.log(`[Campaign Budget API] ✅ Fresh Meta insights fetched, adset data should now be updated`);
+      } catch (insightsError) {
+        console.error(`[Campaign Budget API] ❌ Error fetching fresh Meta insights:`, insightsError);
       }
     }
 
