@@ -1306,8 +1306,8 @@ const CampaignWidget = ({
       // Update last refresh time immediately to block other events
       lastRefresh.current = now;
       
-      // Close all dropdowns when refresh occurs
-      closeAllDropdowns();
+        // Close all dropdowns when refresh occurs
+        closeAllDropdowns();
       
       // First, set loading states to prevent repeated calls
       setRefreshing(true);
@@ -1423,8 +1423,8 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // Close all dropdowns when date range changes
-    closeAllDropdowns();
+      // Close all dropdowns when date range changes
+      closeAllDropdowns();
     
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
