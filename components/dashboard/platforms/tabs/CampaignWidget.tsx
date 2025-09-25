@@ -1719,8 +1719,8 @@ const CampaignWidget = ({
     // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
     // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
-    // Only use API budget if it's > 0 AND we're not currently loading budgets
-    if (currentBudgetData?.budget && currentBudgetData.budget > 0 && !isLoadingBudgets) {
+    // Use API budget if it exists (even if 0) and we're not currently loading budgets
+    if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
@@ -1729,10 +1729,13 @@ const CampaignWidget = ({
         budget_source: 'api'
       };
     } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, {
-        currentBudgetData,
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets data:`, {
+        currentBudgetData_full: currentBudgetData,
+        currentBudgetData_budget: currentBudgetData?.budget,
+        currentBudgetData_budget_type: typeof currentBudgetData?.budget,
         campaign_adset_budget_total: campaign.adset_budget_total,
-        campaign_budget: campaign.budget
+        campaign_budget: campaign.budget,
+        isLoadingBudgets
       });
     }
 
