@@ -1695,9 +1695,9 @@ const CampaignWidget = ({
     // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
     // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
-    // Use API budget if it exists AND is > 0, and we're not currently loading budgets
-    // If API returns 0, it might be stale data, so fall back to other sources
-    if (currentBudgetData && typeof currentBudgetData.budget === 'number' && currentBudgetData.budget > 0 && !isLoadingBudgets) {
+    // Use API budget if it exists (even if 0) and we're not currently loading budgets
+    // 0 is a valid budget value that should be respected
+    if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
@@ -1709,18 +1709,24 @@ const CampaignWidget = ({
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets API returned 0 or invalid:`, {
         currentBudgetData_budget: currentBudgetData?.budget,
         campaign_adset_budget_total: campaign.adset_budget_total,
-        campaign_budget: campaign.budget
+        campaign_budget: campaign.budget,
+        will_try_total_budget_api: true
       });
     }
 
-    // 🚨 IMMEDIATE FALLBACK: Use adset_budget_total from campaign props (this is always current)
-    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
+    // 🚨 TEMPORARY: Skip campaign.adset_budget_total as it contains stale data
+    // Use campaign.adset_budget_total only if API data is completely unavailable
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Skipping stale campaign.adset_budget_total: $${campaign.adset_budget_total} (API data preferred)`);
+    
+    // Only use campaign.adset_budget_total as absolute last resort if currentBudgets is completely empty
+    const hasAnyCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0;
+    if (!hasAnyCurrentBudgets && campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: 'daily', // adset totals are typically daily
-        budget_source: 'campaign_props'
+        budget_type: 'daily',
+        budget_source: 'campaign_props_fallback'
       };
     }
 
