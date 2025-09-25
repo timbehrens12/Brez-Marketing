@@ -204,11 +204,16 @@ export async function GET(request: NextRequest) {
     
     console.log(`[API] Aggregated campaign budgets:`, budgets)
     
-    // 🔍 DEBUG: Check if database data seems stale, but don't sync (too slow for API response)
-    const hasMultipleAdsets = Object.values(budgets).some(budget => budget.count > 1)
-    if (hasMultipleAdsets) {
-      console.warn(`[Campaign Budget API] ⚠️ Found ${Object.values(budgets)[0]?.count} adsets - database may be stale but skipping Meta sync to avoid timeout`)
-      console.warn(`[Campaign Budget API] 💡 Recommendation: Use manual refresh button to trigger background sync`)
+    // 🔍 DEBUG: Check if database data seems stale
+    const totalBudgetFromAdsets = Object.values(budgets).reduce((sum, budget) => sum + budget.total, 0)
+    const adsetCount = Object.values(budgets).reduce((sum, budget) => sum + budget.count, 0)
+    
+    console.log(`[Campaign Budget API] 📊 Database aggregation result: $${totalBudgetFromAdsets} from ${adsetCount} adsets`)
+    
+    // If we get $0 but there are adsets, the database is likely stale
+    if (totalBudgetFromAdsets === 0 && adsetCount > 0) {
+      console.warn(`[Campaign Budget API] 🚨 STALE DATA DETECTED: Found ${adsetCount} adsets but $0 budget - database is stale`)
+      console.warn(`[Campaign Budget API] 💡 Background sync will update this data soon`)
     }
     
     // Format budgets as array of objects to match expected CampaignWidget format

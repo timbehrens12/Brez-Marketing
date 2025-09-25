@@ -1688,7 +1688,21 @@ const CampaignWidget = ({
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
     // Use API budget if it exists (including 0) and we're not currently loading budgets
     // 0 is a valid budget value that should be respected - means no active adsets with budgets
+    // EXCEPTION: If API returns 0 but we can see adsets with budgets, API data is stale
     if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
+      // 🚨 STALE DATA CHECK: If API says $0 but we can see adsets with budgets, use fallback
+      if (currentBudgetData.budget === 0 && campaignAdSets && campaignAdSets.length > 0) {
+        const adsetBudgetTotal = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE').reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+        if (adsetBudgetTotal > 0) {
+          console.warn(`[CampaignWidget] Campaign ${campaign.campaign_id}: API returned $0 but adsets show $${adsetBudgetTotal} - using adset total as fallback`);
+          return {
+            budget: adsetBudgetTotal,
+            formatted_budget: formatCurrency(adsetBudgetTotal),
+            budget_type: 'daily',
+            budget_source: 'adset-fallback'
+          };
+        }
+      }
       // 🚨 REDUCED LOGGING: Only log once per budget value change to prevent spam
       const budgetKey = `${campaign.campaign_id}-${currentBudgetData.budget}`;
       if (!getCampaignBudget._lastLoggedBudget || getCampaignBudget._lastLoggedBudget !== budgetKey) {
