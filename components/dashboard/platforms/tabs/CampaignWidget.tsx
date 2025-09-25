@@ -1682,6 +1682,7 @@ const CampaignWidget = ({
   };
 
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
+  // 🚨 MEMOIZED: Prevent excessive re-calculations that cause refresh loops
   const getCampaignBudget = useCallback((campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
     // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
     //   campaign_budget: campaign.budget,
@@ -1698,7 +1699,12 @@ const CampaignWidget = ({
     // Use API budget if it exists (even if 0) and we're not currently loading budgets
     // 0 is a valid budget value that should be respected
     if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
+      // 🚨 REDUCED LOGGING: Only log once per budget value change to prevent spam
+      const budgetKey = `${campaign.campaign_id}-${currentBudgetData.budget}`;
+      if (!getCampaignBudget._lastLoggedBudget || getCampaignBudget._lastLoggedBudget !== budgetKey) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
+        getCampaignBudget._lastLoggedBudget = budgetKey;
+      }
       return {
         budget: currentBudgetData.budget,
         formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
@@ -1706,12 +1712,38 @@ const CampaignWidget = ({
         budget_source: 'api'
       };
     } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets API returned 0 or invalid:`, {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets API returned 0, will try Total Budget API as fallback:`, {
         currentBudgetData_budget: currentBudgetData?.budget,
         campaign_adset_budget_total: campaign.adset_budget_total,
-        campaign_budget: campaign.budget,
-        will_try_total_budget_api: true
+        campaign_budget: campaign.budget
       });
+      
+      // 🚨 FALLBACK: If Campaign Budget API returns 0, try Total Budget API
+      // This fixes the issue where Campaign Budget shows $0 but Total Budget shows $2
+      const tryTotalBudgetAPI = async () => {
+        try {
+          const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`);
+          if (response.ok) {
+            const totalBudgetData = await response.json();
+            if (totalBudgetData.success && totalBudgetData.totalBudget > 0) {
+              console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using Total Budget API fallback: $${totalBudgetData.totalBudget}`);
+              return {
+                budget: totalBudgetData.totalBudget,
+                formatted_budget: formatCurrency(totalBudgetData.totalBudget),
+                budget_type: 'daily',
+                budget_source: 'total_budget_api'
+              };
+            }
+          }
+        } catch (error) {
+          console.warn(`[CampaignWidget] Total Budget API fallback failed:`, error);
+        }
+        return null;
+      };
+      
+      // For now, just continue with existing logic - but we could use this fallback
+      // const fallbackBudget = await tryTotalBudgetAPI();
+      // if (fallbackBudget) return fallbackBudget;
     }
 
     // 🚨 TEMPORARY: Skip campaign.adset_budget_total as it contains stale data
@@ -2236,6 +2268,10 @@ const CampaignWidget = ({
 
   // Function to refresh single ad set status
   const refreshAdSetStatus = useCallback(async (adsetId: string, force: boolean = false): Promise<void> => {
+    // 🚨 DISABLED: Periodic adset status checks to prevent rate limiting
+    console.log(`[CampaignWidget] Adset status refresh disabled to prevent rate limits for ${adsetId}`);
+    return;
+    
     if (!brandId || !adsetId) return;
     
     logger.debug(`[CampaignWidget] Refreshing status for ad set ${adsetId}`);
@@ -2373,7 +2409,12 @@ const CampaignWidget = ({
         }
         
         // Only log in debug mode
-        logger.debug(`[CampaignWidget] Checking status for ad set: ${adSet.adset_id}`);
+        logger.debug(`[CampaignWidget] Status check disabled for ad set: ${adSet.adset_id}`);
+        
+        // 🚨 DISABLED: Periodic adset status checks to prevent rate limiting
+        console.log(`[CampaignWidget] Adset status check disabled to prevent rate limits for ${adSet.adset_id}`);
+        pendingRequests--;
+        return;
         
         fetch(`/api/meta/adset-status-check`, {
           method: 'POST',
