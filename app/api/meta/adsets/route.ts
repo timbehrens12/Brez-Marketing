@@ -145,6 +145,18 @@ export async function GET(req: NextRequest) {
     // Always check for cached data first, even with forceRefresh
     // This ensures we have a fallback in case of rate limiting
     let cachedAdSets: AdSet[] | null = null;
+    
+    // 🔍 CONVERSIONS DEBUG - AdSets API Entry Point
+    console.group('🔍 ADSETS API - Entry Point Debug');
+    console.log('📊 Request Parameters:', {
+      brandId,
+      campaignId,
+      fromDate,
+      toDate,
+      hasDateRange,
+      forceRefresh
+    });
+    console.groupEnd();
       
     // If date range is provided, use a different query
       if (hasDateRange) {

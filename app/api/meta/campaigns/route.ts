@@ -402,6 +402,20 @@ export async function GET(request: NextRequest) {
         console.log('📈 Conversions by Campaign/Date:', conversionsData);
         const totalConversions = dailyAdStats.reduce((sum, stat) => sum + (Number(stat.conversions) || 0), 0);
         console.log('🎯 Total Conversions Across All Campaigns:', totalConversions);
+        
+        // 🚨 VALIDATE CONVERSIONS - Check if any exist when user says there should be none
+        if (totalConversions > 0) {
+          console.warn('🚨 DATABASE CONTAINS CONVERSIONS - But user reports no conversions should exist!', {
+            totalConversions,
+            conversionDetails: conversionsData.filter(stat => stat.conversions > 0),
+            possibleCauses: [
+              'Stale/cached data in database',
+              'Data sync issues with Meta API',
+              'Test conversions never cleared',
+              'Incorrect campaign/brand data'
+            ]
+          });
+        }
       }
       console.groupEnd();
       

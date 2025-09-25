@@ -1639,6 +1639,28 @@ const CampaignWidget = ({
             campaignName: campaign.campaign_name
           });
         }
+        
+        // 🚨 USER REPORTS NO CONVERSIONS SHOULD EXIST
+        if (aggregatedConversions > 0) {
+          console.warn('🚨 USER SAYS NO CONVERSIONS SHOULD EXIST - But found in data!', {
+            campaignName: campaign.campaign_name,
+            foundConversions: aggregatedConversions,
+            foundSpent: aggregatedSpent,
+            costPerConversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+            dailyInsightsWithConversions: campaign.daily_insights?.filter(insight => insight.conversions > 0).map(insight => ({
+              date: insight.date,
+              conversions: insight.conversions,
+              spent: insight.spent,
+              updatedAt: insight.updated_at
+            })) || [],
+            possibleSolutions: [
+              'Clear stale database records',
+              'Force fresh Meta API sync',
+              'Check if test data was never cleaned up',
+              'Verify correct campaign/brand association'
+            ]
+          });
+        }
         console.groupEnd();
 
         return {
