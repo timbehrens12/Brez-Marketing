@@ -318,54 +318,6 @@ const CampaignWidget = ({
   const [sortBy, setSortBy] = useState(DEFAULT_PREFERENCES.sortBy);
   const [sortOrder, setSortOrder] = useState<SortOrderType>(DEFAULT_PREFERENCES.sortOrder as SortOrderType);
   const [showInactive, setShowInactive] = useState(DEFAULT_PREFERENCES.showInactive);
-  const [dropdownKey, setDropdownKey] = useState(0);
-  const [dropdownDisabled, setDropdownDisabled] = useState(false);
-  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
-  
-  // Function to close all dropdowns and expanded sections during refreshes
-  const closeAllDropdowns = useCallback(() => {
-    console.log('[CampaignWidget] Closing all dropdowns and expanded sections during refresh');
-    
-    // Close the customize dropdown
-    setDropdownDisabled(true);
-    
-    // Close all expanded campaigns and adsets
-    setExpandedCampaign(null);
-    setExpandedAdSet(null);
-    
-    // First try to close any open dropdown content by finding and clicking outside
-    const dropdownContent = document.querySelector('[data-radix-popper-content-wrapper]');
-    if (dropdownContent) {
-      console.log('[CampaignWidget] Found dropdown content, attempting to close');
-      // Try clicking outside
-      document.body.click();
-      
-      // Dispatch escape key
-      const escapeEvent = new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        which: 27,
-        bubbles: true,
-        cancelable: true
-      });
-      document.dispatchEvent(escapeEvent);
-    }
-    
-    // Reset the dropdown component entirely
-    setDropdownKey(prev => prev + 1);
-    
-    // Force blur the trigger as well
-    if (dropdownTriggerRef.current) {
-      dropdownTriggerRef.current.blur();
-    }
-    
-    // Re-enable dropdown after a short delay
-    setTimeout(() => {
-      console.log('[CampaignWidget] Re-enabling dropdown - all expansions closed');
-      setDropdownDisabled(false);
-    }, 1000);
-  }, []);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [expandedAdSet, setExpandedAdSet] = useState<string | null>(null);
   const [adSets, setAdSets] = useState<AdSet[]>([]);
@@ -1306,9 +1258,6 @@ const CampaignWidget = ({
       // Update last refresh time immediately to block other events
       lastRefresh.current = now;
       
-        // Close all dropdowns when refresh occurs
-        closeAllDropdowns();
-      
       // First, set loading states to prevent repeated calls
       setRefreshing(true);
       refreshInProgressRef.current = true;
@@ -1326,6 +1275,10 @@ const CampaignWidget = ({
       // Call refresh with slight delay
       setTimeout(() => {
         if (isMountedRef.current && typeof onRefresh === 'function') {
+          // Close any open dropdowns when global refresh is triggered to prevent UI issues
+          setExpandedCampaign(null);
+          setExpandedAdSet(null);
+          
           onRefresh();
           
           // 🚨 ENSURE BUDGET REFRESH: Also refresh budget data on global refresh
@@ -1367,7 +1320,7 @@ const CampaignWidget = ({
       window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
       document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     };
-  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, closeAllDropdowns]);
+  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef]);
   
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
@@ -1423,11 +1376,12 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-      // Close all dropdowns when date range changes
-      closeAllDropdowns();
-    
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
+    
+    // Close any open dropdowns when date range changes to prevent UI issues
+    setExpandedCampaign(null);
+    setExpandedAdSet(null);
     
     // Clear cached ad sets data for all campaigns when date range changes
     // console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
@@ -1443,7 +1397,7 @@ const CampaignWidget = ({
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [dateRange, brandId, expandedCampaign, fetchAdSets, closeAllDropdowns]);
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 
   // Add this function to update campaign statuses regularly
   useEffect(() => {
@@ -2558,15 +2512,9 @@ const CampaignWidget = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <DropdownMenu key={dropdownKey}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  ref={dropdownTriggerRef} 
-                  variant="outline" 
-                  size="sm" 
-                  disabled={dropdownDisabled}
-                  className={`h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20 ${dropdownDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
+                <Button variant="outline" size="sm" className="h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20">
                   <Settings className="h-3.5 w-3.5 mr-1.5" />
                   Customize
                 </Button>
