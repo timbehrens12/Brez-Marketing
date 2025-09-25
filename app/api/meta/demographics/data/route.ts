@@ -233,40 +233,11 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // FIXED: Respect user's date range selection AND ensure data exists in ad_insights
-      console.log(`[Demographics API] FIXED: Respecting date range ${finalDateFrom} to ${finalDateTo} AND matching ad_insights availability`)
-      
-      // Get the dates that exist in meta_ad_insights for this brand within the requested range
-      const { data: adInsightsDates } = await supabase
-        .from('meta_ad_insights')
-        .select('date')
-        .eq('brand_id', brandId)
-        .gte('date', finalDateFrom)
-        .lte('date', finalDateTo)
-        .order('date')
-      
-      if (adInsightsDates && adInsightsDates.length > 0) {
-        const availableDates = adInsightsDates.map(row => row.date)
-        console.log(`[Demographics API] Found ${availableDates.length} ad_insights dates in range: ${availableDates[0]} to ${availableDates[availableDates.length - 1]}`)
-        
-        // Query demographics for the requested date range (simplified - removed overly strict .in() filter)
-        const matchedDataResult = await supabase
-          .from('meta_demographics')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', breakdownType)
-          .gte('date_range_start', finalDateFrom)
-          .lte('date_range_end', finalDateTo)
-          .order('date_range_start', { ascending: false })
-        
-        if (matchedDataResult.data && matchedDataResult.data.length > 0) {
-          data = matchedDataResult.data
-          console.log(`[Demographics API] Using ${data.length} records for date range ${finalDateFrom} to ${finalDateTo}`)
-        } else {
-          console.log(`[Demographics API] No demographics data found for requested range ${finalDateFrom} to ${finalDateTo}`)
-        }
+      // Use the data from the first query - it's already properly filtered by date range
+      if (data && data.length > 0) {
+        console.log(`[Demographics API] Using ${data.length} demographics records for date range ${finalDateFrom} to ${finalDateTo}`)
       } else {
-        console.log(`[Demographics API] No ad_insights data found for range ${finalDateFrom} to ${finalDateTo}`)
+        console.log(`[Demographics API] No demographics data found for requested range ${finalDateFrom} to ${finalDateTo}`)
       }
     }
     
