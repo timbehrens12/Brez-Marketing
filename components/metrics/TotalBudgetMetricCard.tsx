@@ -114,11 +114,11 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   
   // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
-    // 🚨 FIXED: Always fetch on mount regardless of disableAutoFetch
+    // 🚨 FIXED: Only force refresh on mount when explicitly requested
     if (brandId && !hasInitialLoadRef.current) {
-      console.log('[TotalMetaBudget] Initial mount - fetching fresh budget data');
-      // 🚨 ALWAYS force refresh to get live data (no cache)
-      fetchTotalBudget(true)
+      console.log('[TotalMetaBudget] Initial mount - fetching budget data');
+      // Use cached data on mount, force refresh only when forceRefresh prop is true
+      fetchTotalBudget(false) // Changed from true to false
     }
   }, [brandId])
 

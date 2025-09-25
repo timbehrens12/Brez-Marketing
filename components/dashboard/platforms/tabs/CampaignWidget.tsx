@@ -1159,10 +1159,10 @@ const CampaignWidget = ({
   useEffect(() => {
     console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
-      console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change with force refresh');
+      console.log('[CampaignWidget] Fetching budget data on mount/brandId change (using cache first)');
       // 🚨 CRITICAL FIX: Don't show budget until API completes
       setIsLoadingBudgets(true);
-      fetchCurrentBudgets(true);
+      fetchCurrentBudgets(false); // Changed from true to false - use cache first
     } else {
       // If no brandId, no need to load budgets
       console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');
@@ -1741,9 +1741,26 @@ const CampaignWidget = ({
         return null;
       };
       
-      // For now, just continue with existing logic - but we could use this fallback
-      // const fallbackBudget = await tryTotalBudgetAPI();
-      // if (fallbackBudget) return fallbackBudget;
+      // 🚨 ACTIVATE FALLBACK: Use Total Budget API when Campaign Budget API returns 0
+      if (currentBudgetData?.budget === 0) {
+        try {
+          const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`);
+          if (response.ok) {
+            const totalBudgetData = await response.json();
+            if (totalBudgetData.success && totalBudgetData.totalBudget > 0) {
+              console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using Total Budget API fallback: $${totalBudgetData.totalBudget}`);
+              return {
+                budget: totalBudgetData.totalBudget,
+                formatted_budget: formatCurrency(totalBudgetData.totalBudget),
+                budget_type: 'daily',
+                budget_source: 'total_budget_fallback'
+              };
+            }
+          }
+        } catch (error) {
+          console.warn(`[CampaignWidget] Total Budget API fallback failed:`, error);
+        }
+      }
     }
 
     // 🚨 TEMPORARY: Skip campaign.adset_budget_total as it contains stale data
