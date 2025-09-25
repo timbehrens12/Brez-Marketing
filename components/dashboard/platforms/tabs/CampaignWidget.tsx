@@ -1075,10 +1075,18 @@ const CampaignWidget = ({
     const controller = createAbortController();
     
     try {
-      const url = `/api/meta/campaign-budgets?brandId=${brandId}${forceRefresh ? '&forceRefresh=true' : ''}`;
-      console.log(`[CampaignWidget] 🚀 Calling campaign budget API:`, url);
+      const cacheBuster = forceRefresh ? `&forceRefresh=true&t=${Date.now()}` : '';
+      const url = `/api/meta/campaign-budgets?brandId=${brandId}${cacheBuster}`;
+      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with cache buster:`, url);
       
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await fetch(url, { 
+        signal: controller.signal,
+        cache: forceRefresh ? 'no-store' : 'default',
+        headers: forceRefresh ? {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        } : {}
+      });
       
       if (!isMountedRef.current) return;
       
