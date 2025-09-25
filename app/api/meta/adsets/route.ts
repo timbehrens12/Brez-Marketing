@@ -171,6 +171,9 @@ export async function GET(req: NextRequest) {
               .gte('date', fromDate!)
               .lte('date', toDate!);
             
+            console.log(`[Adsets API] 🔍 Insights query: date >= '${fromDate}' AND date <= '${toDate}' for adsets [${adSetIds.join(', ')}]`);
+            console.log(`[Adsets API] 🔍 Found ${insightsData?.length || 0} insight records`);
+            
             if (insightsError) {
             console.error('[API] Error fetching ad set insights:', insightsError);
           } else {
@@ -206,6 +209,16 @@ export async function GET(req: NextRequest) {
               const impressions = insights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
               const clicks = insights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
               const conversions = insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+              
+              // Debug conversion calculation
+              if (insights.length > 0) {
+                console.log(`[Adsets API] 🔍 AdSet ${adSet.adset_id}: ${insights.length} insights, conversions=${conversions}, spent=${spent}`);
+                insights.forEach(insight => {
+                  if (insight.conversions > 0) {
+                    console.log(`[Adsets API] 🔍 ${insight.date}: ${insight.conversions} conversions, $${insight.spent} spent`);
+                  }
+                });
+              }
               
               // Calculate reach for the date range (sum daily reach values)
               // This matches the campaign-level calculation logic

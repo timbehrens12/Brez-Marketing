@@ -1648,28 +1648,33 @@ const CampaignWidget = ({
 
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
-    // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
-    //   campaign_budget: campaign.budget,
-    //   adset_budget_total: campaign.adset_budget_total,
-    //   budget_type: campaign.budget_type,
-    //   isLoading,
-    //   isSyncing
-    // });
+    // 🔧 FIXED: Always use consistent budget calculation logic
+    // Priority: adset_budget_total (pre-calculated) > campaign budget > fallback to 0
+    
+    // Check if we have pre-calculated adset budget total (most reliable)
+    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+      return {
+        budget: campaign.adset_budget_total,
+        formatted_budget: formatCurrency(campaign.adset_budget_total),
+        budget_type: campaign.budget_type || 'daily',
+        budget_source: campaign.budget_source || 'adsets'
+      };
+    }
     
     // If we have ad sets for this campaign (from expansion), use their combined budget
-    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      // Corrected filter: Only sum up ACTIVE ad sets for the expanded view
+    if (campaignAdSets && campaignAdSets.length > 0) {
+      // Only sum up ACTIVE ad sets
       const activeAdSets = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE');
       const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       
-      // console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
-      
-      return {
-        budget: totalAdSetBudget,
-        formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-        budget_source: 'adsets'
-      };
+      if (totalAdSetBudget > 0) {
+        return {
+          budget: totalAdSetBudget,
+          formatted_budget: formatCurrency(totalAdSetBudget),
+          budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+          budget_source: 'adsets'
+        };
+      }
     }
     
     // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
