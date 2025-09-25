@@ -48,6 +48,7 @@ async function handleBudgetRequest(request: NextRequest) {
     )
     
     // 🔥 FORCE REFRESH: Always use Meta API when forceRefresh=true (like Total Budget API)
+    console.log(`[Campaign Budget API] 🔍 FORCE REFRESH CHECK: forceRefresh=${forceRefresh}, method=${request.method}`);
     if (forceRefresh) {
       console.log(`[Campaign Budget API] 🔥 forceRefresh=true - bypassing database and fetching fresh Meta API data`);
       
