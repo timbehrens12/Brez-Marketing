@@ -1385,45 +1385,36 @@ const CampaignWidget = ({
   // Track previous date range to detect actual changes
   const prevDateRangeRef = useRef<string>('');
   
-  // Add event listeners for date range changes
+  // Add effect to clear cached ad sets data when date range ACTUALLY changes  
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // When date range changes, refresh all data
-    // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
-    
-    // Clear cached ad sets data for all campaigns when date range changes
-    // console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
-    setAdSets([]); // Clear all ad sets data
-    setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
-    
-    if (expandedCampaign) {
-      // 🚨 DISABLED: To prevent sidebar refresh and rate limiting
-      console.log(`[CampaignWidget] Date range change AdSets fetch DISABLED to prevent rate limits`);
-      // const timeoutId = setTimeout(() => {
-      //   if (isMountedRef.current) {
-      //     fetchAdSets(expandedCampaign, true);
-      //   }
-      // }, 300);
-      // return () => clearTimeout(timeoutId);
-    }
-  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
-
-  // Separate effect to close dropdowns only when date range actually changes
-  useEffect(() => {
-    if (!dateRange?.from || !dateRange?.to) return;
-    
     const currentDateRange = `${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
     
-    // Only close dropdowns if the date range actually changed
+    // Only clear adset data if the date range actually changed (not just component re-render)
     if (prevDateRangeRef.current && prevDateRangeRef.current !== currentDateRange) {
-      console.log('[CampaignWidget] Date range actually changed - closing dropdowns');
+      console.log(`[CampaignWidget] 📅 Date range ACTUALLY changed - clearing cached ad sets data and closing dropdowns`);
+      console.log(`  From: ${prevDateRangeRef.current}`);
+      console.log(`  To: ${currentDateRange}`);
+      
+      // Close any open dropdowns when date range actually changes
       setExpandedCampaign(null);
       setExpandedAdSet(null);
+      
+      // Clear cached ad sets data for all campaigns when date range actually changes
+      setAdSets([]); // Clear all ad sets data
+      setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
+    } else if (!prevDateRangeRef.current) {
+      console.log(`[CampaignWidget] 📅 Initial date range set: ${currentDateRange}`);
+    } else {
+      console.log(`[CampaignWidget] 📅 Date range effect fired but no actual change detected - keeping adset data`);
     }
     
+    // Always update the previous date range for next comparison
     prevDateRangeRef.current = currentDateRange;
-  }, [dateRange?.from, dateRange?.to]);
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
+
+  // Note: Date range change handling (including dropdown closing) is now consolidated in the effect above
 
   // 🚨 REMOVED: Periodic campaign status checks to prevent rate limiting
   // Campaign statuses are only checked on load or manual refresh
