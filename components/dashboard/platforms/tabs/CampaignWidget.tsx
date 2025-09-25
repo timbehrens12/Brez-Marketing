@@ -322,10 +322,16 @@ const CampaignWidget = ({
   const [dropdownDisabled, setDropdownDisabled] = useState(false);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
-  // Function to temporarily disable dropdown during refreshes
-  const temporarilyDisableDropdown = useCallback(() => {
-    console.log('[CampaignWidget] Temporarily disabling dropdown during refresh');
+  // Function to close all dropdowns and expanded sections during refreshes
+  const closeAllDropdowns = useCallback(() => {
+    console.log('[CampaignWidget] Closing all dropdowns and expanded sections during refresh');
+    
+    // Close the customize dropdown
     setDropdownDisabled(true);
+    
+    // Close all expanded campaigns and adsets
+    setExpandedCampaign(null);
+    setExpandedAdSet(null);
     
     // First try to close any open dropdown content by finding and clicking outside
     const dropdownContent = document.querySelector('[data-radix-popper-content-wrapper]');
@@ -356,7 +362,7 @@ const CampaignWidget = ({
     
     // Re-enable dropdown after a short delay
     setTimeout(() => {
-      console.log('[CampaignWidget] Re-enabling dropdown');
+      console.log('[CampaignWidget] Re-enabling dropdown - all expansions closed');
       setDropdownDisabled(false);
     }, 1000);
   }, []);
@@ -1300,8 +1306,8 @@ const CampaignWidget = ({
       // Update last refresh time immediately to block other events
       lastRefresh.current = now;
       
-      // Close dropdown when refresh occurs
-      temporarilyDisableDropdown();
+      // Close all dropdowns when refresh occurs
+      closeAllDropdowns();
       
       // First, set loading states to prevent repeated calls
       setRefreshing(true);
@@ -1361,7 +1367,7 @@ const CampaignWidget = ({
       window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
       document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     };
-  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, temporarilyDisableDropdown]);
+  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, closeAllDropdowns]);
   
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
@@ -1417,8 +1423,8 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // Close dropdown when date range changes
-    temporarilyDisableDropdown();
+    // Close all dropdowns when date range changes
+    closeAllDropdowns();
     
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
@@ -1437,7 +1443,7 @@ const CampaignWidget = ({
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [dateRange, brandId, expandedCampaign, fetchAdSets, temporarilyDisableDropdown]);
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets, closeAllDropdowns]);
 
   // Add this function to update campaign statuses regularly
   useEffect(() => {
