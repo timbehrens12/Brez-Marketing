@@ -7,7 +7,9 @@ export async function POST(request: NextRequest) {
   console.log('🚨 EMERGENCY SYNC: Starting complete Meta data rebuild...')
   
   try {
-    const { brandId } = await request.json()
+    // Emergency bypass auth for internal fix
+    const body = await request.json()
+    const { brandId } = body
     
     if (!brandId) {
       return NextResponse.json({ error: 'brandId required' }, { status: 400 })
