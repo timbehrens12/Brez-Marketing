@@ -811,13 +811,16 @@ const CampaignWidget = ({
       // 1. Set expanded state immediately
       setExpandedCampaign(campaignId);
       
+      // 🚨 DISABLED: Prevent API calls when expanding dropdowns to avoid refreshes and rate limiting
+      console.log(`[CampaignWidget] Dropdown expansion API calls DISABLED to prevent rate limits - campaign ${campaignId}`);
+      
       // 2. Fetch ad sets only if not already fetched for this campaign
       if (!campaignsWithAdSets.has(campaignId)) {
-        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} not cached, fetching...`);
-        // Don't await here, let it run in the background
-        fetchAdSets(campaignId, false); 
+        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} not cached, but fetch DISABLED to prevent rate limits`);
+        // 🚨 DISABLED: Don't fetch AdSets to prevent API calls and refreshes
+        // fetchAdSets(campaignId, false); 
       } else {
-        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} already fetched, using cached data (or refetching if necessary within fetchAdSets)`);
+        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} already fetched, using cached data (fetch calls disabled)`);
         // If ad sets are cached but empty, trigger fetch again?
         // Or rely on fetchAdSets internal logic/throttling? For now, assume fetchAdSets handles it.
       }
@@ -956,10 +959,10 @@ const CampaignWidget = ({
                 )
               );
               
-              // If this is the expanded campaign, refresh its ad sets
+              // 🚨 DISABLED: Prevent API calls after status changes to avoid refreshes and rate limiting
               if (expandedCampaign === campaign.campaign_id) {
-                logger.debug(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
-                fetchAdSets(campaign.campaign_id, true);
+                logger.debug(`[CampaignWidget] Ad sets refresh after status change DISABLED to prevent rate limits`);
+                // fetchAdSets(campaign.campaign_id, true);
               }
             }
           }
@@ -1370,17 +1373,17 @@ const CampaignWidget = ({
     
     // We'll only refresh the expanded campaign if one is open to avoid spamming
     if (expandedCampaign && campaignsWithAdSets.has(expandedCampaign)) {
-      logger.debug(`[CampaignWidget] Prioritizing refresh for expanded campaign: ${expandedCampaign}`);
-      fetchAdSets(expandedCampaign, true);
+      logger.debug(`[CampaignWidget] Expanded campaign refresh DISABLED to prevent rate limits: ${expandedCampaign}`);
+      // fetchAdSets(expandedCampaign, true);
       return;
     }
     
-    // If no campaign is expanded, refresh all campaigns with ad sets one at a time
+    // 🚨 DISABLED: Prevent auto-refresh to avoid rate limiting
     const campaignIds = Array.from(campaignsWithAdSets);
     if (campaignIds.length > 0) {
       // Limit to refreshing only the first campaign to reduce API load
-      logger.debug(`[CampaignWidget] Auto-refreshing ad sets for first campaign: ${campaignIds[0]}`);
-      fetchAdSets(campaignIds[0], true);
+      logger.debug(`[CampaignWidget] Auto-refresh ad sets DISABLED to prevent rate limits: ${campaignIds[0]}`);
+      // fetchAdSets(campaignIds[0], true);
     }
   }, [brandId, fetchAdSets, campaignsWithAdSets, isMountedRef, isLoadingAdSets, expandedCampaign, refreshing, refreshInProgressRef]);
 
@@ -1932,10 +1935,10 @@ const CampaignWidget = ({
             )
           );
           
-          // If this is the expanded campaign, refresh its ad sets
+          // 🚨 DISABLED: Prevent API calls after status changes to avoid refreshes and rate limiting
           if (expandedCampaign === campaignId) {
-            logger.debug(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
-            fetchAdSets(campaignId, false);
+            logger.debug(`[CampaignWidget] Ad sets refresh after status change DISABLED to prevent rate limits`);
+            // fetchAdSets(campaignId, false);
           }
           
           // Optionally refresh the parent
