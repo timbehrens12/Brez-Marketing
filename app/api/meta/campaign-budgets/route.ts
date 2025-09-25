@@ -147,15 +147,15 @@ async function handleBudgetRequest(request: NextRequest) {
     
     const campaignIds = campaigns.map(c => c.campaign_id)
     
-          // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
-          // Add cache busting to prevent stale Supabase data
-          const cacheKey = `${Date.now()}-${Math.random()}`;
+          // Get adsets for these campaigns and aggregate their budgets (EXACT SAME QUERY AS TOTAL BUDGET API)
+          // Using the exact same query pattern as Total Budget API for consistency
+          console.log(`[Campaign Budget API] 🔍 Querying adsets for campaigns: ${campaignIds}`);
           const { data: adsets, error: adsetsError } = await supabase
             .from('meta_adsets')
-            .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
+            .select('adset_id, adset_name, campaign_id, status, budget, budget_type, updated_at')
             .eq('brand_id', brandId)
             .in('campaign_id', campaignIds)
-            .eq('status', 'ACTIVE')
+            .eq('status', 'ACTIVE') // Only get ACTIVE ad sets (same as Total Budget API)
             .order('updated_at', { ascending: false }) // Get most recent data first
     
     if (adsetsError) {
