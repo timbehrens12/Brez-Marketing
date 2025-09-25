@@ -52,7 +52,7 @@ async function handleBudgetRequest(request: NextRequest) {
       console.log(`[Campaign Budget API] 🔥 forceRefresh=true - bypassing database and fetching fresh Meta API data`);
       
       // Import the Meta budget fetching function
-      const { fetchMetaCampaignBudgets } = await import('@/lib/services/meta-campaign-budgets');
+      const { fetchMetaCampaignBudgets } = await import('@/lib/services/meta-service');
       
       try {
         const metaResult = await fetchMetaCampaignBudgets(brandId, true);
