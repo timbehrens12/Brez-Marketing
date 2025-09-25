@@ -1125,48 +1125,6 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
               budget = parseFloat(campaign.lifetime_budget) / 100;
               budgetType = 'lifetime';
             }
-            // If no campaign-level budget, check ad set budgets
-            else {
-              try {
-                console.log(`[Meta] No campaign-level budget for ${campaign.name}, checking ad set budgets...`);
-                
-                const adSetsResponse = await fetch(
-                  `https://graph.facebook.com/v18.0/${campaign.id}/adsets?fields=daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
-                );
-                
-                if (adSetsResponse.ok) {
-                  const adSetsData = await adSetsResponse.json();
-                  
-                  if (adSetsData.data && adSetsData.data.length > 0) {
-                    let totalAdSetBudget = 0;
-                    let hasActiveBudgets = false;
-                    
-                    for (const adSet of adSetsData.data) {
-                      // Only count active ad sets
-                      if (adSet.effective_status === 'ACTIVE') {
-                        if (adSet.daily_budget && parseInt(adSet.daily_budget) > 0) {
-                          totalAdSetBudget += parseFloat(adSet.daily_budget) / 100;
-                          budgetType = 'daily';
-                          hasActiveBudgets = true;
-                        } else if (adSet.lifetime_budget && parseInt(adSet.lifetime_budget) > 0) {
-                          totalAdSetBudget += parseFloat(adSet.lifetime_budget) / 100;
-                          budgetType = 'lifetime';
-                          hasActiveBudgets = true;
-                        }
-                      }
-                    }
-                    
-                    if (hasActiveBudgets) {
-                      budget = totalAdSetBudget;
-                      budgetSource = 'adsets';
-                      console.log(`[Meta] Campaign ${campaign.name}: Found $${budget} from ${adSetsData.data.length} ad sets`);
-                    }
-                  }
-                }
-              } catch (adSetError) {
-                console.warn(`[Meta] Could not fetch ad sets for campaign ${campaign.id}:`, adSetError);
-              }
-            }
             
             campaignBudgets.push({
               campaign_id: campaign.id,

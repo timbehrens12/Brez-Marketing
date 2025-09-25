@@ -764,6 +764,9 @@ export function MetaTab2({
   // Listen for global refresh events
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
+      // 🚨 DISABLED: Global refresh to prevent rate limiting and excessive API calls
+      console.log('[MetaTab2] Global refresh event IGNORED to prevent rate limits:', event.detail?.source || 'unknown');
+      return;
 
       if (event.detail?.brandId === brandId && metaConnection) {
         // Check if refresh event includes a specific dateRange
@@ -781,6 +784,9 @@ export function MetaTab2({
 
     // Listen for dashboard meta resync completion to refresh data without syncing
     const handleDashboardMetaRefresh = (event: CustomEvent) => {
+      // 🚨 DISABLED: Dashboard meta refresh to prevent rate limiting and excessive API calls
+      console.log('[MetaTab2] Dashboard meta refresh event IGNORED to prevent rate limits:', event.detail?.source || 'unknown');
+      return;
       
       if (event.detail?.brandId === brandId && metaConnection) {
         // Dashboard completed resync, just fetch fresh data from database
@@ -796,6 +802,9 @@ export function MetaTab2({
     };
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
+      // 🚨 DISABLED: Global refresh all to prevent rate limiting and excessive API calls  
+      console.log('[MetaTab2] Global refresh all event IGNORED to prevent rate limits:', event.detail?.source || 'unknown');
+      return;
 
       if (event.detail?.brandId === brandId && metaConnection && 
           (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
@@ -814,6 +823,9 @@ export function MetaTab2({
     };
 
     const handleNewDayDetected = (event: CustomEvent) => {
+      // 🚨 DISABLED: New day detection to prevent rate limiting and excessive API calls
+      console.log('[MetaTab2] New day event IGNORED to prevent rate limits:', event.detail?.source || 'unknown');
+      return;
 
       if (event.detail?.brandId === brandId && metaConnection) {
 
