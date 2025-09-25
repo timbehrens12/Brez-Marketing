@@ -130,6 +130,10 @@ export function AudienceDemographicsWidget({
     if (!brandId) return
 
     const handleRefresh = () => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[AudienceDemographics] Refresh event IGNORED to prevent rate limits");
+      return;
+      
       fetchData()
     }
 

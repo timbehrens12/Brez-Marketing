@@ -161,6 +161,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   useEffect(() => {
     // Define the event handlers
     const handleMetaDataRefreshed = (event: CustomEvent) => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[TotalMetaBudget] metaDataRefreshed event IGNORED to prevent rate limits");
+      return;
+      
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
         // console.log("[TotalMetaBudget] Received metaDataRefreshed event, refreshing budget data")
@@ -169,6 +173,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
     
     const handleCampaignStatusChanged = (event: CustomEvent) => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[TotalMetaBudget] campaignStatusChanged event IGNORED to prevent rate limits");
+      return;
+      
       // Campaign status changed, refresh budget
       if (event.detail?.brandId === brandId) {
         // console.log("[TotalMetaBudget] Received campaignStatusChanged event, refreshing budget data")
@@ -177,6 +185,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
     
     const handleAdSetStatusChanged = (event: CustomEvent) => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[TotalMetaBudget] adSetStatusChanged event IGNORED to prevent rate limits");
+      return;
+      
       // Ad set status changed, refresh budget
       if (event.detail?.brandId === brandId) {
         // console.log("[TotalMetaBudget] Received adSetStatusChanged event, refreshing budget data")
@@ -185,6 +197,10 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
 
     const handleGlobalRefresh = (event: CustomEvent) => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[TotalMetaBudget] global refresh event IGNORED to prevent rate limits:", event.type);
+      return;
+      
       // Global refresh triggered, refresh budget data
       console.log("[TotalMetaBudget] Received global refresh event, refreshing budget data")
       fetchTotalBudget(true) // Force refresh for global refresh

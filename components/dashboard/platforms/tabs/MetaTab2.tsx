@@ -841,11 +841,31 @@ export function MetaTab2({
       }
     };
 
+    // 🚨 SPECIAL HANDLER: For manual refresh button ONLY (not triggered by tab switches)
+    const handleManualRefreshButton = (event: CustomEvent) => {
+      console.log('[MetaTab2] Manual refresh button clicked - this WILL refresh!');
+      
+      if (event.detail?.brandId === brandId && metaConnection) {
+        // Check if refresh event includes a specific dateRange
+        let forcedDateRange: DateRange | undefined;
+        if (event.detail?.dateRange) {
+          forcedDateRange = {
+            from: new Date(event.detail.dateRange.from),
+            to: new Date(event.detail.dateRange.to)
+          };
+        }
+        
+        syncMetaInsights(forcedDateRange);
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleDashboardMetaRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
       window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
       window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
+      // 🚨 SPECIAL LISTENER: For manual refresh button ONLY
+      window.addEventListener('manual-meta-refresh-button', handleManualRefreshButton as EventListener);
     }
     
     return () => {
@@ -854,9 +874,11 @@ export function MetaTab2({
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
         window.removeEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
+        // 🚨 SPECIAL CLEANUP: For manual refresh button ONLY
+        window.removeEventListener('manual-meta-refresh-button', handleManualRefreshButton as EventListener);
       }
     };
-  }, [brandId, metaConnection]);
+  }, [brandId, metaConnection, syncMetaInsights]);
 
   // Cleanup on unmount
   useEffect(() => {

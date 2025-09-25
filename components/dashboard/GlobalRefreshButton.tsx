@@ -209,6 +209,20 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
               } : undefined
               }
             }))
+            
+            // 🚨 SPECIAL EVENT: Manual refresh button only (not triggered by tab switches)
+            window.dispatchEvent(new CustomEvent('manual-meta-refresh-button', {
+              detail: { 
+                brandId, 
+                timestamp: Date.now(), 
+                forceRefresh: true, 
+                source: 'manual-refresh-button',
+                dateRange: freshDateRange ? {
+                  from: freshDateRange.from.toISOString(),
+                  to: freshDateRange.to.toISOString()
+                } : undefined
+              }
+            }))
           }
         }, 100); // 100ms delay to ensure React state propagation
       }

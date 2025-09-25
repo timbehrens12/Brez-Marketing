@@ -112,6 +112,10 @@ export function DevicePerformanceWidget({
     if (!connectionId) return
 
     const handleRefresh = () => {
+      // 🚨 DISABLED: To prevent rate limiting
+      console.log("[DevicePerformance] Refresh event IGNORED to prevent rate limits");
+      return;
+      
       fetchData()
     }
 
