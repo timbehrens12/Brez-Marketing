@@ -23,8 +23,8 @@ export default function MetaCallback() {
 
         setStatus('Exchanging code for token...')
         
-        // Exchange code for token
-        const response = await fetch('/api/auth/meta/exchange', {
+        // Exchange code for token - USING NEW WORKING ENDPOINT
+        const response = await fetch('/api/auth/meta/exchange-new', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
