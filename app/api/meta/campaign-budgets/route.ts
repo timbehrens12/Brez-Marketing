@@ -78,19 +78,28 @@ export async function GET(request: NextRequest) {
           // 🚨 CHECK: If Meta API returns $0 budgets, this means budgets are at adset level, not campaign level
           const hasNonZeroBudgets = result.budgets.some((budget: any) => budget.budget > 0)
           
-          if (hasNonZeroBudgets) {
-            console.log(`[API] ✅ Meta API succeeded with non-zero budgets, returning fresh budget data:`, result.budgets)
-            // 🔍 DEBUG: Log each budget value
-            result.budgets.forEach((budget: any) => {
-              console.log(`[API] 🔍 Meta API budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, source: ${budget.budget_source}`)
-            })
-            return NextResponse.json({
-              success: true,
-              message: 'Campaign budgets fetched successfully',
-              budgets: result.budgets,
-              timestamp: new Date().toISOString(),
-              refreshMethod: 'meta-api'
-            })
+        if (hasNonZeroBudgets) {
+          console.log(`[API] ✅ Meta API succeeded with non-zero budgets, returning fresh budget data:`, result.budgets)
+          // 🔍 DEBUG: Log each budget value
+          result.budgets.forEach((budget: any) => {
+            console.log(`[API] 🔍 Meta API budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, source: ${budget.budget_source}`)
+          })
+          const response = NextResponse.json({
+            success: true,
+            message: 'Campaign budgets fetched successfully',
+            budgets: result.budgets,
+            timestamp: new Date().toISOString(),
+            refreshMethod: 'meta-api',
+            _nocache: Date.now()
+          })
+          
+          // Prevent 304 responses
+          response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+          response.headers.set('Pragma', 'no-cache')
+          response.headers.set('Expires', '0')
+          response.headers.set('Vary', '*')
+          
+          return response
           } else {
             console.warn(`[API] Meta API returned all $0 budgets - budgets are likely at adset level, falling back to adset aggregation`)
             console.log(`[API] 🔍 About to query database fallback for brandId: ${brandId}, forceRefresh: ${forceRefresh}`)

@@ -1093,6 +1093,13 @@ const CampaignWidget = ({
       
       if (!isMountedRef.current) return;
       
+      // Check for 304 Not Modified response
+      if (response.status === 304) {
+        console.error(`[CampaignWidget] ❌ Campaign budget API returned 304 Not Modified - severe cache issue!`);
+        setCurrentBudgets({});
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         console.log(`[CampaignWidget] 🔍 Campaign budget API response:`, data);
