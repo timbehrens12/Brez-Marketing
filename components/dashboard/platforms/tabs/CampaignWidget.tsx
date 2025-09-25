@@ -1403,13 +1403,14 @@ const CampaignWidget = ({
     setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
     
     if (expandedCampaign) {
-      // Add a slight delay to prevent multiple fetches
-      const timeoutId = setTimeout(() => {
-        if (isMountedRef.current) {
-          fetchAdSets(expandedCampaign, true);
-        }
-      }, 300);
-      return () => clearTimeout(timeoutId);
+      // 🚨 DISABLED: To prevent sidebar refresh and rate limiting
+      console.log(`[CampaignWidget] Date range change AdSets fetch DISABLED to prevent rate limits`);
+      // const timeoutId = setTimeout(() => {
+      //   if (isMountedRef.current) {
+      //     fetchAdSets(expandedCampaign, true);
+      //   }
+      // }, 300);
+      // return () => clearTimeout(timeoutId);
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 

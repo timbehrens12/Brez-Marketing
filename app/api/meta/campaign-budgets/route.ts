@@ -72,18 +72,25 @@ export async function GET(request: NextRequest) {
         const result = await fetchMetaCampaignBudgets(brandId, true)
         
         if (result.success && result.budgets && result.budgets.length > 0) {
-          console.log(`[API] ✅ Meta API succeeded, returning fresh budget data:`, result.budgets)
-          // 🔍 DEBUG: Log each budget value
-          result.budgets.forEach((budget: any) => {
-            console.log(`[API] 🔍 Meta API budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, source: ${budget.budget_source}`)
-          })
-          return NextResponse.json({
-            success: true,
-            message: 'Campaign budgets fetched successfully',
-            budgets: result.budgets,
-            timestamp: new Date().toISOString(),
-            refreshMethod: 'meta-api'
-          })
+          // 🚨 CHECK: If Meta API returns $0 budgets, this means budgets are at adset level, not campaign level
+          const hasNonZeroBudgets = result.budgets.some((budget: any) => budget.budget > 0)
+          
+          if (hasNonZeroBudgets) {
+            console.log(`[API] ✅ Meta API succeeded with non-zero budgets, returning fresh budget data:`, result.budgets)
+            // 🔍 DEBUG: Log each budget value
+            result.budgets.forEach((budget: any) => {
+              console.log(`[API] 🔍 Meta API budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, source: ${budget.budget_source}`)
+            })
+            return NextResponse.json({
+              success: true,
+              message: 'Campaign budgets fetched successfully',
+              budgets: result.budgets,
+              timestamp: new Date().toISOString(),
+              refreshMethod: 'meta-api'
+            })
+          } else {
+            console.warn(`[API] Meta API returned all $0 budgets - budgets are likely at adset level, falling back to adset aggregation`)
+          }
         } else {
           console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
         }
@@ -125,10 +132,10 @@ export async function GET(request: NextRequest) {
     
     const campaignIds = campaigns.map(c => c.campaign_id)
     
-    // Get adsets for these campaigns and aggregate their budgets
+    // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
     const { data: adsets, error: adsetsError } = await supabase
       .from('meta_adsets')
-      .select('campaign_id, budget, status')
+      .select('campaign_id, budget, budget_type, status, adset_name')
       .eq('brand_id', brandId)
       .in('campaign_id', campaignIds)
       .eq('status', 'ACTIVE')
@@ -141,20 +148,24 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
     
-    // Aggregate budgets by campaign
-    const budgets: { [campaignId: string]: number } = {}
+    // Aggregate budgets by campaign (using same logic as Total Budget API)
+    const budgets: { [campaignId: string]: { total: number, type: string, count: number } } = {}
     
     // Initialize all campaigns with 0
     campaigns.forEach(campaign => {
-      budgets[campaign.campaign_id] = 0
+      budgets[campaign.campaign_id] = { total: 0, type: 'daily', count: 0 }
     })
     
     // Sum up adset budgets per campaign
     adsets?.forEach(adset => {
-      console.log(`[API] 🔍 Processing adset - campaign: ${adset.campaign_id}, budget: ${adset.budget}, status: ${adset.status}`)
-      if (adset.budget && adset.budget > 0) {
-        budgets[adset.campaign_id] = (budgets[adset.campaign_id] || 0) + adset.budget
-        console.log(`[API] 🔍 Added to campaign ${adset.campaign_id}: +$${adset.budget} = $${budgets[adset.campaign_id]}`)
+      const adsetBudget = parseFloat(adset.budget) || 0
+      console.log(`[API] 🔍 Processing adset ${adset.adset_name} - campaign: ${adset.campaign_id}, budget: $${adsetBudget}, type: ${adset.budget_type}, status: ${adset.status}`)
+      
+      if (adsetBudget > 0) {
+        budgets[adset.campaign_id].total += adsetBudget
+        budgets[adset.campaign_id].count += 1
+        budgets[adset.campaign_id].type = adset.budget_type || 'daily'
+        console.log(`[API] 🔍 Added to campaign ${adset.campaign_id}: +$${adsetBudget} = $${budgets[adset.campaign_id].total} (${budgets[adset.campaign_id].count} adsets)`)
       }
     })
     
@@ -163,16 +174,19 @@ export async function GET(request: NextRequest) {
     // Format budgets as array of objects to match expected CampaignWidget format
     const formattedBudgets = Object.entries(budgets).map(([campaignId, budget]) => ({
       campaign_id: campaignId,
-      budget: budget,
-      budget_type: 'daily', // Assume daily for database fallback
-      formatted_budget: `$${budget.toFixed(2)}`,
-      budget_source: 'database-adsets'
+      budget: budget.total,
+      budget_type: budget.type,
+      formatted_budget: budget.type === 'daily' 
+        ? `$${budget.total.toFixed(2)}/day`
+        : `$${budget.total.toFixed(2)}`,
+      budget_source: 'database-adsets',
+      adset_count: budget.count
     }))
     
     console.log(`[API] Returning database aggregated budgets:`, formattedBudgets)
     // 🔍 DEBUG: Log each formatted budget
     formattedBudgets.forEach(budget => {
-      console.log(`[API] 🔍 Database budget - campaign: ${budget.campaign_id}, budget: ${budget.budget}, formatted: ${budget.formatted_budget}`)
+      console.log(`[API] 🔍 Database budget - campaign: ${budget.campaign_id}, budget: $${budget.budget}, formatted: ${budget.formatted_budget}, adsets: ${budget.adset_count}`)
     })
     
     return NextResponse.json({
