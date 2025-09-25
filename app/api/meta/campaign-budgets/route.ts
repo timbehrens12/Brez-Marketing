@@ -9,16 +9,7 @@ export const dynamic = 'force-dynamic'
  * API endpoint to get current budgets for all Meta campaigns
  * This always returns the most up-to-date budget values directly from the database
  */
-// Support both GET and POST to bypass caching issues
 export async function GET(request: NextRequest) {
-  return handleBudgetRequest(request);
-}
-
-export async function POST(request: NextRequest) {
-  return handleBudgetRequest(request);
-}
-
-async function handleBudgetRequest(request: NextRequest) {
   try {
     const { userId } = auth()
     
@@ -31,8 +22,6 @@ async function handleBudgetRequest(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const forceRefresh = url.searchParams.get('forceRefresh') === 'true'
     
-    // Log request method for debugging
-    console.log(`[Campaign Budget API] 🔍 ${request.method} request received for brandId: ${brandId}`)
     console.log(`[Campaign Budget API] 🚀 START - brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
     
     if (!brandId) {
@@ -47,65 +36,10 @@ async function handleBudgetRequest(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // 🔥 FORCE REFRESH: Always use Meta API when forceRefresh=true (like Total Budget API)
-    console.log(`[Campaign Budget API] 🔍 FORCE REFRESH CHECK: forceRefresh=${forceRefresh}, method=${request.method}`);
-    if (forceRefresh) {
-      console.log(`[Campaign Budget API] 🔥 forceRefresh=true - bypassing database and fetching fresh Meta API data`);
-      
-      // Import the Meta budget fetching function
-      const { fetchMetaCampaignBudgets } = await import('@/lib/services/meta-service');
-      
-      try {
-        const metaResult = await fetchMetaCampaignBudgets(brandId, true);
-        
-        if (metaResult.success && metaResult.budgets && metaResult.budgets.length > 0) {
-          // Check if Meta API returns non-zero budgets
-          const hasNonZeroBudgets = metaResult.budgets.some((budget: any) => budget.budget > 0);
-          
-          if (hasNonZeroBudgets) {
-            console.log(`[Campaign Budget API] ✅ Meta API forceRefresh success - returning fresh data`);
-            return NextResponse.json({
-              success: true,
-              message: 'Campaign budgets fetched from Meta API (forceRefresh)',
-              budgets: metaResult.budgets,
-              timestamp: new Date().toISOString(),
-              refreshMethod: 'meta-api-force-refresh'
-            });
-          } else {
-            console.log(`[Campaign Budget API] ⚠️ Meta API returned $0 budgets during forceRefresh - will fetch fresh adset data`);
-          }
-        } else {
-          console.log(`[Campaign Budget API] ⚠️ Meta API failed during forceRefresh - falling back to fresh adset data fetch`);
-        }
-      } catch (metaError) {
-        console.error(`[Campaign Budget API] ❌ Meta API error during forceRefresh:`, metaError);
-        console.log(`[Campaign Budget API] 📊 Will try fresh insights sync instead`);
-      }
-
-      // 🔥 CONSOLIDATED FALLBACK: Always try fresh insights sync when forceRefresh=true
-      // This handles both $0 budget cases and rate limit cases
-      console.log(`[Campaign Budget API] 🔄 forceRefresh fallback - fetching fresh Meta insights to update adset data`);
-      console.log(`[Campaign Budget API] 🚨 This will sync fresh adset statuses and budgets from Meta API`);
-      try {
-        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service');
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        
-        // Fetch fresh insights for the last 2 days to update adset statuses and budgets
-        await fetchMetaAdInsights(brandId, yesterday, today, false, true);
-        console.log(`[Campaign Budget API] ✅ Fresh Meta insights fetched, adset data should now be updated`);
-        console.log(`[Campaign Budget API] 🔄 Database should now have correct adset statuses and budgets`);
-      } catch (insightsError) {
-        console.error(`[Campaign Budget API] ❌ Error fetching fresh Meta insights:`, insightsError);
-        console.log(`[Campaign Budget API] ⚠️ Proceeding with database aggregation using existing data`);
-      }
-    }
-
-    // Check if we need to refresh based on data freshness (only when not forceRefresh)
-    let shouldFetchFromMeta = false;
+    // Check if we need to refresh based on data freshness
+    let shouldFetchFromMeta = forceRefresh;
     
-    if (!forceRefresh) {
+    if (!shouldFetchFromMeta) {
       // Check when we last updated campaign budgets
       const { data: lastUpdateCheck } = await supabase
         .from('meta_adsets')
@@ -127,11 +61,11 @@ async function handleBudgetRequest(request: NextRequest) {
       } else {
         console.log(`[API] Budget data is fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database`);
       }
-    } else {
-      console.log(`[API] No recent budget data found, fetching from Meta API`);
-      shouldFetchFromMeta = true;
+      } else {
+        console.log(`[API] No recent budget data found, fetching from Meta API`);
+        shouldFetchFromMeta = true;
+      }
     }
-  }
 
     try {
         // META API FIRST: Fetch real budget data when requested or when data is stale
@@ -202,15 +136,15 @@ async function handleBudgetRequest(request: NextRequest) {
     
     const campaignIds = campaigns.map(c => c.campaign_id)
     
-          // Get adsets for these campaigns and aggregate their budgets (EXACT SAME QUERY AS TOTAL BUDGET API)
-          // Using the exact same query pattern as Total Budget API for consistency
-          console.log(`[Campaign Budget API] 🔍 Querying adsets for campaigns: ${campaignIds}`);
+          // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
+          // Add cache busting to prevent stale Supabase data
+          const cacheKey = `${Date.now()}-${Math.random()}`;
           const { data: adsets, error: adsetsError } = await supabase
             .from('meta_adsets')
-            .select('adset_id, adset_name, campaign_id, status, budget, budget_type, updated_at')
+            .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
             .eq('brand_id', brandId)
             .in('campaign_id', campaignIds)
-            .eq('status', 'ACTIVE') // Only get ACTIVE ad sets (same as Total Budget API)
+            .eq('status', 'ACTIVE')
             .order('updated_at', { ascending: false }) // Get most recent data first
     
     if (adsetsError) {
@@ -304,13 +238,23 @@ async function handleBudgetRequest(request: NextRequest) {
       console.log(`[Campaign Budget API] 🔍 Final budget - campaign: ${budget.campaign_id}, budget: $${budget.budget}, formatted: ${budget.formatted_budget}, adsets: ${budget.adset_count}`)
     })
     
-    return NextResponse.json({
-      success: true,
-      message: 'Campaign budgets fetched from database',
-      budgets: formattedBudgets, // Array format expected by CampaignWidget
-      timestamp: new Date().toISOString(),
-      refreshMethod: 'database-fallback'
-    })
+      const response = NextResponse.json({
+        success: true,
+        message: 'Campaign budgets fetched from database',
+        budgets: formattedBudgets, // Array format expected by CampaignWidget
+        timestamp: new Date().toISOString(),
+        refreshMethod: 'database-fallback',
+        _nocache: Date.now() // Add timestamp to response body to ensure uniqueness
+      })
+      
+      // Set aggressive no-cache headers to prevent 304 responses
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      response.headers.set('Pragma', 'no-cache')
+      response.headers.set('Expires', '0')
+      response.headers.set('X-Content-Type-Options', 'nosniff')
+      response.headers.set('Vary', '*') // Tell proxies not to cache
+      
+      return response
     
   } catch (error) {
     console.error('Error fetching campaign budgets:', error)

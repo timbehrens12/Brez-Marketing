@@ -1073,11 +1073,14 @@ const CampaignWidget = ({
     const controller = createAbortController();
     
     try {
-      const cacheBuster = forceRefresh ? `&forceRefresh=true&t=${Date.now()}&r=${Math.random()}` : `&t=${Date.now()}`;
+      // Use timestamp in path to completely bypass caching
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 9);
+      const cacheBuster = forceRefresh ? `&forceRefresh=true&_t=${timestamp}&_r=${random}&_cb=${timestamp}-${random}` : `&_t=${timestamp}&_r=${random}`;
       const url = `/api/meta/campaign-budgets?brandId=${brandId}${cacheBuster}`;
-      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with aggressive cache buster:`, url);
+      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with EXTREME cache buster:`, url);
       
-      let response = await fetch(url, { 
+      const response = await fetch(url, { 
         signal: controller.signal,
         cache: 'no-store', // Always bypass cache due to caching issues
         headers: {
@@ -1087,23 +1090,6 @@ const CampaignWidget = ({
           'If-None-Match': '*'
         }
       });
-      
-      // 🚨 NUCLEAR OPTION: If GET returns 304 (cached), use POST which cannot be cached
-      if (response.status === 304) {
-        console.warn(`[CampaignWidget] 💥 GET returned 304 (cached), switching to uncacheable POST request`);
-        response = await fetch(url, {
-          method: 'POST',
-          signal: controller.signal,
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ timestamp: Date.now() }) // Add body to make it a valid POST
-        });
-      }
       
       if (!isMountedRef.current) return;
       
