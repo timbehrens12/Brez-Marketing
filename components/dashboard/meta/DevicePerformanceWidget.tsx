@@ -220,7 +220,7 @@ export function DevicePerformanceWidget({
               disabled={isLoading}
               size="sm"
               variant="ghost"
-              className="h-8 w-8 p-0 hover:bg-[#1a1a1a]"
+              className="h-8 px-3 text-xs hover:bg-[#1a1a1a] border border-[#444] hover:border-[#555]"
             >
               {isLoading ? '...' : 'Refresh'}
             </Button>

@@ -2465,7 +2465,6 @@ const CampaignWidget = ({
       <CardHeader className="p-3 pb-1.5 border-b border-[#333]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png" className="w-4 h-4" alt="Meta Logo" />
             <CardTitle className="text-sm font-medium text-white">Campaign Performance</CardTitle>
             <Badge className="bg-zinc-800 text-white border-[#333] text-xs">
               {!isLoading && filteredCampaigns.length} Campaign{!isLoading && filteredCampaigns.length !== 1 ? 's' : ''}
