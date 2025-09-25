@@ -811,18 +811,13 @@ const CampaignWidget = ({
       // 1. Set expanded state immediately
       setExpandedCampaign(campaignId);
       
-      // 🚨 DISABLED: Prevent API calls when expanding dropdowns to avoid refreshes and rate limiting
-      console.log(`[CampaignWidget] Dropdown expansion API calls DISABLED to prevent rate limits - campaign ${campaignId}`);
-      
       // 2. Fetch ad sets only if not already fetched for this campaign
       if (!campaignsWithAdSets.has(campaignId)) {
-        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} not cached, but fetch DISABLED to prevent rate limits`);
-        // 🚨 DISABLED: Don't fetch AdSets to prevent API calls and refreshes
-        // fetchAdSets(campaignId, false); 
+        console.log(`[CampaignWidget] 🔄 Fetching ad sets for dropdown expansion of campaign ${campaignId}`);
+        // ✅ RE-ENABLED: Allow dropdown expansion with throttling to prevent spam
+        fetchAdSets(campaignId, false); 
       } else {
-        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} already fetched, using cached data (fetch calls disabled)`);
-        // If ad sets are cached but empty, trigger fetch again?
-        // Or rely on fetchAdSets internal logic/throttling? For now, assume fetchAdSets handles it.
+        console.log(`[CampaignWidget] ✅ Ad sets for ${campaignId} already cached, using existing data`);
       }
       
       // --- End Expansion Logic ---

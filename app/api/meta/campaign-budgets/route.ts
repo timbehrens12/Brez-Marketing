@@ -148,6 +148,35 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
     
+    // 🔍 DEBUG: Add same debugging as Total Budget API
+    console.log(`[API] Found ${adsets?.length || 0} active adsets for campaigns: ${campaignIds}`)
+    console.log(`[API] Campaigns found:`, campaigns.map(c => `${c.campaign_name} (${c.campaign_id})`))
+    console.log(`[API] Adsets found:`, adsets?.map(a => `${a.adset_name} (${a.campaign_id}) - $${a.budget}`) || [])
+    
+    // Additional debug to check raw adset data
+    if (adsets && adsets.length > 0) {
+      console.log(`[API] Sample adset data:`)
+      adsets.slice(0, 3).forEach(adset => {
+        console.log(`  ${adset.adset_name}: campaign=${adset.campaign_id}, budget=${adset.budget}, type=${adset.budget_type}, status=${adset.status}`)
+      })
+    } else {
+      console.warn(`[API] 🚨 NO ADSETS FOUND - this explains why campaign budget is $0`)
+      
+      // Try a broader query to see what adsets exist
+      const { data: debugAdsets, error: debugError } = await supabase
+        .from('meta_adsets')
+        .select('adset_name, campaign_id, status, budget, budget_type')
+        .eq('brand_id', brandId)
+        .limit(5)
+      
+      if (!debugError && debugAdsets) {
+        console.log(`[API] 🔍 All adsets for brand (any status):`)
+        debugAdsets.forEach(adset => {
+          console.log(`  ${adset.adset_name}: campaign=${adset.campaign_id}, status=${adset.status}, budget=$${adset.budget}`)
+        })
+      }
+    }
+    
     // Aggregate budgets by campaign (using same logic as Total Budget API)
     const budgets: { [campaignId: string]: { total: number, type: string, count: number } } = {}
     
