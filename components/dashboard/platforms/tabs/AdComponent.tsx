@@ -652,13 +652,16 @@ export function AdComponent({
                     case 'conversions':
                       value = ad.conversions;
                       // 🔍 CONVERSIONS DEBUG - Individual Ad
-                      console.log(`🔍 Ad ${ad.ad_name} (${ad.ad_id}) Conversions:`, {
-                        rawConversions: ad.conversions,
-                        displayValue: value,
-                        spent: ad.spent,
-                        costPerConversion: ad.cost_per_conversion,
-                        adsetId: ad.adset_id
-                      });
+                      if (ad.conversions > 0) {
+                        console.warn(`🚨 AD WITH CONVERSIONS: ${ad.ad_name} (${ad.ad_id})`, {
+                          rawConversions: ad.conversions,
+                          displayValue: value,
+                          spent: ad.spent,
+                          costPerConversion: ad.cost_per_conversion,
+                          adsetId: ad.adset_id,
+                          calculatedCostPerConversion: ad.spent > 0 && ad.conversions > 0 ? ad.spent / ad.conversions : 0
+                        });
+                      }
                       break;
                     case 'cost_per_conversion':
                       value = ad.cost_per_conversion;

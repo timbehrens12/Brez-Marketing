@@ -90,6 +90,33 @@ const logger = {
   }
 };
 
+// 🔍 CONVERSIONS ANALYSIS HELPER
+const analyzeConversionsData = (campaigns: any[]) => {
+  console.group('🔍 CONVERSIONS ANALYSIS SUMMARY');
+  
+  let totalCampaignConversions = 0;
+  let totalAdSetConversions = 0;
+  let totalAdConversions = 0;
+  
+  campaigns.forEach(campaign => {
+    totalCampaignConversions += campaign.conversions || 0;
+    console.log(`Campaign ${campaign.campaign_name}: ${campaign.conversions || 0} conversions`);
+  });
+  
+  console.log('📊 SUMMARY:', {
+    totalCampaigns: campaigns.length,
+    totalCampaignConversions,
+    totalAdSetConversions,
+    totalAdConversions
+  });
+  
+  if (totalCampaignConversions > 0) {
+    console.warn('🚨 CAMPAIGNS WITH CONVERSIONS DETECTED - Check for fake data!');
+  }
+  
+  console.groupEnd();
+};
+
 // Throttle mechanism to prevent too many operations
 const throttleMap = new Map<string, number>();
 const throttle = (key: string, minInterval: number = 3000): boolean => {
@@ -1574,6 +1601,20 @@ const CampaignWidget = ({
           finalCostPerConversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
           hasDataInRange: insightsInRange > 0
         });
+        
+        // 🚨 FAKE DATA ALERT
+        if (aggregatedConversions > 0 && aggregatedConversions !== campaign.conversions) {
+          console.warn('🚨 POTENTIAL FAKE CONVERSIONS DETECTED!', {
+            originalCampaignConversions: campaign.conversions,
+            aggregatedConversions: aggregatedConversions,
+            difference: aggregatedConversions - campaign.conversions,
+            dailyInsightsDetails: campaign.daily_insights?.map(insight => ({
+              date: insight.date,
+              conversions: insight.conversions,
+              spent: insight.spent
+            }))
+          });
+        }
         console.groupEnd();
 
         return {
@@ -2619,18 +2660,32 @@ const CampaignWidget = ({
 
                         // 🔍 CONVERSIONS DEBUG - AdSet Aggregation Level
                         console.group(`🔍 CONVERSIONS DEBUG - AdSets for Campaign: ${campaign.campaign_id}`);
-                        console.log('📊 AdSet Individual Conversions:', adSets.map(adSet => ({
+                        const adSetDetails = adSets.map(adSet => ({
                           adSetId: adSet.id,
                           adSetName: adSet.adset_name,
                           conversions: adSet.conversions,
                           spent: adSet.spent,
                           costPerConversion: adSet.cost_per_conversion
-                        })));
+                        }));
+                        console.log('📊 AdSet Individual Conversions:', adSetDetails);
                         console.log('📈 AdSet Aggregation Results:', {
                           adSetCount: adSets.length,
                           totalConversions,
                           totalSpent,
                           aggregateCostPerConversion
+                        });
+                        
+                        // 🚨 CHECK FOR FAKE ADSET CONVERSIONS
+                        adSets.forEach(adSet => {
+                          if (adSet.conversions > 0) {
+                            console.warn(`🔍 AdSet with Conversions: ${adSet.adset_name}`, {
+                              adSetId: adSet.id,
+                              conversions: adSet.conversions,
+                              spent: adSet.spent,
+                              costPerConversion: adSet.cost_per_conversion,
+                              calculatedCostPerConversion: adSet.spent > 0 && adSet.conversions > 0 ? adSet.spent / adSet.conversions : 0
+                            });
+                          }
                         });
                         console.groupEnd();
                         const aggregateRoas = 0; // Needs value calculation
