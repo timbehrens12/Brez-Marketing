@@ -1715,38 +1715,12 @@ const CampaignWidget = ({
     //   isSyncing
     // });
     
-    // 🎯 FIXED: Always use campaign.adset_budget_total for consistency (expanded or collapsed)
-    // This ensures the same budget value is shown regardless of dropdown state
-    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      return {
-        budget: campaign.adset_budget_total,
-        formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: 'daily', // adset totals are always daily budgets
-        budget_source: 'campaign_adset_total_consistent'
-      };
-    }
-    
-    // Only fall back to expanded ad sets if no adset_budget_total available
-    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      // Corrected filter: Only sum up ACTIVE ad sets for the expanded view
-      const activeAdSets = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE');
-      const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
-      
-      // console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
-      
-      return {
-        budget: totalAdSetBudget,
-        formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-        budget_source: 'adsets'
-      };
-    }
-    
-    // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
+     // 🚨 PRIORITY 1: Check current budgets from API first (most up-to-date when available)
     // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
     // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
-    if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
+    // Only use API budget if it's > 0 AND we're not currently loading budgets
+    if (currentBudgetData?.budget && currentBudgetData.budget > 0 && !isLoadingBudgets) {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
@@ -1755,7 +1729,11 @@ const CampaignWidget = ({
         budget_source: 'api'
       };
     } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, currentBudgetData);
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, {
+        currentBudgetData,
+        campaign_adset_budget_total: campaign.adset_budget_total,
+        campaign_budget: campaign.budget
+      });
     }
 
     // 🚨 IMMEDIATE FALLBACK: Use adset_budget_total from campaign props (this is always current)
