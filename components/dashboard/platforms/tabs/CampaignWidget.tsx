@@ -318,30 +318,50 @@ const CampaignWidget = ({
   const [sortBy, setSortBy] = useState(DEFAULT_PREFERENCES.sortBy);
   const [sortOrder, setSortOrder] = useState<SortOrderType>(DEFAULT_PREFERENCES.sortOrder as SortOrderType);
   const [showInactive, setShowInactive] = useState(DEFAULT_PREFERENCES.showInactive);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownKey, setDropdownKey] = useState(0);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
-  // Debug dropdown state changes
-  useEffect(() => {
-    console.log('[CampaignWidget] Dropdown state changed to:', dropdownOpen);
-  }, [dropdownOpen]);
-  
-  // Function to force close dropdown
+  // Function to force close dropdown by resetting the key and DOM manipulation
   const forceCloseDropdown = useCallback(() => {
-    console.log('[CampaignWidget] Force closing dropdown');
-    setDropdownOpen(false);
-    // Force blur the trigger to ensure dropdown closes
+    console.log('[CampaignWidget] Force closing dropdown by resetting key');
+    
+    // First try to close any open dropdown content by finding and clicking outside
+    const dropdownContent = document.querySelector('[data-radix-popper-content-wrapper]');
+    if (dropdownContent) {
+      console.log('[CampaignWidget] Found dropdown content, attempting to close');
+      // Try clicking outside
+      document.body.click();
+    }
+    
+    // Reset the dropdown component entirely
+    setDropdownKey(prev => prev + 1);
+    
+    // Force blur the trigger as well
     if (dropdownTriggerRef.current) {
       dropdownTriggerRef.current.blur();
     }
-    // Force close with timeout as backup
+    
+    // Additional DOM manipulation to ensure closure
     setTimeout(() => {
-      setDropdownOpen(false);
-      if (dropdownTriggerRef.current) {
-        dropdownTriggerRef.current.blur();
-      }
-      // Try to click outside to force close
-      document.body.click();
+      // Dispatch escape key to close any open dropdowns
+      const escapeEvent = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        keyCode: 27,
+        which: 27,
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(escapeEvent);
+      
+      // Find and remove any dropdown portal elements
+      const portals = document.querySelectorAll('[data-radix-portal]');
+      portals.forEach(portal => {
+        if (portal.querySelector('[role="menu"]')) {
+          console.log('[CampaignWidget] Removing dropdown portal');
+          portal.remove();
+        }
+      });
     }, 10);
   }, []);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
@@ -2536,7 +2556,7 @@ const CampaignWidget = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenu key={dropdownKey}>
               <DropdownMenuTrigger asChild>
                 <Button ref={dropdownTriggerRef} variant="outline" size="sm" className="h-7 text-xs bg-transparent border-[#333] text-white hover:bg-black/20">
                   <Settings className="h-3.5 w-3.5 mr-1.5" />
