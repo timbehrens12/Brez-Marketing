@@ -1426,40 +1426,8 @@ const CampaignWidget = ({
     prevDateRangeRef.current = currentDateRange;
   }, [dateRange?.from, dateRange?.to]);
 
-  // Add this function to update campaign statuses regularly
-  useEffect(() => {
-    if (!campaigns.length || !brandId) return;
-    
-    // Temporarily disable status check on initial load for debugging
-    // checkCampaignStatuses(campaigns);
-    
-    // Check for recent status updates every 1-2 minutes to keep them fresh
-    const intervalId = setInterval(() => {
-      // Don't refresh if the user has manually refreshed recently
-      if (refreshing) {
-        logger.debug("[CampaignWidget] Skipping auto refresh because manual refresh is in progress");
-        return;
-      }
-      
-      // Check if we should refresh (apply throttling)
-      if (!throttle('auto-refresh-campaign-statuses', 120000)) {
-        logger.debug("[CampaignWidget] Throttled auto-refresh of campaign statuses");
-        return;
-      }
-      
-      // Temporarily disable periodic status check for debugging
-      // logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
-      // // Only check active campaigns to minimize API calls
-      // const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
-      // if (activeCampaigns.length > 0) {
-      //   checkCampaignStatuses(activeCampaigns.slice(0, 2));
-      // }
-    }, 120000); // 2 minutes interval
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [campaigns, brandId, checkCampaignStatuses, refreshing]);
+  // 🚨 REMOVED: Periodic campaign status checks to prevent rate limiting
+  // Campaign statuses are only checked on load or manual refresh
 
   // Add helper function for budget display
   const formatBudgetWithType = useCallback((budget: number, budgetType: string | null | undefined) => {
@@ -2483,27 +2451,8 @@ const CampaignWidget = ({
   }, [adSets, checkAdSetStatuses]);
 
   // Add effect to periodically check ad set statuses when the expanded campaign changes
-  useEffect(() => {
-    if (!expandedCampaign || adSets.length === 0) return;
-    
-    // Check statuses immediately when a campaign is expanded
-    checkAdSetStatuses(adSets);
-    
-    // Set up interval to check statuses periodically
-    const intervalId = setInterval(() => {
-      if (adSets.length > 0) {
-        // Only check active ad sets during interval updates to reduce API calls
-        const activeAdSets = adSets.filter(a => a.status.toUpperCase() === 'ACTIVE');
-        if (activeAdSets.length > 0) {
-          checkAdSetStatuses(activeAdSets.slice(0, 2)); // Limit to 2 ad sets at a time
-        }
-      }
-    }, 30000); // Check every 30 seconds
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [expandedCampaign, adSets, checkAdSetStatuses]);
+  // 🚨 REMOVED: Periodic adset status checks to prevent rate limiting
+  // Adset statuses are only checked when initially loaded
 
   // Return the JSX for the component
   return (

@@ -445,25 +445,8 @@ export function AdComponent({
     }
   }, [ads, checkAdStatuses]);
 
-  // Periodically check ad statuses
-  useEffect(() => {
-    if (ads.length === 0) return;
-    
-    // Set up interval to check statuses periodically
-    const intervalId = setInterval(() => {
-      if (ads.length > 0 && isMountedRef.current) {
-        // Only check active ads during interval updates to reduce API calls
-        const activeAds = ads.filter(a => a.status.toUpperCase() === 'ACTIVE');
-        if (activeAds.length > 0) {
-          checkAdStatuses(activeAds.slice(0, 2)); // Limit to 2 ads at a time
-        }
-      }
-    }, 30000); // Check every 30 seconds
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [ads, checkAdStatuses, isMountedRef]);
+  // 🚨 REMOVED: Periodic ad status checks to prevent rate limiting
+  // Ad statuses are only checked when initially loaded
   
   // Show loading state while fetching ads
   if (isLoading && ads.length === 0) {
