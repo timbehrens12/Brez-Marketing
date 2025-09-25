@@ -79,15 +79,12 @@ export function AudienceDemographicsWidget({
         params.append('dateTo', endDate)
         console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
       } else {
-        // 🎯 FIXED: Default to today's data when no date range provided (like other widgets)
+        // 🎯 FIXED: Default to today only when no date range provided (like other widgets)
         const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const startDate = yesterday.toISOString().split('T')[0]
-        const endDate = today.toISOString().split('T')[0]
-        params.append('dateFrom', startDate)
-        params.append('dateTo', endDate)
-        console.log('[AudienceDemographics] Using default date range:', startDate, 'to', endDate)
+        const todayStr = today.toISOString().split('T')[0]
+        params.append('dateFrom', todayStr)
+        params.append('dateTo', todayStr)
+        console.log('[AudienceDemographics] Using default date range (today only):', todayStr, 'to', todayStr)
       }
 
       const url = `/api/meta/demographics/data?${params}`
@@ -248,15 +245,6 @@ export function AudienceDemographicsWidget({
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              onClick={fetchData}
-              disabled={isLoading}
-              size="sm"
-              variant="ghost"
-              className="h-8 px-3 text-xs hover:bg-[#1a1a1a] border border-[#444] hover:border-[#555]"
-            >
-              {isLoading ? '...' : 'Refresh'}
-            </Button>
           </div>
         </div>
       </CardHeader>
