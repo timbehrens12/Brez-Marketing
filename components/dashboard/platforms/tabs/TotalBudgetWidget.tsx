@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign } from 'lucide-react'
+// Icons removed as requested
 import { toast } from 'sonner'
 
 // Helper function to format currency
@@ -85,7 +85,6 @@ export function TotalBudgetWidget({ brandId, isManuallyRefreshing = false }: Tot
       <CardHeader className="space-y-0 pb-2">
         <CardTitle className="text-lg font-medium text-white">
           <div className="flex items-center gap-1.5">
-            <DollarSign className="h-5 w-5 text-green-500" />
             <span>Total Meta Ads Budget</span>
           </div>
         </CardTitle>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, RefreshCw } from "lucide-react"
+// Icons removed as requested
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { DateRange } from 'react-day-picker'
 
@@ -79,7 +79,15 @@ export function AudienceDemographicsWidget({
         params.append('dateTo', endDate)
         console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
       } else {
-        // console.log('[AudienceDemographics] No date range, API will use 12-month default')
+        // 🎯 FIXED: Default to today's data when no date range provided (like other widgets)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        const startDate = yesterday.toISOString().split('T')[0]
+        const endDate = today.toISOString().split('T')[0]
+        params.append('dateFrom', startDate)
+        params.append('dateTo', endDate)
+        console.log('[AudienceDemographics] Using default date range:', startDate, 'to', endDate)
       }
 
       const url = `/api/meta/demographics/data?${params}`
@@ -225,7 +233,6 @@ export function AudienceDemographicsWidget({
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-400" />
             <CardTitle className="text-sm font-medium text-white">Audience Demographics</CardTitle>
           </div>
           <div className="flex items-center gap-2">
@@ -248,7 +255,7 @@ export function AudienceDemographicsWidget({
               variant="ghost"
               className="h-8 w-8 p-0 hover:bg-[#1a1a1a]"
             >
-              <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? '...' : 'Refresh'}
             </Button>
           </div>
         </div>
@@ -329,7 +336,6 @@ export function AudienceDemographicsWidget({
           </div>
         ) : (
           <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
             <p className="text-gray-400 mb-2">No {BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label.toLowerCase()} data available</p>
             <div className="text-sm text-gray-500 max-w-md mx-auto space-y-1">
               {selectedBreakdown === 'age_gender' ? (

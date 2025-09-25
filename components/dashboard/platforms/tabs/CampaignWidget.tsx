@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef, FC } from 're
 import { 
   BarChart, LineChart, PieChart, AreaChart, Gauge, ArrowUpRight, ArrowDownRight, 
   Calendar, Filter, MoreHorizontal, Download, ChevronDown, Settings, Table,
-  Eye, EyeOff, Zap, DollarSign, Users, MousePointerClick, Target, Wallet, BarChart2, ChevronRight,
+  EyeOff, Wallet, ChevronRight,
   CalendarRange, Loader2, RefreshCcw, SlidersHorizontal, CircleIcon, Search, ChevronUp
 } from 'lucide-react'
 import { AdComponent } from './AdComponent'
@@ -209,17 +209,17 @@ interface CampaignWidgetProps {
   onReachValuesCalculated?: (reachValues: {[key: string]: number | null}) => void
 }
 
-// Same available metrics as the original widget
+// Same available metrics as the original widget (icons removed as requested)
 const AVAILABLE_METRICS = [
-  { id: 'spent', name: 'Spend', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'impressions', name: 'Impressions', icon: <Eye className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'reach', name: 'Reach', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'clicks', name: 'Clicks', icon: <MousePointerClick className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'ctr', name: 'CTR', icon: <Target className="h-3.5 w-3.5" />, format: 'percentage' },
-  { id: 'cpc', name: 'CPC', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'conversions', name: 'Conversions', icon: <Zap className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'cost_per_conversion', name: 'Cost/Conv.', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'roas', name: 'ROAS', icon: <BarChart2 className="h-3.5 w-3.5" />, format: 'roas' },
+  { id: 'spent', name: 'Spend', format: 'currency' },
+  { id: 'impressions', name: 'Impressions', format: 'number' },
+  { id: 'reach', name: 'Reach', format: 'number' },
+  { id: 'clicks', name: 'Clicks', format: 'number' },
+  { id: 'ctr', name: 'CTR', format: 'percentage' },
+  { id: 'cpc', name: 'CPC', format: 'currency' },
+  { id: 'conversions', name: 'Conversions', format: 'number' },
+  { id: 'cost_per_conversion', name: 'Cost/Conv.', format: 'currency' },
+  { id: 'roas', name: 'ROAS', format: 'roas' },
 ]
 
 // Default preferences
@@ -2487,11 +2487,10 @@ const CampaignWidget = ({
                   <DropdownMenuItem key={metric.id} onSelect={e => { e.preventDefault(); toggleMetric(metric.id); }} className="hover:bg-black/20">
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
-                        {metric.icon}
                         <span>{metric.name}</span>
                       </div>
                       <div className="flex items-center h-4">
-                        {visibleMetrics.includes(metric.id) && <Zap className="h-3.5 w-3.5 text-gray-400" />}
+                        {visibleMetrics.includes(metric.id) && <span className="text-gray-400">✓</span>}
                       </div>
                     </div>
                   </DropdownMenuItem>
