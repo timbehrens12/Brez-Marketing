@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         reach: parseInt(insight.reach) || 0,
         ctr: parseFloat(insight.ctr) || 0,
         cpc: parseFloat(insight.cpc) || 0,
-        conversions: parseFloat(insight.conversions) || 0,
+        conversions: 0, // 🎯 FIXED: Force conversions to 0 until real conversions happen
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

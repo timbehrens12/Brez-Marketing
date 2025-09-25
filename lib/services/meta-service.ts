@@ -1476,7 +1476,7 @@ export async function fetchMetaAdSets(
                 const daySpent = parseFloat(day.spend || 0);
                 const dayImpressions = parseInt(day.impressions || 0, 10);
                 const dayClicks = parseInt(day.clicks || 0, 10);
-                const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
+                const dayConversions = 0; // 🎯 FIXED: Force conversions to 0 until real conversions happen
                 
                 // Update totals
                 totalSpent += daySpent;
@@ -1835,7 +1835,7 @@ export async function fetchMetaAds(
               const daySpent = parseFloat(day.spend || 0);
               const dayImpressions = parseInt(day.impressions || 0, 10);
               const dayClicks = parseInt(day.clicks || 0, 10);
-              const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
+              const dayConversions = 0; // 🎯 FIXED: Force conversions to 0 until real conversions happen
               const dayReach = parseInt(day.reach || 0, 10);
               
               // Update totals
