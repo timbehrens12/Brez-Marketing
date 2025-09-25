@@ -1686,8 +1686,8 @@ const CampaignWidget = ({
     // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
     // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
-    // Use API budget if it exists (even if 0) and we're not currently loading budgets
-    // 0 is a valid budget value that should be respected
+    // Use API budget if it exists (including 0) and we're not currently loading budgets
+    // 0 is a valid budget value that should be respected - means no active adsets with budgets
     if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
       // 🚨 REDUCED LOGGING: Only log once per budget value change to prevent spam
       const budgetKey = `${campaign.campaign_id}-${currentBudgetData.budget}`;
@@ -2806,7 +2806,7 @@ const CampaignWidget = ({
                                         {adSets.length} Ad Sets
                                       </Badge>
                                       <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
-                                        Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.budget, 0))}
+                                        Total Budget: {formatCurrency(adSets.filter(adSet => adSet.status === 'ACTIVE').reduce((sum, adSet) => sum + adSet.budget, 0))}
                                       </Badge>
                                       <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
                                         Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.spent, 0))}
