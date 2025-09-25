@@ -753,7 +753,6 @@ export async function fetchMetaAdInsights(
         
         // Age breakdown records
         allDemographicData.age.forEach((item: any) => {
-          console.log(`[Meta] 🔍 Age item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           demographicRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -768,15 +767,14 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });
 
         // Gender breakdown records
         allDemographicData.gender.forEach((item: any) => {
-          console.log(`[Meta] 🔍 Gender item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           demographicRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -791,15 +789,14 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });
 
         // Age + Gender breakdown records
         allDemographicData.ageGender.forEach((item: any) => {
-          console.log(`[Meta] 🔍 AgeGender item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           demographicRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -814,8 +811,8 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });
@@ -861,7 +858,6 @@ export async function fetchMetaAdInsights(
         
         // Device breakdown records
         allDeviceData.device.forEach((item: any) => {
-          console.log(`[Meta] 🔍 Device item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           deviceRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -876,15 +872,14 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });
 
         // Placement breakdown records
         allDeviceData.placement.forEach((item: any) => {
-          console.log(`[Meta] 🔍 Placement item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           deviceRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -899,15 +894,14 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });
 
         // Platform breakdown records
         allDeviceData.platform.forEach((item: any) => {
-          console.log(`[Meta] 🔍 Platform item data: date_start=${item.date_start}, date_stop=${item.date_stop}, requested=${startDateStr} to ${endDateStr}`);
           deviceRecords.push({
             brand_id: brandId,
             connection_id: connection.id,
@@ -922,8 +916,8 @@ export async function fetchMetaAdInsights(
             cpm: parseFloat(item.cpm || '0'),
             cpc: parseFloat(item.cpc || '0'),
             ctr: parseFloat(item.ctr || '0'),
-            date_range_start: startDateStr, // FORCE use requested date instead of Meta's date
-            date_range_end: endDateStr,     // FORCE use requested date instead of Meta's date
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
             updated_at: new Date().toISOString()
           });
         });

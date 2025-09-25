@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
       // Import the real Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // Calculate date range - use last 12 months for complete historical data like other syncs
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setFullYear(startDate.getFullYear() - 1) // Last 12 months for full historical coverage
+      // 🎯 FIXED: ONLY sync September 1-24 as requested
+      const endDate = new Date() // Today (Sept 24)
+      const startDate = new Date('2025-09-01') // September 1st
       
+      console.log(`[Meta Demographics Sync] 🎯 FOCUSED SYNC: September 1-24 ONLY as requested`)
       console.log(`[Meta Demographics Sync] 🔥 SYNC DATE RANGE: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]} (${Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days)`)
       console.log(`[Meta Demographics Sync] Fetching real Meta demographic data from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
       
