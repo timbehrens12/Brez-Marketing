@@ -1073,17 +1073,19 @@ const CampaignWidget = ({
     const controller = createAbortController();
     
     try {
-      const cacheBuster = forceRefresh ? `&forceRefresh=true&t=${Date.now()}` : '';
+      const cacheBuster = forceRefresh ? `&forceRefresh=true&t=${Date.now()}&r=${Math.random()}` : `&t=${Date.now()}`;
       const url = `/api/meta/campaign-budgets?brandId=${brandId}${cacheBuster}`;
-      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with cache buster:`, url);
+      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with aggressive cache buster:`, url);
       
       const response = await fetch(url, { 
         signal: controller.signal,
-        cache: forceRefresh ? 'no-store' : 'default',
-        headers: forceRefresh ? {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        } : {}
+        cache: 'no-store', // Always bypass cache due to caching issues
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'If-None-Match': '*'
+        }
       });
       
       if (!isMountedRef.current) return;

@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
         const now = new Date();
         const minutesSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
         
-      // If data is older than 10 minutes, fetch fresh data (increased from 5 to reduce API calls)
-      if (minutesSinceUpdate > 10) {
+          // If data is older than 2 minutes, fetch fresh data (aggressive refresh due to caching issues)
+          if (minutesSinceUpdate > 2) {
         console.log(`[API] Budget data is ${minutesSinceUpdate.toFixed(1)} minutes old, fetching fresh data from Meta API`);
         shouldFetchFromMeta = true;
       } else {
@@ -136,13 +136,16 @@ export async function GET(request: NextRequest) {
     
     const campaignIds = campaigns.map(c => c.campaign_id)
     
-    // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
-    const { data: adsets, error: adsetsError } = await supabase
-      .from('meta_adsets')
-      .select('campaign_id, budget, budget_type, status, adset_name')
-      .eq('brand_id', brandId)
-      .in('campaign_id', campaignIds)
-      .eq('status', 'ACTIVE')
+          // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
+          // Add cache busting to prevent stale Supabase data
+          const cacheKey = `${Date.now()}-${Math.random()}`;
+          const { data: adsets, error: adsetsError } = await supabase
+            .from('meta_adsets')
+            .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
+            .eq('brand_id', brandId)
+            .in('campaign_id', campaignIds)
+            .eq('status', 'ACTIVE')
+            .order('updated_at', { ascending: false }) // Get most recent data first
     
     if (adsetsError) {
       console.error(`[API] Database fallback failed (adsets):`, adsetsError)
@@ -152,10 +155,11 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
     
-    // 🔍 DEBUG: Add same debugging as Total Budget API
-    console.log(`[API] Found ${adsets?.length || 0} active adsets for campaigns: ${campaignIds}`)
-    console.log(`[API] Campaigns found:`, campaigns.map(c => `${c.campaign_name} (${c.campaign_id})`))
-    console.log(`[API] Adsets found:`, adsets?.map(a => `${a.adset_name} (${a.campaign_id}) - $${a.budget}`) || [])
+          // 🔍 DEBUG: Add comprehensive debugging with timestamps
+          console.log(`[API] Found ${adsets?.length || 0} active adsets for campaigns: ${campaignIds}`)
+          console.log(`[API] Campaigns found:`, campaigns.map(c => `${c.campaign_name} (${c.campaign_id})`))
+          console.log(`[API] 🕒 Current time: ${new Date().toISOString()}`)
+          console.log(`[API] Adsets found:`, adsets?.map(a => `${a.adset_name} (${a.campaign_id}) - $${a.budget} [updated: ${a.updated_at}]`) || [])
     
     // Additional debug to check raw adset data
     if (adsets && adsets.length > 0) {
