@@ -1583,6 +1583,12 @@ const CampaignWidget = ({
         // If no insights in range, all metrics should be 0 to avoid showing stale data
         // 🔍 CONVERSIONS DEBUG - Campaign Level
         console.group(`🔍 CONVERSIONS DEBUG - Campaign: ${campaign.campaign_name} (${campaign.campaign_id})`);
+        console.log('📅 Date Range Context:', {
+          dateRangeProvided: !!dateRange,
+          dateRangeFrom: dateRange?.from?.toISOString()?.split('T')[0],
+          dateRangeTo: dateRange?.to?.toISOString()?.split('T')[0],
+          dailyInsightsCount: campaign.daily_insights?.length || 0
+        });
         console.log('📊 Raw Campaign Data:', {
           originalConversions: campaign.conversions,
           originalSpent: campaign.spent,
@@ -1602,7 +1608,7 @@ const CampaignWidget = ({
           hasDataInRange: insightsInRange > 0
         });
         
-        // 🚨 FAKE DATA ALERT
+        // 🚨 FAKE DATA ALERT - Check for impossible scenarios
         if (aggregatedConversions > 0 && aggregatedConversions !== campaign.conversions) {
           console.warn('🚨 POTENTIAL FAKE CONVERSIONS DETECTED!', {
             originalCampaignConversions: campaign.conversions,
@@ -1613,6 +1619,24 @@ const CampaignWidget = ({
               conversions: insight.conversions,
               spent: insight.spent
             }))
+          });
+        }
+        
+        // 🚨 CHECK FOR IMPOSSIBLE CONVERSION SCENARIOS
+        if (aggregatedConversions > 0 && aggregatedSpent === 0) {
+          console.error('🚨 IMPOSSIBLE: Conversions with $0 spend!', {
+            conversions: aggregatedConversions,
+            spent: aggregatedSpent,
+            campaignName: campaign.campaign_name
+          });
+        }
+        
+        if (aggregatedConversions > 100 && aggregatedSpent < 10) {
+          console.error('🚨 SUSPICIOUS: Very high conversions with very low spend!', {
+            conversions: aggregatedConversions,
+            spent: aggregatedSpent,
+            costPerConversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+            campaignName: campaign.campaign_name
           });
         }
         console.groupEnd();
