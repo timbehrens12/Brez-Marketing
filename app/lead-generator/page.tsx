@@ -2923,19 +2923,12 @@ export default function LeadGeneratorPage() {
               {/* Business Type Selection */}
               <div className="space-y-3 mb-6">
                 <Label className="text-sm font-medium text-gray-400">Business Type</Label>
-                <Tabs value="local_service" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                    <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Local Services
-                    </TabsTrigger>
-                    <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed opacity-60" disabled>
-                      <Globe className="h-4 w-4 mr-1" />
-                      <span className="text-xs">eCommerce</span>
-                      <Badge className="ml-1 bg-[#FF2A2A]/20 text-[#FF2A2A] text-[10px] px-1 py-0">Soon</Badge>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="w-full">
+                  <div className="flex items-center justify-center p-3 bg-[#2A2A2A] rounded-lg border border-[#333]">
+                    <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-gray-400 font-medium">Local Services</span>
+                  </div>
+                </div>
               </div>
 
           <div className="grid grid-cols-2 gap-4">
