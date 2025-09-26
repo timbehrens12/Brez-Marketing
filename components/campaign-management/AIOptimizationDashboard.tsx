@@ -152,7 +152,7 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
       }
     } catch (error) {
       console.error('Failed to fetch optimization data:', error)
-      toast.error('Failed to load optimization data')
+      toast.error('Failed to load optimization data - check console for details')
     } finally {
       setIsLoading(false)
     }
@@ -167,7 +167,9 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
         const adsetsResponse = await fetch(`/api/meta/adsets?campaignId=${campaign.campaign_id}&brandId=${selectedBrandId}`)
         const adsetsData = await adsetsResponse.json()
         
-        if (adsetsData.success && adsetsData.adsets.length > 0) {
+        // Debug: console.log(`[AI Optimization] AdSets API response for campaign ${campaign.campaign_id}:`, adsetsData)
+        
+        if (adsetsData.success && adsetsData.adsets && Array.isArray(adsetsData.adsets) && adsetsData.adsets.length > 0) {
           adsetsData.adsets.forEach((adset: any) => {
             // Calculate profit (revenue - spend)
             // For now, we'll estimate revenue using ROAS from campaign data
@@ -219,10 +221,67 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
               cost_per_conversion: adset.cost_per_conversion || 0
             })
           })
+        } else {
+          // Debug: No adsets found for campaign
         }
       } catch (error) {
         console.error(`Failed to fetch adsets for campaign ${campaign.campaign_id}:`, error)
       }
+    }
+
+    // If no adsets were found, create fallback data from campaigns
+    if (adsets.length === 0 && campaigns.length > 0) {
+      // Creating fallback data from campaigns
+      
+      campaigns.forEach((campaign) => {
+        // Create a synthetic adset from campaign data
+        const estimatedRevenue = (campaign.spent || 0) * (campaign.roas || 1)
+        const profit = estimatedRevenue - (campaign.spent || 0)
+        const profitMargin = campaign.spent > 0 ? (profit / estimatedRevenue) * 100 : 0
+        
+        // Calculate performance score
+        const roasScore = Math.min((campaign.roas || 0) * 25, 40)
+        const ctrScore = Math.min((campaign.ctr || 0) * 10, 30)
+        const profitScore = profit > 0 ? 30 : 0
+        const performanceScore = Math.round(roasScore + ctrScore + profitScore)
+        
+        // Determine alert level
+        let alertLevel: 'success' | 'warning' | 'critical' = 'success'
+        if (profit < 0 || (campaign.roas || 0) < 1.5) {
+          alertLevel = 'critical'
+        } else if ((campaign.roas || 0) < 2.5 || (campaign.ctr || 0) < 2) {
+          alertLevel = 'warning'
+        }
+        
+        const recommendations = generateRecommendations(campaign, campaign, profit, alertLevel)
+        
+        adsets.push({
+          adset_id: `campaign-${campaign.campaign_id}`,
+          adset_name: campaign.campaign_name,
+          campaign_name: campaign.campaign_name,
+          campaign_id: campaign.campaign_id,
+          status: campaign.status || 'ACTIVE',
+          budget: campaign.budget || 0,
+          spent: campaign.spent || 0,
+          revenue: estimatedRevenue,
+          roas: campaign.roas || 0,
+          cpm: campaign.spent && campaign.impressions ? (campaign.spent / campaign.impressions) * 1000 : 0,
+          ctr: campaign.ctr || 0,
+          conversion_rate: campaign.conversions && campaign.clicks ? (campaign.conversions / campaign.clicks) * 100 : 0,
+          profit,
+          profit_margin: profitMargin,
+          performance_score: performanceScore,
+          alert_level: alertLevel,
+          recommendations,
+          trend_7d: profit > 0 ? 'up' : 'down',
+          potential_profit_increase: recommendations.reduce((sum, rec) => sum + rec.estimated_profit_change, 0),
+          impressions: campaign.impressions || 0,
+          clicks: campaign.clicks || 0,
+          conversions: campaign.conversions || 0,
+          cpc: campaign.cpc || 0,
+          cost_per_conversion: campaign.cost_per_conversion || 0
+        })
+      })
     }
 
     // Calculate summary data
