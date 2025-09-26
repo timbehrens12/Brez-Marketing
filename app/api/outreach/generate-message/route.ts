@@ -283,18 +283,43 @@ AI Instructions:
 - Use casual, human language - avoid corporate buzzwords
 Format as: Subject: [subject line]\n\n[email body]`,
 
-      phone: `Create a natural phone conversation framework that sounds like one business owner calling another. Include:
+      phone: `Create a comprehensive phone conversation framework that sounds like one business owner calling another. MUST include:
+
+MAIN SCRIPT SECTIONS:
 - Friendly opening (15-20 seconds) that feels genuine and establishes connection
 - Conversational hooks that spark curiosity naturally
 - Industry-specific talking points that show understanding
 - Focus on shared challenges and approaches, never specific numbers or claims
-- Multiple response pathways that feel organic
-- Gentle objection responses that build rapport
 - Natural next steps that feel collaborative
-- Authentic conversation pivots for different reactions
 - Script should sound like a helpful peer, not a salesperson
 - Use everyday language, avoid jargon and corporate speak
-Format as: OPENING → CONNECTION → SHARED CHALLENGES → NATURAL CLOSE`,
+
+MANDATORY OBJECTION HANDLING SECTION:
+You MUST include a comprehensive objection handling guide with multiple response options for each common objection:
+
+⚡ OBJECTION HANDLING GUIDE:
+
+🚫 "NOT INTERESTED" (3 response options)
+⏰ "TOO BUSY" (3 response options)
+✅ "ALREADY HAVE MARKETING" (3 response options)
+💰 "NO BUDGET" (3 response options)
+📧 "SEND ME INFORMATION" (3 response options)
+📞 "CALL ME BACK LATER" (3 response options)
+🤔 "NEED TO THINK ABOUT IT" (3 response options)
+🏢 "NEED TO DISCUSS WITH PARTNER/TEAM" (3 response options)
+❌ "WE'VE TRIED MARKETING BEFORE - DIDN'T WORK" (3 response options)
+⚠️ "TOO GOOD TO BE TRUE" (3 response options)
+
+Each objection should have 3 different response approaches (Option 1, Option 2, Option 3) that:
+- Acknowledge their concern genuinely
+- Reframe the conversation
+- Ask questions to keep dialogue going
+- Sound natural and conversational
+- Build rapport rather than pressure
+
+EMERGENCY OBJECTION BREAKERS for when they're really resistant.
+
+Format as: OPENING → CONNECTION → SHARED CHALLENGES → NATURAL CLOSE → OBJECTION HANDLING GUIDE → EMERGENCY OBJECTION BREAKERS`,
 
       linkedin: `Create a LinkedIn message that sounds like authentic professional networking between peers. Should be:
 - 100-150 words maximum
