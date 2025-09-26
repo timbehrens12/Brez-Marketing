@@ -776,22 +776,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
 
-        // Load Creative Studio usage - check localStorage (weekly limit)
+        // Creative Studio Usage - fetch from API for consistency
         try {
-          const creativeUsageData = localStorage.getItem('ad-creative-usage')
-          if (creativeUsageData) {
-            const parsedData = JSON.parse(creativeUsageData)
-            const weeklyUsageCount = parsedData.current || 0
-            
-
-            
-            // Store usage count for this user (weekly limit of 10)
+          const creativeUsageResponse = await fetch('/api/creative-usage')
+          if (creativeUsageResponse.ok) {
+            const usageData = await creativeUsageResponse.json()
+            const weeklyUsageCount = usageData.usage?.current || 0
+            // Store usage count for this user (weekly limit of 25)
             newToolUsageData.creativeStudio[userId] = weeklyUsageCount
           } else {
             newToolUsageData.creativeStudio[userId] = 0
           }
         } catch (error) {
-
+          console.error('Error fetching creative studio usage:', error)
           newToolUsageData.creativeStudio[userId] = 0
         }
         
@@ -1356,7 +1353,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (tool.id === 'creative-studio') {
           // Creative Studio has weekly usage limits
           const weeklyUsage = toolUsageData.creativeStudio[userId || ''] || 0
-                      const WEEKLY_LIMIT = 50 // 50 generations per week
+          const WEEKLY_LIMIT = 25 // 25 generations per week
           
           const hasUsageLeft = weeklyUsage < WEEKLY_LIMIT
 
@@ -1514,7 +1511,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 }
                                   if (tool.id === 'creative-studio') {
                     const used = toolUsageData.creativeStudio[userId || ''] || 0
-                    const limit = 50
+                    const limit = 25
                     return `${used}/${limit} used this week`
                   }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
