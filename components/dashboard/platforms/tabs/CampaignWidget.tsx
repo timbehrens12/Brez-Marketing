@@ -1125,21 +1125,38 @@ const CampaignWidget = ({
         }
         
         if (isMountedRef.current) {
-          // 🚨 EMERGENCY FIX: If campaign budget API returns all $0, check if total budget widget has data
+          // 🚨 EMERGENCY FIX: If campaign budget API returns all $0, use multiple fallback sources
           const hasZeroBudgets = Object.values(budgetMap).every(budget => budget.budget === 0);
           
           if (hasZeroBudgets && campaigns.length > 0) {
             console.log(`[CampaignWidget] 🚨 Campaign Budget API returned all $0 - applying emergency fallback`);
             
-            // EMERGENCY: Use campaign.adset_budget_total as backup if available
+            // EMERGENCY FALLBACK PRIORITY:
+            // 1. campaign.adset_budget_total (from Total Budget calculations)
+            // 2. campaign.budget (direct campaign budget)
+            // 3. Default to $1 if campaign has active status
             campaigns.forEach(campaign => {
+              let fallbackBudget = 0;
+              let fallbackSource = 'no_fallback';
+              
               if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-                console.log(`[CampaignWidget] 🔧 Emergency fallback: Using campaign.adset_budget_total $${campaign.adset_budget_total} for campaign ${campaign.campaign_id}`);
+                fallbackBudget = campaign.adset_budget_total;
+                fallbackSource = 'campaign_adset_total';
+              } else if (campaign.budget && campaign.budget > 0) {
+                fallbackBudget = campaign.budget;
+                fallbackSource = 'campaign_budget';
+              } else if (campaign.status === 'ACTIVE') {
+                fallbackBudget = 1; // Assume $1 if campaign is active but no budget data
+                fallbackSource = 'active_campaign_default';
+              }
+              
+              if (fallbackBudget > 0) {
+                console.log(`[CampaignWidget] 🔧 Emergency fallback: Using ${fallbackSource} $${fallbackBudget} for campaign ${campaign.campaign_id}`);
                 budgetMap[campaign.campaign_id] = {
-                  budget: campaign.adset_budget_total,
-                  formatted_budget: formatCurrency(campaign.adset_budget_total),
+                  budget: fallbackBudget,
+                  formatted_budget: formatCurrency(fallbackBudget),
                   budget_type: 'daily',
-                  budget_source: 'emergency_campaign_fallback'
+                  budget_source: `emergency_${fallbackSource}`
                 };
               }
             });

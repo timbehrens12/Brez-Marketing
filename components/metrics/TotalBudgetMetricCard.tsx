@@ -197,13 +197,14 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
 
     const handleGlobalRefresh = (event: CustomEvent) => {
-      // 🚨 DISABLED: To prevent rate limiting
-      console.log("[TotalMetaBudget] global refresh event IGNORED to prevent rate limits:", event.type);
-      return;
-      
-      // Global refresh triggered, refresh budget data
-      console.log("[TotalMetaBudget] Received global refresh event, refreshing budget data")
-      fetchTotalBudget(true) // Force refresh for global refresh
+      // 🚨 FIXED: Allow manual refresh button but ignore auto-refreshes to prevent rate limiting
+      const source = event.detail?.source;
+      if (source === 'manual-refresh-button' || source === 'global-refresh') {
+        console.log("[TotalMetaBudget] Manual refresh button clicked - refreshing budget data", source);
+        fetchTotalBudget(true); // Force refresh for manual button clicks
+      } else {
+        console.log("[TotalMetaBudget] global refresh event IGNORED to prevent rate limits:", event.type);
+      }
     }
 
     // Add the event listeners
