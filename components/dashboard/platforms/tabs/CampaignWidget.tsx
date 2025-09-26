@@ -677,6 +677,16 @@ const CampaignWidget = ({
           setAdSets(validAdSets);
           success = true; // Mark as successful
           
+          // 🚨 ALSO: Update the cached adsets map with fresh data
+          if (validAdSets.length > 0) {
+            setAllCampaignAdSets(prev => {
+              const newMap = new Map(prev);
+              newMap.set(campaignId, validAdSets);
+              console.log(`[CampaignWidget] 🔄 Updated cached adsets for campaign ${campaignId} with ${validAdSets.length} fresh adsets`);
+              return newMap;
+            });
+          }
+          
           // Add this campaign ID to the set regardless of whether ad sets were found,
           // indicating that a fetch attempt was completed.
           setCampaignsWithAdSets(prev => {
@@ -2284,6 +2294,36 @@ const CampaignWidget = ({
     setCampaignsWithAdSets(new Set()); // Reset fetched tracker
     // console.log("[CW DEBUG] Brand ID or Date Range changed, cleared current ad sets view and fetched tracker.");
   }, [brandId, dateRange]);
+
+  // 🚨 NEW: Auto-update campaign budget when expanded adsets change
+  useEffect(() => {
+    if (expandedCampaign && adSets.length > 0) {
+      const activeAdSets = adSets.filter(adSet => adSet.status === 'ACTIVE');
+      const calculatedBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      
+      // Use callback to get current budget data to avoid circular dependency
+      setCurrentBudgets(prev => {
+        const currentBudgetData = prev[expandedCampaign];
+        
+        // Only update if budget has actually changed
+        if (currentBudgetData && currentBudgetData.budget !== calculatedBudget) {
+          console.log(`[CampaignWidget] 🔄 AdSets changed - updating campaign ${expandedCampaign} budget from $${currentBudgetData.budget} to $${calculatedBudget}`);
+          
+          return {
+            ...prev,
+            [expandedCampaign]: {
+              ...currentBudgetData,
+              budget: calculatedBudget,
+              formatted_budget: formatCurrency(calculatedBudget),
+              budget_source: 'auto_calculated_from_adsets'
+            }
+          };
+        }
+        
+        return prev; // No change needed
+      });
+    }
+  }, [expandedCampaign, adSets]);
 
   // Near the end of the component, add this effect to notify the parent when reach values change:
   useEffect(() => {
