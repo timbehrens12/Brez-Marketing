@@ -258,33 +258,18 @@ async function handleBudgetRequest(request: NextRequest) {
       adset_count: budget.count
     }))
     
-    // 🚨 FORCE SYNC: When forceRefresh=true, always sync fresh adset data to ensure consistency
+    // 🚨 SMART FILTERING: Apply 24-hour filtering without Meta sync (which was causing timeouts)
     if (forceRefresh && adsetCount > 0) {
       console.warn(`[Campaign Budget API] ⚠️ POTENTIAL INCONSISTENCY: Found ${adsetCount} active adsets, but Total Budget API may show different count`)
       console.warn(`[Campaign Budget API] 💡 This suggests one API has fresher data than the other`)
-      console.log(`[Campaign Budget API] 🔄 forceRefresh=true - fetching fresh adset data from Meta API to ensure consistency`)
+      console.log(`[Campaign Budget API] 🔄 forceRefresh=true - applying 24-hour filtering to use only fresh data`)
+      
+      // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
+      console.log(`[Campaign Budget API] 🔄 Applying smart filtering to exclude stale adset data...`)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      console.log(`[Campaign Budget API] 📅 Filtering adsets updated after: ${twentyFourHoursAgo}`)
       
       try {
-        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(today.getDate() - 1)
-        
-        console.log(`[Campaign Budget API] 🔄 Syncing fresh insights for the last 2 days to update adset statuses...`)
-        
-        // Add timeout to prevent API from hanging
-        const syncPromise = fetchMetaAdInsights(brandId, yesterday, today, false, true)
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Sync timeout after 5 seconds')), 5000)
-        )
-        
-        await Promise.race([syncPromise, timeoutPromise])
-        console.log(`[Campaign Budget API] ✅ Fresh adset data synced from Meta API`)
-        
-        // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
-        console.log(`[Campaign Budget API] 🔄 Applying smart filtering to exclude stale adset data...`)
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        console.log(`[Campaign Budget API] 📅 Filtering adsets updated after: ${twentyFourHoursAgo}`)
         
         // Re-query with fresh data, filtering out stale adsets
         const { data: freshAdsets, error: freshError } = await supabase
@@ -319,18 +304,18 @@ async function handleBudgetRequest(request: NextRequest) {
           // Use fresh data instead
           Object.assign(budgets, freshBudgets)
         }
-      } catch (syncError) {
-        console.error(`[Campaign Budget API] ❌ Error syncing fresh adset data:`, syncError)
-        console.log(`[Campaign Budget API] ⚠️ Proceeding with database data, may be inconsistent`)
+      } catch (filterError) {
+        console.error(`[Campaign Budget API] ❌ Error applying 24-hour filter:`, filterError)
+        console.log(`[Campaign Budget API] ⚠️ Proceeding with original database data without filtering`)
         
-        // If sync fails, still return what we have rather than failing completely
-        console.log(`[Campaign Budget API] 📤 RETURNING original database budgets (sync failed):`, formattedBudgets)
+        // If filtering fails, still return what we have rather than failing completely
+        console.log(`[Campaign Budget API] 📤 RETURNING original database budgets (filtering failed):`, formattedBudgets)
         const response = NextResponse.json({
           success: true,
-          message: 'Campaign budgets fetched from database (sync failed)',
+          message: 'Campaign budgets fetched from database (filtering failed)',
           budgets: formattedBudgets,
           timestamp: new Date().toISOString(),
-          refreshMethod: 'database-fallback-sync-failed',
+          refreshMethod: 'database-fallback-filter-failed',
           _nocache: Date.now()
         })
         
