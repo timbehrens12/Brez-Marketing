@@ -528,35 +528,103 @@ P.S. Even if we don't end up working together, I can share some insights about w
 🎯 QUALIFYING QUESTION:
 "Quick question - what's your biggest challenge right now when it comes to getting new customers consistently?"
 
-⚡ OBJECTION HANDLING:
+⚡ OBJECTION HANDLING GUIDE:
 
-"Not interested":
-→ "I totally get that. Most successful business owners are skeptical of marketing pitches. But here's the thing - this isn't about pitching services, it's about sharing a systematic approach that could eliminate the guesswork from your customer acquisition. Would that be worth 15 minutes?"
+🚫 "NOT INTERESTED":
+Option 1: "I totally get that. Most successful business owners are skeptical of marketing pitches. But here's the thing - this isn't about pitching services, it's about sharing a systematic approach that could eliminate the guesswork from your customer acquisition. Would that be worth 15 minutes?"
+Option 2: "That's fair - I'm not interested in a lot of things either. But let me ask you this: if there was a way to make your customer acquisition completely predictable, would that be worth exploring?"
+Option 3: "No problem at all. Out of curiosity, what would need to happen for you to be interested in making your marketing more profitable and predictable?"
 
-"Too busy":
-→ "That's exactly why this approach works so well. You're busy running your business, not learning marketing. The system I've developed handles customer acquisition systematically so you can focus on what you do best - running your business."
+⏰ "TOO BUSY":
+Option 1: "That's exactly why this approach works so well. You're busy running your business, not learning marketing. The system I've developed handles customer acquisition systematically so you can focus on what you do best - running your business."
+Option 2: "I hear you - that's exactly the problem this solves. Most business owners are too busy to figure out marketing, which is why systematic automation is so valuable. What if I could show you how to get better results with less time invested?"
+Option 3: "Perfect - busy means successful! That's why I focus on systematic approaches that work in the background. How long are you planning to stay this busy with manual customer acquisition?"
 
-"Already have marketing":
-→ "That's great! What kind of results are you getting? [Listen] Here's the thing - if your marketing doesn't feel predictable and systematic, there might be room for improvement. Mind if I ask what your biggest challenge is with your current approach?"
+✅ "ALREADY HAVE MARKETING":
+Option 1: "That's great! What kind of results are you getting? [Listen] Here's the thing - if your marketing doesn't feel predictable and systematic, there might be room for improvement. Mind if I ask what your biggest challenge is with your current approach?"
+Option 2: "Awesome! Is it delivering consistent, predictable results every month? [Listen] Most businesses have marketing but lack the systematic approach that makes it truly profitable."
+Option 3: "Great to hear! On a scale of 1-10, how predictable are your marketing results? [Listen] Even good marketing can usually be optimized for better profitability."
 
-"No budget":
-→ "I understand budget is always a consideration. But here's what I've learned: it's not about finding money for marketing, it's about making marketing pay for itself. The system I'm talking about typically pays for itself within the first month. Would it be worth exploring if it cost you nothing to test?"
+💰 "NO BUDGET":
+Option 1: "I understand budget is always a consideration. But here's what I've learned: it's not about finding money for marketing, it's about making marketing pay for itself. The system I'm talking about typically pays for itself within the first month. Would it be worth exploring if it cost you nothing to test?"
+Option 2: "That makes sense. But let me ask this - how much are you losing each month by not having a systematic customer acquisition process? Sometimes the cost of NOT acting is higher than the investment."
+Option 3: "I hear that a lot. But what if this actually reduced your current marketing costs while improving results? Would that change things?"
 
-"Send me information":
-→ "I could do that, but honestly, most people who say that never look at it. Plus, this is really about whether it's a fit for your specific situation. How about this - let me ask you three quick questions, and if it sounds like it could work for you, we'll schedule 15 minutes to dig deeper. Sound fair?"
+📧 "SEND ME INFORMATION":
+Option 1: "I could do that, but honestly, most people who say that never look at it. Plus, this is really about whether it's a fit for your specific situation. How about this - let me ask you three quick questions, and if it sounds like it could work for you, we'll schedule 15 minutes to dig deeper. Sound fair?"
+Option 2: "Sure, but info without context isn't very helpful. It's like sending someone a recipe without knowing if they have the right kitchen. Let me ask you one quick question first - what's your biggest challenge with getting consistent customers?"
+Option 3: "I can do that, but here's the thing - generic information won't help your specific situation. How about I send you something customized based on your business? What's your biggest customer acquisition challenge right now?"
+
+📞 "CALL ME BACK LATER":
+Option 1: "I'll be honest with you - I'm pretty selective about who I work with, and I may not have availability later. But I can send you a quick overview of the systematic approach I mentioned. What's your email?"
+Option 2: "I understand - timing isn't always perfect. But let me ask this: when you say later, are you talking about a better time today, or are you hoping I'll forget to call? [Laugh] What would be a good time?"
+Option 3: "Sure, but let me ask you this - if this conversation could save you months of frustration with ineffective marketing, wouldn't now be the perfect time?"
+
+🤔 "NEED TO THINK ABOUT IT":
+Option 1: "That's smart - you should think about important decisions. What specifically do you need to think about? Maybe I can help you think through it right now."
+Option 2: "Absolutely, and thinking is good. But usually when people say that, there's something specific they're concerned about. What is it - the time investment, the cost, or something else?"
+Option 3: "Fair enough. In my experience, when someone needs to think about it, it means I haven't explained something clearly. What part would you like me to clarify?"
+
+🏢 "NEED TO DISCUSS WITH PARTNER/TEAM":
+Option 1: "That makes perfect sense. Important decisions should involve the right people. What do you think they'd want to know about this approach?"
+Option 2: "Smart - good partnerships involve good communication. What's the best way to get them the information they'd need to make a decision?"
+Option 3: "Absolutely. When you discuss it, what are they going to ask you? Let me make sure you have all the answers they'll want to hear."
+
+❌ "WE'VE TRIED MARKETING BEFORE - DIDN'T WORK":
+Option 1: "I hear that all the time, and I bet it was frustrating. But here's the thing - most marketing fails because it's not systematic. What specifically didn't work for you?"
+Option 2: "That's exactly why I focus on systematic approaches instead of random tactics. What you tried before probably lacked the framework that makes marketing predictable. Want to hear the difference?"
+Option 3: "I'm not surprised - most marketing is just throwing stuff at the wall. But there's a difference between random marketing and systematic customer acquisition. Which one did you try?"
+
+⚠️ "TOO GOOD TO BE TRUE":
+Option 1: "I appreciate the skepticism - that means you're a smart business owner. You're right to be careful. What would need to happen for you to feel confident this is legitimate?"
+Option 2: "Your skepticism is exactly why this works so well - I only work with smart, cautious business owners. What proof would you need to see that this is real?"
+Option 3: "Good question. The difference is this isn't a magic bullet - it's a systematic process that requires work. But it's predictable work that gets predictable results."
 
 🎯 ASSUMPTIVE CLOSE:
 "Based on what you've told me, this could be exactly what ${requestBody?.lead?.business_name || 'your business'} needs. I have time Thursday at 2pm or Friday at 10am for a 15-minute call where I can show you exactly how this would work for your business. Which works better for you?"
 
 🆘 EMERGENCY OBJECTION BREAKERS:
-"Really not interested":
+
+💥 "REALLY NOT INTERESTED":
 → "No problem at all. Mind if I ask what would need to happen for you to be interested in making your customer acquisition more predictable and profitable?"
+→ "That's perfectly fine. Out of curiosity, what's working really well for you right now in terms of getting new customers?"
 
-"Call me back later":
-→ "I'll be honest with you - I'm pretty selective about who I work with, and I may not have availability later. But I can send you a quick overview of the systematic approach I mentioned. What's your email?"
+🔄 "WE'RE ALL SET":
+→ "That's great to hear! What's working so well that you never want to improve it? I'm genuinely curious."
+→ "Awesome! So your customer acquisition is completely predictable and profitable every month? That's rare - what's your secret?"
 
-📞 FINAL CLOSE:
-"How about this - let me send you an overview of the customer acquisition framework that's working well for ${requestBody?.lead?.niche_name || 'businesses'} right now, and if it looks interesting, we can hop on a quick call. What's the best email for that?"`,
+🚪 "NOT A GOOD TIME":
+→ "I understand completely. When would be a good time to have a conversation that could potentially save you thousands in wasted marketing spend?"
+→ "Fair enough. But here's a quick question - is there ever a good time to discuss making more money? [Laugh] What would make this a good time?"
+
+🔒 FINAL SOFTENING TECHNIQUES:
+"Listen, I'm not trying to sell you anything today. I'm just trying to understand if there's a fit. If there is, great. If not, no big deal."
+
+"Here's the thing - I'd rather have a 5-minute honest conversation than waste both our time. Can I ask you one direct question?"
+
+"You know what? You're clearly successful, so whatever you're doing is working. I'm just curious - if you could wave a magic wand and fix one thing about how you get customers, what would it be?"
+
+📞 FINAL CLOSE OPTIONS:
+
+OPTION A - Information Close:
+"How about this - let me send you an overview of the customer acquisition framework that's working well for ${requestBody?.lead?.niche_name || 'businesses'} right now, and if it looks interesting, we can hop on a quick call. What's the best email for that?"
+
+OPTION B - Value Close:
+"Listen, even if we never work together, I can share 3 specific strategies that are working really well for ${requestBody?.lead?.niche_name || 'businesses like yours'} right now. Worth a 10-minute conversation?"
+
+OPTION C - Curiosity Close:
+"You know what? I'm curious about your business. Can I ask you one question that might help both of us figure out if there's anything here worth exploring?"
+
+OPTION D - Direct Close:
+"Based on our conversation, I think this approach could work really well for ${requestBody?.lead?.business_name || 'your business'}. Want to spend 15 minutes next week seeing exactly how it would apply to your situation?"
+
+💡 POWER PHRASES TO USE:
+• "Most ${requestBody?.lead?.niche_name || 'business'} owners tell me..."
+• "Here's what I've learned working with ${requestBody?.lead?.niche_name || 'businesses'} like yours..."
+• "The difference between this and everything else you've tried is..."
+• "What would need to happen for this to be a no-brainer for you?"
+• "On a scale of 1-10, how important is [their stated challenge] to fix?"
+• "If I could show you exactly how to [solve their problem], would that be worth 15 minutes?"`,
 
       linkedin: `Hi ${requestBody?.lead?.owner_name || '[Name]'},
 

@@ -3364,7 +3364,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           size="sm"
                           className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          Clear Selection
+                          Cancel
                         </Button>
                         <Button
                           onClick={deleteBulkCampaignLeads}
