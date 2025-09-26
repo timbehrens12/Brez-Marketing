@@ -1924,19 +1924,12 @@ export default function LeadGeneratorPage() {
               {/* Business Type Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
-              <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
-                <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                  <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Local Services
-                  </TabsTrigger>
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
-                    <Globe className="h-4 w-4 mr-1" />
-                    <span className="text-xs">eCommerce</span>
-                    <Badge className="ml-1 bg-orange-500/20 text-orange-400 text-[10px] px-1 py-0">Soon</Badge>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="w-full">
+                <div className="flex items-center justify-center p-3 bg-[#2A2A2A] rounded-lg border border-[#333]">
+                  <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-gray-400 font-medium">Local Services</span>
+                </div>
+              </div>
             </div>
 
               {/* Niche Selection */}
