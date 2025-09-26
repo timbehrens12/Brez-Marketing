@@ -697,83 +697,33 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           newToolUsageData.outreachTool[userId] = 0
         }
 
-        // Load AI Consultant usage - now shows combined agency + brand usage
-        // First check localStorage for cached usage data to avoid unnecessary API calls
-        let cachedUsage = 0
+        // AI Consultant Usage - fetch from API for consistency with local timezone handling
         try {
-          const cachedData = localStorage.getItem(`ai-consultant-usage-${userId}`)
-          if (cachedData) {
-            const parsed = JSON.parse(cachedData)
-            const today = new Date().toDateString()
-            if (parsed.date === today && parsed.usage !== undefined) {
-              cachedUsage = parsed.usage
-            }
+          const response = await fetch('/api/ai/marketing-consultant', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              checkUsageOnly: true
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
+            const remainingUses = data.remainingUses || 0
+            const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+            newToolUsageData.aiConsultant[userId] = dailyUsageCount
+          } else if (response.status === 429) {
+            // User is maxed out - set to 15 used
+            newToolUsageData.aiConsultant[userId] = 15
+          } else {
+            newToolUsageData.aiConsultant[userId] = 0
           }
         } catch (error) {
-        }
-
-        // If cached usage shows user is maxed out, don't make API call
-        if (cachedUsage >= 15) {
-          newToolUsageData.aiConsultant[userId] = 15
-        } else {
-          // Only make API call if not already loading and user might not be maxed out
-          if (toolUsageLoadingRef.current) {
-            newToolUsageData.aiConsultant[userId] = cachedUsage // Use cached value
-          } else {
-            toolUsageLoadingRef.current = true // Set loading flag for API call
-            try {
-              const response = await fetch('/api/ai/marketing-consultant', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  mode: 'agency', // Mode doesn't matter now - usage is combined
-                  checkUsageOnly: true
-                }),
-              })
-
-
-              if (response.ok) {
-                const data = await response.json()
-                // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
-                const remainingUses = data.remainingUses || 0
-                const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
-
-                // Store combined usage count for this user (daily limit of 15 across all modes)
-                newToolUsageData.aiConsultant[userId] = dailyUsageCount
-
-                // Cache the usage data for future use
-                try {
-                  localStorage.setItem(`ai-consultant-usage-${userId}`, JSON.stringify({
-                    date: new Date().toDateString(),
-                    usage: dailyUsageCount
-                  }))
-                } catch (error) {
-                }
-              } else if (response.status === 429) {
-                // User is maxed out - set to 15 used
-                newToolUsageData.aiConsultant[userId] = 15 // Maxed out
-                
-                // Cache the maxed out status
-                try {
-                  localStorage.setItem(`ai-consultant-usage-${userId}`, JSON.stringify({
-                    date: new Date().toDateString(),
-                    usage: 15
-                  }))
-                } catch (error) {
-                }
-              } else {
-                // If API fails, use cached value or set to 0
-                newToolUsageData.aiConsultant[userId] = cachedUsage || 0
-              }
-            } catch (error) {
-              // If API fails, use cached value or set to 0
-              newToolUsageData.aiConsultant[userId] = cachedUsage || 0
-            } finally {
-              toolUsageLoadingRef.current = false // Always reset the loading flag
-            }
-          }
+          console.error('Error fetching AI consultant usage:', error)
+          newToolUsageData.aiConsultant[userId] = 0
         }
 
         // Creative Studio Usage - fetch from API for consistency
@@ -852,17 +802,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
     }
 
-    // Listen for AI consultant usage updates
-    const handleAIConsultantUpdate = () => {
-      if (userId) {
-        // Only refresh if we don't already know the user is maxed out
-        const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
-        if (currentUsage < 15) {
-          loadToolUsageData()
-        } else {
-        }
-      }
-    }
 
     // Listen for localStorage changes (for creative studio usage resets)
     const handleStorageChange = (event: StorageEvent) => {
@@ -879,14 +818,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('focus', handleFocus)
     window.addEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
-    window.addEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
-      window.removeEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
       window.removeEventListener('storage', handleStorageChange)
       clearInterval(refreshInterval)
     }

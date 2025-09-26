@@ -264,14 +264,26 @@ async function checkCombinedUsage(userId: string, featureType: string, supabase:
     const today = getCurrentLocalDateString()
     const dailyLimit = 15 // Same limit for both modes
     
+    // Get local timezone offset and convert to proper UTC times for database query
+    const now = new Date()
+    const timezoneOffset = now.getTimezoneOffset() * 60000 // Convert to milliseconds
+    
+    // Create start of day in local time, then convert to UTC
+    const startOfDayLocal = new Date(`${today}T00:00:00`)
+    const startOfDayUTC = new Date(startOfDayLocal.getTime() - timezoneOffset)
+    
+    // Create end of day in local time, then convert to UTC  
+    const endOfDayLocal = new Date(`${today}T23:59:59.999`)
+    const endOfDayUTC = new Date(endOfDayLocal.getTime() - timezoneOffset)
+    
     // Get today's usage from ai_feature_usage table (now handles both agency and brand modes)
     const { data: usageData, error: usageError } = await supabase
       .from('ai_feature_usage')
       .select('*')
       .eq('user_id', userId)
       .eq('feature_type', featureType)
-      .gte('created_at', `${today}T00:00:00.000Z`)
-      .lt('created_at', `${today}T23:59:59.999Z`)
+      .gte('created_at', startOfDayUTC.toISOString())
+      .lt('created_at', endOfDayUTC.toISOString())
     
     if (usageError) {
       console.error('Error checking unified usage:', usageError)
