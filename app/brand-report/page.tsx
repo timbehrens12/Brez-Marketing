@@ -50,7 +50,7 @@ export default function BrandReportPage() {
     from: undefined,
     to: undefined,
   })
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [isLoadingReport, setIsLoadingReport] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<string>("today")

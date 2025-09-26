@@ -167,7 +167,7 @@ export default function OutreachToolPage() {
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
   const [selectedCampaignLead, setSelectedCampaignLead] = useState<CampaignLead | null>(null)
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
   const [messageUsage, setMessageUsage] = useState<{

@@ -835,7 +835,7 @@ export default function SettingsPage() {
   const { user } = useUser()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const { agencySettings, updateAgencySettings, isLoading: agencyLoading } = useAgency()
-  const [isLoadingPage, setIsLoadingPage] = useState(false)
+    const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [activeTab, setActiveTab] = useState('agency-branding')
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [isAddBrandDialogOpen, setIsAddBrandDialogOpen] = useState(false)

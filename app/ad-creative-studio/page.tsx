@@ -1163,7 +1163,7 @@ export default function AdCreativeStudioPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [isLoadingAfterBrandSelection, setIsLoadingAfterBrandSelection] = useState(false)
   const [currentStyleIndex, setCurrentStyleIndex] = useState(0)
   const [showMoreInfo, setShowMoreInfo] = useState(false)

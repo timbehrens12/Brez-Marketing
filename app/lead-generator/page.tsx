@@ -255,7 +255,7 @@ export default function LeadGeneratorPage() {
   const [todayLeads, setTodayLeads] = useState(0)
   const [activeTab, setActiveTab] = useState('search')
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const { agencySettings } = useAgency()
   const [showFilters, setShowFilters] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')

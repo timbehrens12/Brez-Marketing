@@ -16,7 +16,7 @@ import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidge
 export default function AnalyticsPage() {
   const { selectedBrandId } = useBrandContext()
   const supabase = useSupabase()
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const { agencySettings } = useAgency()
   const pathname = usePathname()
 
