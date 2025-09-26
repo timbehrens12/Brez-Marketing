@@ -270,15 +270,87 @@ async function handleBudgetRequest(request: NextRequest) {
       try {
         console.log(`[Campaign Budget API] 🔄 Fetching fresh adset statuses from Meta API...`)
         
-        // Import the Meta service function
-        const { fetchMetaAdInsights } = await import('../../../../lib/services/meta-service')
+        // Use direct Meta AdSets API call (same as Total Budget API)
+        console.log(`[Campaign Budget API] 🔄 Making direct Meta AdSets API call for real-time status...`)
         
-        // Fetch fresh adset statuses from Meta API (this updates the database)
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
+        // Get Meta connection details from database
+        const { data: connectionData, error: connectionError } = await supabase
+          .from('meta_connections')
+          .select('access_token, metadata')
+          .eq('brand_id', brandId)
+          .single()
+          
+        if (connectionError || !connectionData?.access_token) {
+          console.error(`[Campaign Budget API] ❌ No Meta connection found for brand ${brandId}:`, connectionError)
+          throw new Error('No Meta connection found')
+        }
         
-        const metaResult = await fetchMetaAdInsights(brandId, yesterday, today, false, true) // Force refresh, skip demographics
+        const accessToken = connectionData.access_token
+        let accountId = 'unknown'
+        
+        if (connectionData.metadata && connectionData.metadata.account_id) {
+          accountId = connectionData.metadata.account_id
+        } else {
+          // If no metadata, try to get account ID from a simple me call
+          console.log('[Campaign Budget API] No account ID in metadata, fetching from Meta API...')
+          const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}&fields=id&limit=1`)
+          if (meResponse.ok) {
+            const meData = await meResponse.json()
+            if (meData.data?.[0]?.id) {
+              accountId = meData.data[0].id.replace('act_', '') // Remove act_ prefix if present
+            }
+          }
+        }
+        
+        console.log(`[Campaign Budget API] 🔄 Direct Meta API call to account: ${accountId}`)
+        
+        // DIRECT META API CALL - same as Total Budget API
+        const response = await fetch(
+          `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${accessToken}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
+          { 
+            method: 'GET',
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          }
+        )
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`[Campaign Budget API] Meta AdSets API error ${response.status}:`, errorText)
+          throw new Error(`Meta API error: ${response.status} - ${errorText}`)
+        }
+        
+        const adSetsResponse = await response.json()
+        console.log(`[Campaign Budget API] 📊 Direct Meta AdSets API result:`, { 
+          success: !!adSetsResponse?.data, 
+          totalAdSets: adSetsResponse?.data?.length || 0,
+          activeAdSets: adSetsResponse?.data?.filter((adset: any) => adset.status === 'ACTIVE').length || 0
+        })
+        
+        // Update database with fresh adset statuses
+        if (adSetsResponse?.data) {
+          console.log(`[Campaign Budget API] 🔄 Updating database with ${adSetsResponse.data.length} fresh adset statuses...`)
+          
+          for (const adset of adSetsResponse.data) {
+            const budget = parseFloat(adset.daily_budget || adset.lifetime_budget || '0') / 100 // Convert from cents
+            await supabase
+              .from('meta_adsets')
+              .upsert({
+                brand_id: brandId,
+                adset_id: adset.id,
+                adset_name: adset.name,
+                campaign_id: adset.campaign_id,
+                status: adset.status,
+                budget: budget,
+                budget_type: adset.daily_budget ? 'daily' : 'lifetime',
+                updated_at: new Date().toISOString()
+              })
+          }
+          console.log(`[Campaign Budget API] ✅ Database updated with fresh Meta adset statuses`)
+        }
+        
+        const metaResult = { success: true, freshAdSets: adSetsResponse?.data?.length || 0 }
         console.log(`[Campaign Budget API] 📊 Meta adset sync result:`, metaResult)
         
         // Re-query database after Meta sync to get updated statuses
