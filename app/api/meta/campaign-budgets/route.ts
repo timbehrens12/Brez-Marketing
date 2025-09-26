@@ -34,6 +34,7 @@ async function handleBudgetRequest(request: NextRequest) {
     // Log request method for debugging
     console.log(`[Campaign Budget API] 🔍 ${request.method} request received for brandId: ${brandId}`)
     console.log(`[Campaign Budget API] 🚀 START - brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
+    console.log(`[Campaign Budget API] 🔥 DEPLOYMENT TEST: ${Date.now()}`)
     
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
