@@ -271,10 +271,14 @@ async function handleBudgetRequest(request: NextRequest) {
         console.log(`[Campaign Budget API] 🔄 Fetching fresh adset statuses from Meta API...`)
         
         // Import the Meta service function
-        const { fetchMetaAdSets } = await import('../../../../lib/services/meta-service')
+        const { fetchMetaAdInsights } = await import('../../../../lib/services/meta-service')
         
         // Fetch fresh adset statuses from Meta API (this updates the database)
-        const metaResult = await fetchMetaAdSets(brandId, true) // Force refresh
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        
+        const metaResult = await fetchMetaAdInsights(brandId, yesterday, today, false, true) // Force refresh, skip demographics
         console.log(`[Campaign Budget API] 📊 Meta adset sync result:`, metaResult)
         
         // Re-query database after Meta sync to get updated statuses
