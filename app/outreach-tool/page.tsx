@@ -2368,13 +2368,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   const copyToClipboard = async (text: string, type: string, fieldId?: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      toast(`${type} copied to clipboard!`, {
+      toast.success(`✓ ${type} copied to clipboard!`, {
         style: {
-          background: '#2A2A2A',
-          color: '#E5E5E5',
-          border: '1px solid #444',
+          background: '#1a2f1a',
+          color: '#4ade80',
+          border: '1px solid #22c55e',
         },
-        icon: '📋',
+        duration: 2000,
       })
       
       // Add visual feedback
@@ -4225,10 +4225,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.email!, 'Email', 'email-copy')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
-                          title="Copy Email"
+                          className={`h-8 w-8 p-0 group transition-all duration-200 ${
+                            copiedField === 'email-copy' 
+                              ? 'bg-green-500/20 border border-green-500/30' 
+                              : 'hover:bg-blue-500/20'
+                          }`}
+                          title={copiedField === 'email-copy' ? 'Copied!' : 'Copy Email'}
                         >
-                          <Mail className={`h-4 w-4 text-blue-400 group-hover:text-blue-300 ${copiedField === 'email-copy' ? 'animate-pulse' : ''}`} />
+                          {copiedField === 'email-copy' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
+                          ) : (
+                            <Mail className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
+                          )}
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.phone && (
@@ -4236,10 +4244,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.phone!, 'Phone', 'phone-copy')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-green-500/20 group"
-                          title="Copy Phone"
+                          className={`h-8 w-8 p-0 group transition-all duration-200 ${
+                            copiedField === 'phone-copy' 
+                              ? 'bg-green-500/20 border border-green-500/30' 
+                              : 'hover:bg-green-500/20'
+                          }`}
+                          title={copiedField === 'phone-copy' ? 'Copied!' : 'Copy Phone'}
                         >
-                          <Phone className={`h-4 w-4 text-green-400 group-hover:text-green-300 ${copiedField === 'phone-copy' ? 'animate-pulse' : ''}`} />
+                          {copiedField === 'phone-copy' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
+                          ) : (
+                            <Phone className="h-4 w-4 text-green-400 group-hover:text-green-300" />
+                          )}
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.linkedin_profile && (
