@@ -159,12 +159,18 @@ async function handleBudgetRequest(request: NextRequest) {
           // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
           // Add cache busting to prevent stale Supabase data
           const cacheKey = `${Date.now()}-${Math.random()}`;
+          
+          // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+          console.log(`[Campaign Budget API] 📅 Initial query: Filtering adsets updated after: ${twentyFourHoursAgo}`)
+          
           const { data: adsets, error: adsetsError } = await supabase
             .from('meta_adsets')
             .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
             .eq('brand_id', brandId)
             .in('campaign_id', campaignIds)
             .eq('status', 'ACTIVE')
+            .gte('updated_at', twentyFourHoursAgo) // Only include adsets updated in last 24 hours
             .order('updated_at', { ascending: false }) // Get most recent data first
     
     if (adsetsError) {
@@ -275,24 +281,19 @@ async function handleBudgetRequest(request: NextRequest) {
         await Promise.race([syncPromise, timeoutPromise])
         console.log(`[Campaign Budget API] ✅ Fresh adset data synced from Meta API`)
         
-        // 🚨 FORCE ADSET STATUS SYNC: Some adsets may have stale status data
-        console.log(`[Campaign Budget API] 🔄 Force syncing adset statuses to ensure accurate budget calculation...`)
-        try {
-          // Use the Meta campaigns service to force refresh adset data
-          const { fetchMetaCampaignData } = await import('@/lib/services/meta-service')
-          await fetchMetaCampaignData(brandId, true) // Force refresh all campaign data including adsets
-          console.log(`[Campaign Budget API] ✅ Adset statuses synced from Meta API`)
-        } catch (statusSyncError) {
-          console.warn(`[Campaign Budget API] ⚠️ Adset status sync failed, proceeding with current data:`, statusSyncError)
-        }
+        // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
+        console.log(`[Campaign Budget API] 🔄 Applying smart filtering to exclude stale adset data...`)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        console.log(`[Campaign Budget API] 📅 Filtering adsets updated after: ${twentyFourHoursAgo}`)
         
-        // Re-query with fresh data
+        // Re-query with fresh data, filtering out stale adsets
         const { data: freshAdsets, error: freshError } = await supabase
           .from('meta_adsets')
           .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
           .eq('brand_id', brandId)
           .in('campaign_id', campaignIds)
           .eq('status', 'ACTIVE')
+          .gte('updated_at', twentyFourHoursAgo) // Only include adsets updated in last 24 hours
           .order('updated_at', { ascending: false })
         
         if (!freshError && freshAdsets) {
