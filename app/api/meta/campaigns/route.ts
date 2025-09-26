@@ -312,6 +312,7 @@ export async function GET(request: NextRequest) {
           }
           
           return NextResponse.json({
+            success: true,
             campaigns: campaignsWithRecommendations,
             dateRange: {
               from: from,
@@ -341,6 +342,7 @@ export async function GET(request: NextRequest) {
       
       if (!campaignDetails || campaignDetails.length === 0) {
         return NextResponse.json({ 
+          success: true,
           campaigns: [],
           message: 'No campaigns found'
         })
@@ -459,6 +461,7 @@ export async function GET(request: NextRequest) {
         }));
         
         return NextResponse.json({
+          success: true,
           campaigns: campaignsWithZeroMetrics,
           dateRange: {
             from: from,
@@ -1053,6 +1056,7 @@ export async function GET(request: NextRequest) {
       }
       
       return NextResponse.json({
+        success: true,
         campaigns: campaignsWithRecommendations,
         dateRange: {
           from: from,
@@ -1391,14 +1395,14 @@ export async function GET(request: NextRequest) {
     }));
 
     // Log debug info for our test campaign
-    const testCampaignFinal = campaignsWithRecommendations.find(campaign => campaign.campaign_id === '120218263352990058');
+    const testCampaignFinal = campaignsWithRecommendationsFinal.find(campaign => campaign.campaign_id === '120218263352990058');
     if (testCampaignFinal) {
       console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaignFinal.campaign_name}`);
       console.log(`>>> [API Campaigns] Has recommendation: ${!!testCampaignFinal.recommendation}`);
       }
   
       // Calculate campaign totals for summary (use the CORRECTED version with bulk calculation fixes)
-      const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
+      const campaignTotals = campaignsWithRecommendationsFinal.reduce((totals, campaign) => ({
         spend: totals.spend + (campaign.spent || 0),
       impressions: totals.impressions + (campaign.impressions || 0),
       clicks: totals.clicks + (campaign.clicks || 0),
@@ -1407,13 +1411,14 @@ export async function GET(request: NextRequest) {
     }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 });
       
       console.log(`[CAMPAIGNS API] Campaign totals - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}`)
-      console.log(`[CAMPAIGNS API] Source: CORRECTED bulk calculation from ad set insights across ${campaignsWithRecommendations.length} campaigns`)
+      console.log(`[CAMPAIGNS API] Source: CORRECTED bulk calculation from ad set insights across ${campaignsWithRecommendationsFinal.length} campaigns`)
   
       return NextResponse.json({
-        campaigns: campaignsWithRecommendations, // Use the CORRECTED version with bulk calculation fixes
+        success: true,
+        campaigns: campaignsWithRecommendationsFinal, // Use the CORRECTED version with bulk calculation fixes
         shouldRefresh,
         refreshReason,
-      lastRefresh: campaignsWithRecommendations && campaignsWithRecommendations.length > 0 ? campaignsWithRecommendations[0].last_refresh_date : null
+      lastRefresh: campaignsWithRecommendationsFinal && campaignsWithRecommendationsFinal.length > 0 ? campaignsWithRecommendationsFinal[0].last_refresh_date : null
     });
   } catch (error) {
     console.error('[Meta Campaigns] Error in campaigns endpoint:', error)
