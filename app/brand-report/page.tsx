@@ -6,6 +6,7 @@ import { DateRange } from "react-day-picker"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -70,6 +71,12 @@ export default function BrandReportPage() {
   const [userTimezone, setUserTimezone] = useState<string>('America/Chicago') // Default fallback
   const [isEditingReport, setIsEditingReport] = useState(false)
   const [editedReportContent, setEditedReportContent] = useState<string>("")
+  const [reportSections, setReportSections] = useState<Array<{
+    title: string
+    content: string
+    id: string
+  }>>([])
+  const [editMode, setEditMode] = useState<'visual' | 'html'>('visual')
 
   // Detect user's timezone on mount
   useEffect(() => {
@@ -722,10 +729,10 @@ export default function BrandReportPage() {
 
       // Run data sync in background - don't block report generation
       try {
-        // Sync Meta data with timeout
+        // Sync Meta data with extended timeout for fresh data
         const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7
         const metaSyncController = new AbortController()
-        const metaSyncTimeout = setTimeout(() => metaSyncController.abort(), 45000) // 45 second timeout
+        const metaSyncTimeout = setTimeout(() => metaSyncController.abort(), 90000) // 90 second timeout for Meta
         
         const metaSyncPromise = fetch('/api/meta/sync', {
           method: 'POST',
@@ -741,9 +748,9 @@ export default function BrandReportPage() {
           signal: metaSyncController.signal
         }).finally(() => clearTimeout(metaSyncTimeout))
         
-        // Sync Shopify data with timeout
+        // Sync Shopify data with extended timeout for fresh data
         const shopifySyncController = new AbortController()
-        const shopifySyncTimeout = setTimeout(() => shopifySyncController.abort(), 30000) // 30 second timeout
+        const shopifySyncTimeout = setTimeout(() => shopifySyncController.abort(), 60000) // 60 second timeout
         
         const shopifySyncPromise = fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/cron/shopify-sync`, {
           method: 'POST',
@@ -757,9 +764,9 @@ export default function BrandReportPage() {
           signal: shopifySyncController.signal
         }).finally(() => clearTimeout(shopifySyncTimeout))
         
-        // Sync Meta demographics with timeout
+        // Sync Meta demographics with extended timeout for fresh data
         const demoSyncController = new AbortController()
-        const demoSyncTimeout = setTimeout(() => demoSyncController.abort(), 20000) // 20 second timeout
+        const demoSyncTimeout = setTimeout(() => demoSyncController.abort(), 45000) // 45 second timeout for demographics
         
         const demoSyncPromise = fetch('/api/meta/sync-demographics', {
           method: 'POST',
@@ -772,11 +779,36 @@ export default function BrandReportPage() {
           signal: demoSyncController.signal
         }).finally(() => clearTimeout(demoSyncTimeout))
         
-        // Don't await - let sync run in background
-        Promise.allSettled([metaSyncPromise, shopifySyncPromise, demoSyncPromise])
+        // Wait for sync operations to complete before proceeding with fresh data
+        console.log('🔄 Waiting for data sync to complete...')
+        
+        // Show user that fresh data is being pulled
+        toast({
+          title: "Syncing fresh data...",
+          description: "Pulling latest Meta ads, Shopify sales, and demographic data. This may take up to 2 minutes.",
+        })
+        
+        const syncResults = await Promise.allSettled([metaSyncPromise, shopifySyncPromise, demoSyncPromise])
+        
+        const syncStatus = syncResults.map((result, index) => {
+          const names = ['Meta', 'Shopify', 'Demographics']
+          if (result.status === 'fulfilled') {
+            console.log(`✅ ${names[index]} sync completed`)
+            return `${names[index]}: ✓`
+          } else {
+            console.log(`⚠️ ${names[index]} sync failed/timeout:`, result.reason)
+            return `${names[index]}: ⚠️ Timeout/Error`
+          }
+        })
+        
+        // Wait an additional 10 seconds for data to propagate in database
+        console.log('⏳ Waiting for data propagation...')
+        await new Promise(resolve => setTimeout(resolve, 10000))
+        
+        console.log('📊 Proceeding with fresh data fetch...')
 
       } catch (syncError) {
-        // Sync errors don't block report generation
+        console.log('⚠️ Failed to trigger sync operations, continuing with existing data:', syncError)
       }
 
       // If not forcing refresh, check if report already exists for this snapshot time
@@ -2125,21 +2157,137 @@ export default function BrandReportPage() {
     }
   }
 
+  // Parse HTML report into editable sections
+  const parseReportSections = (htmlContent: string) => {
+    const sections = []
+    
+    // Extract sections using regex to find h2 headers and their content
+    const sectionRegex = /<h2[^>]*?>(.*?)<\/h2>\s*<p[^>]*?>(.*?)<\/p>/gs
+    let match
+    let sectionId = 1
+    
+    while ((match = sectionRegex.exec(htmlContent)) !== null) {
+      const title = match[1].replace(/<[^>]*>/g, '').trim() // Remove HTML tags from title
+      const content = match[2].trim()
+      
+      sections.push({
+        id: `section-${sectionId++}`,
+        title,
+        content
+      })
+    }
+    
+    // If no sections found, create a default one
+    if (sections.length === 0) {
+      sections.push({
+        id: 'section-1',
+        title: 'Report Content',
+        content: htmlContent.replace(/<[^>]*>/g, '').trim()
+      })
+    }
+    
+    return sections
+  }
+
+  // Reconstruct HTML from sections
+  const reconstructReportFromSections = (sections: typeof reportSections) => {
+    let reconstructedHtml = `<div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">`
+    
+    sections.forEach((section, index) => {
+      // Add appropriate icon based on section title
+      let icon = ''
+      if (section.title.includes('EXECUTIVE') || section.title.includes('SUMMARY')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z" fill="currentColor"/>
+          <path d="M7 7h2v2H7V7zm4 0h6v2h-6V7zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2z" fill="currentColor"/>
+        </svg>`
+      } else if (section.title.includes('PERFORMANCE') || section.title.includes('METRICS')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 13h8L9 9l4-6 4 6-2 4h8l-2 4H3v-4z" fill="currentColor"/>
+          <path d="M3 17h18v2H3v-2z" fill="currentColor"/>
+        </svg>`
+      } else if (section.title.includes('ADS') || section.title.includes('CREATIVE')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          <path d="M12 1l3 6h6l-5 4 2 6-6-4-6 4 2-6-5-4h6l3-6z" fill="currentColor"/>
+        </svg>`
+      } else if (section.title.includes('AUDIENCE')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M17 7c0-2.76-2.24-5-5-5S7 4.24 7 7c0 2.76 2.24 5 5 5s5-2.24 5-5zM12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/>
+          <path d="M3 18c0-3.87 3.13-7 7-7h4c3.87 0 7 3.13 7 7v3H3v-3z" fill="currentColor"/>
+        </svg>`
+      } else if (section.title.includes('BUDGET')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+          <circle cx="12" cy="7" r="1.5" fill="currentColor"/>
+          <circle cx="7" cy="12" r="1.5" fill="currentColor"/>
+          <circle cx="17" cy="12" r="1.5" fill="currentColor"/>
+        </svg>`
+      } else if (section.title.includes('ROI') || section.title.includes('IMPACT')) {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M14 12l-2 2-2-2V7l2-2 2 2v5z" fill="currentColor"/>
+          <path d="M12 3L3 12l9 9 9-9-9-9zm0 2.41L19.59 12 12 19.59 4.41 12 12 5.41z" fill="currentColor"/>
+        </svg>`
+      } else {
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M9 11H7l5-8 5 8h-2l-3 8-3-8z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>`
+      }
+      
+      reconstructedHtml += `
+        <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+          ${icon}
+          ${section.title}
+        </h2>
+        <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">${section.content}</p>
+      `
+    })
+    
+    reconstructedHtml += `</div>`
+    return reconstructedHtml
+  }
+
   // Start editing the report
   const startEditingReport = () => {
     if (!selectedReport) return
     setEditedReportContent(selectedReport.content)
+    
+    // Parse the report into sections for visual editing
+    const sections = parseReportSections(selectedReport.content)
+    setReportSections(sections)
+    
     setIsEditingReport(true)
+  }
+
+  // Update section content
+  const updateSectionContent = (sectionId: string, newContent: string) => {
+    setReportSections(prev => 
+      prev.map(section => 
+        section.id === sectionId 
+          ? { ...section, content: newContent }
+          : section
+      )
+    )
   }
 
   // Save the edited report
   const saveEditedReport = () => {
     if (!selectedReport) return
     
+    let finalContent
+    if (editMode === 'visual') {
+      // Reconstruct HTML from sections
+      finalContent = reconstructReportFromSections(reportSections)
+    } else {
+      // Use direct HTML content
+      finalContent = editedReportContent
+    }
+    
     // Update the selected report with edited content
     const updatedReport = {
       ...selectedReport,
-      content: editedReportContent
+      content: finalContent
     }
     
     setSelectedReport(updatedReport)
@@ -3143,39 +3291,84 @@ export default function BrandReportPage() {
             </div>
             
             <div className="p-6 max-h-[80vh] overflow-y-auto">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">
-                    Report Content (HTML)
-                  </label>
-                  <textarea
-                    value={editedReportContent}
-                    onChange={(e) => setEditedReportContent(e.target.value)}
-                    className="w-full h-96 p-4 bg-[#0f0f0f] border border-[#333] rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-[#555]"
-                    placeholder="Edit your report content here..."
-                  />
-                </div>
+              <Tabs value={editMode} onValueChange={(value) => setEditMode(value as 'visual' | 'html')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-[#0f0f0f] border border-[#333]">
+                  <TabsTrigger value="visual" className="text-white flex items-center gap-2">
+                    <Edit3 className="w-4 h-4" />
+                    Visual Editor
+                  </TabsTrigger>
+                  <TabsTrigger value="html" className="text-white flex items-center gap-2">
+                    <span className="text-sm">{"</>"}</span>
+                    HTML Code
+                  </TabsTrigger>
+                </TabsList>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-[#333]">
-                  <p className="text-sm text-gray-400">
-                    Edit the HTML content above to customize your report before downloading.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={cancelEditingReport}
-                      className="border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={saveEditedReport}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
+                <TabsContent value="visual" className="space-y-4 mt-4">
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-400 mb-4">
+                      Edit each section of your report below. No HTML knowledge required!
+                    </p>
+                    
+                    {reportSections.map((section, index) => (
+                      <div key={section.id} className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-medium text-white">{section.title}</h4>
+                        </div>
+                        <Textarea
+                          value={section.content}
+                          onChange={(e) => updateSectionContent(section.id, e.target.value)}
+                          className="w-full min-h-32 p-3 bg-[#0f0f0f] border border-[#333] rounded-lg text-white resize-none focus:outline-none focus:border-[#555]"
+                          placeholder={`Write content for ${section.title} section...`}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Plain text only - formatting will be applied automatically
+                        </p>
+                      </div>
+                    ))}
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="html" className="space-y-4 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-300 mb-2 block">
+                      Report Content (HTML) - Advanced Users Only
+                    </label>
+                    <textarea
+                      value={editedReportContent}
+                      onChange={(e) => setEditedReportContent(e.target.value)}
+                      className="w-full h-96 p-4 bg-[#0f0f0f] border border-[#333] rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-[#555]"
+                      placeholder="Edit your report HTML content here..."
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      ⚠️ Advanced mode: Direct HTML editing. Use Visual Editor for easier editing.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-[#333] mt-6">
+                <p className="text-sm text-gray-400">
+                  {editMode === 'visual' 
+                    ? "Edit each section above to customize your report." 
+                    : "Edit the HTML content above for advanced customization."
+                  }
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={cancelEditingReport}
+                    className="border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveEditedReport}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
                 </div>
               </div>
             </div>
