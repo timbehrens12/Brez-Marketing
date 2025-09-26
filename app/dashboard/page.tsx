@@ -199,8 +199,8 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
-  const [isLoading, setIsLoading] = useState(false)
-  const [initialDataLoad, setInitialDataLoad] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isDateRangeLoading, setIsDateRangeLoading] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
@@ -240,12 +240,12 @@ export default function DashboardPage() {
   }, [dateRange])
   
   // Add a state to track if we're in the initial setup phase
-  const [isInitialSetup, setIsInitialSetup] = useState(false)
+  const [isInitialSetup, setIsInitialSetup] = useState(true)
   
-  // Add action center loading state (like marketing assistant) - start true to prevent flash
+  // Add action center loading state - start false for immediate access
   const [isActionCenterLoading, setIsActionCenterLoading] = useState(false)
   const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Action Center')
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
   const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(false)
