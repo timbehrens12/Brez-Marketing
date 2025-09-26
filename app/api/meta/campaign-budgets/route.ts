@@ -275,6 +275,16 @@ async function handleBudgetRequest(request: NextRequest) {
         await Promise.race([syncPromise, timeoutPromise])
         console.log(`[Campaign Budget API] ✅ Fresh adset data synced from Meta API`)
         
+        // 🚨 FORCE ADSET STATUS SYNC: Some adsets may have stale status data
+        console.log(`[Campaign Budget API] 🔄 Force syncing adset statuses to ensure accurate budget calculation...`)
+        try {
+          const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
+          await fetchMetaAdSets(brandId, true) // Force refresh adset statuses
+          console.log(`[Campaign Budget API] ✅ Adset statuses synced from Meta API`)
+        } catch (statusSyncError) {
+          console.warn(`[Campaign Budget API] ⚠️ Adset status sync failed, proceeding with current data:`, statusSyncError)
+        }
+        
         // Re-query with fresh data
         const { data: freshAdsets, error: freshError } = await supabase
           .from('meta_adsets')
