@@ -104,16 +104,16 @@ Generate ONLY the report content sections (no title, no wrapper). Create a profe
 
 Use this EXACT HTML structure but replace the example text with your actual analysis of the provided data:
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">EXECUTIVE SUMMARY</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📈 KEY PERFORMANCE METRICS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">KEY PERFORMANCE METRICS</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 TOP PERFORMING ADS & CREATIVES</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">TOP PERFORMING ADS & CREATIVES</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">👥 AUDIENCE PERFORMANCE INSIGHTS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">AUDIENCE PERFORMANCE INSIGHTS</h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
 <h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Demographics Analysis</h3>
 <p style="color: #d1d5db; line-height: 1.8;">[Write actual demographics analysis with age groups, gender, device data]</p>
@@ -127,13 +127,13 @@ Use this EXACT HTML structure but replace the example text with your actual anal
 <p style="color: #d1d5db; line-height: 1.8;">[Write actual customer retention analysis with repeat customer data]</p>
 </div>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">💰 BUDGET ALLOCATION & SCALING INSIGHTS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">BUDGET ALLOCATION & SCALING INSIGHTS</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 OVERALL CLIENT IMPACT & ROI</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">OVERALL CLIENT IMPACT & ROI</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 NEXT STEPS & RECOMMENDATIONS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">NEXT STEPS & RECOMMENDATIONS</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
@@ -165,7 +165,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       ],
       model: 'gpt-3.5-turbo', // Faster model
       temperature: 0.3, // Lower for faster, more focused responses
-      max_tokens: 1500 // Significantly reduced for speed
+      max_tokens: 4000 // Increased to prevent cutoff
     }, {
       timeout: 25000 // 25 second timeout on OpenAI call
     })
@@ -220,13 +220,13 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     // Fast fallback response instead of error
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">EXECUTIVE SUMMARY</h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📈 KEY PERFORMANCE METRICS</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">KEY PERFORMANCE METRICS</h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 NEXT STEPS</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">NEXT STEPS & RECOMMENDATIONS</h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Refresh the report to generate detailed analysis with current data insights.</p>
     </div>`
     
