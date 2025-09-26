@@ -106,28 +106,28 @@ CRITICAL: You MUST use this EXACT HTML structure including ALL SVG icons. Copy t
 
 EXAMPLE: Change [Write your comprehensive executive summary here with actual performance data] to real analysis like "Our analysis shows Test Brand achieved $1835.9 in revenue with 100% growth rate..."
 
-DO NOT remove the styled emoji icons - keep them exactly as shown:
+DO NOT remove the numbered section widgets - keep them exactly as shown:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📋</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">1</span>
   EXECUTIVE SUMMARY
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📊</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">2</span>
   KEY PERFORMANCE METRICS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">⭐</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">3</span>
   TOP PERFORMING ADS & CREATIVES
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">👥</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">4</span>
   AUDIENCE PERFORMANCE INSIGHTS
 </h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
@@ -144,28 +144,28 @@ DO NOT remove the styled emoji icons - keep them exactly as shown:
 </div>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">💰</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">5</span>
   BUDGET ALLOCATION & SCALING INSIGHTS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📈</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">6</span>
   OVERALL CLIENT IMPACT & ROI
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">🚀</span>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">7</span>
   NEXT STEPS & RECOMMENDATIONS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
-- You MUST copy the EXACT HTML template above including ALL styled emoji icons
+- You MUST copy the EXACT HTML template above including ALL numbered section widgets
 - You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)  
 - You MUST include ALL 3 colored subsections under Audience Performance Insights
-- You MUST keep ALL styled emoji icons exactly as shown - DO NOT remove them
+- You MUST keep ALL numbered section widgets exactly as shown - DO NOT remove them
 - REPLACE ONLY the [bracketed placeholder text] with actual analysis of the provided data
 - Do NOT copy the placeholder text - write real content based on the data
 - DO NOT change HTML structure, styling, or remove SVG icons
@@ -181,7 +181,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a marketing agency analyst creating a report FOR your client. You MUST copy the EXACT HTML template including ALL styled emoji icons. NEVER remove or change the styled emoji icons. Only replace the [bracketed placeholder text] with actual analysis. Keep ALL HTML structure, styling, and styled emoji icons exactly as shown in the template.'
+          content: 'You are a marketing agency analyst creating a report FOR your client. You MUST copy the EXACT HTML template including ALL numbered section widgets. NEVER remove or change the numbered widgets. Only replace the [bracketed placeholder text] with actual analysis. Keep ALL HTML structure, styling, and numbered widgets exactly as shown in the template.'
         },
         {
           role: 'user',
@@ -246,19 +246,19 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📋</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">1</span>
         EXECUTIVE SUMMARY
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📊</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">2</span>
         KEY PERFORMANCE METRICS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #374151, #4b5563); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">🚀</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #333; border: 2px solid #ffffff; border-radius: 8px; margin-right: 12px; font-size: 18px; color: #ffffff; font-weight: bold;">7</span>
         NEXT STEPS & RECOMMENDATIONS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Refresh the report to generate detailed analysis with current data insights.</p>
