@@ -105,37 +105,32 @@ Generate ONLY the report content sections (no title, no wrapper). Create a profe
 Use this EXACT HTML structure but replace the example text with your actual analysis of the provided data:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor"/>
-    <polyline points="14,2 14,8 20,8" fill="none" stroke="currentColor" stroke-width="2"/>
-    <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
-    <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
-    <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 0l3 3h-3V4zM8 13h8v1H8v-1zm0 3h8v1H8v-1zm0-6h2v1H8v-1z"/>
   </svg>
   EXECUTIVE SUMMARY
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M3 17h4v4H3v-4zm6-7h4v11H9V10zm6-7h4v18h-4V3z"/>
   </svg>
   KEY PERFORMANCE METRICS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <polygon points="12,2 15.09,8.26 22,9 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9 8.91,8.26 12,2" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M12 2l3.09 6.26L22 9l-5 4.87 1.18 6.88L12 17.77l-6.18 2.98L7 14.87 2 9l6.91-1.26L12 2z"/>
   </svg>
   TOP PERFORMING ADS & CREATIVES
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/>
-    <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
   </svg>
   AUDIENCE PERFORMANCE INSIGHTS
 </h2>
@@ -153,26 +148,24 @@ Use this EXACT HTML structure but replace the example text with your actual anal
 </div>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <line x1="12" y1="1" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
   </svg>
   BUDGET ALLOCATION & SCALING INSIGHTS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <polyline points="23,6 13.5,15.5 8.5,10.5 1,18" fill="none" stroke="currentColor" stroke-width="2"/>
-    <polyline points="17,6 23,6 23,12" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
   </svg>
   OVERALL CLIENT IMPACT & ROI
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M13 3l3.5 3.5L22 2l-2 8h-8l2.5-2.5L9.5 2.5 8 4l1.5 1.5L2 13l8-2-2.5-2.5L13 3z"/>
   </svg>
   NEXT STEPS & RECOMMENDATIONS
 </h2>
@@ -263,28 +256,24 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor"/>
-          <polyline points="14,2 14,8 20,8" fill="none" stroke="currentColor" stroke-width="2"/>
-          <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
-          <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
-          <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 0l3 3h-3V4zM8 13h8v1H8v-1zm0 3h8v1H8v-1zm0-6h2v1H8v-1z"/>
         </svg>
         EXECUTIVE SUMMARY
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-          <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" fill="none" stroke="currentColor" stroke-width="2"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 17h4v4H3v-4zm6-7h4v11H9V10zm6-7h4v18h-4V3z"/>
         </svg>
         KEY PERFORMANCE METRICS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; color: #d1d5db;">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M13 3l3.5 3.5L22 2l-2 8h-8l2.5-2.5L9.5 2.5 8 4l1.5 1.5L2 13l8-2-2.5-2.5L13 3z"/>
         </svg>
         NEXT STEPS & RECOMMENDATIONS
       </h2>
