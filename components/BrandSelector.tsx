@@ -345,13 +345,17 @@ export default function BrandSelector({ onSelect, selectedBrandId, className, is
                         <button
                           key={brand.id}
                           className={cn(
-                            "flex items-center w-full px-3 py-3 text-sm text-left transition-all duration-200 group",
+                            "relative flex items-center w-full px-3 py-3 text-sm text-left transition-all duration-200 group",
                             brand.id === selectedBrandId 
-                              ? "bg-gradient-to-r from-white/10 to-white/5 text-white border-l-2 border-white/30" 
-                              : "text-gray-300 hover:bg-gradient-to-r hover:from-white/5 hover:to-white/2 hover:text-white"
+                              ? "bg-[#2A2A2A] text-white shadow-[0_0_20px_rgba(255,42,42,0.4),inset_0_0_20px_rgba(255,42,42,0.1)]" 
+                              : "text-gray-300 hover:bg-[#2A2A2A] hover:text-white"
                           )}
                           onClick={() => handleSelect(brand)}
                         >
+                          {/* Add the red indicator lip for selected items */}
+                          {brand.id === selectedBrandId && (
+                            <div className="absolute left-0 inset-y-2 w-1 bg-[#FF2A2A] rounded-full"></div>
+                          )}
                           <div className="flex items-center gap-3 w-full min-w-0">
                             {renderBrandAvatar(brand, 'md')}
                             <div className="flex flex-col items-start min-w-0 flex-1">
@@ -395,13 +399,17 @@ export default function BrandSelector({ onSelect, selectedBrandId, className, is
                         <button
                           key={brand.id}
                           className={cn(
-                            "flex items-center w-full px-3 py-3 text-sm text-left transition-all duration-200 group",
+                            "relative flex items-center w-full px-3 py-3 text-sm text-left transition-all duration-200 group",
                             brand.id === selectedBrandId 
-                              ? "bg-gradient-to-r from-white/10 to-white/5 text-white border-l-2 border-white/30" 
-                              : "text-gray-300 hover:bg-gradient-to-r hover:from-white/5 hover:to-white/2 hover:text-white"
+                              ? "bg-[#2A2A2A] text-white shadow-[0_0_20px_rgba(255,42,42,0.4),inset_0_0_20px_rgba(255,42,42,0.1)]" 
+                              : "text-gray-300 hover:bg-[#2A2A2A] hover:text-white"
                           )}
                           onClick={() => handleSelect(brand)}
                         >
+                          {/* Add the red indicator lip for selected items */}
+                          {brand.id === selectedBrandId && (
+                            <div className="absolute left-0 inset-y-2 w-1 bg-[#FF2A2A] rounded-full"></div>
+                          )}
                           <div className="flex items-center gap-3 w-full min-w-0">
                             {renderBrandAvatar(brand, 'md')}
                             <div className="flex flex-col items-start min-w-0 flex-1">
