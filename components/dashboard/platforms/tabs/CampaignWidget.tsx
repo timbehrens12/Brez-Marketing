@@ -1072,6 +1072,9 @@ const CampaignWidget = ({
     
     const controller = createAbortController();
     
+    // Add frontend timeout to prevent hanging - declare outside try block for proper scope
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
     try {
       // Use timestamp in path to completely bypass caching
       const timestamp = Date.now();
@@ -1081,8 +1084,6 @@ const CampaignWidget = ({
       console.log(`[CampaignWidget] 🚀 Calling campaign budget API with EXTREME cache buster:`, url);
       
       // 🚨 NUCLEAR OPTION: Use POST method which cannot be cached by any proxy/CDN
-      // Add frontend timeout to prevent hanging
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
       const response = await fetch(url, { 
         method: 'POST', // POST requests cannot be cached
