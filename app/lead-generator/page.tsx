@@ -3245,7 +3245,7 @@ export default function LeadGeneratorPage() {
                   <div className="w-full bg-[#333] rounded-full h-2">
                     <div 
                       className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${selectedScoreBreakdown.scoreData.total}%` }}
+                      style={{ width: `${Math.min(100, Math.max(0, selectedScoreBreakdown.scoreData.total))}%` }}
                     ></div>
                   </div>
                   <div className="flex justify-between text-xs text-gray-400 mt-2">
@@ -3272,8 +3272,8 @@ export default function LeadGeneratorPage() {
                       
                       <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
                         <div 
-                                                      className="bg-white h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${(data.score / data.max) * 100}%` }}
+                          className="bg-white h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.max(0, (data.score / data.max) * 100))}%` }}
                         ></div>
                       </div>
                       
