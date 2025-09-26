@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Loader2, BarChart4, RefreshCw, Zap, Download, CheckSquare, Clock, AlertTriangle } from "lucide-react"
+import { Loader2, BarChart4, RefreshCw, Zap, Download, CheckSquare, Clock, AlertTriangle, Edit3, Save, X } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { useUser, useAuth } from "@clerk/nextjs"
@@ -68,6 +68,8 @@ export default function BrandReportPage() {
   const [hasMonthlyReportThisMonth, setHasMonthlyReportThisMonth] = useState(false)
   const [hasDailyReportToday, setHasDailyReportToday] = useState(false)
   const [userTimezone, setUserTimezone] = useState<string>('America/Chicago') // Default fallback
+  const [isEditingReport, setIsEditingReport] = useState(false)
+  const [editedReportContent, setEditedReportContent] = useState<string>("")
 
   // Detect user's timezone on mount
   useEffect(() => {
@@ -2123,6 +2125,47 @@ export default function BrandReportPage() {
     }
   }
 
+  // Start editing the report
+  const startEditingReport = () => {
+    if (!selectedReport) return
+    setEditedReportContent(selectedReport.content)
+    setIsEditingReport(true)
+  }
+
+  // Save the edited report
+  const saveEditedReport = () => {
+    if (!selectedReport) return
+    
+    // Update the selected report with edited content
+    const updatedReport = {
+      ...selectedReport,
+      content: editedReportContent
+    }
+    
+    setSelectedReport(updatedReport)
+    
+    // Update the report in the dailyReports array
+    setDailyReports(prev => 
+      prev.map(report => 
+        report.snapshotTime === selectedReport.snapshotTime 
+          ? updatedReport 
+          : report
+      )
+    )
+    
+    setIsEditingReport(false)
+    toast({
+      title: "Report updated",
+      description: "Your changes have been saved successfully.",
+    })
+  }
+
+  // Cancel editing
+  const cancelEditingReport = () => {
+    setIsEditingReport(false)
+    setEditedReportContent("")
+  }
+
   // Export the report to PDF
   const exportToPdf = async () => {
     if (!selectedReport) {
@@ -2893,6 +2936,17 @@ export default function BrandReportPage() {
                 variant="outline" 
                 size="lg"
                 className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white rounded-xl transition-all duration-300 h-11"
+                onClick={startEditingReport}
+                disabled={isLoadingReport || !selectedReport}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Report
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white rounded-xl transition-all duration-300 h-11"
                 onClick={exportToPdf}
                 disabled={isLoadingReport || !selectedReport || isExportingPdf || !canGenerateReports()}
               >
@@ -3055,6 +3109,74 @@ export default function BrandReportPage() {
                 <p className="text-xs text-gray-500 text-center">
                   Type "reset" to show this menu again
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Report Modal */}
+      {isEditingReport && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-[#333]">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5" />
+                Edit Report
+              </h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={saveEditedReport}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={cancelEditingReport}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 max-h-[80vh] overflow-y-auto">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Report Content (HTML)
+                  </label>
+                  <textarea
+                    value={editedReportContent}
+                    onChange={(e) => setEditedReportContent(e.target.value)}
+                    className="w-full h-96 p-4 bg-[#0f0f0f] border border-[#333] rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-[#555]"
+                    placeholder="Edit your report content here..."
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-[#333]">
+                  <p className="text-sm text-gray-400">
+                    Edit the HTML content above to customize your report before downloading.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={cancelEditingReport}
+                      className="border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={saveEditedReport}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

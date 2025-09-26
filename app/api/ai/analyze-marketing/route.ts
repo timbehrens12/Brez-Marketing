@@ -104,16 +104,40 @@ Generate ONLY the report content sections (no title, no wrapper). Create a profe
 
 Use this EXACT HTML structure but replace the example text with your actual analysis of the provided data:
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">EXECUTIVE SUMMARY</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z" fill="currentColor"/>
+    <path d="M7 7h2v2H7V7zm4 0h6v2h-6V7zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2z" fill="currentColor"/>
+  </svg>
+  EXECUTIVE SUMMARY
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">KEY PERFORMANCE METRICS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M3 13h8L9 9l4-6 4 6-2 4h8l-2 4H3v-4z" fill="currentColor"/>
+    <path d="M3 17h18v2H3v-2z" fill="currentColor"/>
+  </svg>
+  KEY PERFORMANCE METRICS
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">TOP PERFORMING ADS & CREATIVES</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+    <path d="M12 1l3 6h6l-5 4 2 6-6-4-6 4 2-6-5-4h6l3-6z" fill="currentColor"/>
+  </svg>
+  TOP PERFORMING ADS & CREATIVES
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">AUDIENCE PERFORMANCE INSIGHTS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M17 7c0-2.76-2.24-5-5-5S7 4.24 7 7c0 2.76 2.24 5 5 5s5-2.24 5-5zM12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/>
+    <path d="M3 18c0-3.87 3.13-7 7-7h4c3.87 0 7 3.13 7 7v3H3v-3z" fill="currentColor"/>
+  </svg>
+  AUDIENCE PERFORMANCE INSIGHTS
+</h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
 <h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Demographics Analysis</h3>
 <p style="color: #d1d5db; line-height: 1.8;">[Write actual demographics analysis with age groups, gender, device data]</p>
@@ -127,13 +151,33 @@ Use this EXACT HTML structure but replace the example text with your actual anal
 <p style="color: #d1d5db; line-height: 1.8;">[Write actual customer retention analysis with repeat customer data]</p>
 </div>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">BUDGET ALLOCATION & SCALING INSIGHTS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+    <circle cx="12" cy="7" r="1.5" fill="currentColor"/>
+    <circle cx="7" cy="12" r="1.5" fill="currentColor"/>
+    <circle cx="17" cy="12" r="1.5" fill="currentColor"/>
+  </svg>
+  BUDGET ALLOCATION & SCALING INSIGHTS
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">OVERALL CLIENT IMPACT & ROI</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M14 12l-2 2-2-2V7l2-2 2 2v5z" fill="currentColor"/>
+    <path d="M12 3L3 12l9 9 9-9-9-9zm0 2.41L19.59 12 12 19.59 4.41 12 12 5.41z" fill="currentColor"/>
+  </svg>
+  OVERALL CLIENT IMPACT & ROI
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">NEXT STEPS & RECOMMENDATIONS</h2>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+    <path d="M9 11H7l5-8 5 8h-2l-3 8-3-8z" fill="currentColor"/>
+    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </svg>
+  NEXT STEPS & RECOMMENDATIONS
+</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
@@ -220,13 +264,31 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     // Fast fallback response instead of error
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">EXECUTIVE SUMMARY</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z" fill="currentColor"/>
+          <path d="M7 7h2v2H7V7zm4 0h6v2h-6V7zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2z" fill="currentColor"/>
+        </svg>
+        EXECUTIVE SUMMARY
+      </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">KEY PERFORMANCE METRICS</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 13h8L9 9l4-6 4 6-2 4h8l-2 4H3v-4z" fill="currentColor"/>
+          <path d="M3 17h18v2H3v-2z" fill="currentColor"/>
+        </svg>
+        KEY PERFORMANCE METRICS
+      </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
-      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">NEXT STEPS & RECOMMENDATIONS</h2>
+      <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M9 11H7l5-8 5 8h-2l-3 8-3-8z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>
+        NEXT STEPS & RECOMMENDATIONS
+      </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Refresh the report to generate detailed analysis with current data insights.</p>
     </div>`
     
