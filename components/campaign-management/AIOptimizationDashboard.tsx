@@ -393,22 +393,22 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
 
   const getAlertIcon = (level: string) => {
     switch (level) {
-      case 'success': return <CheckCircle className="w-4 h-4 text-green-500" />
-      case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-500" />
-      case 'critical': return <AlertCircle className="w-4 h-4 text-red-500" />
-      default: return <Activity className="w-4 h-4 text-gray-400" />
+      case 'success': return <CheckCircle className="w-3 h-3 text-green-500" />
+      case 'warning': return <AlertTriangle className="w-3 h-3 text-yellow-500" />
+      case 'critical': return <AlertCircle className="w-3 h-3 text-red-500" />
+      default: return <Activity className="w-3 h-3 text-gray-400" />
     }
   }
 
   const getActionIcon = (type: string) => {
     switch (type) {
-      case 'budget_increase': return <Plus className="w-4 h-4" />
-      case 'budget_decrease': return <Minus className="w-4 h-4" />
-      case 'pause': return <Pause className="w-4 h-4" />
-      case 'creative_refresh': return <RefreshCw className="w-4 h-4" />
-      case 'audience_expand': return <Target className="w-4 h-4" />
-      case 'bid_adjust': return <TrendingUp className="w-4 h-4" />
-      default: return <Zap className="w-4 h-4" />
+      case 'budget_increase': return <Plus className="w-3 h-3" />
+      case 'budget_decrease': return <Minus className="w-3 h-3" />
+      case 'pause': return <Pause className="w-3 h-3" />
+      case 'creative_refresh': return <RefreshCw className="w-3 h-3" />
+      case 'audience_expand': return <Target className="w-3 h-3" />
+      case 'bid_adjust': return <TrendingUp className="w-3 h-3" />
+      default: return <Zap className="w-3 h-3" />
     }
   }
 
@@ -488,25 +488,25 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
     )
   }
 
-  return (
-    <Card className="h-full bg-gradient-to-br from-[#1a1a1a] to-[#222] border border-[#333] overflow-hidden">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-blue-400" />
-            <CardTitle className="text-lg text-white">AI Optimization Center</CardTitle>
+    return (
+      <Card className="h-full bg-gradient-to-br from-[#1a1a1a] to-[#222] border border-[#333] overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-400" />
+              <CardTitle className="text-base text-white">AI Optimization Center</CardTitle>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={fetchOptimizationData}
+              disabled={isLoading}
+              className="border-[#333] hover:border-gray-500 text-white h-7 px-2"
+            >
+              <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="text-xs">Refresh</span>
+            </Button>
           </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={fetchOptimizationData}
-            disabled={isLoading}
-            className="border-[#333] hover:border-gray-500 text-white"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
         
         {/* Executive Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
@@ -550,11 +550,11 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
 
         {/* Priority Actions Banner */}
         {summary.optimizations_available > 0 && (
-          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-3 mt-4">
+          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-2 mt-3">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-yellow-400">
-                {summary.optimizations_available} optimizations available - potential ${summary.potential_profit_increase.toFixed(2)} daily profit increase
+              <Flame className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+              <span className="text-xs font-medium text-yellow-400 truncate">
+                {summary.optimizations_available} optimizations - ${summary.potential_profit_increase.toFixed(2)} profit gain
               </span>
             </div>
           </div>
@@ -563,11 +563,11 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
       
       <CardContent className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-4 bg-[#0f0f0f] border border-[#333]">
-            <TabsTrigger value="alerts" className="text-xs">Performance Alerts</TabsTrigger>
-            <TabsTrigger value="heatmap" className="text-xs">Profit Trends</TabsTrigger>
-            <TabsTrigger value="recommendations" className="text-xs">Smart Actions</TabsTrigger>
-            <TabsTrigger value="insights" className="text-xs">AI Insights</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-[#0f0f0f] border border-[#333] h-8">
+            <TabsTrigger value="alerts" className="text-xs px-2">Alerts</TabsTrigger>
+            <TabsTrigger value="heatmap" className="text-xs px-2">Trends</TabsTrigger>
+            <TabsTrigger value="recommendations" className="text-xs px-2">Actions</TabsTrigger>
+            <TabsTrigger value="insights" className="text-xs px-2">Insights</TabsTrigger>
           </TabsList>
           
           <div className="flex-1 overflow-auto mt-4">
@@ -584,15 +584,16 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         {getAlertIcon(adset.alert_level)}
-                        <div>
-                          <h4 className="text-sm font-medium text-white">{adset.adset_name}</h4>
-                          <p className="text-xs text-gray-400">{adset.campaign_name}</p>
-                          <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 mt-1 ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
-                            {statusFormatted.displayText}
-                          </Badge>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-medium text-white truncate">{adset.adset_name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`text-xs px-1.5 py-0 h-4 flex items-center gap-1 ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
+                              {statusFormatted.displayText}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -629,22 +630,18 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-gray-300">Recommended Actions:</p>
                         {adset.recommendations.map((rec, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded border border-[#333]">
-                            <div className="flex items-center gap-2 flex-1">
+                          <div key={idx} className="flex items-start gap-2 bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                               {getActionIcon(rec.type)}
-                              <div>
-                                <p className="text-xs font-medium text-white">{rec.title}</p>
-                                <p className="text-xs text-gray-400">{rec.description}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium text-white truncate">{rec.title}</p>
+                                <p className="text-xs text-green-500">+{formatCurrency(rec.estimated_profit_change)} ({rec.confidence}%)</p>
                               </div>
-                            </div>
-                            <div className="text-right mr-3">
-                              <p className="text-xs text-green-500">+{formatCurrency(rec.estimated_profit_change)}</p>
-                              <p className="text-xs text-gray-400">{rec.confidence}% confidence</p>
                             </div>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-blue-500/30 hover:border-blue-500/50 text-blue-400"
+                              className="border-blue-500/30 hover:border-blue-500/50 text-blue-400 h-6 px-2 text-xs"
                               onClick={() => executeOptimization(adset.adset_id, rec)}
                               disabled={executingAction === `${adset.adset_id}-${rec.type}`}
                             >
@@ -705,55 +702,48 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
             </TabsContent>
             
             <TabsContent value="recommendations" className="mt-0">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {adsets.flatMap(adset => 
                   adset.recommendations.map((rec, idx) => (
-                    <div key={`${adset.adset_id}-${idx}`} className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                    <div key={`${adset.adset_id}-${idx}`} className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {getActionIcon(rec.type)}
-                          <div>
-                            <h4 className="text-sm font-medium text-white">{rec.title}</h4>
-                            <p className="text-xs text-gray-400">{adset.adset_name}</p>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-medium text-white truncate">{rec.title}</h4>
+                            <p className="text-xs text-gray-400 truncate">{adset.adset_name}</p>
                           </div>
                         </div>
                         <Badge 
                           variant="outline" 
-                          className={`
-                            ${rec.impact === 'high' ? 'border-red-500/30 text-red-400' : 
+                          className={`text-xs ${rec.impact === 'high' ? 'border-red-500/30 text-red-400' : 
                               rec.impact === 'medium' ? 'border-yellow-500/30 text-yellow-400' : 
-                              'border-green-500/30 text-green-400'}
-                          `}
+                              'border-green-500/30 text-green-400'} flex-shrink-0`}
                         >
-                          {rec.impact} impact
+                          {rec.impact}
                         </Badge>
                       </div>
                       
-                      <p className="text-sm text-gray-300 mb-3">{rec.description}</p>
-                      
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <p className="text-xs text-gray-400">Estimated Profit Gain</p>
-                            <p className="text-sm font-medium text-green-500">{formatCurrency(rec.estimated_profit_change)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-400">Confidence</p>
-                            <p className="text-sm font-medium text-white">{rec.confidence}%</p>
-                          </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-green-500">+{formatCurrency(rec.estimated_profit_change)}</span>
+                          <span className="text-gray-400">{rec.confidence}% confident</span>
                         </div>
                         
                         <Button
-                          className="bg-blue-600 hover:bg-blue-700"
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 h-6 px-2 text-xs"
                           onClick={() => executeOptimization(adset.adset_id, rec)}
                           disabled={executingAction === `${adset.adset_id}-${rec.type}`}
                         >
                           {executingAction === `${adset.adset_id}-${rec.type}` ? (
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            <Loader2 className="w-3 h-3 animate-spin" />
                           ) : (
-                            <Zap className="w-4 h-4 mr-2" />
+                            <>
+                              <Zap className="w-3 h-3 mr-1" />
+                              Go
+                            </>
                           )}
-                          Execute
                         </Button>
                       </div>
                     </div>
@@ -764,30 +754,30 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
             
             <TabsContent value="insights" className="mt-0">
               <div className="space-y-4">
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Crown className="w-4 h-4 text-yellow-400" />
-                    <h4 className="text-sm font-medium text-white">Top Performer</h4>
+                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-3 h-3 text-green-400" />
+                    <h4 className="text-xs font-medium text-white">Top Performer</h4>
                   </div>
                   <p className="text-sm text-gray-300">
                     <span className="text-green-500 font-medium">{summary.top_performer}</span> is your best performing adset with excellent profitability and efficiency.
                   </p>
                 </div>
                 
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                    <h4 className="text-sm font-medium text-white">Needs Attention</h4>
+                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-3 h-3 text-red-500" />
+                    <h4 className="text-xs font-medium text-white">Needs Attention</h4>
                   </div>
                   <p className="text-sm text-gray-300">
                     <span className="text-red-500 font-medium">{summary.worst_performer}</span> is underperforming and may need immediate optimization or pausing.
                   </p>
                 </div>
                 
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-blue-400" />
-                    <h4 className="text-sm font-medium text-white">AI Recommendation</h4>
+                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-3 h-3 text-blue-400" />
+                    <h4 className="text-xs font-medium text-white">AI Recommendation</h4>
                   </div>
                   <p className="text-sm text-gray-300">
                     Focus on scaling your high-ROAS adsets while optimizing or pausing underperformers. 
@@ -796,27 +786,27 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
                   </p>
                 </div>
                 
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-purple-400" />
-                    <h4 className="text-sm font-medium text-white">Performance Summary</h4>
+                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 className="w-3 h-3 text-purple-400" />
+                    <h4 className="text-xs font-medium text-white">Performance Summary</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-gray-400">Active AdSets:</span>
-                      <span className="text-white ml-2">{summary.active_adsets}</span>
+                      <span className="text-white ml-1">{summary.active_adsets}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Total Conversions:</span>
-                      <span className="text-white ml-2">{summary.total_conversions}</span>
+                      <span className="text-gray-400">Conversions:</span>
+                      <span className="text-white ml-1">{summary.total_conversions}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Total Spend:</span>
-                      <span className="text-white ml-2">{formatCurrency(summary.total_spend)}</span>
+                      <span className="text-white ml-1">{formatCurrency(summary.total_spend)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Avg ROAS:</span>
-                      <span className="text-white ml-2">{summary.average_roas.toFixed(2)}x</span>
+                      <span className="text-white ml-1">{summary.average_roas.toFixed(2)}x</span>
                     </div>
                   </div>
                 </div>
