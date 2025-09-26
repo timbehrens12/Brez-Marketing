@@ -156,22 +156,22 @@ async function handleBudgetRequest(request: NextRequest) {
     
     const campaignIds = campaigns.map(c => c.campaign_id)
     
-          // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
-          // Add cache busting to prevent stale Supabase data
-          const cacheKey = `${Date.now()}-${Math.random()}`;
-          
-          // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
-          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-          console.log(`[Campaign Budget API] 📅 Initial query: Filtering adsets updated after: ${twentyFourHoursAgo}`)
-          
-          const { data: adsets, error: adsetsError } = await supabase
-            .from('meta_adsets')
-            .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
-            .eq('brand_id', brandId)
-            .in('campaign_id', campaignIds)
-            .eq('status', 'ACTIVE')
-            .gte('updated_at', twentyFourHoursAgo) // Only include adsets updated in last 24 hours
-            .order('updated_at', { ascending: false }) // Get most recent data first
+    // Get adsets for these campaigns and aggregate their budgets (similar to Total Budget API)
+    // Add cache busting to prevent stale Supabase data
+    const cacheKey = `${Date.now()}-${Math.random()}`;
+    
+    // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    console.log(`[Campaign Budget API] 📅 Initial query: Filtering adsets updated after: ${twentyFourHoursAgo}`)
+    
+    const { data: adsets, error: adsetsError } = await supabase
+      .from('meta_adsets')
+      .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
+      .eq('brand_id', brandId)
+      .in('campaign_id', campaignIds)
+      .eq('status', 'ACTIVE')
+      .gte('updated_at', twentyFourHoursAgo) // Only include adsets updated in last 24 hours
+      .order('updated_at', { ascending: false }) // Get most recent data first
     
     if (adsetsError) {
       console.error(`[API] Database fallback failed (adsets):`, adsetsError)
@@ -181,11 +181,11 @@ async function handleBudgetRequest(request: NextRequest) {
       }, { status: 500 })
     }
     
-          // 🔍 DEBUG: Add comprehensive debugging with timestamps
-          console.log(`[API] Found ${adsets?.length || 0} active adsets for campaigns: ${campaignIds}`)
-          console.log(`[API] Campaigns found:`, campaigns.map(c => `${c.campaign_name} (${c.campaign_id})`))
-          console.log(`[API] 🕒 Current time: ${new Date().toISOString()}`)
-          console.log(`[API] Adsets found:`, adsets?.map(a => `${a.adset_name} (${a.campaign_id}) - $${a.budget} [updated: ${a.updated_at}]`) || [])
+    // 🔍 DEBUG: Add comprehensive debugging with timestamps
+    console.log(`[API] Found ${adsets?.length || 0} active adsets for campaigns: ${campaignIds}`)
+    console.log(`[API] Campaigns found:`, campaigns.map(c => `${c.campaign_name} (${c.campaign_id})`))
+    console.log(`[API] 🕒 Current time: ${new Date().toISOString()}`)
+    console.log(`[API] Adsets found:`, adsets?.map(a => `${a.adset_name} (${a.campaign_id}) - $${a.budget} [updated: ${a.updated_at}]`) || [])
     
     // Additional debug to check raw adset data
     if (adsets && adsets.length > 0) {
