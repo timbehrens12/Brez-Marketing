@@ -2228,54 +2228,42 @@ export default function BrandReportPage() {
       // Add appropriate icon based on section title
       let icon = ''
       if (section.title.includes('EXECUTIVE') || section.title.includes('SUMMARY')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10,9 9,9 8,9"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z" fill="currentColor"/>
+          <path d="M7 7h2v2H7V7zm4 0h6v2h-6V7zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2z" fill="currentColor"/>
+        </svg>`
       } else if (section.title.includes('PERFORMANCE') || section.title.includes('METRICS')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 13h8L9 9l4-6 4 6-2 4h8l-2 4H3v-4z" fill="currentColor"/>
+          <path d="M3 17h18v2H3v-2z" fill="currentColor"/>
+        </svg>`
       } else if (section.title.includes('ADS') || section.title.includes('CREATIVE')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #dc2626, #ef4444); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <polygon points="12,2 15.09,8.26 22,9 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9 8.91,8.26 12,2"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          <path d="M12 1l3 6h6l-5 4 2 6-6-4-6 4 2-6-5-4h6l3-6z" fill="currentColor"/>
+        </svg>`
       } else if (section.title.includes('AUDIENCE')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M17 7c0-2.76-2.24-5-5-5S7 4.24 7 7c0 2.76 2.24 5 5 5s5-2.24 5-5zM12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/>
+          <path d="M3 18c0-3.87 3.13-7 7-7h4c3.87 0 7 3.13 7 7v3H3v-3z" fill="currentColor"/>
+        </svg>`
       } else if (section.title.includes('BUDGET')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #f59e0b, #fbbf24); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <line x1="12" y1="1" x2="12" y2="23"/>
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+          <circle cx="12" cy="7" r="1.5" fill="currentColor"/>
+          <circle cx="7" cy="12" r="1.5" fill="currentColor"/>
+          <circle cx="17" cy="12" r="1.5" fill="currentColor"/>
+        </svg>`
       } else if (section.title.includes('ROI') || section.title.includes('IMPACT')) {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6, #a855f7); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/>
-            <polyline points="17,6 23,6 23,12"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M14 12l-2 2-2-2V7l2-2 2 2v5z" fill="currentColor"/>
+          <path d="M12 3L3 12l9 9 9-9-9-9zm0 2.41L19.59 12 12 19.59 4.41 12 12 5.41z" fill="currentColor"/>
+        </svg>`
       } else {
-        icon = `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 8px; flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-        </span>`
+        icon = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M9 11H7l5-8 5 8h-2l-3 8-3-8z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>`
       }
       
       reconstructedHtml += `
