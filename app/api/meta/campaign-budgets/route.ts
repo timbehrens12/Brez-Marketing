@@ -258,11 +258,14 @@ async function handleBudgetRequest(request: NextRequest) {
       adset_count: budget.count
     }))
     
-    // 🚨 SMART FILTERING: Apply 24-hour filtering without Meta sync (which was causing timeouts)
-    if (forceRefresh && adsetCount > 0) {
+    // 🚨 FORCE FILTERING: Always apply 24-hour filtering to fix the budget inconsistency
+    console.log(`[Campaign Budget API] 🔍 FILTERING CHECK: forceRefresh=${forceRefresh}, adsetCount=${adsetCount}, totalBudget=$${totalBudgetFromAdsets}`)
+    
+    // NUCLEAR OPTION: Always apply filtering if we have adsets with budget > 0
+    if (adsetCount > 0 && totalBudgetFromAdsets > 0) {
       console.warn(`[Campaign Budget API] ⚠️ POTENTIAL INCONSISTENCY: Found ${adsetCount} active adsets, but Total Budget API may show different count`)
       console.warn(`[Campaign Budget API] 💡 This suggests one API has fresher data than the other`)
-      console.log(`[Campaign Budget API] 🔄 forceRefresh=true - applying 24-hour filtering to use only fresh data`)
+      console.log(`[Campaign Budget API] 🔄 NUCLEAR OPTION: Always applying 24-hour filtering to fix budget inconsistency`)
       
       // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
       console.log(`[Campaign Budget API] 🔄 Applying smart filtering to exclude stale adset data...`)
