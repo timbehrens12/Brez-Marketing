@@ -106,36 +106,28 @@ CRITICAL: You MUST use this EXACT HTML structure including ALL SVG icons. Copy t
 
 EXAMPLE: Change [Write your comprehensive executive summary here with actual performance data] to real analysis like "Our analysis shows Test Brand achieved $1835.9 in revenue with 100% growth rate..."
 
-DO NOT remove the SVG icons - keep them exactly as shown:
+DO NOT remove the styled emoji icons - keep them exactly as shown:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 0l3 3h-3V4zM8 13h8v1H8v-1zm0 3h8v1H8v-1zm0-6h2v1H8v-1z"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📋</span>
   EXECUTIVE SUMMARY
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M3 17h4v4H3v-4zm6-7h4v11H9V10zm6-7h4v18h-4V3z"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📊</span>
   KEY PERFORMANCE METRICS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M12 2l3.09 6.26L22 9l-5 4.87 1.18 6.88L12 17.77l-6.18 2.98L7 14.87 2 9l6.91-1.26L12 2z"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #dc2626, #ef4444); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">⭐</span>
   TOP PERFORMING ADS & CREATIVES
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">👥</span>
   AUDIENCE PERFORMANCE INSIGHTS
 </h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
@@ -152,38 +144,28 @@ DO NOT remove the SVG icons - keep them exactly as shown:
 </div>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #f59e0b, #fbbf24); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">💰</span>
   BUDGET ALLOCATION & SCALING INSIGHTS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M7 14l5-5 5 5z"/>
-    <path d="M7 10l5-5 5 5z"/>
-    <rect x="11" y="12" width="2" height="8"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6, #a855f7); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📈</span>
   OVERALL CLIENT IMPACT & ROI
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-    <path d="M9 18l6-6-6-6v4H3v4h6v4z"/>
-    <path d="M21 12h-3"/>
-    <circle cx="19" cy="12" r="2"/>
-  </svg>
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">🚀</span>
   NEXT STEPS & RECOMMENDATIONS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
-- You MUST copy the EXACT HTML template above including ALL SVG icons
+- You MUST copy the EXACT HTML template above including ALL styled emoji icons
 - You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)  
 - You MUST include ALL 3 colored subsections under Audience Performance Insights
-- You MUST keep ALL SVG icons exactly as shown - DO NOT remove them
+- You MUST keep ALL styled emoji icons exactly as shown - DO NOT remove them
 - REPLACE ONLY the [bracketed placeholder text] with actual analysis of the provided data
 - Do NOT copy the placeholder text - write real content based on the data
 - DO NOT change HTML structure, styling, or remove SVG icons
@@ -199,7 +181,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a marketing agency analyst creating a report FOR your client. You MUST copy the EXACT HTML template including ALL SVG icons. NEVER remove or change the SVG icons. Only replace the [bracketed placeholder text] with actual analysis. Keep ALL HTML structure, styling, and SVG icons exactly as shown in the template.'
+          content: 'You are a marketing agency analyst creating a report FOR your client. You MUST copy the EXACT HTML template including ALL styled emoji icons. NEVER remove or change the styled emoji icons. Only replace the [bracketed placeholder text] with actual analysis. Keep ALL HTML structure, styling, and styled emoji icons exactly as shown in the template.'
         },
         {
           role: 'user',
@@ -264,27 +246,19 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 0l3 3h-3V4zM8 13h8v1H8v-1zm0 3h8v1H8v-1zm0-6h2v1H8v-1z"/>
-        </svg>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📋</span>
         EXECUTIVE SUMMARY
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-          <path d="M3 17h4v4H3v-4zm6-7h4v11H9V10zm6-7h4v18h-4V3z"/>
-        </svg>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">📊</span>
         KEY PERFORMANCE METRICS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 8px;">
-          <path d="M9 18l6-6-6-6v4H3v4h6v4z"/>
-          <path d="M21 12h-3"/>
-          <circle cx="19" cy="12" r="2"/>
-        </svg>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 6px; margin-right: 12px; font-size: 16px; color: white; font-weight: bold;">🚀</span>
         NEXT STEPS & RECOMMENDATIONS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Refresh the report to generate detailed analysis with current data insights.</p>
