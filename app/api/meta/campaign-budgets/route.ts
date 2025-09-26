@@ -271,7 +271,7 @@ async function handleBudgetRequest(request: NextRequest) {
         console.log(`[Campaign Budget API] 🔄 Fetching fresh adset statuses from Meta API...`)
         
         // Import the Meta service function
-        const { fetchMetaAdSets } = await import('../../../../lib/meta-service')
+        const { fetchMetaAdSets } = await import('../../../../lib/services/meta-service')
         
         // Fetch fresh adset statuses from Meta API (this updates the database)
         const metaResult = await fetchMetaAdSets(brandId, true) // Force refresh
