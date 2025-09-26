@@ -259,36 +259,39 @@ async function handleBudgetRequest(request: NextRequest) {
       adset_count: budget.count
     }))
     
-    // 🚨 FORCE FILTERING: Always apply 24-hour filtering to fix the budget inconsistency
-    console.log(`[Campaign Budget API] 🔍 FILTERING CHECK: forceRefresh=${forceRefresh}, adsetCount=${adsetCount}, totalBudget=$${totalBudgetFromAdsets}`)
+    // 🚨 REAL-TIME STATUS CHECK: Fetch fresh adset statuses from Meta API
+    console.log(`[Campaign Budget API] 🔍 STATUS CHECK: forceRefresh=${forceRefresh}, adsetCount=${adsetCount}, totalBudget=$${totalBudgetFromAdsets}`)
     
-    // NUCLEAR OPTION: Always apply filtering if we have adsets with budget > 0
+    // Always check for status inconsistency when we have active adsets
     if (adsetCount > 0 && totalBudgetFromAdsets > 0) {
-      console.warn(`[Campaign Budget API] ⚠️ POTENTIAL INCONSISTENCY: Found ${adsetCount} active adsets, but Total Budget API may show different count`)
-      console.warn(`[Campaign Budget API] 💡 This suggests one API has fresher data than the other`)
-      console.log(`[Campaign Budget API] 🔄 NUCLEAR OPTION: Always applying 24-hour filtering to fix budget inconsistency`)
-      
-      // 🚨 SMART FILTERING: Only count adsets updated in the last 24 hours (fresh data)
-      console.log(`[Campaign Budget API] 🔄 Applying smart filtering to exclude stale adset data...`)
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      console.log(`[Campaign Budget API] 📅 Filtering adsets updated after: ${twentyFourHoursAgo}`)
+      console.warn(`[Campaign Budget API] ⚠️ POTENTIAL STATUS INCONSISTENCY: Found ${adsetCount} active adsets in database`)
+      console.warn(`[Campaign Budget API] 💡 Fetching real-time adset statuses from Meta API to verify`)
       
       try {
+        console.log(`[Campaign Budget API] 🔄 Fetching fresh adset statuses from Meta API...`)
         
-        // Re-query with fresh data, filtering out stale adsets
+        // Import the Meta service function
+        const { fetchMetaAdSets } = await import('../../../../lib/meta-service')
+        
+        // Fetch fresh adset statuses from Meta API (this updates the database)
+        const metaResult = await fetchMetaAdSets(brandId, true) // Force refresh
+        console.log(`[Campaign Budget API] 📊 Meta adset sync result:`, metaResult)
+        
+        // Re-query database after Meta sync to get updated statuses
+        console.log(`[Campaign Budget API] 🔄 Re-querying database with fresh Meta statuses...`)
         const { data: freshAdsets, error: freshError } = await supabase
           .from('meta_adsets')
           .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
           .eq('brand_id', brandId)
           .in('campaign_id', campaignIds)
-          .eq('status', 'ACTIVE')
-          .gte('updated_at', twentyFourHoursAgo) // Only include adsets updated in last 24 hours
+          .eq('status', 'ACTIVE') // Only ACTIVE adsets
           .order('updated_at', { ascending: false })
         
         if (!freshError && freshAdsets) {
-          console.log(`[Campaign Budget API] 🔄 Re-queried with fresh data: ${freshAdsets.length} adsets`)
+          console.log(`[Campaign Budget API] 🔄 Fresh database query: ${freshAdsets.length} ACTIVE adsets`)
+          console.log(`[Campaign Budget API] 🔍 Fresh adsets:`, freshAdsets.map(a => `${a.adset_name} ($${a.budget}) [${a.status}]`))
           
-          // Recalculate budgets with fresh data
+          // Recalculate budgets with fresh Meta statuses
           const freshBudgets: { [campaignId: string]: { total: number, type: string, count: number } } = {}
           campaigns.forEach(campaign => {
             freshBudgets[campaign.campaign_id] = { total: 0, type: 'daily', count: 0 }
@@ -300,36 +303,22 @@ async function handleBudgetRequest(request: NextRequest) {
               freshBudgets[adset.campaign_id].total += adsetBudget
               freshBudgets[adset.campaign_id].count += 1
               freshBudgets[adset.campaign_id].type = adset.budget_type || 'daily'
+              console.log(`[Campaign Budget API] 🔍 Added fresh adset ${adset.adset_name}: +$${adsetBudget} = $${freshBudgets[adset.campaign_id].total}`)
             }
           })
           
-          console.log(`[Campaign Budget API] 📊 Fresh aggregation result: $${Object.values(freshBudgets).reduce((sum, budget) => sum + budget.total, 0)} from ${Object.values(freshBudgets).reduce((sum, budget) => sum + budget.count, 0)} adsets`)
+          const freshTotal = Object.values(freshBudgets).reduce((sum, budget) => sum + budget.total, 0)
+          const freshCount = Object.values(freshBudgets).reduce((sum, budget) => sum + budget.count, 0)
+          console.log(`[Campaign Budget API] 📊 Fresh Meta status result: $${freshTotal} from ${freshCount} ACTIVE adsets`)
           
-          // Use fresh data instead
+          // Use fresh Meta status data
           Object.assign(budgets, freshBudgets)
+        } else {
+          console.error(`[Campaign Budget API] ❌ Error re-querying after Meta sync:`, freshError)
         }
-      } catch (filterError) {
-        console.error(`[Campaign Budget API] ❌ Error applying 24-hour filter:`, filterError)
-        console.log(`[Campaign Budget API] ⚠️ Proceeding with original database data without filtering`)
-        
-        // If filtering fails, still return what we have rather than failing completely
-        console.log(`[Campaign Budget API] 📤 RETURNING original database budgets (filtering failed):`, formattedBudgets)
-        const response = NextResponse.json({
-          success: true,
-          message: 'Campaign budgets fetched from database (filtering failed)',
-          budgets: formattedBudgets,
-          timestamp: new Date().toISOString(),
-          refreshMethod: 'database-fallback-filter-failed',
-          _nocache: Date.now()
-        })
-        
-        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-        response.headers.set('Pragma', 'no-cache')
-        response.headers.set('Expires', '0')
-        response.headers.set('X-Content-Type-Options', 'nosniff')
-        response.headers.set('Vary', '*')
-        
-        return response
+      } catch (metaError) {
+        console.error(`[Campaign Budget API] ❌ Error fetching fresh Meta statuses:`, metaError)
+        console.log(`[Campaign Budget API] ⚠️ Proceeding with original database data`)
       }
     }
     
