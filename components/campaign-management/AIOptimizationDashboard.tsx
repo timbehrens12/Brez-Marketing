@@ -4,45 +4,11 @@ import { useState, useEffect } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  AlertTriangle, 
-  CheckCircle, 
-  TrendingUp, 
-  TrendingDown,
-  Eye,
-  DollarSign,
-  Target,
-  Calendar,
-  Brain,
-  Zap,
-  BarChart3,
-  PieChart,
-  Activity,
-  ArrowUp,
-  ArrowDown,
-  CircleDollarSign,
-  Wallet,
-  RefreshCw,
-  Loader2,
-  Play,
-  Pause,
-  Plus,
-  Minus,
-  ThumbsUp,
-  ThumbsDown,
-  TrendingUp as TrendIcon,
-  Flame,
-  Crown,
-  AlertCircle,
-  MapPin
+  Brain
 } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar, Tooltip, Cell, PieChart as RechartsPieChart } from 'recharts'
 
 interface AdSetOptimization {
   adset_id: string
@@ -114,8 +80,6 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
     profitData: [],
     performanceData: []
   })
-  const [activeTab, setActiveTab] = useState('alerts')
-  const [executingAction, setExecutingAction] = useState<string | null>(null)
 
   useEffect(() => {
     if (selectedBrandId) {
@@ -373,44 +337,6 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
     return recommendations
   }
 
-  const executeOptimization = async (adsetId: string, action: OptimizationAction) => {
-    setExecutingAction(`${adsetId}-${action.type}`)
-    
-    try {
-      // Simulate API call to execute the optimization
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast.success(`${action.title} executed successfully!`)
-      
-      // Refresh data
-      await fetchOptimizationData()
-    } catch (error) {
-      toast.error('Failed to execute optimization')
-    } finally {
-      setExecutingAction(null)
-    }
-  }
-
-  const getAlertIcon = (level: string) => {
-    switch (level) {
-      case 'success': return <CheckCircle className="w-3 h-3 text-green-500" />
-      case 'warning': return <AlertTriangle className="w-3 h-3 text-yellow-500" />
-      case 'critical': return <AlertCircle className="w-3 h-3 text-red-500" />
-      default: return <Activity className="w-3 h-3 text-gray-400" />
-    }
-  }
-
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'budget_increase': return <Plus className="w-3 h-3" />
-      case 'budget_decrease': return <Minus className="w-3 h-3" />
-      case 'pause': return <Pause className="w-3 h-3" />
-      case 'creative_refresh': return <RefreshCw className="w-3 h-3" />
-      case 'audience_expand': return <Target className="w-3 h-3" />
-      case 'bid_adjust': return <TrendingUp className="w-3 h-3" />
-      default: return <Zap className="w-3 h-3" />
-    }
-  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -488,332 +414,93 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
     )
   }
 
-    return (
-      <Card className="h-full bg-gradient-to-br from-[#1a1a1a] to-[#222] border border-[#333] overflow-hidden">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-400" />
-              <CardTitle className="text-base text-white">AI Optimization Center</CardTitle>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={fetchOptimizationData}
-              disabled={isLoading}
-              className="border-[#333] hover:border-gray-500 text-white h-7 px-2"
-            >
-              <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="text-xs">Refresh</span>
-            </Button>
-          </div>
+   return (
+     <Card className="bg-gradient-to-br from-[#1a1a1a] to-[#222] overflow-hidden border border-[#333]">
+       <CardHeader className="space-y-0 pb-2">
+         <CardTitle className="text-lg font-medium text-white">
+           <div className="flex items-center gap-1.5">
+             <span>AI Optimization Center</span>
+           </div>
+         </CardTitle>
+       </CardHeader>
         
-        {/* Executive Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+      <CardContent className="p-4 pt-2 pb-12">
+        {/* Modern KPI Cards */}
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Profit Today</p>
-                <p className="text-lg font-bold text-green-500">{formatCurrency(summary.total_profit)}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                {summary.profit_trend === 'up' ? 
-                  <ArrowUp className="w-4 h-4 text-green-500" /> : 
-                  <ArrowDown className="w-4 h-4 text-red-500" />
-                }
-                <span className="text-xs text-gray-400">+{summary.profit_change_percent}%</span>
-              </div>
-            </div>
+            <div className="text-xs text-gray-400 mb-1">Profit Today</div>
+            <div className="text-lg font-bold text-white">{formatCurrency(summary.total_profit)}</div>
           </div>
-          
           <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-            <div>
-              <p className="text-xs text-gray-400">Avg ROAS</p>
-              <p className="text-lg font-bold text-blue-400">{summary.average_roas.toFixed(2)}x</p>
-            </div>
+            <div className="text-xs text-gray-400 mb-1">Avg ROAS</div>
+            <div className="text-lg font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
           </div>
-          
           <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-            <div>
-              <p className="text-xs text-gray-400">Optimizations</p>
-              <p className="text-lg font-bold text-purple-400">{summary.optimizations_available}</p>
-            </div>
-          </div>
-          
-          <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-            <div>
-              <p className="text-xs text-gray-400">Potential Gain</p>
-              <p className="text-lg font-bold text-yellow-400">{formatCurrency(summary.potential_profit_increase)}</p>
-            </div>
+            <div className="text-xs text-gray-400 mb-1">Actions</div>
+            <div className="text-lg font-bold text-white">{summary.optimizations_available}</div>
           </div>
         </div>
-
-        {/* Priority Actions Banner */}
-        {summary.optimizations_available > 0 && (
-          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-2 mt-3">
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-              <span className="text-xs font-medium text-yellow-400 truncate">
-                {summary.optimizations_available} optimizations - ${summary.potential_profit_increase.toFixed(2)} profit gain
-              </span>
-            </div>
-          </div>
-        )}
-      </CardHeader>
-      
-      <CardContent className="flex-1 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-4 bg-[#0f0f0f] border border-[#333] h-8">
-            <TabsTrigger value="alerts" className="text-xs px-2">Alerts</TabsTrigger>
-            <TabsTrigger value="heatmap" className="text-xs px-2">Trends</TabsTrigger>
-            <TabsTrigger value="recommendations" className="text-xs px-2">Actions</TabsTrigger>
-            <TabsTrigger value="insights" className="text-xs px-2">Insights</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex-1 overflow-auto mt-4">
-            <TabsContent value="alerts" className="space-y-3 mt-0">
-              {adsets.map((adset) => {
-                const statusFormatted = formatAdSetStatus(adset.status)
-                return (
-                  <div 
-                    key={adset.adset_id}
-                    className={`bg-[#0f0f0f]/50 border rounded-lg p-4 ${
-                      adset.alert_level === 'critical' ? 'border-red-500/30' :
-                      adset.alert_level === 'warning' ? 'border-yellow-500/30' :
-                      'border-green-500/30'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {getAlertIcon(adset.alert_level)}
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-medium text-white truncate">{adset.adset_name}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={`text-xs px-1.5 py-0 h-4 flex items-center gap-1 ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
-                              {statusFormatted.displayText}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-white">{formatCurrency(adset.profit)}</p>
-                        <p className="text-xs text-gray-400">Profit</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-4 gap-4 mb-3">
-                      <div>
-                        <p className="text-xs text-gray-400">ROAS</p>
-                        <p className="text-sm font-medium text-white">{adset.roas.toFixed(2)}x</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Spend</p>
-                        <p className="text-sm font-medium text-white">{formatCurrency(adset.spent)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">CTR</p>
-                        <p className="text-sm font-medium text-white">{adset.ctr.toFixed(2)}%</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Score</p>
-                        <p className="text-sm font-medium text-white">{adset.performance_score}/100</p>
-                      </div>
-                    </div>
-                    
-                    <Progress 
-                      value={adset.performance_score} 
-                      className="h-2 mb-3"
-                    />
-                    
-                    {adset.recommendations.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-gray-300">Recommended Actions:</p>
-                        {adset.recommendations.map((rec, idx) => (
-                          <div key={idx} className="flex items-start gap-2 bg-[#1a1a1a] p-2 rounded border border-[#333]">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {getActionIcon(rec.type)}
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-medium text-white truncate">{rec.title}</p>
-                                <p className="text-xs text-green-500">+{formatCurrency(rec.estimated_profit_change)} ({rec.confidence}%)</p>
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-500/30 hover:border-blue-500/50 text-blue-400 h-6 px-2 text-xs"
-                              onClick={() => executeOptimization(adset.adset_id, rec)}
-                              disabled={executingAction === `${adset.adset_id}-${rec.type}`}
-                            >
-                              {executingAction === `${adset.adset_id}-${rec.type}` ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                'Apply'
-                              )}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </TabsContent>
-            
-            <TabsContent value="heatmap" className="mt-0">
-              <div className="space-y-4">
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-white mb-3">Profit Trend Today</h4>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={profitData}>
-                      <XAxis dataKey="time" tick={{ fontSize: 12, fill: '#9ca3af' }} />
-                      <YAxis tick={{ fontSize: 12, fill: '#9ca3af' }} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1a1a', 
-                          border: '1px solid #374151',
-                          borderRadius: '8px' 
-                        }}
-                        formatter={(value) => [formatCurrency(Number(value)), 'Profit']}
-                      />
-                      <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-white mb-3">AdSet Performance Matrix</h4>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={performanceData}>
-                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#9ca3af' }} />
-                      <YAxis tick={{ fontSize: 12, fill: '#9ca3af' }} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1a1a', 
-                          border: '1px solid #374151',
-                          borderRadius: '8px' 
-                        }}
-                      />
-                      <Bar dataKey="roas" fill="#3b82f6" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="recommendations" className="mt-0">
-              <div className="space-y-2">
-                {adsets.flatMap(adset => 
-                  adset.recommendations.map((rec, idx) => (
-                    <div key={`${adset.adset_id}-${idx}`} className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {getActionIcon(rec.type)}
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-sm font-medium text-white truncate">{rec.title}</h4>
-                            <p className="text-xs text-gray-400 truncate">{adset.adset_name}</p>
-                          </div>
-                        </div>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${rec.impact === 'high' ? 'border-red-500/30 text-red-400' : 
-                              rec.impact === 'medium' ? 'border-yellow-500/30 text-yellow-400' : 
-                              'border-green-500/30 text-green-400'} flex-shrink-0`}
-                        >
-                          {rec.impact}
+        
+        {/* Performance Summary */}
+        <div className="space-y-3 mt-4">
+          {adsets.map((adset) => {
+            const statusFormatted = formatAdSetStatus(adset.status)
+            return (
+              <div 
+                key={adset.adset_id}
+                className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-medium text-white truncate">{adset.adset_name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className={`text-xs px-1.5 py-0 h-4 flex items-center gap-1 ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
+                          {statusFormatted.displayText}
                         </Badge>
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className="text-green-500">+{formatCurrency(rec.estimated_profit_change)}</span>
-                          <span className="text-gray-400">{rec.confidence}% confident</span>
-                        </div>
-                        
-                        <Button
-                          size="sm"
-                          className="bg-blue-600 hover:bg-blue-700 h-6 px-2 text-xs"
-                          onClick={() => executeOptimization(adset.adset_id, rec)}
-                          disabled={executingAction === `${adset.adset_id}-${rec.type}`}
-                        >
-                          {executingAction === `${adset.adset_id}-${rec.type}` ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <>
-                              <Zap className="w-3 h-3 mr-1" />
-                              Go
-                            </>
-                          )}
-                        </Button>
-                      </div>
                     </div>
-                  ))
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-white">{formatCurrency(adset.profit)}</p>
+                    <p className="text-xs text-gray-400">Profit</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-4 mb-2">
+                  <div>
+                    <p className="text-xs text-gray-400">ROAS</p>
+                    <p className="text-sm font-medium text-white">{adset.roas.toFixed(2)}x</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Spend</p>
+                    <p className="text-sm font-medium text-white">{formatCurrency(adset.spent)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">CTR</p>
+                    <p className="text-sm font-medium text-white">{adset.ctr.toFixed(2)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Score</p>
+                    <p className="text-sm font-medium text-white">{adset.performance_score}/100</p>
+                  </div>
+                </div>
+                
+                {adset.recommendations.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-[#333]/50">
+                    <div className="text-xs text-gray-400 mb-1">AI Recommendations:</div>
+                    {adset.recommendations.slice(0, 2).map((rec, idx) => (
+                      <div key={idx} className="text-xs text-gray-300 mb-1">
+                        • {rec.title} - {formatCurrency(rec.estimated_profit_change)} potential gain
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="insights" className="mt-0">
-              <div className="space-y-4">
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-3 h-3 text-green-400" />
-                    <h4 className="text-xs font-medium text-white">Top Performer</h4>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    <span className="text-green-500 font-medium">{summary.top_performer}</span> is your best performing adset with excellent profitability and efficiency.
-                  </p>
-                </div>
-                
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-3 h-3 text-red-500" />
-                    <h4 className="text-xs font-medium text-white">Needs Attention</h4>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    <span className="text-red-500 font-medium">{summary.worst_performer}</span> is underperforming and may need immediate optimization or pausing.
-                  </p>
-                </div>
-                
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Brain className="w-3 h-3 text-blue-400" />
-                    <h4 className="text-xs font-medium text-white">AI Recommendation</h4>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    Focus on scaling your high-ROAS adsets while optimizing or pausing underperformers. 
-                    You have <span className="text-yellow-400 font-medium">${summary.potential_profit_increase.toFixed(2)}</span> in 
-                    potential daily profit improvements available.
-                  </p>
-                </div>
-                
-                <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <BarChart3 className="w-3 h-3 text-purple-400" />
-                    <h4 className="text-xs font-medium text-white">Performance Summary</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-gray-400">Active AdSets:</span>
-                      <span className="text-white ml-1">{summary.active_adsets}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Conversions:</span>
-                      <span className="text-white ml-1">{summary.total_conversions}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Total Spend:</span>
-                      <span className="text-white ml-1">{formatCurrency(summary.total_spend)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Avg ROAS:</span>
-                      <span className="text-white ml-1">{summary.average_roas.toFixed(2)}x</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )
