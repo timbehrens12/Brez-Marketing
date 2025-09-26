@@ -22,7 +22,7 @@ import { BackfillAlert } from "@/components/BackfillAlert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
 import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
-import AIDailyReport from "@/components/campaign-management/AIDailyReport"
+import AIOptimizationDashboard from "@/components/campaign-management/AIOptimizationDashboard"
 import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBreakdown"
 
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
@@ -1280,9 +1280,9 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* AI Daily Report - Full width on mobile, right column on xl */}
+              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
               <div className="xl:col-span-1">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
               </div>
 
             </div>
