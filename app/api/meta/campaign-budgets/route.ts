@@ -39,35 +39,18 @@ async function handleBudgetRequest(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Initialize Supabase client
+    console.log(`[API] Fetching campaign budgets for brand ${brandId}, force refresh: ${forceRefresh}`)
+    
+    // Initialize Supabase client for fallback
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-
-    // 🔥 UNIFIED REFRESH LOGIC: When forceRefresh=true, always sync fresh adset data first
-    if (forceRefresh) {
-      console.log(`[Campaign Budget API] 🔥 forceRefresh=true - syncing fresh adset data from Meta...`);
-      try {
-        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service');
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        
-        // Fetch fresh insights for the last 2 days to update adset statuses and budgets
-        await fetchMetaAdInsights(brandId, yesterday, today, false, true);
-        console.log(`[Campaign Budget API] ✅ Fresh Meta adset data synced successfully.`);
-        console.log(`[Campaign Budget API] 🔄 Database now has correct adset statuses and budgets.`);
-      } catch (insightsError) {
-        console.error(`[Campaign Budget API] ❌ Error syncing fresh Meta adset data:`, insightsError);
-        console.log(`[Campaign Budget API] ⚠️ Proceeding with potentially stale database data.`);
-      }
-    }
     
     // Check if we need to refresh based on data freshness
-    let shouldFetchFromMeta = false // This API will now rely on the forceRefresh sync above
+    let shouldFetchFromMeta = forceRefresh;
     
-    if (!forceRefresh) {
+    if (!shouldFetchFromMeta) {
       // Check when we last updated campaign budgets
       const { data: lastUpdateCheck } = await supabase
         .from('meta_adsets')
@@ -255,6 +238,55 @@ async function handleBudgetRequest(request: NextRequest) {
     if (totalBudgetFromAdsets === 0 && adsetCount > 0) {
       console.warn(`[Campaign Budget API] 🚨 STALE DATA DETECTED: Found ${adsetCount} adsets but $0 budget - database is stale`)
       console.warn(`[Campaign Budget API] 💡 Background sync will update this data soon`)
+    }
+    
+    // 🚨 FORCE SYNC: When forceRefresh=true, always sync fresh adset data to ensure consistency
+    if (forceRefresh && adsetCount > 0) {
+      console.warn(`[Campaign Budget API] ⚠️ POTENTIAL INCONSISTENCY: Found ${adsetCount} active adsets, but Total Budget API may show different count`)
+      console.warn(`[Campaign Budget API] 💡 This suggests one API has fresher data than the other`)
+      console.log(`[Campaign Budget API] 🔄 forceRefresh=true - fetching fresh adset data from Meta API to ensure consistency`)
+      
+      try {
+        const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
+        await fetchMetaAdSets(brandId, true) // Force refresh from Meta API
+        console.log(`[Campaign Budget API] ✅ Fresh adset data synced from Meta API`)
+        
+        // Re-query with fresh data
+        const { data: freshAdsets, error: freshError } = await supabase
+          .from('meta_adsets')
+          .select('campaign_id, budget, budget_type, status, adset_name, updated_at')
+          .eq('brand_id', brandId)
+          .in('campaign_id', campaignIds)
+          .eq('status', 'ACTIVE')
+          .order('updated_at', { ascending: false })
+        
+        if (!freshError && freshAdsets) {
+          console.log(`[Campaign Budget API] 🔄 Re-queried with fresh data: ${freshAdsets.length} adsets`)
+          
+          // Recalculate budgets with fresh data
+          const freshBudgets: { [campaignId: string]: { total: number, type: string, count: number } } = {}
+          campaigns.forEach(campaign => {
+            freshBudgets[campaign.campaign_id] = { total: 0, type: 'daily', count: 0 }
+          })
+          
+          freshAdsets.forEach(adset => {
+            const adsetBudget = parseFloat(adset.budget) || 0
+            if (adsetBudget > 0) {
+              freshBudgets[adset.campaign_id].total += adsetBudget
+              freshBudgets[adset.campaign_id].count += 1
+              freshBudgets[adset.campaign_id].type = adset.budget_type || 'daily'
+            }
+          })
+          
+          console.log(`[Campaign Budget API] 📊 Fresh aggregation result: $${Object.values(freshBudgets).reduce((sum, budget) => sum + budget.total, 0)} from ${Object.values(freshBudgets).reduce((sum, budget) => sum + budget.count, 0)} adsets`)
+          
+          // Use fresh data instead
+          Object.assign(budgets, freshBudgets)
+        }
+      } catch (syncError) {
+        console.error(`[Campaign Budget API] ❌ Error syncing fresh adset data:`, syncError)
+        console.log(`[Campaign Budget API] ⚠️ Proceeding with database data, may be inconsistent`)
+      }
     }
     
     // Format budgets as array of objects to match expected CampaignWidget format
