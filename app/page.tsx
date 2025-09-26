@@ -289,9 +289,9 @@ export default function HomePage() {
           <div className="w-full bg-black/70 border-b border-white/10">
             <div className="flex justify-center py-2">
               <div className="flex items-center gap-2">
-                <TagBadge tone="red">LIMITED TIME OFFER</TagBadge>
+                <TagBadge tone="red">LAUNCH SPECIAL</TagBadge>
                 <span className="text-sm text-white/80 tracking-wide font-bold">
-                  Existing Scale 2.0 users get 25% off
+                  Early access pricing ends soon
                 </span>
               </div>
             </div>
