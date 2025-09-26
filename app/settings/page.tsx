@@ -835,7 +835,7 @@ export default function SettingsPage() {
   const { user } = useUser()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const { agencySettings, updateAgencySettings, isLoading: agencyLoading } = useAgency()
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [activeTab, setActiveTab] = useState('agency-branding')
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [isAddBrandDialogOpen, setIsAddBrandDialogOpen] = useState(false)
@@ -1105,13 +1105,6 @@ export default function SettingsPage() {
     }
   }
 
-  // Page loading effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoadingPage(false)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
 
   // Load connections for all accessible brands (both owned and shared)
   const loadConnections = useCallback(async () => {

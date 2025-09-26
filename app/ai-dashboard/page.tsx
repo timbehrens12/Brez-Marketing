@@ -14,7 +14,7 @@ export default function AIDashboardPage() {
   const router = useRouter()
   const { agencySettings } = useAgency()
   const { userId } = useAuth()
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingPhase, setLoadingPhase] = useState('Initializing AI dashboard...')
 
