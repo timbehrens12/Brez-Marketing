@@ -20,14 +20,6 @@ export default function AnalyticsPage() {
   const { agencySettings } = useAgency()
   const pathname = usePathname()
 
-  useEffect(() => {
-    // Page loading simulation
-    const timer = setTimeout(() => {
-      setIsLoadingPage(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
 
   // Show loading state
   if (isLoadingPage) {

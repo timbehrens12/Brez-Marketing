@@ -242,13 +242,13 @@ export default function DashboardPage() {
   // Add a state to track if we're in the initial setup phase
   const [isInitialSetup, setIsInitialSetup] = useState(true)
   
-  // Add action center loading state - start false for immediate access
-  const [isActionCenterLoading, setIsActionCenterLoading] = useState(false)
+  // Add action center loading state (like marketing assistant) - start true to prevent flash
+  const [isActionCenterLoading, setIsActionCenterLoading] = useState(true)
   const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Action Center')
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(true)
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
-  const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(false)
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(true)
+  const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(true)
   
   // Sidebar state management - tracks sidebar width for loading overlay positioning
   const [sidebarWidth, setSidebarWidth] = useState(() => {

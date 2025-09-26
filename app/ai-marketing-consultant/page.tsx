@@ -35,7 +35,7 @@ export default function AIMarketingConsultantPage() {
 
     const runPhase = () => {
       if (currentPhaseIndex >= phases.length) {
-        setTimeout(() => setIsLoadingPage(false), 300)
+        setIsLoadingPage(false)
         return
       }
 

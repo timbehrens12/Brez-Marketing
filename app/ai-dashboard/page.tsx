@@ -35,7 +35,7 @@ export default function AIDashboardPage() {
 
     const runPhase = () => {
       if (currentPhaseIndex >= phases.length) {
-        setTimeout(() => setIsLoadingPage(false), 300)
+        setIsLoadingPage(false)
         return
       }
 
