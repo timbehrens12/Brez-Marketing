@@ -674,30 +674,19 @@ const CampaignWidget = ({
             }
           }
           
-          // 🚨 SMART STATUS SYNC: Apply smart status inference to current view too
-          const smartValidAdSets = validAdSets.map((adSet: AdSet) => {
-            // If adset has $0 budget but shows as ACTIVE, it's likely been deactivated
-            if (adSet.budget === 0 && adSet.status === 'ACTIVE') {
-              console.log(`[CampaignWidget] 🔧 AdSet ${adSet.adset_name}: Budget is $0 but status is ACTIVE - inferring PAUSED status`);
-              return { ...adSet, status: 'PAUSED' };
-            }
-            // If adset has budget > 0 but shows as PAUSED, it might have been reactivated
-            else if (adSet.budget > 0 && (adSet.status === 'PAUSED' || adSet.status === 'INACTIVE')) {
-              console.log(`[CampaignWidget] 🔧 AdSet ${adSet.adset_name}: Budget is $${adSet.budget} but status is ${adSet.status} - inferring ACTIVE status`);
-              return { ...adSet, status: 'ACTIVE' };
-            }
-            return adSet;
-          });
+          // 🚨 DISABLED: Smart status sync was too aggressive - trust actual API data
+          // The issue is database budget data being stale, not status being wrong
+          console.log(`[CampaignWidget] 🔄 Setting ${validAdSets.length} adsets without status modification`);
           
-          setAdSets(smartValidAdSets);
+          setAdSets(validAdSets);
           success = true; // Mark as successful
           
           // 🚨 ALSO: Update the cached adsets map with fresh data
-          if (smartValidAdSets.length > 0) {
+          if (validAdSets.length > 0) {
             setAllCampaignAdSets(prev => {
               const newMap = new Map(prev);
-              newMap.set(campaignId, smartValidAdSets);
-              console.log(`[CampaignWidget] 🔄 Updated cached adsets for campaign ${campaignId} with ${smartValidAdSets.length} fresh adsets (with smart status sync)`);
+              newMap.set(campaignId, validAdSets);
+              console.log(`[CampaignWidget] 🔄 Updated cached adsets for campaign ${campaignId} with ${validAdSets.length} fresh adsets`);
               return newMap;
             });
           }
@@ -1136,49 +1125,29 @@ const CampaignWidget = ({
         }
         
         if (isMountedRef.current) {
+          // 🚨 EMERGENCY FIX: If campaign budget API returns all $0, check if total budget widget has data
+          const hasZeroBudgets = Object.values(budgetMap).every(budget => budget.budget === 0);
+          
+          if (hasZeroBudgets && campaigns.length > 0) {
+            console.log(`[CampaignWidget] 🚨 Campaign Budget API returned all $0 - applying emergency fallback`);
+            
+            // EMERGENCY: Use campaign.adset_budget_total as backup if available
+            campaigns.forEach(campaign => {
+              if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+                console.log(`[CampaignWidget] 🔧 Emergency fallback: Using campaign.adset_budget_total $${campaign.adset_budget_total} for campaign ${campaign.campaign_id}`);
+                budgetMap[campaign.campaign_id] = {
+                  budget: campaign.adset_budget_total,
+                  formatted_budget: formatCurrency(campaign.adset_budget_total),
+                  budget_type: 'daily',
+                  budget_source: 'emergency_campaign_fallback'
+                };
+              }
+            });
+          }
+          
           setCurrentBudgets(budgetMap);
           console.log(`[CampaignWidget] ✅ Set currentBudgets:`, budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
-          
-          // 🚨 SMART BUDGET SYNC: Don't blindly override adset budgets with 0
-          // Instead, if campaign API returns 0 but we have adsets with budgets, 
-          // recalculate campaign budget from adsets (adsets are more accurate)
-          setAllCampaignAdSets(current => {
-            const newMap = new Map(current);
-            let recalculatedBudgets = 0;
-            
-            // For each campaign with fresh budget data
-            Object.entries(budgetMap).forEach(([campaignId, budgetData]) => {
-              const cachedAdSets = newMap.get(campaignId);
-              if (cachedAdSets && cachedAdSets.length > 0) {
-                // Calculate actual budget from cached adsets
-                const activeAdSets = cachedAdSets.filter(adSet => adSet.status === 'ACTIVE');
-                const actualBudgetFromAdSets = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
-                
-                // If API says $0 but adsets show budget, trust the adsets and update the API data
-                if (budgetData.budget === 0 && actualBudgetFromAdSets > 0) {
-                  console.log(`[CampaignWidget] 🔧 Campaign ${campaignId}: API returned $0 but adsets show $${actualBudgetFromAdSets} - trusting adsets`);
-                  
-                  // Update the budget data to reflect reality
-                  budgetMap[campaignId] = {
-                    ...budgetData,
-                    budget: actualBudgetFromAdSets,
-                    formatted_budget: formatCurrency(actualBudgetFromAdSets),
-                    budget_source: 'calculated_from_adsets'
-                  };
-                  recalculatedBudgets++;
-                }
-              }
-            });
-            
-            if (recalculatedBudgets > 0) {
-              console.log(`[CampaignWidget] 🔄 Recalculated ${recalculatedBudgets} campaign budgets from adset data`);
-              // Update currentBudgets with the corrected data
-              setCurrentBudgets(budgetMap);
-            }
-            
-            return newMap; // No changes to adsets needed
-          });
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
