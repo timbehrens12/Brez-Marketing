@@ -109,25 +109,25 @@ EXAMPLE: Change [Write your comprehensive executive summary here with actual per
 DO NOT remove the numbered section widgets - keep them exactly as shown:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">1</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">1.</span>
   EXECUTIVE SUMMARY
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">2</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">2.</span>
   KEY PERFORMANCE METRICS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">3</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">3.</span>
   TOP PERFORMING ADS & CREATIVES
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">4</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">4.</span>
   AUDIENCE PERFORMANCE INSIGHTS
 </h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #666; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
@@ -144,19 +144,19 @@ DO NOT remove the numbered section widgets - keep them exactly as shown:
 </div>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">5</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">5.</span>
   BUDGET ALLOCATION & SCALING INSIGHTS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">6</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">6.</span>
   OVERALL CLIENT IMPACT & ROI
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-  <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">7</span>
+  <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">7.</span>
   NEXT STEPS & RECOMMENDATIONS
 </h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
@@ -246,19 +246,19 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
     const fallbackReport = `
     <div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">1</span>
+        <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">1.</span>
         EXECUTIVE SUMMARY
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Report is being generated with current performance data. Analytics show ongoing campaign optimization and data collection in progress.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">2</span>
+        <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">2.</span>
         KEY PERFORMANCE METRICS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Current performance metrics are being compiled. Please refresh for updated analysis.</p>
       
       <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-block; width: 28px; height: 28px; background: #555; color: #ffffff; text-align: center; line-height: 28px; border-radius: 50%; margin-right: 12px; font-size: 16px; font-weight: bold;">7</span>
+        <span style="color: #ffffff; font-size: 24px; font-weight: bold; margin-right: 16px;">7.</span>
         NEXT STEPS & RECOMMENDATIONS
       </h2>
       <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Refresh the report to generate detailed analysis with current data insights.</p>
