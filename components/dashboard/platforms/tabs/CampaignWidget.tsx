@@ -1114,6 +1114,56 @@ const CampaignWidget = ({
           setCurrentBudgets(budgetMap);
           console.log(`[CampaignWidget] ✅ Set currentBudgets:`, budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+          
+          // 🚨 NEW: Update cached adsets with fresh budget data
+          // This ensures dropdown shows correct budget values immediately
+          setAllCampaignAdSets(current => {
+            const newMap = new Map(current);
+            let updatedCount = 0;
+            
+            // For each campaign with fresh budget data
+            Object.entries(budgetMap).forEach(([campaignId, budgetData]) => {
+              const cachedAdSets = newMap.get(campaignId);
+              if (cachedAdSets && cachedAdSets.length > 0) {
+                // Update all cached adsets for this campaign with fresh budget data
+                // Note: We don't have individual adset budgets from this API, but we know
+                // if the campaign total is 0, all active adsets should show 0
+                const updatedAdSets = cachedAdSets.map(adSet => {
+                  if (budgetData.budget === 0 && adSet.status === 'ACTIVE') {
+                    // If campaign total is 0, individual adsets should also be 0
+                    updatedCount++;
+                    return { ...adSet, budget: 0 };
+                  }
+                  return adSet;
+                });
+                newMap.set(campaignId, updatedAdSets);
+              }
+            });
+            
+            if (updatedCount > 0) {
+              console.log(`[CampaignWidget] 🔄 Updated ${updatedCount} cached adsets with fresh budget data`);
+            }
+            
+            return newMap;
+          });
+          
+          // 🚨 ALSO: Update the currently expanded campaign's adsets if affected
+          if (expandedCampaign && budgetMap[expandedCampaign]) {
+            const budgetData = budgetMap[expandedCampaign];
+            setAdSets(current => {
+              if (current.length > 0 && budgetData.budget === 0) {
+                const updatedAdSets = current.map(adSet => {
+                  if (adSet.status === 'ACTIVE') {
+                    return { ...adSet, budget: 0 };
+                  }
+                  return adSet;
+                });
+                console.log(`[CampaignWidget] 🔄 Updated expanded campaign adsets with fresh budget data`);
+                return updatedAdSets;
+              }
+              return current;
+            });
+          }
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
@@ -1689,12 +1739,8 @@ const CampaignWidget = ({
     // Use API budget if it exists (including 0) and we're not currently loading budgets
     // 0 is a valid budget value that should be respected - means no active adsets with budgets
     if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
-      // 🚨 REDUCED LOGGING: Only log once per budget value change to prevent spam
-      const budgetKey = `${campaign.campaign_id}-${currentBudgetData.budget}`;
-      if (!getCampaignBudget._lastLoggedBudget || getCampaignBudget._lastLoggedBudget !== budgetKey) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
-        getCampaignBudget._lastLoggedBudget = budgetKey;
-      }
+      // 🚨 Log API budget usage
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
         formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
@@ -1702,38 +1748,23 @@ const CampaignWidget = ({
         budget_source: 'api'
       };
     } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets API returned 0, will try Total Budget API as fallback:`, {
+      // 🚨 TRUST API DATA: If API explicitly returns 0, that means no active adsets with budgets
+      // Don't treat 0 as a fallback situation - it's valid data!
+      if (currentBudgetData && typeof currentBudgetData.budget === 'number') {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: API returned budget $${currentBudgetData.budget} - trusting this value`);
+        return {
+          budget: currentBudgetData.budget,
+          formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
+          budget_type: currentBudgetData.budget_type || 'unknown',
+          budget_source: 'api_trusted'
+        };
+      }
+      
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, trying campaign props:`, {
         currentBudgetData_budget: currentBudgetData?.budget,
         campaign_adset_budget_total: campaign.adset_budget_total,
         campaign_budget: campaign.budget
       });
-      
-      // 🚨 FALLBACK LOGIC: When Campaign Budget API returns 0, use campaign props
-      if (currentBudgetData?.budget === 0) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Campaign Budget API returned 0, using campaign props as fallback`);
-        
-        // Priority: Use adset_budget_total from campaign props (this comes from Total Budget calculations)
-        if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-          console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.adset_budget_total fallback: $${campaign.adset_budget_total}`);
-          return {
-            budget: campaign.adset_budget_total,
-            formatted_budget: formatCurrency(campaign.adset_budget_total),
-            budget_type: 'daily',
-            budget_source: 'adset_total_fallback'
-          };
-        }
-        
-        // Secondary fallback: Use campaign.budget if available
-        if (campaign.budget && campaign.budget > 0) {
-          console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.budget fallback: $${campaign.budget}`);
-          return {
-            budget: campaign.budget,
-            formatted_budget: formatCurrency(campaign.budget),
-            budget_type: campaign.budget_type || 'daily',
-            budget_source: 'campaign_budget_fallback'
-          };
-        }
-      }
     }
 
     // 🚨 LAST RESORT: Only use campaign data if API is completely unavailable
