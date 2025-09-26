@@ -262,14 +262,16 @@ export default function BrandSelector({ onSelect, selectedBrandId, className, is
       <button
         type="button"
         className={cn(
-          "flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium rounded-xl overflow-hidden",
-          "bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] text-white hover:from-[#252525] hover:to-[#1a1a1a]",
-          "focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 shadow-lg",
+          "relative flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium rounded-xl overflow-hidden",
+          "bg-[#2A2A2A] text-white shadow-[0_0_20px_rgba(255,42,42,0.4),inset_0_0_20px_rgba(255,42,42,0.1)] border border-[#333]",
+          "hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30",
           "transition-all duration-300 ease-out will-change-transform",
           isOpen && "ring-2 ring-white/20 border-white/30 shadow-xl"
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
+        {/* Add the red indicator lip */}
+        <div className="absolute left-0 inset-y-2 w-1 bg-[#FF2A2A] rounded-full"></div>
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {selectedBrand ? (
             <>
