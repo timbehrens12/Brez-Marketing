@@ -1081,6 +1081,9 @@ const CampaignWidget = ({
       console.log(`[CampaignWidget] 🚀 Calling campaign budget API with EXTREME cache buster:`, url);
       
       // 🚨 NUCLEAR OPTION: Use POST method which cannot be cached by any proxy/CDN
+      // Add frontend timeout to prevent hanging
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
       const response = await fetch(url, { 
         method: 'POST', // POST requests cannot be cached
         signal: controller.signal,
@@ -1097,6 +1100,8 @@ const CampaignWidget = ({
           nonce: Math.random().toString(36)
         })
       });
+      
+      clearTimeout(timeoutId); // Clear timeout if request completes
       
       if (!isMountedRef.current) return;
       
@@ -1127,6 +1132,7 @@ const CampaignWidget = ({
           });
         } else {
           console.warn(`[CampaignWidget] ⚠️ Invalid budget data format:`, data);
+          console.warn(`[CampaignWidget] 🚨 Expected 'budgets' array but got:`, typeof data.budgets);
         }
         
         if (isMountedRef.current) {
@@ -1150,6 +1156,7 @@ const CampaignWidget = ({
         }
       }
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       if ((error as Error).name === 'AbortError') {
         logger.debug("[CampaignWidget] Budget fetch aborted");
         return;

@@ -240,6 +240,18 @@ async function handleBudgetRequest(request: NextRequest) {
       console.warn(`[Campaign Budget API] 💡 Background sync will update this data soon`)
     }
     
+    // Format budgets as array of objects to match expected CampaignWidget format (moved here for scope)
+    const formattedBudgets = Object.entries(budgets).map(([campaignId, budget]) => ({
+      campaign_id: campaignId,
+      budget: budget.total,
+      budget_type: budget.type,
+      formatted_budget: budget.type === 'daily' 
+        ? `$${budget.total.toFixed(2)}/day`
+        : `$${budget.total.toFixed(2)}`,
+      budget_source: 'database-adsets',
+      adset_count: budget.count
+    }))
+    
     // 🚨 FORCE SYNC: When forceRefresh=true, always sync fresh adset data to ensure consistency
     if (forceRefresh && adsetCount > 0) {
       console.warn(`[Campaign Budget API] ⚠️ POTENTIAL INCONSISTENCY: Found ${adsetCount} active adsets, but Total Budget API may show different count`)
@@ -257,7 +269,7 @@ async function handleBudgetRequest(request: NextRequest) {
         // Add timeout to prevent API from hanging
         const syncPromise = fetchMetaAdInsights(brandId, yesterday, today, false, true)
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Sync timeout after 10 seconds')), 10000)
+          setTimeout(() => reject(new Error('Sync timeout after 5 seconds')), 5000)
         )
         
         await Promise.race([syncPromise, timeoutPromise])
@@ -298,20 +310,27 @@ async function handleBudgetRequest(request: NextRequest) {
       } catch (syncError) {
         console.error(`[Campaign Budget API] ❌ Error syncing fresh adset data:`, syncError)
         console.log(`[Campaign Budget API] ⚠️ Proceeding with database data, may be inconsistent`)
+        
+        // If sync fails, still return what we have rather than failing completely
+        console.log(`[Campaign Budget API] 📤 RETURNING original database budgets (sync failed):`, formattedBudgets)
+        const response = NextResponse.json({
+          success: true,
+          message: 'Campaign budgets fetched from database (sync failed)',
+          budgets: formattedBudgets,
+          timestamp: new Date().toISOString(),
+          refreshMethod: 'database-fallback-sync-failed',
+          _nocache: Date.now()
+        })
+        
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        response.headers.set('Pragma', 'no-cache')
+        response.headers.set('Expires', '0')
+        response.headers.set('X-Content-Type-Options', 'nosniff')
+        response.headers.set('Vary', '*')
+        
+        return response
       }
     }
-    
-    // Format budgets as array of objects to match expected CampaignWidget format
-    const formattedBudgets = Object.entries(budgets).map(([campaignId, budget]) => ({
-      campaign_id: campaignId,
-      budget: budget.total,
-      budget_type: budget.type,
-      formatted_budget: budget.type === 'daily' 
-        ? `$${budget.total.toFixed(2)}/day`
-        : `$${budget.total.toFixed(2)}`,
-      budget_source: 'database-adsets',
-      adset_count: budget.count
-    }))
     
     console.log(`[Campaign Budget API] 📤 RETURNING database aggregated budgets:`, formattedBudgets)
     // 🔍 DEBUG: Log each formatted budget
