@@ -1115,55 +1115,45 @@ const CampaignWidget = ({
           console.log(`[CampaignWidget] ✅ Set currentBudgets:`, budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
           
-          // 🚨 NEW: Update cached adsets with fresh budget data
-          // This ensures dropdown shows correct budget values immediately
+          // 🚨 SMART BUDGET SYNC: Don't blindly override adset budgets with 0
+          // Instead, if campaign API returns 0 but we have adsets with budgets, 
+          // recalculate campaign budget from adsets (adsets are more accurate)
           setAllCampaignAdSets(current => {
             const newMap = new Map(current);
-            let updatedCount = 0;
+            let recalculatedBudgets = 0;
             
             // For each campaign with fresh budget data
             Object.entries(budgetMap).forEach(([campaignId, budgetData]) => {
               const cachedAdSets = newMap.get(campaignId);
               if (cachedAdSets && cachedAdSets.length > 0) {
-                // Update all cached adsets for this campaign with fresh budget data
-                // Note: We don't have individual adset budgets from this API, but we know
-                // if the campaign total is 0, all active adsets should show 0
-                const updatedAdSets = cachedAdSets.map(adSet => {
-                  if (budgetData.budget === 0 && adSet.status === 'ACTIVE') {
-                    // If campaign total is 0, individual adsets should also be 0
-                    updatedCount++;
-                    return { ...adSet, budget: 0 };
-                  }
-                  return adSet;
-                });
-                newMap.set(campaignId, updatedAdSets);
+                // Calculate actual budget from cached adsets
+                const activeAdSets = cachedAdSets.filter(adSet => adSet.status === 'ACTIVE');
+                const actualBudgetFromAdSets = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+                
+                // If API says $0 but adsets show budget, trust the adsets and update the API data
+                if (budgetData.budget === 0 && actualBudgetFromAdSets > 0) {
+                  console.log(`[CampaignWidget] 🔧 Campaign ${campaignId}: API returned $0 but adsets show $${actualBudgetFromAdSets} - trusting adsets`);
+                  
+                  // Update the budget data to reflect reality
+                  budgetMap[campaignId] = {
+                    ...budgetData,
+                    budget: actualBudgetFromAdSets,
+                    formatted_budget: formatCurrency(actualBudgetFromAdSets),
+                    budget_source: 'calculated_from_adsets'
+                  };
+                  recalculatedBudgets++;
+                }
               }
             });
             
-            if (updatedCount > 0) {
-              console.log(`[CampaignWidget] 🔄 Updated ${updatedCount} cached adsets with fresh budget data`);
+            if (recalculatedBudgets > 0) {
+              console.log(`[CampaignWidget] 🔄 Recalculated ${recalculatedBudgets} campaign budgets from adset data`);
+              // Update currentBudgets with the corrected data
+              setCurrentBudgets(budgetMap);
             }
             
-            return newMap;
+            return newMap; // No changes to adsets needed
           });
-          
-          // 🚨 ALSO: Update the currently expanded campaign's adsets if affected
-          if (expandedCampaign && budgetMap[expandedCampaign]) {
-            const budgetData = budgetMap[expandedCampaign];
-            setAdSets(current => {
-              if (current.length > 0 && budgetData.budget === 0) {
-                const updatedAdSets = current.map(adSet => {
-                  if (adSet.status === 'ACTIVE') {
-                    return { ...adSet, budget: 0 };
-                  }
-                  return adSet;
-                });
-                console.log(`[CampaignWidget] 🔄 Updated expanded campaign adsets with fresh budget data`);
-                return updatedAdSets;
-              }
-              return current;
-            });
-          }
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
@@ -1767,6 +1757,22 @@ const CampaignWidget = ({
       });
     }
 
+    // 🚨 SMART FALLBACK: Calculate from expanded adsets if available
+    if (expandedCampaign === campaign.campaign_id && adSets.length > 0) {
+      const activeAdSets = adSets.filter(adSet => adSet.status === 'ACTIVE');
+      const calculatedBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      
+      if (calculatedBudget > 0) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Calculated from expanded adsets: $${calculatedBudget}`);
+        return {
+          budget: calculatedBudget,
+          formatted_budget: formatCurrency(calculatedBudget),
+          budget_type: activeAdSets.length > 0 ? (activeAdSets[0].budget_type || 'daily') : 'daily',
+          budget_source: 'calculated_from_expanded_adsets'
+        };
+      }
+    }
+
     // 🚨 LAST RESORT: Only use campaign data if API is completely unavailable
     const hasAnyCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0;
     if (!hasAnyCurrentBudgets) {
@@ -1917,7 +1923,7 @@ const CampaignWidget = ({
       budget_type: 'daily',
       budget_source: 'fallback_estimate'
     };
-  }, [currentBudgets, expandedCampaign, isLoading, isSyncing, isLoadingBudgets, allCampaignAdSets]);
+  }, [currentBudgets, expandedCampaign, isLoading, isSyncing, isLoadingBudgets, allCampaignAdSets, adSets]);
 
   // Function to refresh single campaign status
   const refreshCampaignStatus = useCallback(async (campaignId: string, force: boolean = false): Promise<void> => {
