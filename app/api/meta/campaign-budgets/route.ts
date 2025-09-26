@@ -247,8 +247,20 @@ async function handleBudgetRequest(request: NextRequest) {
       console.log(`[Campaign Budget API] 🔄 forceRefresh=true - fetching fresh adset data from Meta API to ensure consistency`)
       
       try {
-        const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
-        await fetchMetaAdSets(brandId, true) // Force refresh from Meta API
+        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(today.getDate() - 1)
+        
+        console.log(`[Campaign Budget API] 🔄 Syncing fresh insights for the last 2 days to update adset statuses...`)
+        
+        // Add timeout to prevent API from hanging
+        const syncPromise = fetchMetaAdInsights(brandId, yesterday, today, false, true)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Sync timeout after 10 seconds')), 10000)
+        )
+        
+        await Promise.race([syncPromise, timeoutPromise])
         console.log(`[Campaign Budget API] ✅ Fresh adset data synced from Meta API`)
         
         // Re-query with fresh data
