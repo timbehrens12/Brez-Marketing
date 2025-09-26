@@ -102,7 +102,11 @@ Generate ONLY the report content sections (no title, no wrapper). Create a profe
 6. OVERALL CLIENT IMPACT & ROI - Business impact and return on investment
 7. NEXT STEPS & RECOMMENDATIONS - Strategic guidance from your agency
 
-Use this EXACT HTML structure but replace the example text with your actual analysis of the provided data:
+CRITICAL: You MUST use this EXACT HTML structure including ALL SVG icons. Copy this template EXACTLY and only replace the bracketed placeholder text with your analysis.
+
+EXAMPLE: Change [Write your comprehensive executive summary here with actual performance data] to real analysis like "Our analysis shows Test Brand achieved $1835.9 in revenue with 100% growth rate..."
+
+DO NOT remove the SVG icons - keep them exactly as shown:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase; display: flex; align-items: center; gap: 0.75rem;">
   <svg width="28" height="28" viewBox="0 0 24 24" fill="#d1d5db" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
@@ -172,13 +176,13 @@ Use this EXACT HTML structure but replace the example text with your actual anal
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
-- You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)
+- You MUST copy the EXACT HTML template above including ALL SVG icons
+- You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)  
 - You MUST include ALL 3 colored subsections under Audience Performance Insights
-- Use the EXACT HTML structure and styling provided above
-- REPLACE ALL [bracketed placeholder text] with actual analysis of the provided data
+- You MUST keep ALL SVG icons exactly as shown - DO NOT remove them
+- REPLACE ONLY the [bracketed placeholder text] with actual analysis of the provided data
 - Do NOT copy the placeholder text - write real content based on the data
-- Generate the same structure for daily and monthly reports
-- Only change the data content, never the structure or section headers
+- DO NOT change HTML structure, styling, or remove SVG icons
 - Include specific data points and be comprehensive
 
 CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, li, span). Use inline styles only. Never use script, iframe, object, embed tags or event handlers.
@@ -191,7 +195,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a marketing agency analyst creating a report FOR your client. Use the provided HTML template but REPLACE ALL placeholder text with actual analysis of the data. Write in agency-to-client tone with specific data points. Generate ONLY the content sections using the exact HTML structure provided.'
+          content: 'You are a marketing agency analyst creating a report FOR your client. You MUST copy the EXACT HTML template including ALL SVG icons. NEVER remove or change the SVG icons. Only replace the [bracketed placeholder text] with actual analysis. Keep ALL HTML structure, styling, and SVG icons exactly as shown in the template.'
         },
         {
           role: 'user',
