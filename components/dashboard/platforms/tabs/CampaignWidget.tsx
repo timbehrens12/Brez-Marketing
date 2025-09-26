@@ -674,15 +674,30 @@ const CampaignWidget = ({
             }
           }
           
-          setAdSets(validAdSets);
+          // 🚨 SMART STATUS SYNC: Apply smart status inference to current view too
+          const smartValidAdSets = validAdSets.map((adSet: AdSet) => {
+            // If adset has $0 budget but shows as ACTIVE, it's likely been deactivated
+            if (adSet.budget === 0 && adSet.status === 'ACTIVE') {
+              console.log(`[CampaignWidget] 🔧 AdSet ${adSet.adset_name}: Budget is $0 but status is ACTIVE - inferring PAUSED status`);
+              return { ...adSet, status: 'PAUSED' };
+            }
+            // If adset has budget > 0 but shows as PAUSED, it might have been reactivated
+            else if (adSet.budget > 0 && (adSet.status === 'PAUSED' || adSet.status === 'INACTIVE')) {
+              console.log(`[CampaignWidget] 🔧 AdSet ${adSet.adset_name}: Budget is $${adSet.budget} but status is ${adSet.status} - inferring ACTIVE status`);
+              return { ...adSet, status: 'ACTIVE' };
+            }
+            return adSet;
+          });
+          
+          setAdSets(smartValidAdSets);
           success = true; // Mark as successful
           
           // 🚨 ALSO: Update the cached adsets map with fresh data
-          if (validAdSets.length > 0) {
+          if (smartValidAdSets.length > 0) {
             setAllCampaignAdSets(prev => {
               const newMap = new Map(prev);
-              newMap.set(campaignId, validAdSets);
-              console.log(`[CampaignWidget] 🔄 Updated cached adsets for campaign ${campaignId} with ${validAdSets.length} fresh adsets`);
+              newMap.set(campaignId, smartValidAdSets);
+              console.log(`[CampaignWidget] 🔄 Updated cached adsets for campaign ${campaignId} with ${smartValidAdSets.length} fresh adsets (with smart status sync)`);
               return newMap;
             });
           }
