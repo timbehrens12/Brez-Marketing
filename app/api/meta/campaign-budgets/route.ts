@@ -278,8 +278,9 @@ async function handleBudgetRequest(request: NextRequest) {
         // 🚨 FORCE ADSET STATUS SYNC: Some adsets may have stale status data
         console.log(`[Campaign Budget API] 🔄 Force syncing adset statuses to ensure accurate budget calculation...`)
         try {
-          const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
-          await fetchMetaAdSets(brandId, true) // Force refresh adset statuses
+          // Use the Meta campaigns service to force refresh adset data
+          const { fetchMetaCampaignData } = await import('@/lib/services/meta-service')
+          await fetchMetaCampaignData(brandId, true) // Force refresh all campaign data including adsets
           console.log(`[Campaign Budget API] ✅ Adset statuses synced from Meta API`)
         } catch (statusSyncError) {
           console.warn(`[Campaign Budget API] ⚠️ Adset status sync failed, proceeding with current data:`, statusSyncError)
