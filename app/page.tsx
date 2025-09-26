@@ -28,6 +28,7 @@ function PlanRecommendationQuiz() {
           plan: "DTC Owner",
           reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
           price: "$67/mo",
+          originalPrice: "$97/mo",
           features: ["1 Brand", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
         }
       
@@ -36,6 +37,7 @@ function PlanRecommendationQuiz() {
           plan: "Beginner",
           reason: "Includes lead generation and outreach tools to help you land your first freelance brandscaling clients.",
           price: "$97/mo",
+          originalPrice: "$147/mo",
           features: ["1 Brand", "100 leads/month", "250 outreach emails", "Client management tools"]
         }
       
@@ -44,6 +46,7 @@ function PlanRecommendationQuiz() {
           plan: "Growing",
           reason: "Perfect for managing multiple freelance brandscaling clients efficiently.",
           price: "$397/mo",
+          originalPrice: "$597/mo",
           features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Higher AI usage limits"]
         }
       
@@ -52,6 +55,7 @@ function PlanRecommendationQuiz() {
           plan: "Multi-Brand",
           reason: "Built for agencies managing multiple clients with team collaboration features.",
           price: "$697/mo",
+          originalPrice: "$997/mo",
           features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Maximum AI usage limits"]
         }
       
@@ -60,6 +64,7 @@ function PlanRecommendationQuiz() {
           plan: "Enterprise",
           reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
           price: "$1,337/mo",
+          originalPrice: "$1,997/mo",
           features: ["Up to 25 brands", "Unlimited AI chatbot", "Priority email support", "Advanced usage analytics"]
         }
       
@@ -68,6 +73,7 @@ function PlanRecommendationQuiz() {
           plan: "Beginner",
           reason: "A great starting point with all essential features for freelance brandscaling.",
           price: "$97/mo",
+          originalPrice: "$147/mo",
           features: ["1 Brand", "Lead generation", "Client management", "White-label reports"]
         }
     }
@@ -88,7 +94,15 @@ function PlanRecommendationQuiz() {
           </div>
           <h3 className="text-2xl font-bold mb-2">We recommend the <span className="text-[var(--brand-red)]">{recommendation.plan}</span> plan</h3>
           <p className="text-white/70 mb-4">{recommendation.reason}</p>
-          <div className="text-3xl font-black text-[var(--brand-red)] mb-6">{recommendation.price}</div>
+          <div className="mb-6">
+            <div className="text-3xl font-black text-[var(--brand-red)] mb-2">{recommendation.price}</div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-lg text-white/50 line-through">{recommendation.originalPrice}</span>
+              <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                Limited Time
+              </span>
+            </div>
+          </div>
         </div>
         
         <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -309,10 +323,10 @@ export default function HomePage() {
             <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
-                <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER</TagBadge>
+                <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER - Try for free for your first 7 days, cancel anytime</TagBadge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
                   THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1.1em] mx-2" /><br />
-                  FOR SIGNING <span className="relative inline-block">
+                  FOR SIGNING AND SCALING <span className="relative inline-block">
                     <span className="text-white font-black relative z-10">FREELANCE</span>
                     <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
                   </span> <span className="relative inline-block">
@@ -796,6 +810,7 @@ export default function HomePage() {
                     name: "DTC Owner",
                     description: "Single brand owners",
                     price: 67,
+                    originalPrice: 97,
                     popular: false,
                     icon: Users,
                     brands: 1,
@@ -819,6 +834,7 @@ export default function HomePage() {
                     name: "Beginner", 
                     description: "First freelance clients",
                     price: 97,
+                    originalPrice: 147,
                     popular: true,
                     icon: Rocket,
                     brands: 1,
@@ -841,6 +857,7 @@ export default function HomePage() {
                     name: "Growing",
                     description: "Multiple clients",
                     price: 397,
+                    originalPrice: 597,
                     popular: false,
                     icon: TrendingUp,
                     brands: 5,
@@ -862,6 +879,7 @@ export default function HomePage() {
                     name: "Multi-Brand",
                     description: "Agencies with teams",
                     price: 697,
+                    originalPrice: 997,
                     popular: false,
                     icon: Zap,
                     brands: 15,
@@ -883,6 +901,7 @@ export default function HomePage() {
                     name: "Enterprise",
                     description: "Large agencies",
                     price: 1337,
+                    originalPrice: 1997,
                     popular: false,
                     icon: Award,
                     brands: 25,
@@ -929,9 +948,15 @@ export default function HomePage() {
                         </div>
                       </div>
                       <div className="mb-6">
-                        <div className="flex items-baseline">
+                        <div className="flex items-baseline gap-2">
                           <span className="text-4xl font-black text-white">${plan.price}</span>
-                          <span className="text-white/40 text-sm ml-1">/mo</span>
+                          <span className="text-white/40 text-sm">/mo</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-lg text-white/50 line-through">${plan.originalPrice}</span>
+                          <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                            Save ${plan.originalPrice - plan.price}
+                          </span>
                         </div>
                       </div>
                       
