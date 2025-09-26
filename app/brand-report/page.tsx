@@ -746,13 +746,18 @@ export default function BrandReportPage() {
             force_refresh: true
           }),
           signal: metaSyncController.signal
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`Meta sync failed: ${response.status}`)
+          }
+          return response.json()
         }).finally(() => clearTimeout(metaSyncTimeout))
         
         // Sync Shopify data with extended timeout for fresh data
         const shopifySyncController = new AbortController()
         const shopifySyncTimeout = setTimeout(() => shopifySyncController.abort(), 60000) // 60 second timeout
         
-        const shopifySyncPromise = fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/cron/shopify-sync`, {
+        const shopifySyncPromise = fetch('/api/cron/shopify-sync', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -762,6 +767,11 @@ export default function BrandReportPage() {
             force_refresh: true
           }),
           signal: shopifySyncController.signal
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`Shopify sync failed: ${response.status}`)
+          }
+          return response.json()
         }).finally(() => clearTimeout(shopifySyncTimeout))
         
         // Sync Meta demographics with extended timeout for fresh data
@@ -777,6 +787,11 @@ export default function BrandReportPage() {
             brandId: selectedBrandId
           }),
           signal: demoSyncController.signal
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`Demographics sync failed: ${response.status}`)
+          }
+          return response.json()
         }).finally(() => clearTimeout(demoSyncTimeout))
         
         // Wait for sync operations to complete before proceeding with fresh data
@@ -797,15 +812,31 @@ export default function BrandReportPage() {
             return `${names[index]}: ✓`
           } else {
             console.log(`⚠️ ${names[index]} sync failed/timeout:`, result.reason)
-            return `${names[index]}: ⚠️ Timeout/Error`
+            return `${names[index]}: ⚠️ ${result.reason?.message || 'Timeout/Error'}`
           }
         })
         
-        // Wait an additional 10 seconds for data to propagate in database
-        console.log('⏳ Waiting for data propagation...')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        // Count successful syncs
+        const successfulSyncs = syncResults.filter(result => result.status === 'fulfilled').length
         
-        console.log('📊 Proceeding with fresh data fetch...')
+        if (successfulSyncs > 0) {
+          toast({
+            title: `${successfulSyncs}/3 data sources synced`,
+            description: `Successfully updated ${syncStatus.filter(s => s.includes('✓')).map(s => s.split(':')[0]).join(', ')} data.`,
+          })
+          
+          // Wait for data to propagate in database
+          console.log('⏳ Waiting for data propagation...')
+          await new Promise(resolve => setTimeout(resolve, 5000)) // Reduced wait since some syncs failed
+        } else {
+          toast({
+            title: "Sync incomplete",
+            description: "Some data sources couldn't sync. Using existing data for report.",
+            variant: "destructive"
+          })
+        }
+        
+        console.log('📊 Proceeding with data fetch...')
 
       } catch (syncError) {
         console.log('⚠️ Failed to trigger sync operations, continuing with existing data:', syncError)
