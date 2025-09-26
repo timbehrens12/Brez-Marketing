@@ -1072,46 +1072,21 @@ const CampaignWidget = ({
     
     const controller = createAbortController();
     
-    // Add frontend timeout to prevent hanging - declare outside try block for proper scope
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
     try {
-      // Use timestamp in path to completely bypass caching
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(2, 9);
-      const cacheBuster = forceRefresh ? `&forceRefresh=true&_t=${timestamp}&_r=${random}&_cb=${timestamp}-${random}` : `&_t=${timestamp}&_r=${random}`;
+      const cacheBuster = forceRefresh ? `&forceRefresh=true&t=${Date.now()}` : '';
       const url = `/api/meta/campaign-budgets?brandId=${brandId}${cacheBuster}`;
-      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with EXTREME cache buster:`, url);
-      
-      // 🚨 NUCLEAR OPTION: Use POST method which cannot be cached by any proxy/CDN
+      console.log(`[CampaignWidget] 🚀 Calling campaign budget API with cache buster:`, url);
       
       const response = await fetch(url, { 
-        method: 'POST', // POST requests cannot be cached
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-        body: JSON.stringify({
-          brandId,
-          forceRefresh,
-          timestamp: Date.now(),
-          nonce: Math.random().toString(36)
-        })
+        cache: forceRefresh ? 'no-store' : 'default',
+        headers: forceRefresh ? {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        } : {}
       });
       
-      clearTimeout(timeoutId); // Clear timeout if request completes
-      
       if (!isMountedRef.current) return;
-      
-      // Check for 304 Not Modified response
-      if (response.status === 304) {
-        console.error(`[CampaignWidget] ❌ Campaign budget API returned 304 Not Modified - severe cache issue!`);
-        setCurrentBudgets({});
-        return;
-      }
       
       if (response.ok) {
         const data = await response.json();
@@ -1133,7 +1108,6 @@ const CampaignWidget = ({
           });
         } else {
           console.warn(`[CampaignWidget] ⚠️ Invalid budget data format:`, data);
-          console.warn(`[CampaignWidget] 🚨 Expected 'budgets' array but got:`, typeof data.budgets);
         }
         
         if (isMountedRef.current) {
@@ -1157,7 +1131,6 @@ const CampaignWidget = ({
         }
       }
     } catch (error) {
-      clearTimeout(timeoutId); // Clear timeout on error
       if ((error as Error).name === 'AbortError') {
         logger.debug("[CampaignWidget] Budget fetch aborted");
         return;
@@ -1715,21 +1688,7 @@ const CampaignWidget = ({
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
     // Use API budget if it exists (including 0) and we're not currently loading budgets
     // 0 is a valid budget value that should be respected - means no active adsets with budgets
-    // EXCEPTION: If API returns 0 but we can see adsets with budgets, API data is stale
     if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
-      // 🚨 STALE DATA CHECK: If API says $0 but we can see adsets with budgets, use fallback
-      if (currentBudgetData.budget === 0 && campaignAdSets && campaignAdSets.length > 0) {
-        const adsetBudgetTotal = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE').reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
-        if (adsetBudgetTotal > 0) {
-          console.warn(`[CampaignWidget] Campaign ${campaign.campaign_id}: API returned $0 but adsets show $${adsetBudgetTotal} - using adset total as fallback`);
-          return {
-            budget: adsetBudgetTotal,
-            formatted_budget: formatCurrency(adsetBudgetTotal),
-            budget_type: 'daily',
-            budget_source: 'adset-fallback'
-          };
-        }
-      }
       // 🚨 REDUCED LOGGING: Only log once per budget value change to prevent spam
       const budgetKey = `${campaign.campaign_id}-${currentBudgetData.budget}`;
       if (!getCampaignBudget._lastLoggedBudget || getCampaignBudget._lastLoggedBudget !== budgetKey) {
