@@ -199,8 +199,8 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
-  const [isLoading, setIsLoading] = useState(true)
-  const [initialDataLoad, setInitialDataLoad] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [initialDataLoad, setInitialDataLoad] = useState(false)
   const [isDateRangeLoading, setIsDateRangeLoading] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
@@ -240,15 +240,15 @@ export default function DashboardPage() {
   }, [dateRange])
   
   // Add a state to track if we're in the initial setup phase
-  const [isInitialSetup, setIsInitialSetup] = useState(true)
+  const [isInitialSetup, setIsInitialSetup] = useState(false)
   
   // Add action center loading state (like marketing assistant) - start true to prevent flash
-  const [isActionCenterLoading, setIsActionCenterLoading] = useState(true)
+  const [isActionCenterLoading, setIsActionCenterLoading] = useState(false)
   const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Action Center')
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(true)
-  const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(true)
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
+  const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(false)
   
   // Sidebar state management - tracks sidebar width for loading overlay positioning
   const [sidebarWidth, setSidebarWidth] = useState(() => {
