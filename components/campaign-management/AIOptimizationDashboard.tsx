@@ -417,15 +417,13 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
   }
 
    return (
-     <Card className="bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden h-full">
-       <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
-         <div className="flex items-center gap-4">
-           <div className="w-14 h-14 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
-             <Brain className="w-7 h-7 text-[#FF2A2A]" />
-           </div>
+     <Card className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden h-full">
+       <CardHeader className="border-b border-white/5 p-6">
+         <div className="flex items-center gap-3">
+           <Brain className="w-5 h-5 text-white" />
            <div>
-             <CardTitle className="text-2xl font-bold text-white tracking-tight mb-1">AI Optimization</CardTitle>
-             <p className="text-gray-400 font-medium">Smart campaign insights</p>
+             <CardTitle className="text-lg font-medium text-white">AI Optimization</CardTitle>
+             <p className="text-gray-400 text-sm">Smart insights</p>
            </div>
          </div>
        </CardHeader>

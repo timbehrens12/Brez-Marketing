@@ -1423,34 +1423,25 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       */}
       
       {/* Compact Header */}
-      <Card className="bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
+      <Card className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
+        <CardHeader className="border-b border-white/5 p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl 
-                            flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
-                <Target className="w-8 h-8 text-[#FF2A2A]" />
-              </div>
+            <div className="flex items-center gap-3">
+              <Target className="w-5 h-5 text-white" />
               <div>
-                <CardTitle className="text-white text-3xl font-bold tracking-tight mb-1">Campaign Management</CardTitle>
-                <p className="text-gray-400 text-lg font-medium">Optimize your advertising campaigns</p>
+                <CardTitle className="text-white text-lg font-medium">Campaign Management</CardTitle>
+                <p className="text-gray-400 text-sm">Active campaigns and performance</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Live Status Indicator */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 text-sm font-medium">Live Data</span>
-              </div>
-              
-              {/* Enhanced Search */}
+            <div className="flex items-center gap-3">
+              {/* Simple Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search campaigns..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-72 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-[#FF2A2A]/50 rounded-xl backdrop-blur-sm"
+                  className="pl-10 pr-4 py-2 w-48 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-white/20 rounded-lg text-sm"
                 />
               </div>
               <DropdownMenu>
@@ -1481,14 +1472,13 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         
         <CardContent className="p-6">
 
-          {/* Enhanced Tabs */}
+          {/* Simple Tabs */}
           <div className="space-y-6">
             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-[#1A1A1A]/80 to-[#0F0F0F]/80 backdrop-blur-sm border border-white/10 rounded-xl p-1.5 h-12">
+              <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/10 rounded-lg p-1 h-10">
               <TabsTrigger 
                 value="all" 
-                className="flex items-center justify-center gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-lg
-                         text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full font-medium"
+                className="text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 hover:text-white transition-all duration-200"
               >
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
@@ -1522,8 +1512,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 <TabsTrigger 
                   key={platformKey}
                   value={platformKey}
-                  className="flex items-center justify-center gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-lg
-                           text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full font-medium"
+                  className="text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 hover:text-white transition-all duration-200"
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
@@ -2003,4 +1992,5 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       </Dialog>
     </div>
   )
+}
 }

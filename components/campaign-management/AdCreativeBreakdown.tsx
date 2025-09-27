@@ -305,17 +305,14 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl h-full max-h-[720px] flex flex-col overflow-hidden">
-      {/* Modern Header with Glass Effect */}
-      <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
+    <Card className="bg-white/[0.02] border border-white/5 rounded-xl h-full max-h-[600px] flex flex-col overflow-hidden">
+      {/* Simple Header */}
+      <CardHeader className="border-b border-white/5 p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl 
-                          flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
-              <ImageIcon className="w-8 h-8 text-[#FF2A2A]" />
-            </div>
+          <div className="flex items-center gap-3">
+            <ImageIcon className="w-5 h-5 text-white" />
             <div>
-              <h2 className="text-3xl text-white font-bold tracking-tight mb-1">Ad Creative Performance</h2>
+              <h2 className="text-lg text-white font-medium">Ad Creatives</h2>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
                   {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
@@ -418,8 +415,8 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               });
               
               return (
-                <Card key={ad.ad_id} className="bg-gradient-to-br from-[#1A1A1A]/80 to-[#0F0F0F]/80 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 
-                                              shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col rounded-xl hover:transform hover:scale-105">
+                <Card key={ad.ad_id} className="bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-200 
+                                              group overflow-hidden flex flex-col rounded-lg hover:bg-white/[0.04]">
                   <CardContent className="p-0 flex-1 flex flex-col">
                     {/* Creative Image - Responsive sizing */}
                     <div className="p-3 lg:p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
