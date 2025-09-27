@@ -996,6 +996,27 @@ export default function SettingsPage() {
     }
   }
 
+  // Handle drag and drop for logo upload
+  const handleLogoDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleLogoDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      const file = files[0]
+      if (file.type.startsWith('image/')) {
+        await handleLogoChange(file)
+      } else {
+        toast.error('Please upload an image file (PNG, JPG, SVG)')
+      }
+    }
+  }
+
   // Handle signature file selection
   const handleSignatureChange = async (file: File | null) => {
     setTempSignatureImage(file)
@@ -1844,14 +1865,18 @@ export default function SettingsPage() {
                             </div>
                           ) : (
                             <div className="space-y-3">
-                              <div className="relative group cursor-pointer">
-                                <div className="w-full h-36 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-4 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center max-w-full">
+                              <div 
+                                className="relative group cursor-pointer"
+                                onDragOver={handleLogoDragOver}
+                                onDrop={handleLogoDrop}
+                              >
+                                <div className="w-full h-40 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-4 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
+                                  <div className="text-center w-full px-2">
                                     <div className="w-12 h-12 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-3 group-hover:bg-[#444] transition-colors">
                                       <Upload className="w-6 h-6 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium mb-1 text-sm">Upload Agency Logo</p>
-                                    <p className="text-gray-400 text-xs mb-2">
+                                    <p className="text-white font-medium mb-1 text-sm leading-tight">Upload Agency Logo</p>
+                                    <p className="text-gray-400 text-xs mb-3 leading-tight">
                                       Drag & drop or click to browse
                                     </p>
                                     <div className="flex items-center justify-center gap-1 flex-wrap">
