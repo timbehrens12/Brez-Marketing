@@ -1240,119 +1240,134 @@ export default function MarketingAssistantPage() {
     )
   }
 
-  // Show regular dashboard when brand is selected
+  // Show modern, flowy dashboard when brand is selected
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0B] via-[#0F0F0F] to-[#0A0A0B] relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/5 via-transparent to-purple-900/5"></div>
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.08) 1px, transparent 0)',
-          backgroundSize: '32px 32px'
-        }}></div>
-      </div>
-
-      {/* Floating Elements */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-500/8 to-pink-500/8 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Dynamic Background Elements */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
       <div className="relative z-10">
-        {/* Connection Status - Compact and modern */}
-        <div className="px-6 py-4">
-          <MetaConnectionStatus
-            brandId={selectedBrandId}
-            className="max-w-7xl mx-auto"
-          />
-        </div>
+        {/* Hero Header Section */}
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-8 pb-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-full mb-6">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-blue-300 text-sm font-medium">Marketing Intelligence Active</span>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-300"></div>
+              </div>
 
-        {/* Main Dashboard Content */}
-        <div className="max-w-7xl mx-auto px-6 pb-12 space-y-8">
-
-          {/* Hero Section - Key Profitability Metrics */}
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
-                Marketing Profitability Hub
+              <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4">
+                Marketing Command Center
               </h1>
-              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                AI-powered insights to maximize brand ad profitability and optimize campaign performance
+
+              <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                AI-powered insights, campaign optimization, and performance analytics all in one unified dashboard
               </p>
             </div>
 
-            {/* Redesigned BlendedWidgetsTable - Profitability Focused */}
-            <BlendedWidgetsTable
-              metaMetrics={metaMetrics}
-              layout="horizontal"
-            />
+            {/* Connection Status - Modern Card */}
+            <div className="mb-8">
+              <MetaConnectionStatus brandId={selectedBrandId} className="max-w-4xl mx-auto" />
+            </div>
           </div>
+        </div>
 
-          {/* Core Optimization Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Dashboard Flow */}
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 pb-12">
+          <div className="max-w-7xl mx-auto space-y-8">
 
-            {/* Left Column - Campaign Intelligence */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* Campaign Management */}
+            {/* Performance Overview Section - Flowy Hero Cards */}
+            <section className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">Performance Overview</h2>
+                <p className="text-gray-400">Real-time metrics across all your marketing channels</p>
+              </div>
+
+              <BlendedWidgetsTable
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
+            </section>
+
+            {/* Campaign Intelligence Section */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Campaign Intelligence</h2>
+                  <p className="text-gray-400">AI-powered campaign management and optimization</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-green-400 text-sm font-medium">Live Data</span>
+                  </div>
+                </div>
+              </div>
+
               <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </section>
 
-              {/* Creative & Performance Analysis */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Creative & Analytics Section - Side by Side Flow */}
+            <section className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+              {/* Creative Performance - Takes up 3 columns */}
+              <div className="xl:col-span-3 space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Creative Performance</h3>
+                  <p className="text-gray-400">Analyze ad creative effectiveness and audience engagement</p>
+                </div>
+
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              </div>
+
+              {/* AI Optimization & Trends - Takes up 2 columns */}
+              <div className="xl:col-span-2 space-y-6">
+                {/* Performance Trends */}
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Performance Trends</h3>
+                  <p className="text-gray-400">7-day performance visualization</p>
+                </div>
+
                 <PerformanceChart
                   preloadedPerformanceData={preloadedData.performanceData}
                 />
-              </div>
-            </div>
 
-            {/* Right Column - AI Optimization Center */}
-            <div className="lg:col-span-4">
-              <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-            </div>
-          </div>
+                {/* AI Optimization Dashboard */}
+                <div className="pt-4">
+                  <h3 className="text-xl font-bold text-white mb-2">AI Optimization</h3>
+                  <p className="text-gray-400">Smart recommendations for better performance</p>
+                </div>
 
-          {/* Action Footer */}
-          <div className="bg-gradient-to-r from-[#1a1a1a]/80 to-[#111]/80 backdrop-blur-xl border border-[#333]/50 rounded-2xl p-6">
-            <div className="text-center space-y-4">
-              <h3 className="text-xl font-semibold text-white">Ready to Scale Your Profits?</h3>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                Use the AI recommendations above to optimize your campaigns, test new creatives, and maximize your ad spend ROI.
-              </p>
-              <div className="flex flex-wrap gap-3 justify-center">
-                <Button
-                  onClick={refreshAllWidgets}
-                  disabled={isRefreshingAll || refreshCooldown}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  {isRefreshingAll ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Refreshing Data...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="w-4 h-4 mr-2" />
-                      Refresh AI Insights
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={syncMetaInsights}
-                  disabled={isRefreshingData}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  {isRefreshingData ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Syncing Meta...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Sync Latest Data
-                    </>
-                  )}
-                </Button>
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
               </div>
-            </div>
+            </section>
+
+            {/* Insights Footer */}
+            <section className="text-center py-8">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-full">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span className="text-emerald-300 text-sm font-medium">AI-Powered Analytics</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-full">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-purple-300 text-sm font-medium">Real-Time Insights</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-full">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-blue-300 text-sm font-medium">Automated Optimization</span>
+                  </div>
+                </div>
+
+                <p className="text-gray-500 text-sm">
+                  Last updated: {lastPageRefresh ? format(lastPageRefresh, 'PPp') : 'Just now'}
+                </p>
+              </div>
+            </section>
+
           </div>
         </div>
       </div>

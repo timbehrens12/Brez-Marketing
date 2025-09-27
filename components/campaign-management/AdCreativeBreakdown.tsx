@@ -305,269 +305,259 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="relative bg-gradient-to-br from-[#0f0f0f]/50 to-[#1a1a1a]/50 backdrop-blur-xl border border-[#333]/50 rounded-3xl overflow-hidden h-full max-h-[680px] flex flex-col">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-teal-500/5"></div>
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-64 h-64 bg-gradient-to-br from-green-500/10 to-teal-500/10 rounded-full blur-3xl"></div>
-
-      <div className="relative z-10">
-        {/* Modern Header */}
-        <div className="bg-gradient-to-r from-[#0a0a0a]/80 to-[#141414]/80 backdrop-blur-xl border-b border-[#333]/50 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
+    <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl overflow-hidden h-full max-h-[680px] flex flex-col">
+      {/* Modern Header */}
+      <div className="relative bg-gradient-to-r from-blue-600/20 via-cyan-600/20 to-indigo-600/20 p-6 border-b border-white/10">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 animate-pulse"></div>
+        <div className="relative">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-teal-500/20 rounded-2xl
-                            flex items-center justify-center border border-[#333]/50 shadow-lg backdrop-blur-xl">
-                <ImageIcon className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl
+                            flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
+                <ImageIcon className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  Creative Performance
-                </h2>
-                <p className="text-gray-400 text-sm">Analyze ad creative effectiveness and ROI</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-[#1a1a1a]/50 border border-[#333]/50 rounded-full">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium text-gray-300">
-                      {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">Creative Performance</h2>
+                <p className="text-blue-200 text-sm">Analyze ad effectiveness and audience engagement</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search creatives..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#1a1a1a]/50 border-[#333]/50 text-white placeholder:text-gray-500 w-48 rounded-xl focus:border-blue-500/50"
-                />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-emerald-300 text-sm font-medium">Live Data</span>
               </div>
 
-              {/* Filters */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-[#1a1a1a]/50 border-[#333]/50 text-white hover:bg-[#2a2a2a]/50 rounded-xl">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-                </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-[#333] rounded-xl">
-                <DropdownMenuLabel className="text-white">Sort By</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#333]" />
-                {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
-                  <DropdownMenuItem 
-                    key={metric} 
-                    onSelect={() => setSortBy(metric)}
-                    className="text-white hover:bg-[#2a2a2a] rounded-lg"
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{filteredAndSortedAds.length}</div>
+                <div className="text-xs text-slate-400">Active Creatives</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="Search creatives by name, headline, or campaign..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-slate-800/50 border-slate-600/50 text-white placeholder:text-slate-400 focus:border-blue-400/50 focus:ring-blue-400/20"
+              />
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Sort & Filter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-slate-800 border-slate-600 min-w-64">
+                <DropdownMenuLabel className="text-slate-200">Sort By Performance</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-600" />
+                {[
+                  { key: 'spent', label: 'Ad Spend', icon: DollarSign },
+                  { key: 'impressions', label: 'Impressions', icon: Eye },
+                  { key: 'clicks', label: 'Clicks', icon: MousePointer },
+                  { key: 'ctr', label: 'CTR', icon: Target },
+                  { key: 'conversions', label: 'Conversions', icon: Zap }
+                ].map(({ key, label, icon: Icon }) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onSelect={() => setSortBy(key)}
+                    className="text-slate-200 hover:bg-slate-700 focus:bg-slate-700"
                   >
-                    {metric === 'spent' && <DollarSign className="h-4 w-4 mr-2" />}
-                    {metric === 'impressions' && <Eye className="h-4 w-4 mr-2" />}
-                    {metric === 'clicks' && <MousePointer className="h-4 w-4 mr-2" />}
-                    {metric === 'ctr' && <Target className="h-4 w-4 mr-2" />}
-                    {metric === 'conversions' && <Zap className="h-4 w-4 mr-2" />}
-                    <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
-                    {sortBy === metric && (
-                      <Badge className="ml-2 bg-blue-600 text-white">
+                    <Icon className="h-4 w-4 mr-3" />
+                    <span className="flex-1">{label}</span>
+                    {sortBy === key && (
+                      <Badge className="bg-blue-600 text-white text-xs">
                         {sortOrder === 'desc' ? '↓' : '↑'}
                       </Badge>
                     )}
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuSeparator className="bg-[#333]" />
-                <DropdownMenuItem 
-                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }} 
-                  className="text-white hover:bg-gray-800"
+
+                <DropdownMenuSeparator className="bg-slate-600" />
+                <DropdownMenuItem
+                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }}
+                  className="text-slate-200 hover:bg-slate-700 focus:bg-slate-700"
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center">
-                      {showInactive ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+                      {showInactive ? <Eye className="h-4 w-4 mr-3" /> : <EyeOff className="h-4 w-4 mr-3" />}
                       Show Inactive Ads
                     </div>
-                    <Switch checked={showInactive} />
+                    <Switch
+                      checked={showInactive}
+                      onCheckedChange={setShowInactive}
+                      className="data-[state=checked]:bg-blue-500"
+                    />
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-        
-        {/* Search Bar */}
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search ads, campaigns, or headlines..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-gray-400 
-                     focus:border-white/20 focus:ring-1 focus:ring-white/20"
-          />
-        </div>
-      </CardHeader>
+      </div>
 
-        {/* Content Area */}
-        <div className="p-6 flex-1 overflow-hidden">
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+      {/* Content Area */}
+      <div className="flex-1 p-6 overflow-hidden">
+        <div className="h-full overflow-y-auto custom-scrollbar">
           {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
             <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-2xl flex items-center justify-center border border-gray-500/30">
-                <ImageIcon className="w-10 h-10 text-gray-400" />
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-slate-600/20 to-slate-700/30 rounded-2xl flex items-center justify-center border border-slate-600/50">
+                <ImageIcon className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">No Ad Creatives Found</h3>
-              <p className="text-gray-400 max-w-sm mx-auto leading-relaxed">
-                No ad creatives match your current filters. Try adjusting your search criteria or check if your Meta campaigns have active ads.
+              <h3 className="text-xl font-bold text-white mb-3">No Creatives Found</h3>
+              <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                {searchQuery ? 'Try adjusting your search criteria' : 'No ad creatives found. Start creating ads to see performance data here.'}
               </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 border border-indigo-500/30 rounded-full">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                <span className="text-indigo-300 text-sm font-medium">Ready for your ads...</span>
+              </div>
             </div>
-        ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {filteredAndSortedAds.map((ad) => {
-              const roas = calculateROAS(ad.conversions, ad.spent)
-              const profit = (roas * ad.spent) - ad.spent
+                const roas = calculateROAS(ad.conversions, ad.spent)
+                const ctrColor = ad.ctr >= 2 ? 'text-green-400' : ad.ctr >= 1 ? 'text-yellow-400' : 'text-red-400'
+                const roasColor = roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
 
-              return (
-                <div key={ad.ad_id} className="group relative bg-gradient-to-br from-[#0f0f0f]/80 to-[#1a1a1a]/80 backdrop-blur-xl border border-[#333]/50 rounded-2xl hover:border-teal-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/10 overflow-hidden flex flex-col">
-                  {/* Background Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                return (
+                  <div key={ad.ad_id} className="group relative backdrop-blur-xl bg-gradient-to-br from-slate-800/30 to-slate-900/30 border border-slate-700/50 rounded-2xl overflow-hidden hover:border-indigo-400/30 transition-all duration-300">
+                    {/* Animated background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                  <div className="relative z-10 flex-1 flex flex-col">
-                    {/* Creative Image */}
-                    <div className="p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
-                      <div className="relative h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]
-                                    flex items-center justify-center overflow-hidden group-hover:border-teal-500/30 transition-colors">
-                        {ad.thumbnail_url || ad.image_url ? (
-                          <Image 
-                            src={ad.thumbnail_url || ad.image_url || ''} 
-                            alt={ad.ad_name}
-                            fill
-                            className="object-cover rounded-xl"
-                          />
-                        ) : (
-                          <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
-                        )}
-                        
-                        {/* Platform Logo */}
-                        <div className="absolute top-1.5 lg:top-2 left-1.5 lg:left-2">
-                          <div className="w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
+                    <div className="relative">
+                      {/* Creative Preview Section */}
+                      <div className="p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-b border-slate-700/50">
+                        <div className="relative aspect-video bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden group-hover:border-slate-600/50 transition-colors">
+                          {ad.thumbnail_url || ad.image_url ? (
                             <Image
-                              src="https://i.imgur.com/6hyyRrs.png"
-                              alt="Meta"
-                              width={12}
-                              height={12}
-                              className="object-contain lg:w-[14px] lg:h-[14px]"
+                              src={ad.thumbnail_url || ad.image_url || ''}
+                              alt={ad.ad_name}
+                              fill
+                              className="object-cover"
                             />
-                          </div>
-                        </div>
-                        
-                        {/* Status Badge */}
-                        <div className="absolute top-1.5 lg:top-2 right-1.5 lg:right-2">
-                          <Badge className={`text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-                            ad.status === 'ACTIVE' 
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                          }`}>
-                            {ad.status}
-                          </Badge>
-                        </div>
-                        
-                        {/* Preview Link - Hidden on smaller screens */}
-                        {ad.preview_url && (
-                          <div className="absolute bottom-1.5 lg:bottom-2 right-1.5 lg:right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 lg:h-6 lg:w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
-                                    onClick={() => window.open(ad.preview_url!, '_blank')}
-                                  >
-                                    <ExternalLink className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#0a0a0a] border-[#2a2a2a]">
-                                  <p className="text-white text-xs">Preview Ad</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="w-8 h-8 text-slate-500" />
+                            </div>
+                          )}
 
-                    {/* Ad Details - Streamlined */}
-                    <div className="p-4 flex-1 flex flex-col">
-                      {/* Header */}
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-white text-sm mb-2 truncate">
-                          {ad.ad_name}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`text-xs px-2 py-0.5 ${
-                            ad.status === 'ACTIVE'
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                          }`}>
-                            {ad.status}
-                          </Badge>
-                          <span className="text-xs text-gray-500">Meta Ads</span>
-                        </div>
-                      </div>
-
-                      {/* Key Metrics - Profitability Focus */}
-                      <div className="space-y-3 mb-4">
-                        {/* Profit & ROAS Row */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-lg p-3 text-center">
-                            <div className="text-xs text-gray-400 mb-1">Profit</div>
-                            <div className={`text-lg font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {profit >= 0 ? '+' : ''}${Math.abs(profit).toFixed(0)}
+                          {/* Overlay Elements */}
+                          <div className="absolute top-3 left-3">
+                            <div className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-slate-600/50">
+                              <Image
+                                src="https://i.imgur.com/6hyyRrs.png"
+                                alt="Meta"
+                                width={16}
+                                height={16}
+                                className="object-contain"
+                              />
                             </div>
                           </div>
 
-                          <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-3 text-center">
-                            <div className="text-xs text-gray-400 mb-1">ROAS</div>
-                            <div className={`text-lg font-bold ${roas >= 2 ? 'text-green-400' : roas >= 1.5 ? 'text-yellow-400' : 'text-red-400'}`}>
-                              {roas.toFixed(2)}x
+                          <div className="absolute top-3 right-3">
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm border ${
+                              ad.status === 'ACTIVE'
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                            }`}>
+                              {ad.status}
                             </div>
+                          </div>
+
+                          {/* Preview Button */}
+                          {ad.preview_url && (
+                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm hover:bg-slate-700/80 text-white border border-slate-600/50"
+                                      onClick={() => window.open(ad.preview_url!, '_blank')}
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-slate-800 border-slate-600">
+                                    <p className="text-white text-xs">Preview Ad</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content Section */}
+                      <div className="p-4">
+                        {/* Ad Details */}
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-white text-base mb-2 line-clamp-2 group-hover:text-indigo-200 transition-colors">
+                            {ad.ad_name}
+                          </h4>
+                          {ad.headline && (
+                            <p className="text-sm text-slate-400 mb-2 line-clamp-2">
+                              {ad.headline}
+                            </p>
+                          )}
+                          <div className="text-xs text-slate-500 space-y-1">
+                            <div className="truncate" title={ad.campaign_name}>{ad.campaign_name}</div>
+                            <div className="truncate" title={ad.adset_name}>{ad.adset_name}</div>
                           </div>
                         </div>
 
-                        {/* Performance Row */}
+                        {/* Performance Metrics Grid */}
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                            <div className="text-lg font-bold text-white mb-1">{formatCurrency(ad.spent)}</div>
+                            <div className="text-xs text-slate-400">Spend</div>
+                          </div>
+
+                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                            <div className="text-lg font-bold text-white mb-1">{(ad.impressions / 1000).toFixed(0)}K</div>
+                            <div className="text-xs text-slate-400">Impressions</div>
+                          </div>
+
+                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                            <div className="text-lg font-bold text-white mb-1">{ad.clicks.toLocaleString()}</div>
+                            <div className="text-xs text-slate-400">Clicks</div>
+                          </div>
+                        </div>
+
+                        {/* Key Performance Indicators */}
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
-                            <div className="text-xs text-gray-500 mb-1">CTR</div>
-                            <div className="text-sm font-semibold text-white">{formatPercentage(ad.ctr)}</div>
+                            <div className={`text-lg font-bold mb-1 ${ctrColor}`}>{formatPercentage(ad.ctr)}</div>
+                            <div className="text-xs text-slate-400">CTR</div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500 mb-1">Clicks</div>
-                            <div className="text-sm font-semibold text-white">{formatNumber(ad.clicks)}</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500 mb-1">Spend</div>
-                            <div className="text-sm font-semibold text-white">${ad.spent?.toFixed(0) || '0'}</div>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Campaign Info */}
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div className="truncate" title={ad.campaign_name}>
-                          Campaign: {ad.campaign_name}
-                        </div>
-                        <div className="truncate" title={ad.adset_name}>
-                          Ad Set: {ad.adset_name}
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-white mb-1">{ad.conversions}</div>
+                            <div className="text-xs text-slate-400">Conversions</div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className={`text-lg font-bold mb-1 ${roasColor}`}>
+                              {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
+                            </div>
+                            <div className="text-xs text-slate-400">ROAS</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
+                )
               })}
             </div>
-        )}
+          )}
         </div>
       </div>
     </div>

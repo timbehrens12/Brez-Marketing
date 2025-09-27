@@ -877,16 +877,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     return platforms[platformKey]
   }
 
-  // Render modern campaign card
+  // Render modern campaign card with glass-morphism design
   const renderCampaignCard = (campaign: Campaign) => {
     const platformData = getPlatformData(campaign)
     const isBeingChecked = campaignsBeingChecked.has(campaign.campaign_id)
     const isGeneratingRecommendation = campaignsGeneratingRecommendations.has(campaign.campaign_id)
-
-    // Calculate profitability
-    const revenue = (campaign.spent || 0) * (campaign.roas || 0)
-    const profit = revenue - (campaign.spent || 0)
-    const profitMargin = campaign.spent > 0 ? (profit / revenue) * 100 : 0
 
     const getStatusColor = (status: string) => {
       switch (status) {
@@ -905,132 +900,181 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       return 'text-red-400'
     }
 
-    const getProfitColor = (profit: number) => {
-      if (profit >= 0) return 'text-emerald-400'
-      return 'text-red-400'
+    const getROASBadge = (roas: number) => {
+      if (roas >= 3) return { color: 'bg-emerald-500/20 border-emerald-500/30', text: 'text-emerald-400', label: 'Excellent' }
+      if (roas >= 2) return { color: 'bg-amber-500/20 border-amber-500/30', text: 'text-amber-400', label: 'Good' }
+      if (roas >= 1) return { color: 'bg-orange-500/20 border-orange-500/30', text: 'text-orange-400', label: 'Fair' }
+      return { color: 'bg-red-500/20 border-red-500/30', text: 'text-red-400', label: 'Poor' }
     }
 
     return (
-      <div key={campaign.campaign_id} className="group relative bg-gradient-to-br from-[#0f0f0f]/80 to-[#1a1a1a]/80 backdrop-blur-xl border border-[#333]/50 rounded-2xl hover:border-blue-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 overflow-hidden">
-        {/* Background Glow Effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div key={campaign.campaign_id} className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl overflow-hidden group hover:border-indigo-400/30 transition-all duration-300">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="p-4 border-b border-[#333]/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl flex items-center justify-center border border-[#333]/50 flex-shrink-0">
+        <div className="relative">
+          {/* Header Section */}
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl flex items-center justify-center border border-indigo-500/30 flex-shrink-0">
                   <Image
                     src="https://i.imgur.com/6hyyRrs.png"
                     alt="Meta"
-                    width={20}
-                    height={20}
-                    className="object-contain rounded"
+                    width={24}
+                    height={24}
+                    className="object-contain"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-semibold text-lg truncate mb-1">
+                  <h3 className="text-white font-bold text-lg mb-1 truncate group-hover:text-indigo-200 transition-colors">
                     {campaign.campaign_name}
                   </h3>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="px-2 py-0.5 bg-[#1a1a1a]/50 rounded-full text-xs">{campaign.objective}</span>
-                    <span className="px-2 py-0.5 bg-[#1a1a1a]/50 rounded-full text-xs">{campaign.budget_type}</span>
+                  <div className="flex items-center gap-3 text-sm text-slate-400">
+                    <span className="px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-700/50">{campaign.objective}</span>
+                    <span>•</span>
+                    <span>{campaign.budget_type}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+
+              <div className="flex items-center gap-3 flex-shrink-0">
                 {isBeingChecked ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a]/50 border border-[#333]/50 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                    <span className="text-xs text-gray-300">Checking...</span>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/50 border border-slate-700/50 rounded-full">
+                    <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-slate-400">Checking...</span>
                   </div>
                 ) : (
-                  <Badge className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(campaign.status)}`}>
                     {campaign.status}
-                  </Badge>
+                  </div>
                 )}
+              </div>
+            </div>
+
+            {/* Key Metrics Row */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{formatCurrency(campaign.spent)}</div>
+                <div className="text-xs text-slate-400 mb-2">Spent</div>
+                <div className="w-full bg-slate-700/50 rounded-full h-1">
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min((campaign.spent / (campaign.budget || campaign.spent)) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className={`text-2xl font-bold mb-1 ${getROASColor(campaign.roas)}`}>
+                  {campaign.roas?.toFixed(2) || '0.00'}x
+                </div>
+                <div className="text-xs text-slate-400 mb-2">ROAS</div>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${getROASBadge(campaign.roas).color}`}>
+                  <span className={getROASBadge(campaign.roas).text}>{getROASBadge(campaign.roas).label}</span>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{formatPercentage(campaign.ctr)}</div>
+                <div className="text-xs text-slate-400 mb-2">CTR</div>
+                <div className="text-xs text-slate-500">Click Rate</div>
+              </div>
+
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{formatCurrency(campaign.cpc)}</div>
+                <div className="text-xs text-slate-400 mb-2">CPC</div>
+                <div className="text-xs text-slate-500">Cost per Click</div>
               </div>
             </div>
           </div>
 
-          {/* Key Metrics - Profitability Focus */}
-          <div className="p-4 space-y-4">
-            {/* Profit & ROAS Row */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
-                <div className="text-xs text-gray-400 mb-1">Profit</div>
-                <div className={`text-lg font-bold ${getProfitColor(profit)}`}>
-                  {profit >= 0 ? '+' : ''}${Math.abs(profit).toFixed(0)}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {profitMargin >= 0 ? '+' : ''}{profitMargin.toFixed(1)}%
-                </div>
+          {/* Performance Metrics Grid */}
+          <div className="p-6 bg-gradient-to-br from-slate-900/20 to-slate-800/20">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                <div className="text-lg font-bold text-white mb-1">{(campaign.impressions / 1000).toFixed(0)}K</div>
+                <div className="text-xs text-slate-400">Impressions</div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
-                <div className="text-xs text-gray-400 mb-1">ROAS</div>
-                <div className={`text-lg font-bold ${getROASColor(campaign.roas)}`}>
-                  {campaign.roas?.toFixed(2) || '0.00'}x
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Target: 2.0x
-                </div>
+              <div className="text-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                <div className="text-lg font-bold text-white mb-1">{campaign.clicks.toLocaleString()}</div>
+                <div className="text-xs text-slate-400">Clicks</div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-3 text-center">
-                <div className="text-xs text-gray-400 mb-1">Spend</div>
-                <div className="text-lg font-bold text-purple-400">
-                  ${campaign.spent?.toFixed(0) || '0'}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  of ${campaign.budget?.toFixed(0) || '0'}
-                </div>
+              <div className="text-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                <div className="text-lg font-bold text-white mb-1">{campaign.conversions}</div>
+                <div className="text-xs text-slate-400">Conversions</div>
+              </div>
+
+              <div className="text-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                <div className="text-lg font-bold text-white mb-1">{(campaign.frequency || 0).toFixed(2)}</div>
+                <div className="text-xs text-slate-400">Frequency</div>
               </div>
             </div>
 
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-4 gap-3">
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">Impressions</div>
-                <div className="text-sm font-semibold text-white">{formatNumber(campaign.impressions)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">Clicks</div>
-                <div className="text-sm font-semibold text-white">{formatNumber(campaign.clicks)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">CTR</div>
-                <div className="text-sm font-semibold text-white">{formatPercentage(campaign.ctr)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">CPC</div>
-                <div className="text-sm font-semibold text-white">${campaign.cpc?.toFixed(2) || '0.00'}</div>
-              </div>
-            </div>
-
-            {/* AI Recommendation Section - Modern Design */}
-            <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#222]/50 rounded-xl p-4 border border-[#333]/30">
+            {/* AI Recommendation Section */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl p-4 border border-slate-700/50">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <Brain className="w-4 h-4 text-blue-400" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center border border-purple-500/30">
+                    <Brain className="w-4 h-4 text-purple-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-white">AI Optimization</div>
-                    <div className="text-xs text-gray-400">Smart campaign recommendations</div>
+                    <div className="text-sm font-semibold text-white">AI Recommendation</div>
+                    <div className="text-xs text-slate-400">Weekly optimization insights</div>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                   {campaign.recommendation ? (
                     <>
-                      <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                        <div className={`w-2 h-2 rounded-full ${campaign.recommendation?.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                        <span className="text-xs text-green-400 font-medium">
-                          {Math.round((campaign.recommendation.confidence || 8.5) * 10)}% confidence
-                        </span>
+                      <div className="text-xs text-slate-400 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">
+                        {Math.round((campaign.recommendation.confidence || 8.5) * 10)}% confidence
                       </div>
 
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                              campaign.recommendation?.status === 'completed'
+                                ? 'bg-emerald-600 border-emerald-500 text-white'
+                                : 'bg-slate-700 border-slate-600 text-slate-400'
+                            }`}>
+                              {campaign.recommendation?.status === 'completed' ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-slate-800 border-slate-600">
+                            <p className="font-medium text-white">
+                              {campaign.recommendation?.status === 'completed'
+                                ? 'Recommendation Completed'
+                                : 'Pending Implementation'}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                {campaign.recommendation ? (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white font-medium mb-1">{campaign.recommendation.action}</div>
+                      {campaign.recommendation.reasoning && (
+                        <div className="text-xs text-slate-400 line-clamp-2">
+                          {campaign.recommendation.reasoning.slice(0, 100)}...
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
                       <Button
                         onClick={() => {
                           setSelectedRecommendation(campaign)
@@ -1038,12 +1082,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                         }}
                         variant="outline"
                         size="sm"
-                        className="bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-xs px-3 py-1 h-7 rounded-lg"
+                        className="bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700/50 hover:text-white text-xs"
                       >
                         Details
                       </Button>
 
-                      {/* Recommendation Status & Refresh */}
+                      {/* Weekly Refresh Button Logic */}
                       {(() => {
                         const now = new Date()
                         const isBlocked = isRecommendationBlocked(campaign)
@@ -1052,83 +1096,73 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
                         if (isBlocked) {
                           return (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-500/10 border border-gray-500/20 rounded-lg">
-                              <Clock className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-400">{daysUntilMonday}d</span>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="text-xs text-slate-500 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {daysUntilMonday}d
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-slate-800 border-slate-600">
+                                  <p className="font-medium text-white">Weekly Limit Reached</p>
+                                  <p className="text-xs text-slate-400">Next refresh: Monday</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )
                         }
 
-                        const isWeeklyRefreshAvailable = now.getDay() >= 1 || now.getDay() === 0
+                        const isMondayOrLater = now.getDay() >= 1 || now.getDay() === 0
+                        const isWeeklyRefreshAvailable = isMondayOrLater && !isBlocked
 
                         if (isWeeklyRefreshAvailable) {
                           return (
                             <Button
                               onClick={() => generateRecommendation(campaign, true)}
+                              disabled={isGenerating}
                               variant="outline"
                               size="sm"
-                              disabled={isGenerating}
-                              className="bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300 text-xs px-2 py-1 h-7 rounded-lg"
+                              className="text-xs px-2 py-1 bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700/50"
                             >
-                              {isGenerating ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <RefreshCw className="h-3 w-3" />
-                              )}
+                              {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                             </Button>
                           )
                         }
 
-                        return null
+                        return (
+                          <div className="text-xs text-slate-500 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">
+                            Mon 12AM
+                          </div>
+                        )
                       })()}
-                    </>
-                  ) : (
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between w-full">
+                    <div className="text-sm text-slate-400">No AI recommendation generated yet</div>
                     <Button
                       onClick={() => generateRecommendation(campaign)}
                       disabled={isGeneratingRecommendation}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs px-4 py-1.5 h-7 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                      variant="outline"
+                      size="sm"
+                      className="bg-indigo-500/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-xs"
                     >
                       {isGeneratingRecommendation ? (
-                        <>
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          Generating...
-                        </>
+                        <>Generating...</>
                       ) : (
-                        <>
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          Get AI Insight
-                        </>
+                        <>Generate AI Insight</>
                       )}
                     </Button>
-                  )}
-                </div>
-              </div>
-
-              {campaign.recommendation && (
-                <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] rounded-lg p-3 border border-[#333]/50">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${campaign.recommendation?.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-white mb-1">{campaign.recommendation.action}</div>
-                      <div className="text-xs text-gray-400 leading-relaxed">
-                        {campaign.recommendation.reasoning?.slice(0, 100)}
-                        {campaign.recommendation.reasoning && campaign.recommendation.reasoning.length > 100 && '...'}
-                      </div>
-                      {campaign.recommendation?.status === 'completed' && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-green-400">
-                          <CheckCircle className="w-3 h-3" />
-                          Implemented
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+          </div>
         </div>
       </div>
     )
-                  }
+  }
 
   // Render platform content
   const renderPlatformContent = (platformKey: string) => {
@@ -1353,149 +1387,93 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-    <div className="relative bg-gradient-to-br from-[#0f0f0f]/50 to-[#1a1a1a]/50 backdrop-blur-xl border border-[#333]/50 rounded-3xl overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-blue-500/5"></div>
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
-
-      <div className="relative z-10">
-        {/* Modern Header */}
-        <div className="bg-gradient-to-r from-[#0a0a0a]/80 to-[#141414]/80 backdrop-blur-xl border-b border-[#333]/50 p-6">
-          <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Modern Header Section */}
+      <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-pink-600/10"></div>
+        <div className="relative p-6">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-2xl
-                            flex items-center justify-center border border-[#333]/50 shadow-lg backdrop-blur-xl">
-                <Target className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl
+                            flex items-center justify-center border border-indigo-500/30 shadow-lg backdrop-blur-sm">
+                <Target className="w-6 h-6 text-indigo-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  Campaign Intelligence
-                </h2>
-                <p className="text-gray-400 text-sm">AI-powered campaign optimization and management</p>
+                <h2 className="text-2xl font-bold text-white mb-1">Campaign Intelligence</h2>
+                <p className="text-indigo-200 text-sm">AI-powered campaign management and optimization</p>
               </div>
             </div>
 
-            {/* Status & Controls */}
             <div className="flex items-center gap-4">
-              {/* Campaign Count Badge */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a]/50 border border-[#333]/50 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-gray-300">
-                  {localCampaigns.length} Campaign{localCampaigns.length !== 1 ? 's' : ''}
-                </span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-emerald-300 text-sm font-medium">Live Campaigns</span>
               </div>
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search campaigns..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#1a1a1a]/50 border-[#333]/50 text-white placeholder:text-gray-500 w-64 rounded-xl focus:border-blue-500/50"
-                />
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{localCampaigns.length}</div>
+                <div className="text-xs text-slate-400">Total Campaigns</div>
               </div>
-
-              {/* Filters */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-[#1a1a1a]/50 border-[#333]/50 text-white hover:bg-[#2a2a2a]/50 rounded-xl">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Filters
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#1a1a1a] border-[#333] z-50 rounded-xl">
-                  <div className="p-3">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="show-inactive"
-                        checked={showInactive}
-                        onCheckedChange={setShowInactive}
-                      />
-                      <label htmlFor="show-inactive" className="text-sm text-white">
-                        Show inactive campaigns
-                      </label>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="Search campaigns by name, objective, or account..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-slate-800/50 border-slate-600/50 text-white placeholder:text-slate-400 focus:border-indigo-400/50 focus:ring-indigo-400/20"
+              />
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-slate-800 border-slate-600">
+                <div className="p-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-inactive"
+                      checked={showInactive}
+                      onCheckedChange={setShowInactive}
+                      className="data-[state=checked]:bg-indigo-500"
+                    />
+                    <label htmlFor="show-inactive" className="text-sm text-white">
+                      Show inactive campaigns
+                    </label>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        
-        {/* Modern Content Area */}
-        <div className="p-6">
+      </div>
 
-          {/* Platform Tabs */}
-          <div className="mb-6">
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/50 border border-[#333]/50 rounded-xl p-1 h-12 backdrop-blur-xl">
-                <TabsTrigger
-                  value="all"
-                  className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-blue-500/30 text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex -space-x-1">
-                      <div className="w-5 h-5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center border border-blue-500/30">
-                        <Image
-                          src="https://i.imgur.com/6hyyRrs.png"
-                          alt="Meta"
-                          width={12}
-                          height={12}
-                          className="object-contain"
-                        />
-                      </div>
-                      <div className="w-5 h-5 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-full flex items-center justify-center border border-gray-500/30">
-                        <span className="text-xs text-gray-400">+</span>
-                      </div>
-                    </div>
-                    <span className="font-medium text-sm">All Platforms</span>
-                  </div>
-                </TabsTrigger>
-
-                {Object.entries(platforms).map(([platformKey, platform]) => (
-                  <TabsTrigger
-                    key={platformKey}
-                    value={platformKey}
-                    className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-blue-500/20 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-green-500/30 text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <div className={`w-5 h-5 rounded-lg flex items-center justify-center border ${platform.isActive ? 'border-green-500/30 bg-green-500/10' : 'border-gray-500/30 bg-gray-500/10'}`}>
-                          <Image
-                            src={platform.logo}
-                            alt={platform.name}
-                            width={14}
-                            height={14}
-                            className={`object-contain ${!platform.isActive ? 'grayscale opacity-50' : ''}`}
-                          />
-                        </div>
-                        {platform.isActive && (
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-[#0f0f0f] animate-pulse"></div>
-                        )}
-                      </div>
-                      <span className="font-medium text-sm">{platform.name}</span>
-                    </div>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-            {/* Tab Content */}
-            <div className="mt-4">
-              <TabsContent value="all">
-                {renderPlatformContent('all')}
-              </TabsContent>
-              
-              {Object.keys(platforms).map(platformKey => (
-                <TabsContent key={platformKey} value={platformKey}>
-                  {renderPlatformContent(platformKey)}
-                </TabsContent>
-              ))}
+      {/* Campaign Cards Grid */}
+      <div className="space-y-4">
+        {filteredAndSortedCampaigns.length === 0 ? (
+          <div className="text-center py-16 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-slate-600/20 to-slate-700/30 rounded-2xl flex items-center justify-center border border-slate-600/50">
+              <Target className="w-8 h-8 text-slate-400" />
             </div>
-          </Tabs>
+            <h3 className="text-xl font-bold text-white mb-3">No Campaigns Found</h3>
+            <p className="text-slate-400 mb-6 max-w-md mx-auto">
+              {searchQuery ? 'Try adjusting your search criteria' : 'No campaigns available. Start creating campaigns to see them here.'}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="grid gap-4">
+            {filteredAndSortedCampaigns.map(renderCampaignCard)}
+          </div>
+        )}
+      </div>
 
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
@@ -1939,5 +1917,4 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       </Dialog>
     </div>
   )
-}
 }

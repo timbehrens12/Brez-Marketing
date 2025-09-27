@@ -298,366 +298,309 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <div className="relative bg-gradient-to-br from-[#0f0f0f]/50 to-[#1a1a1a]/50 backdrop-blur-xl border border-[#333]/50 rounded-3xl overflow-hidden h-full flex flex-col">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5"></div>
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
+    <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl overflow-hidden h-full flex flex-col">
+      {/* Modern Header */}
+      <div className="relative bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 p-6 border-b border-white/10">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 animate-pulse"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-xl
+                          flex items-center justify-center border border-emerald-500/30 shadow-lg backdrop-blur-sm">
+              <BarChart3 className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-1">Performance Trends</h2>
+              <p className="text-emerald-200 text-sm">{getMetricLabel()} visualization</p>
+            </div>
+          </div>
 
-      <div className="relative z-10">
-        {/* Modern Header */}
-        <div className="bg-gradient-to-r from-[#0a0a0a]/80 to-[#141414]/80 backdrop-blur-xl border-b border-[#333]/50 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl
-                            flex items-center justify-center border border-[#333]/50 shadow-lg backdrop-blur-xl">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  Performance Trends
-                </h2>
-                <p className="text-gray-400 text-sm">{getMetricLabel()} across all campaigns</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur-sm">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-300 text-sm font-medium">Live Trends</span>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center gap-3">
             {/* Metric Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-[#1a1a1a]/50 border-[#333]/50 text-white hover:bg-[#2a2a2a]/50 rounded-xl">
+                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50">
                   <Settings2 className="h-4 w-4 mr-2" />
-                  {getMetricLabel()}
+                  Metric
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1a] border-[#333] rounded-xl">
-                <DropdownMenuLabel className="text-gray-400">Select Metric</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#333]" />
-                <DropdownMenuItem
-                  onClick={() => setSelectedMetric('spend')}
-                  className={`rounded-lg ${selectedMetric === 'spend' ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-[#2a2a2a]'}`}
-                >
-                  Daily Spend
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSelectedMetric('roas')}
-                  className={`rounded-lg ${selectedMetric === 'roas' ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-[#2a2a2a]'}`}
-                >
-                  ROAS
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSelectedMetric('impressions')}
-                  className={`rounded-lg ${selectedMetric === 'impressions' ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-[#2a2a2a]'}`}
-                >
-                  Impressions
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSelectedMetric('clicks')}
-                  className={`rounded-lg ${selectedMetric === 'clicks' ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-[#2a2a2a]'}`}
-                >
-                  Clicks
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSelectedMetric('conversions')}
-                  className={`rounded-lg ${selectedMetric === 'conversions' ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-[#2a2a2a]'}`}
-                >
-                  Conversions
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="bg-[#333]" />
-                <DropdownMenuLabel className="text-gray-400">Platforms</DropdownMenuLabel>
-                <DropdownMenuCheckboxItem
-                  checked={enabledPlatforms.meta}
-                  onCheckedChange={() => togglePlatform('meta')}
-                  className="rounded-lg"
-                >
-                  <Image
-                    src="https://i.imgur.com/6hyyRrs.png"
-                    alt="Meta"
-                    width={14}
-                    height={14}
-                    className="object-contain mr-2"
-                  />
-                  Meta
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={enabledPlatforms.tiktok}
-                  onCheckedChange={() => togglePlatform('tiktok')}
-                  disabled
-                  className="rounded-lg opacity-50"
-                >
-                  <Image
-                    src="https://i.imgur.com/AXHa9UT.png"
-                    alt="TikTok"
-                    width={14}
-                    height={14}
-                    className="object-contain grayscale opacity-40 mr-2"
-                  />
-                  TikTok (Coming Soon)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={enabledPlatforms.google}
-                  onCheckedChange={() => togglePlatform('google')}
-                  disabled
-                  className="rounded-lg opacity-50"
-                >
-                  <Image
-                    src="https://i.imgur.com/TavV4UJ.png"
-                    alt="Google Ads"
-                    width={14}
-                    height={14}
-                    className="object-contain grayscale opacity-40 mr-2"
-                  />
-                  Google Ads (Coming Soon)
-                </DropdownMenuCheckboxItem>
+              <DropdownMenuContent className="bg-slate-800 border-slate-600 min-w-48">
+                <DropdownMenuLabel className="text-slate-200">Select Metric</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-600" />
+                {[
+                  { key: 'spend', label: 'Daily Spend', icon: DollarSign },
+                  { key: 'roas', label: 'ROAS', icon: TrendingUp },
+                  { key: 'impressions', label: 'Impressions', icon: Eye },
+                  { key: 'clicks', label: 'Clicks', icon: MousePointer },
+                  { key: 'conversions', label: 'Conversions', icon: Target }
+                ].map(({ key, label, icon: Icon }) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onSelect={() => setSelectedMetric(key as any)}
+                    className={`text-slate-200 hover:bg-slate-700 focus:bg-slate-700 ${selectedMetric === key ? 'bg-slate-700' : ''}`}
+                  >
+                    <Icon className="h-4 w-4 mr-3" />
+                    <span className="flex-1">{label}</span>
+                    {selectedMetric === key && (
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    )}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-        {/* Chart Content */}
-        <div className="p-6 flex-1">
-          {chartData.length > 0 ? (
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="metaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6b7280" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#6b7280" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="tiktokGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FE2C55" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#FE2C55" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="googleGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4285F4" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#4285F4" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" opacity={0.3} />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#9ca3af', fontSize: 11 }}
-                    tickFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEE')}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#9ca3af', fontSize: 11 }}
-                    tickFormatter={formatValue}
-                    width={70}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f0f0f',
-                      border: '1px solid #333',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                    labelStyle={{ color: '#fff', fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}
-                    labelFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEEE, MMM d')}
-                    formatter={(value: any, name: string, props: any) => {
-                      const formattedValue = formatValue(Number(value) || 0)
-                      return [
-                        <span key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                          {name === 'Meta' && (
-                            <img
-                              src="https://i.imgur.com/6hyyRrs.png"
-                              alt="Meta"
-                              style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '4px' }}
-                            />
-                          )}
-                          {name === 'TikTok' && (
-                            <img
-                              src="https://i.imgur.com/AXHa9UT.png"
-                              alt="TikTok"
-                              style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '4px' }}
-                            />
-                          )}
-                          {name === 'Google' && (
-                            <img
-                              src="https://i.imgur.com/TavV4UJ.png"
-                              alt="Google Ads"
-                              style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '4px' }}
-                            />
-                          )}
-                          <span style={{ fontWeight: '600' }}>{formattedValue}</span>
-                        </span>,
-                        name
-                      ]
-                    }}
-                    cursor={{ stroke: '#333', strokeWidth: 1 }}
-                  />
+      </div>
 
-                  {enabledPlatforms.meta && (
-                    <Area
-                      type="monotone"
-                      dataKey="Meta"
-                      stroke="#6b7280"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#metaGradient)"
-                      dot={false}
-                      activeDot={{ r: 4, fill: '#6b7280', stroke: '#fff', strokeWidth: 2 }}
-                    />
-                  )}
+      {/* Content Area */}
+      <div className="flex-1 p-6">
+        {/* Chart Area */}
+        {chartData.length > 0 ? (
+          <div className="h-80 mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="metaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#64748b" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="tiktokGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FE2C55" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#FE2C55" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="googleGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4285F4" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#4285F4" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  tickFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEE')}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  tickFormatter={formatValue}
+                  width={70}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0f172a',
+                    border: '1px solid #334155',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(12px)'
+                  }}
+                  labelStyle={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}
+                  labelFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEEE, MMM d')}
+                  formatter={(value: any, name: string) => {
+                    const formattedValue = formatValue(Number(value) || 0)
+                    return [
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: platformColors[name as keyof typeof platformColors] || '#64748b'
+                        }}></div>
+                        <span style={{ color: '#e2e8f0', fontWeight: '500' }}>{formattedValue}</span>
+                      </div>,
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{name}</span>
+                    ]
+                  }}
+                  cursor={{ stroke: '#475569', strokeWidth: 1, strokeDasharray: '4 4' }}
+                />
 
-                  {enabledPlatforms.tiktok && (
-                    <Area
-                      type="monotone"
-                      dataKey="TikTok"
-                      stroke="#FE2C55"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#tiktokGradient)"
-                      dot={false}
-                      activeDot={{ r: 4, fill: '#FE2C55', stroke: '#fff', strokeWidth: 2 }}
-                    />
-                  )}
-
-                  {enabledPlatforms.google && (
-                    <Area
-                      type="monotone"
-                      dataKey="Google"
-                      stroke="#4285F4"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#googleGradient)"
-                      dot={false}
-                      activeDot={{ r: 4, fill: '#4285F4', stroke: '#fff', strokeWidth: 2 }}
-                    />
-                  )}
-
-                  <Legend
-                    wrapperStyle={{ paddingTop: '16px' }}
-                    iconType="rect"
-                    formatter={(value) => (
-                      <span style={{ color: '#ccc', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                        {value === 'Meta' && (
-                          <img
-                            src="https://i.imgur.com/6hyyRrs.png"
-                            alt="Meta"
-                            style={{ width: '14px', height: '14px', objectFit: 'contain', borderRadius: '3px' }}
-                          />
-                        )}
-                        {value === 'TikTok' && (
-                          <img
-                            src="https://i.imgur.com/AXHa9UT.png"
-                            alt="TikTok"
-                            style={{ width: '14px', height: '14px', objectFit: 'contain', borderRadius: '3px' }}
-                          />
-                        )}
-                        {value === 'Google' && (
-                          <img
-                            src="https://i.imgur.com/TavV4UJ.png"
-                            alt="Google Ads"
-                            style={{ width: '14px', height: '14px', objectFit: 'contain', borderRadius: '3px' }}
-                          />
-                        )}
-                        {value}
-                      </span>
-                    )}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-80 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-2xl flex items-center justify-center border border-gray-500/30">
-                  <BarChart3 className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">No Performance Data</h3>
-                <p className="text-gray-400 max-w-xs">Performance trends will appear once you have campaign data available.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Platform Toggle Section */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/50 backdrop-blur-xl rounded-xl border border-[#333]/30">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-medium text-gray-300">Platform Comparison</h4>
-              <span className="text-xs text-gray-500">Toggle platforms in chart</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {/* Meta Platform */}
-              <button
-                onClick={() => togglePlatform('meta')}
-                className={`relative p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
-                  enabledPlatforms.meta
-                    ? 'bg-gradient-to-br from-gray-500/20 to-gray-600/20 border-gray-500/50 shadow-lg shadow-gray-500/10'
-                    : 'bg-[#0f0f0f]/50 border-[#333]/50 opacity-60 hover:opacity-80'
-                }`}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${
-                    enabledPlatforms.meta ? 'border-gray-500/50 bg-gray-500/10' : 'border-gray-600/50 bg-gray-600/10'
-                  }`}>
-                    <Image
-                      src="https://i.imgur.com/6hyyRrs.png"
-                      alt="Meta"
-                      width={20}
-                      height={20}
-                      className={`object-contain transition-all ${
-                        !enabledPlatforms.meta ? 'grayscale' : ''
-                      }`}
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-white">Meta</span>
-                  <span className={`text-xs ${enabledPlatforms.meta ? 'text-green-400' : 'text-gray-500'}`}>
-                    {enabledPlatforms.meta ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
                 {enabledPlatforms.meta && (
-                  <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full animate-pulse border border-[#0f0f0f]"></div>
+                  <Area
+                    type="monotone"
+                    dataKey="Meta"
+                    stroke="#64748b"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#metaGradient)"
+                    dot={{ fill: '#64748b', strokeWidth: 2, stroke: '#0f172a', r: 4 }}
+                    activeDot={{ r: 6, stroke: '#64748b', strokeWidth: 2, fill: '#0f172a' }}
+                  />
                 )}
-              </button>
 
-              {/* TikTok Platform */}
-              <button
-                disabled
-                className="relative p-4 rounded-xl border bg-[#0f0f0f]/30 border-[#333]/30 opacity-40 cursor-not-allowed"
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-600/30 bg-gray-600/10">
-                    <Image
-                      src="https://i.imgur.com/AXHa9UT.png"
-                      alt="TikTok"
-                      width={20}
-                      height={20}
-                      className="object-contain grayscale"
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-gray-500">TikTok</span>
-                  <span className="text-xs text-gray-600">Coming Soon</span>
-                </div>
-              </button>
+                {enabledPlatforms.tiktok && (
+                  <Area
+                    type="monotone"
+                    dataKey="TikTok"
+                    stroke="#FE2C55"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#tiktokGradient)"
+                    dot={{ fill: '#FE2C55', strokeWidth: 2, stroke: '#0f172a', r: 4 }}
+                    activeDot={{ r: 6, stroke: '#FE2C55', strokeWidth: 2, fill: '#0f172a' }}
+                  />
+                )}
 
-              {/* Google Ads Platform */}
-              <button
-                disabled
-                className="relative p-4 rounded-xl border bg-[#0f0f0f]/30 border-[#333]/30 opacity-40 cursor-not-allowed"
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-600/30 bg-gray-600/10">
-                    <Image
-                      src="https://i.imgur.com/TavV4UJ.png"
-                      alt="Google Ads"
-                      width={20}
-                      height={20}
-                      className="object-contain grayscale"
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-gray-500">Google Ads</span>
-                  <span className="text-xs text-gray-600">Coming Soon</span>
+                {enabledPlatforms.google && (
+                  <Area
+                    type="monotone"
+                    dataKey="Google"
+                    stroke="#4285F4"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#googleGradient)"
+                    dot={{ fill: '#4285F4', strokeWidth: 2, stroke: '#0f172a', r: 4 }}
+                    activeDot={{ r: 6, stroke: '#4285F4', strokeWidth: 2, fill: '#0f172a' }}
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-80 mb-6 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-slate-600/20 to-slate-700/30 rounded-2xl flex items-center justify-center border border-slate-600/50">
+                <BarChart3 className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">No Performance Data</h3>
+              <p className="text-slate-400 text-sm">Performance trends will appear once you have campaign data</p>
+            </div>
+          </div>
+        )}
+
+        {/* Platform Control Panel */}
+        <div className="backdrop-blur-xl bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-1">Platform Visibility</h4>
+              <p className="text-xs text-slate-400">Toggle platforms to compare performance</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-emerald-300 font-medium">Interactive</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            {/* Meta Platform */}
+            <button
+              onClick={() => togglePlatform('meta')}
+              className={`relative p-4 rounded-xl border transition-all duration-300 group ${
+                enabledPlatforms.meta
+                  ? 'bg-slate-700/50 border-slate-600 shadow-lg scale-105'
+                  : 'bg-slate-800/30 border-slate-700/50 hover:bg-slate-700/30'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <Image
+                    src="https://i.imgur.com/6hyyRrs.png"
+                    alt="Meta"
+                    width={32}
+                    height={32}
+                    className={`object-contain transition-all duration-300 ${
+                      !enabledPlatforms.meta ? 'grayscale opacity-50' : 'opacity-100'
+                    }`}
+                  />
+                  {enabledPlatforms.meta && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-800 animate-pulse"></div>
+                  )}
                 </div>
-              </button>
+                <div className="text-center">
+                  <div className={`text-sm font-semibold mb-1 transition-colors ${
+                    enabledPlatforms.meta ? 'text-white' : 'text-slate-400'
+                  }`}>
+                    Meta
+                  </div>
+                  <div className={`text-xs transition-colors ${
+                    enabledPlatforms.meta ? 'text-emerald-400' : 'text-slate-500'
+                  }`}>
+                    {enabledPlatforms.meta ? 'Active' : 'Connected'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hover effect */}
+              <div className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
+                enabledPlatforms.meta ? 'opacity-20' : 'opacity-0 group-hover:opacity-10'
+              } bg-gradient-to-br from-slate-400 to-slate-600`}></div>
+            </button>
+
+            {/* TikTok Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-xl border bg-slate-800/20 border-slate-700/30 opacity-60 cursor-not-allowed group"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <Image
+                    src="https://i.imgur.com/AXHa9UT.png"
+                    alt="TikTok"
+                    width={32}
+                    height={32}
+                    className="object-contain grayscale opacity-40"
+                  />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-600 rounded-full border-2 border-slate-800"></div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-slate-500 mb-1">TikTok</div>
+                  <div className="text-xs text-slate-600">Coming Soon</div>
+                </div>
+              </div>
+            </button>
+
+            {/* Google Ads Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-xl border bg-slate-800/20 border-slate-700/30 opacity-60 cursor-not-allowed group"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <Image
+                    src="https://i.imgur.com/TavV4UJ.png"
+                    alt="Google Ads"
+                    width={32}
+                    height={32}
+                    className="object-contain grayscale opacity-40"
+                  />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-600 rounded-full border-2 border-slate-800"></div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-slate-500 mb-1">Google Ads</div>
+                  <div className="text-xs text-slate-600">Coming Soon</div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* Legend */}
+          <div className="mt-6 pt-4 border-t border-slate-700/50">
+            <div className="flex items-center justify-center gap-6">
+              {enabledPlatforms.meta && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-slate-400"></div>
+                  <span className="text-xs text-slate-300 font-medium">Meta Ads</span>
+                </div>
+              )}
+              {enabledPlatforms.tiktok && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-xs text-slate-300 font-medium">TikTok Ads</span>
+                </div>
+              )}
+              {enabledPlatforms.google && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-xs text-slate-300 font-medium">Google Ads</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
