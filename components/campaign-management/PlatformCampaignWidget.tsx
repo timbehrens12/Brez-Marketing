@@ -29,10 +29,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
-  AlertCircle, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
   Minus,
   Search,
   Settings,
@@ -47,7 +47,8 @@ import {
   Sparkles,
   Eye,
   RefreshCw,
-  Clock
+  Clock,
+  DollarSign
 } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
