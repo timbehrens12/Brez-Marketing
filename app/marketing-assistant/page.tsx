@@ -31,7 +31,7 @@ import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgets
 
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Brain, Clock, Check, BarChart3 } from "lucide-react"
+import { RefreshCw, Brain, Clock, Check } from "lucide-react"
 
 // Extend Window interface for global state management
 declare global {
@@ -1242,223 +1242,173 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full space-y-6 mb-12 relative">
+    <div className="w-full min-h-screen bg-[#0B0B0B] relative">
       <GridOverlay />
       <div className="relative z-10">
-        <>
 
         {/* Meta Connection Status Banner */}
         <MetaConnectionStatus
           brandId={selectedBrandId}
-          className="px-4 sm:px-6 lg:px-8"
+          className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32"
         />
 
-        {/* Modern Marketing Assistant Layout */}
-        <div className="px-4 sm:px-6 lg:px-8 space-y-6 animate-in fade-in duration-300">
+        {/* Modern Profitability-Focused Layout */}
+        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 py-6 space-y-8 animate-in fade-in duration-300">
 
-          {/* HERO SECTION - Key Performance Indicators */}
-          <div className="bg-gradient-to-r from-[#0B0B0B] via-[#111] to-[#0B0B0B] border border-[#2A2A2A] rounded-2xl p-6 lg:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-                  Marketing Performance Dashboard
-                </h1>
-                <p className="text-gray-400 text-sm lg:text-base">
-                  Optimize your campaigns for maximum profitability
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={refreshAllWidgets}
-                  disabled={isRefreshingAll || refreshCooldown}
-                  size="sm"
-                  className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/90 text-white"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
-                  {isRefreshingAll ? 'Refreshing...' : 'Refresh Data'}
-                </Button>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Last updated</p>
-                  <p className="text-sm text-white font-medium">
-                    {lastPageRefresh ? format(lastPageRefresh, 'HH:mm') : 'Never'}
-                  </p>
-                </div>
-              </div>
+          {/* Section 1: Executive Overview - Top Metrics for Quick Profit Assessment */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
+                Executive Overview
+              </h2>
+              <Button
+                onClick={refreshAllWidgets}
+                disabled={isRefreshingAll || refreshCooldown}
+                className="bg-[#2A2A2A] hover:bg-[#333] text-white border border-[#444] px-4 py-2 text-sm"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                {isRefreshingAll ? 'Refreshing...' : 'Refresh All'}
+              </Button>
             </div>
 
-            {/* Key Metrics Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+            {/* Key Profitability Metrics - Horizontal Layout */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">ROAS</span>
-                  <div className={`text-xs px-2 py-1 rounded-full ${
-                    metaMetrics.roas > 3 ? 'bg-green-500/20 text-green-400' :
-                    metaMetrics.roas > 2 ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {metaMetrics.roas > 0 ? `${metaMetrics.roas.toFixed(1)}x` : '0x'}
-                  </div>
+                  <div className={`w-2 h-2 rounded-full ${metaMetrics.roas >= 3 ? 'bg-green-400' : metaMetrics.roas >= 2 ? 'bg-yellow-400' : 'bg-red-400'}`}></div>
                 </div>
-                <div className="text-2xl font-bold text-white">
-                  ${metaMetrics.roas > 0 ? (metaMetrics.adSpend * metaMetrics.roas).toLocaleString() : '0'}
-                </div>
-                <p className="text-xs text-gray-500">Revenue Generated</p>
-                <div className={`text-xs mt-1 flex items-center gap-1 ${
-                  metaMetrics.roasGrowth > 0 ? 'text-green-400' :
-                  metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-500'
-                }`}>
-                  <span>{metaMetrics.roasGrowth > 0 ? '↗' : metaMetrics.roasGrowth < 0 ? '↘' : '→'}</span>
-                  {metaMetrics.roasGrowth !== null ? `${Math.abs(metaMetrics.roasGrowth).toFixed(1)}%` : 'N/A'}
+                <div className="text-2xl font-bold text-white">{metaMetrics.roas.toFixed(2)}x</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}% vs last period
                 </div>
               </div>
 
-              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Spend</span>
-                  <div className={`text-xs px-2 py-1 rounded-full ${
-                    metaMetrics.adSpend < 1000 ? 'bg-green-500/20 text-green-400' :
-                    metaMetrics.adSpend < 5000 ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    ${metaMetrics.adSpend.toLocaleString()}
-                  </div>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total Spent</span>
+                  <div className={`w-2 h-2 rounded-full ${metaMetrics.adSpendGrowth >= 0 ? 'bg-green-400' : 'bg-red-400'}`}></div>
                 </div>
-                <div className="text-2xl font-bold text-white">
-                  ${metaMetrics.adSpend.toLocaleString()}
-                </div>
-                <p className="text-xs text-gray-500">Total Ad Spend</p>
-                <div className={`text-xs mt-1 flex items-center gap-1 ${
-                  metaMetrics.adSpendGrowth > 0 ? 'text-green-400' :
-                  metaMetrics.adSpendGrowth < 0 ? 'text-red-400' : 'text-gray-500'
-                }`}>
-                  <span>{metaMetrics.adSpendGrowth > 0 ? '↗' : metaMetrics.adSpendGrowth < 0 ? '↘' : '→'}</span>
-                  {metaMetrics.adSpendGrowth !== null ? `${Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%` : 'N/A'}
+                <div className="text-2xl font-bold text-white">${metaMetrics.adSpend.toLocaleString()}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {metaMetrics.adSpendGrowth > 0 ? '+' : ''}{metaMetrics.adSpendGrowth.toFixed(1)}% vs last period
                 </div>
               </div>
 
-              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">CTR</span>
-                  <div className={`text-xs px-2 py-1 rounded-full ${
-                    metaMetrics.ctr > 2 ? 'bg-green-500/20 text-green-400' :
-                    metaMetrics.ctr > 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {metaMetrics.ctr.toFixed(2)}%
-                  </div>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Conversions</span>
+                  <div className={`w-2 h-2 rounded-full ${metaMetrics.conversionGrowth >= 0 ? 'bg-green-400' : 'bg-red-400'}`}></div>
                 </div>
-                <div className="text-2xl font-bold text-white">
-                  {metaMetrics.ctr.toFixed(2)}%
-                </div>
-                <p className="text-xs text-gray-500">Click Through Rate</p>
-                <div className={`text-xs mt-1 flex items-center gap-1 ${
-                  metaMetrics.ctrGrowth > 0 ? 'text-green-400' :
-                  metaMetrics.ctrGrowth < 0 ? 'text-red-400' : 'text-gray-500'
-                }`}>
-                  <span>{metaMetrics.ctrGrowth > 0 ? '↗' : metaMetrics.ctrGrowth < 0 ? '↘' : '→'}</span>
-                  {metaMetrics.ctrGrowth !== null ? `${Math.abs(metaMetrics.ctrGrowth).toFixed(1)}%` : 'N/A'}
+                <div className="text-2xl font-bold text-white">{metaMetrics.conversions.toLocaleString()}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {metaMetrics.conversionGrowth > 0 ? '+' : ''}{metaMetrics.conversionGrowth.toFixed(1)}% vs last period
                 </div>
               </div>
 
-              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Profit</span>
-                  <div className={`text-xs px-2 py-1 rounded-full ${
-                    ((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend) > 0 ? 'bg-green-500/20 text-green-400' :
-                    ((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend) < 0 ? 'bg-red-500/20 text-red-400' :
-                    'bg-gray-500/20 text-gray-400'
-                  }`}>
-                    ${(((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend)).toLocaleString()}
-                  </div>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Profit Score</span>
+                  <div className={`w-2 h-2 rounded-full ${metaMetrics.roas >= 4 ? 'bg-green-400' : metaMetrics.roas >= 2.5 ? 'bg-yellow-400' : 'bg-red-400'}`}></div>
                 </div>
-                <div className="text-2xl font-bold text-white">
-                  ${(((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend)).toLocaleString()}
-                </div>
-                <p className="text-xs text-gray-500">Net Profit</p>
-                <div className="text-xs mt-1 text-gray-500">
-                  Target: $5,000+
+                <div className="text-2xl font-bold text-white">{((metaMetrics.roas - 1) * 100).toFixed(0)}%</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Based on ROAS performance
                 </div>
               </div>
             </div>
           </div>
 
-          {/* MAIN CONTENT AREA - Optimized Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Section 2: Campaign Performance & Optimization */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
+              Campaign Performance & Optimization
+            </h2>
 
-            {/* LEFT COLUMN - Campaign Management & Analysis */}
-            <div className="lg:col-span-8 space-y-6">
-
-              {/* Top Section - Original Blended Performance Metrics */}
-              <div className="w-full">
-                <BlendedWidgetsTable
-                  metaMetrics={metaMetrics}
-                  layout="horizontal"
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Campaign Management */}
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Campaign Management</h3>
+                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
+                      {preloadedData.campaigns?.length || 0} Active Campaigns
+                    </div>
+                  </div>
+                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                </div>
               </div>
 
-              {/* Campaign Management - Original functionality with new styling */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              {/* AI Optimization Dashboard */}
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">AI Optimization</h3>
+                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
+                      Smart Recommendations
+                    </div>
+                  </div>
+                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+                </div>
               </div>
+            </div>
+          </div>
 
-              {/* Ad Creative & Performance - Original components with new layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+          {/* Section 3: Creative Performance & Analytics */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
+              Creative Performance & Analytics
+            </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Ad Creative Performance */}
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Ad Creative Performance</h3>
+                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
+                      {preloadedData.adCreatives?.length || 0} Creatives
+                    </div>
+                  </div>
                   <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                 </div>
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+              </div>
+
+              {/* Performance Trends */}
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Performance Trends</h3>
+                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
+                      7-Day View
+                    </div>
+                  </div>
                   <PerformanceChart
                     preloadedPerformanceData={preloadedData.performanceData}
                   />
                 </div>
               </div>
-
             </div>
-
-            {/* RIGHT COLUMN - AI Optimization & Insights */}
-            <div className="lg:col-span-4 space-y-6">
-
-              {/* AI Optimization Dashboard - Original functionality with new styling */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-              </div>
-
-              {/* Performance Trends - Keep the original trend visualization */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
-                <h2 className="text-xl font-bold text-white mb-6">Performance Trends</h2>
-
-                {/* Mini Chart */}
-                <div className="h-32 bg-[#2A2A2A] rounded-lg p-4 mb-4">
-                  <div className="flex items-end gap-1 h-full">
-                    {Array.from({ length: 14 }, (_, i) => (
-                      <div
-                        key={i}
-                        className="bg-gradient-to-t from-green-500 to-green-400 rounded-sm flex-1"
-                        style={{ height: `${Math.random() * 80 + 20}%` }}
-                      ></div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-green-400">+12%</p>
-                    <p className="text-xs text-gray-400">vs Last Week</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-green-400">+8%</p>
-                    <p className="text-xs text-gray-400">vs Last Month</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
           </div>
 
+          {/* Section 4: Detailed Performance Metrics */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
+              Detailed Performance Metrics
+            </h2>
+
+            <BlendedWidgetsTable
+              metaMetrics={metaMetrics}
+              layout="horizontal"
+            />
+          </div>
 
         </div>
-        </>
+
       </div>
     </div>
   )

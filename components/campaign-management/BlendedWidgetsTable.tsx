@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
 import Image from "next/image"
-import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon as Percent, CreditCard, Layers, AlertTriangle, Users } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, Percent, CreditCard, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
@@ -105,100 +104,62 @@ function BlendedMetricCard({
   }
 
   return (
-    <div className="relative bg-[#0A0A0A] border border-[#222] rounded-lg p-4 hover:border-[#444] transition-all duration-200 group">
-      {/* Icon and Title */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={cn("p-1.5 rounded-md", iconColor)}>
-            <Icon className="w-4 h-4 text-white" />
+    <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6 hover:border-[#444] transition-all duration-200 group">
+      {/* Header with Icon and Title */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={cn("p-2 rounded-lg", iconColor)}>
+            <Icon className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-sm font-medium text-gray-300">{title}</h3>
+          <h3 className="text-base font-semibold text-white">{title}</h3>
         </div>
-        
-        {/* Platform icons */}
-        <div className="flex items-center gap-2">
+
+        {/* Platform indicators */}
+        <div className="flex items-center gap-1">
           {platforms.map((platform) => (
             <TooltipProvider key={platform.name}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="relative group cursor-pointer">
-                    <Image 
-                      src={platform.icon} 
-                      alt={platform.name} 
-                      width={32} 
-                      height={32} 
+                  <div className="relative cursor-pointer">
+                    <Image
+                      src={platform.icon}
+                      alt={platform.name}
+                      width={20}
+                      height={20}
                       className={cn(
-                        "object-contain transition-all duration-300 rounded-lg",
-                        platform.active 
-                          ? "opacity-100 hover:scale-110 shadow-lg" 
-                          : "grayscale opacity-30 hover:opacity-50"
+                        "object-contain transition-all duration-300 rounded",
+                        platform.active
+                          ? "opacity-100"
+                          : "grayscale opacity-40"
                       )}
                     />
                     {platform.active && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0A0A0A]" />
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1a1a1a]" />
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent 
-                  side="bottom" 
-                  className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-4 rounded-xl shadow-2xl max-w-xs"
+                <TooltipContent
+                  side="bottom"
+                  className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-3 rounded-lg shadow-xl"
                   sideOffset={8}
                 >
-                  <div className="space-y-3">
-                    {/* Platform Header */}
-                    <div className="flex items-center gap-3 pb-2 border-b border-[#333]">
-                      <Image 
-                        src={platform.icon} 
-                        alt={platform.name} 
-                        width={24} 
-                        height={24} 
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={platform.icon}
+                        alt={platform.name}
+                        width={16}
+                        height={16}
                         className="object-contain"
                       />
-                      <div>
-                        <h4 className="font-semibold text-white">{platform.name}</h4>
-                        <p className="text-xs text-gray-400">
-                          {platform.active ? "Connected & Active" : "Not Connected"}
-                        </p>
-                      </div>
+                      <span className="font-medium text-white">{platform.name}</span>
                     </div>
-                    
-                    {/* Platform Value */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-300">{title} Value:</span>
-                        <span className="font-semibold text-white">{platform.value}</span>
-                      </div>
-                      
-                      {platform.active ? (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-300">Contribution:</span>
-                            <span className="font-semibold text-green-400">100%</span>
-                          </div>
-                          <div className="w-full bg-[#333] rounded-full h-2">
-                            <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full w-full"></div>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Currently the only active platform contributing to this metric.
-                          </p>
-                        </>
-                      ) : (
-                        <div className="text-center py-2">
-                          <p className="text-xs text-gray-400">
-                            Connect {platform.name} to see contribution data
-                          </p>
-                        </div>
-                      )}
+                    <div className="text-xs text-gray-300">
+                      {platform.active ? "Connected & Active" : "Not Connected"}
                     </div>
-                    
-                    {/* Future Enhancement Note */}
-                    {!platform.active && (
-                      <div className="mt-3 p-2 bg-[#222] rounded-lg border-l-2 border-blue-500">
-                        <p className="text-xs text-blue-300">
-                          💡 Connect {platform.name} for blended analytics across all platforms
-                        </p>
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-400">
+                      Value: {platform.value}
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -207,50 +168,46 @@ function BlendedMetricCard({
         </div>
       </div>
 
-      {/* Value and Change */}
-      <div className="space-y-1">
-        <div className="flex items-baseline gap-2">
-          {/* Remove loading skeleton, always show actual content */}
-          <span className="text-2xl font-semibold text-white">
+      {/* Main Value Display */}
+      <div className="space-y-3">
+        <div className="flex items-baseline gap-3">
+          <span className="text-3xl font-bold text-white">
             {formatValue(value)}
           </span>
           {change !== null && change !== undefined && (
             <div className={cn(
-              "flex items-center gap-0.5 text-xs font-medium",
-              change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400"
+              "flex items-center gap-1 text-sm font-medium",
+              change > 0 ? "text-green-400" : change < 0 ? "text-red-400" : "text-gray-400"
             )}>
               {change > 0 ? (
-                <TrendingUp className="w-3 h-3" />
+                <TrendingUp className="w-4 h-4" />
               ) : change < 0 ? (
-                <TrendingDown className="w-3 h-3" />
+                <TrendingDown className="w-4 h-4" />
               ) : (
-                <div className="w-3 h-3" /> /* Empty space for 0% change */
+                <div className="w-4 h-4" />
               )}
               <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
             </div>
           )}
         </div>
-        
+
         {/* Custom content */}
         {customContent && (
           <div className="mt-3">
             {customContent}
           </div>
         )}
-        
-        {/* Subtle background pattern on hover */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#1a1a1a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
+
+        {/* Subtle hover effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#2a2a2a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
       </div>
     </div>
   )
 }
 
-export default function BlendedWidgetsTable({ 
+export default function BlendedWidgetsTable({
   metaMetrics,
-  layout = 'vertical'
-  // Remove loading props
-  // isLoadingMetrics, 
-  // isRefreshingData 
+  layout = 'horizontal'
 }: BlendedWidgetsTableProps) {
   const { brands, selectedBrand } = useBrandContext()
   const { userId } = useAuth()
@@ -260,9 +217,6 @@ export default function BlendedWidgetsTable({
     budgetUsedPercentage: 0,
     brands: []
   })
-
-  // Remove loading state calculation
-  // const loading = isLoadingMetrics || isRefreshingData
 
   useEffect(() => {
     if (!userId || !selectedBrand) return
@@ -382,63 +336,222 @@ export default function BlendedWidgetsTable({
 
   if (layout === 'horizontal') {
     return (
-      <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Layers className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
-              <p className="text-gray-400 font-medium text-sm">Unified view across all platforms</p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-1">Profitability Metrics</h2>
+            <p className="text-sm text-gray-400">Key performance indicators for campaign profitability</p>
+          </div>
+          <div className="text-xs text-gray-500">
+            Last updated: {new Date().toLocaleTimeString()}
           </div>
         </div>
         
-        {/* Horizontal Content - Responsive layout for budget and metrics */}
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            
-            {/* Budget Usage Pill - Full width on mobile, fixed width on desktop */}
-            <div className="flex-shrink-0 lg:w-40 w-full">
-              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full min-h-[120px]">
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg flex items-center justify-center mb-3">
-                    <CreditCard className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Budget Usage</h3>
-                  <div className="text-xl lg:text-2xl font-semibold text-white mb-1">
-                    {(budgetData.budgetUsedPercentage).toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ${budgetData.totalSpend.toFixed(0)} / ${budgetData.totalBudget.toFixed(0)}
-                  </div>
-                  <div className="w-full bg-[#1a1a1a] rounded-full h-2 mt-2">
-                    <div 
-                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                    />
-                  </div>
+        {/* Profitability-Focused Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Primary Profitability Metrics */}
+          <BlendedMetricCard
+            icon={TrendingUp}
+            iconColor="bg-gradient-to-br from-green-500/20 to-green-600/30"
+            title="ROAS (Return on Ad Spend)"
+            value={metaMetrics.roas}
+            change={metaMetrics.roasGrowth}
+            suffix="x"
+            decimals={2}
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: `${metaMetrics.roas?.toFixed(2) || '0.00'}x`,
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "0.00x",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "0.00x",
+                active: false
+              }
+            ]}
+          />
+
+          <BlendedMetricCard
+            icon={CreditCard}
+            iconColor="bg-gradient-to-br from-blue-500/20 to-blue-600/30"
+            title="Total Revenue"
+            value={metaMetrics.roas * metaMetrics.adSpend}
+            change={metaMetrics.roasGrowth}
+            prefix="$"
+            decimals={2}
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: `$${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}`,
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "$0.00",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "$0.00",
+                active: false
+              }
+            ]}
+          />
+
+          <BlendedMetricCard
+            icon={Target}
+            iconColor="bg-gradient-to-br from-purple-500/20 to-purple-600/30"
+            title="Total Conversions"
+            value={metaMetrics.conversions}
+            change={metaMetrics.conversionGrowth}
+            decimals={0}
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: metaMetrics.conversions?.toLocaleString() || '0',
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "0",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "0",
+                active: false
+              }
+            ]}
+          />
+
+          {/* Efficiency Metrics */}
+          <BlendedMetricCard
+            icon={DollarSign}
+            iconColor="bg-gradient-to-br from-orange-500/20 to-orange-600/30"
+            title="Cost Per Conversion"
+            value={metaMetrics.costPerResult}
+            change={metaMetrics.cprGrowth}
+            prefix="$"
+            decimals={2}
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: `$${metaMetrics.costPerResult?.toFixed(2) || '0.00'}`,
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "$0.00",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "$0.00",
+                active: false
+              }
+            ]}
+          />
+
+          <BlendedMetricCard
+            icon={Percent}
+            iconColor="bg-gradient-to-br from-cyan-500/20 to-cyan-600/30"
+            title="Click-Through Rate"
+            value={metaMetrics.ctr / 100}
+            change={metaMetrics.ctrGrowth}
+            isPercentage={true}
+            decimals={2}
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: `${metaMetrics.ctr?.toFixed(2) || '0.00'}%`,
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "0.00%",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "0.00%",
+                active: false
+              }
+            ]}
+          />
+
+          <BlendedMetricCard
+            icon={Layers}
+            iconColor="bg-gradient-to-br from-pink-500/20 to-pink-600/30"
+            title="Budget Utilization"
+            value={budgetData.budgetUsedPercentage}
+            change={null}
+            isPercentage={true}
+            decimals={1}
+            customContent={
+              <div className="space-y-2 mt-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Budget:</span>
+                  <span className="text-white">${budgetData.totalBudget.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Spent:</span>
+                  <span className="text-white">${budgetData.totalSpend.toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-[#333] rounded-full h-2 mt-2">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, budgetData.budgetUsedPercentage)}%` }}
+                  ></div>
                 </div>
               </div>
-            </div>
-
-            {/* Metrics Grid - Responsive columns */}
-            <div className="flex-1">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2 lg:gap-3 h-full">
-                {/* Row 1 - Top 4 metrics */}
-                <div>
-                  <BlendedMetricCard
-                    icon={DollarSign}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Ad Spend"
-                    value={metaMetrics.adSpend}
-                    change={metaMetrics.adSpendGrowth}
-                    prefix="$"
-                    decimals={2}
-                    platforms={[
+            }
+            platforms={[
+              {
+                name: "Meta",
+                icon: "https://i.imgur.com/6hyyRrs.png",
+                value: `${budgetData.budgetUsedPercentage.toFixed(1)}%`,
+                active: true
+              },
+              {
+                name: "TikTok",
+                icon: "https://i.imgur.com/AXHa9UT.png",
+                value: "0.0%",
+                active: false
+              },
+              {
+                name: "Google Ads",
+                icon: "https://i.imgur.com/TavV4UJ.png",
+                value: "0.0%",
+                active: false
+              }
+            ]}
+          />
+        </div>
+      </div>
+    )
+  }
                       { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
                       { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
                       { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
