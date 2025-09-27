@@ -1577,37 +1577,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     </Card>
   )
 }
-              </div>
-              Campaign Optimization Recommendation
-            </DialogTitle>
-            <DialogDescription className="text-gray-400 text-base space-y-2">
-              <div>AI-powered insights for <strong className="text-white">{selectedRecommendation?.campaign_name}</strong></div>
-              
-              {/* Analysis Period & Timestamp Info */}
-              {selectedRecommendation?.recommendation?.analysis_period && (
-                <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333] text-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-gray-500">Analysis Period:</span>
-                      <div className="text-white font-medium">
-                        {selectedRecommendation.recommendation.analysis_period.from} to {selectedRecommendation.recommendation.analysis_period.to}
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        {selectedRecommendation.recommendation.analysis_period.days} days of data 
-                        ({selectedRecommendation.recommendation.analysis_period.timezone})
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Generated:</span>
-                      <div className="text-white font-medium">
-                        {selectedRecommendation.recommendation.generated_at ? 
-                          new Date(selectedRecommendation.recommendation.generated_at).toLocaleString(undefined, {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            timeZoneName: 'short'
                           }) : 'Unknown'
                         }
                       </div>
