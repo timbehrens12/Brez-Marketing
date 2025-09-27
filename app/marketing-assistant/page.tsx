@@ -24,31 +24,14 @@ import Image from "next/image"
 import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
 import AIOptimizationDashboard from "@/components/campaign-management/AIOptimizationDashboard"
 import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBreakdown"
+
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
 import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
+
+
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import {
-  RefreshCw,
-  Brain,
-  Clock,
-  Check,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Target,
-  Zap,
-  BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
-  Lightbulb,
-  Rocket,
-  Settings,
-  Eye,
-  Sparkles
-} from "lucide-react"
+import { RefreshCw, Brain, Clock, Check } from "lucide-react"
 
 // Extend Window interface for global state management
 declare global {
@@ -1259,253 +1242,118 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0F0F0F] to-[#0B0B0B] relative overflow-hidden">
-      <GridOverlay />
+    <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0B] via-[#0F0F0F] to-[#0A0A0B] relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/5 via-transparent to-purple-900/5"></div>
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.08) 1px, transparent 0)',
+          backgroundSize: '32px 32px'
+        }}></div>
+      </div>
+
+      {/* Floating Elements */}
+      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-500/8 to-pink-500/8 rounded-full blur-3xl"></div>
+
       <div className="relative z-10">
-        {/* Meta Connection Status Banner */}
-          <MetaConnectionStatus 
-            brandId={selectedBrandId} 
-            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
+        {/* Connection Status - Compact and modern */}
+        <div className="px-6 py-4">
+          <MetaConnectionStatus
+            brandId={selectedBrandId}
+            className="max-w-7xl mx-auto"
           />
+        </div>
 
-        {/* Main Content Container */}
-        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 py-6 space-y-6">
+        {/* Main Dashboard Content */}
+        <div className="max-w-7xl mx-auto px-6 pb-12 space-y-8">
 
-          {/* Hero Section - Profit Summary & Quick Actions */}
-          <div className="relative">
-            <Card className="bg-gradient-to-r from-[#0F0F0F] via-[#1A1A1A] to-[#0F0F0F] border border-[#2A2A2A] shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/5 via-transparent to-[#FF2A2A]/5"></div>
-              <CardContent className="relative p-6 lg:p-8">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-                  {/* Profit Summary */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#FF2A2A] to-[#FF4444] rounded-xl flex items-center justify-center shadow-lg">
-                        <DollarSign className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-white">Marketing Assistant</h1>
-                        <p className="text-gray-400 text-sm">AI-powered campaign optimization for maximum profitability</p>
-                      </div>
+          {/* Hero Section - Key Profitability Metrics */}
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                Marketing Profitability Hub
+              </h1>
+              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                AI-powered insights to maximize brand ad profitability and optimize campaign performance
+              </p>
             </div>
-            
-                    {/* Key Profit Metrics */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-[#0A0A0A]/50 border border-[#2A2A2A] rounded-xl p-4">
-                        <div className="text-sm text-gray-400 mb-1">Today's Profit</div>
-                        <div className="text-2xl font-bold text-green-400">
-                          ${((metaMetrics.conversions || 0) * 25 - (metaMetrics.adSpend || 0)).toFixed(0)}
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <ArrowUpRight className="w-3 h-3 text-green-400" />
-                          <span className="text-xs text-green-400">
-                            {metaMetrics.roasGrowth >= 0 ? '+' : ''}{metaMetrics.roasGrowth?.toFixed(1) || '0'}%
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="bg-[#0A0A0A]/50 border border-[#2A2A2A] rounded-xl p-4">
-                        <div className="text-sm text-gray-400 mb-1">ROAS</div>
-                        <div className="text-2xl font-bold text-white">
-                          {metaMetrics.roas?.toFixed(2) || '0.00'}x
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {metaMetrics.roasGrowth >= 0 ?
-                            <TrendingUp className="w-3 h-3 text-green-400" /> :
-                            <TrendingDown className="w-3 h-3 text-red-400" />
-                          }
-                          <span className={`text-xs ${metaMetrics.roasGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {metaMetrics.roasGrowth >= 0 ? '+' : ''}{metaMetrics.roasGrowth?.toFixed(1) || '0'}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="bg-[#0A0A0A]/50 border border-[#2A2A2A] rounded-xl p-4">
-                        <div className="text-sm text-gray-400 mb-1">Ad Spend</div>
-                        <div className="text-2xl font-bold text-white">
-                          ${metaMetrics.adSpend?.toFixed(0) || '0'}
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {metaMetrics.adSpendGrowth >= 0 ?
-                            <TrendingUp className="w-3 h-3 text-red-400" /> :
-                            <TrendingDown className="w-3 h-3 text-green-400" />
-                          }
-                          <span className={`text-xs ${metaMetrics.adSpendGrowth >= 0 ? 'text-red-400' : 'text-green-400'}`}>
-                            {metaMetrics.adSpendGrowth >= 0 ? '+' : ''}{metaMetrics.adSpendGrowth?.toFixed(1) || '0'}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="bg-[#0A0A0A]/50 border border-[#2A2A2A] rounded-xl p-4">
-                        <div className="text-sm text-gray-400 mb-1">Conversions</div>
-                        <div className="text-2xl font-bold text-white">
-                          {metaMetrics.conversions?.toFixed(0) || '0'}
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {metaMetrics.conversionGrowth >= 0 ?
-                            <TrendingUp className="w-3 h-3 text-green-400" /> :
-                            <TrendingDown className="w-3 h-3 text-red-400" />
-                          }
-                          <span className={`text-xs ${metaMetrics.conversionGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {metaMetrics.conversionGrowth >= 0 ? '+' : ''}{metaMetrics.conversionGrowth?.toFixed(1) || '0'}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="lg:w-80 space-y-4">
-                    <h3 className="text-lg font-semibold text-white mb-3">Quick Actions</h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                      <Button
-                        onClick={syncMetaInsights}
-                        disabled={isRefreshingData}
-                        className="bg-gradient-to-r from-[#FF2A2A] to-[#FF4444] hover:from-[#FF4444] hover:to-[#FF6666] text-white border-0 h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                        Sync Latest Data
-                      </Button>
-
-                      <Button
-                        onClick={refreshAllWidgets}
-                        disabled={isRefreshingAll || refreshCooldown}
-                        variant="outline"
-                        className="border-[#2A2A2A] text-gray-300 hover:bg-[#2A2A2A] hover:text-white h-12 rounded-xl font-semibold"
-                      >
-                        <Brain className="w-4 h-4 mr-2" />
-                        AI Analysis
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="border-[#2A2A2A] text-gray-300 hover:bg-[#2A2A2A] hover:text-white h-12 rounded-xl font-semibold"
-                      >
-                        <Rocket className="w-4 h-4 mr-2" />
-                        Scale Winners
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="border-[#2A2A2A] text-gray-300 hover:bg-[#2A2A2A] hover:text-white h-12 rounded-xl font-semibold"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Auto-Optimize
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Performance Dashboard */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-            {/* Main Performance Chart - Takes 2 columns */}
-            <div className="xl:col-span-2">
-              <Card className="bg-gradient-to-br from-[#0F0F0F] to-[#1A1A1A] border border-[#2A2A2A] shadow-xl">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A] to-[#FF4444] rounded-lg flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-white text-lg">Performance Trends</CardTitle>
-                        <p className="text-gray-400 text-sm">7-day performance analysis</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                      Live Data
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
-                </CardContent>
-              </Card>
-              </div>
-
-            {/* AI Optimization Hub */}
-              <div className="xl:col-span-1">
-              <Card className="bg-gradient-to-br from-[#0F0F0F] to-[#1A1A1A] border border-[#2A2A2A] shadow-xl h-full">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A] to-[#FF4444] rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white text-lg">AI Optimization Hub</CardTitle>
-                      <p className="text-gray-400 text-sm">Smart recommendations</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                </CardContent>
-              </Card>
-            </div>
-              </div>
-
-          {/* Campaign Control Center */}
-          <Card className="bg-gradient-to-br from-[#0F0F0F] to-[#1A1A1A] border border-[#2A2A2A] shadow-xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A] to-[#FF4444] rounded-lg flex items-center justify-center">
-                    <Target className="w-5 h-5 text-white" />
-            </div>
-                  <div>
-                    <CardTitle className="text-white text-lg">Campaign Control Center</CardTitle>
-                    <p className="text-gray-400 text-sm">Manage and optimize your campaigns</p>
-                  </div>
-                </div>
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  {preloadedData.campaigns?.length || 0} Active
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-            </CardContent>
-          </Card>
-
-          {/* Creative Analysis */}
-          <Card className="bg-gradient-to-br from-[#0F0F0F] to-[#1A1A1A] border border-[#2A2A2A] shadow-xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A] to-[#FF4444] rounded-lg flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-white" />
-          </div>
-                  <div>
-                    <CardTitle className="text-white text-lg">Creative Performance Analysis</CardTitle>
-                    <p className="text-gray-400 text-sm">Optimize your ad creatives for better results</p>
-                  </div>
-                </div>
-                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                  {preloadedData.adCreatives?.length || 0} Creatives
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-            </CardContent>
-          </Card>
-
-          {/* Legacy Performance Table - Hidden but functional */}
-          <div className="hidden">
+            {/* Redesigned BlendedWidgetsTable - Profitability Focused */}
             <BlendedWidgetsTable
               metaMetrics={metaMetrics}
               layout="horizontal"
             />
           </div>
 
+          {/* Core Optimization Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            {/* Left Column - Campaign Intelligence */}
+            <div className="lg:col-span-8 space-y-8">
+              {/* Campaign Management */}
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+
+              {/* Creative & Performance Analysis */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                <PerformanceChart
+                  preloadedPerformanceData={preloadedData.performanceData}
+                />
+              </div>
+            </div>
+
+            {/* Right Column - AI Optimization Center */}
+            <div className="lg:col-span-4">
+              <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="bg-gradient-to-r from-[#1a1a1a]/80 to-[#111]/80 backdrop-blur-xl border border-[#333]/50 rounded-2xl p-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-semibold text-white">Ready to Scale Your Profits?</h3>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Use the AI recommendations above to optimize your campaigns, test new creatives, and maximize your ad spend ROI.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button
+                  onClick={refreshAllWidgets}
+                  disabled={isRefreshingAll || refreshCooldown}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isRefreshingAll ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Refreshing Data...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 mr-2" />
+                      Refresh AI Insights
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={syncMetaInsights}
+                  disabled={isRefreshingData}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isRefreshingData ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Syncing Meta...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Sync Latest Data
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

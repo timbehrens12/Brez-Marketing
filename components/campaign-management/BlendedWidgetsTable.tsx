@@ -381,182 +381,239 @@ export default function BlendedWidgetsTable({
 
 
   if (layout === 'horizontal') {
+    // Calculate profitability metrics
+    const revenue = metaMetrics.roas * metaMetrics.adSpend
+    const profit = revenue - metaMetrics.adSpend
+    const profitMargin = metaMetrics.adSpend > 0 ? (profit / revenue) * 100 : 0
+
     return (
-      <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Layers className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
-              <p className="text-gray-400 font-medium text-sm">Unified view across all platforms</p>
+      <div className="relative bg-gradient-to-br from-[#0f0f0f]/50 to-[#1a1a1a]/50 backdrop-blur-xl border border-[#333]/50 rounded-3xl overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"></div>
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-[#0a0a0a]/80 to-[#141414]/80 backdrop-blur-xl border-b border-[#333]/50 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl
+                              flex items-center justify-center border border-[#333]/50 shadow-lg backdrop-blur-xl">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Profitability Dashboard
+                  </h2>
+                  <p className="text-gray-400 text-sm">Real-time performance metrics across all campaigns</p>
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium text-green-400">Live Data</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Horizontal Content - Responsive layout for budget and metrics */}
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            
-            {/* Budget Usage Pill - Full width on mobile, fixed width on desktop */}
-            <div className="flex-shrink-0 lg:w-40 w-full">
-              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full min-h-[120px]">
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg flex items-center justify-center mb-3">
-                    <CreditCard className="w-6 h-6 text-white" />
+
+          {/* Main Content */}
+          <div className="p-6 space-y-6">
+
+            {/* Primary KPI Cards - Profitability Focus */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* Profit Card - Most Important */}
+              <div className="group relative bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-2xl p-6 hover:border-emerald-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Budget Usage</h3>
-                  <div className="text-xl lg:text-2xl font-semibold text-white mb-1">
-                    {(budgetData.budgetUsedPercentage).toFixed(1)}%
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400 mb-1">Today's Profit</div>
+                    <div className={`text-xs font-medium ${profit >= 0 ? 'text-green-400' : 'text-red-400'} flex items-center gap-1`}>
+                      {profit >= 0 ? (
+                        <>
+                          <TrendingUp className="w-3 h-3" />
+                          +{profitMargin.toFixed(1)}%
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="w-3 h-3" />
+                          {profitMargin.toFixed(1)}%
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    ${budgetData.totalSpend.toFixed(0)} / ${budgetData.totalBudget.toFixed(0)}
+                </div>
+                <div className="space-y-1">
+                  <div className={`text-3xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ${Math.abs(profit).toFixed(2)}
                   </div>
-                  <div className="w-full bg-[#1a1a1a] rounded-full h-2 mt-2">
-                    <div 
-                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                    />
+                  <div className="text-sm text-gray-400">
+                    Revenue: ${revenue.toFixed(2)}
                   </div>
+                </div>
+              </div>
+
+              {/* ROAS Card - Key Performance Indicator */}
+              <div className="group relative bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center">
+                    <Target className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400 mb-1">ROAS Change</div>
+                    <div className={`text-xs font-medium ${metaMetrics.roasGrowth >= 0 ? 'text-green-400' : 'text-red-400'} flex items-center gap-1`}>
+                      {metaMetrics.roasGrowth >= 0 ? (
+                        <>
+                          <TrendingUp className="w-3 h-3" />
+                          +{Math.abs(metaMetrics.roasGrowth || 0).toFixed(1)}%
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="w-3 h-3" />
+                          {Math.abs(metaMetrics.roasGrowth || 0).toFixed(1)}%
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className={`text-3xl font-bold ${metaMetrics.roas >= 2 ? 'text-green-400' : metaMetrics.roas >= 1.5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {metaMetrics.roas.toFixed(2)}x
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Break-even at 1.0x
+                  </div>
+                </div>
+              </div>
+
+              {/* Spend Efficiency Card */}
+              <div className="group relative bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center">
+                    <MousePointer className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400 mb-1">CTR Change</div>
+                    <div className={`text-xs font-medium ${metaMetrics.ctrGrowth >= 0 ? 'text-green-400' : 'text-red-400'} flex items-center gap-1`}>
+                      {metaMetrics.ctrGrowth >= 0 ? (
+                        <>
+                          <TrendingUp className="w-3 h-3" />
+                          +{Math.abs(metaMetrics.ctrGrowth || 0).toFixed(1)}%
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="w-3 h-3" />
+                          {Math.abs(metaMetrics.ctrGrowth || 0).toFixed(1)}%
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-3xl font-bold text-purple-400">
+                    {metaMetrics.ctr.toFixed(2)}%
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    CPC: ${metaMetrics.cpc.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget Utilization Card */}
+              <div className="group relative bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl p-6 hover:border-orange-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400 mb-1">Budget Used</div>
+                    <div className={`text-xs font-medium ${budgetData.budgetUsedPercentage <= 80 ? 'text-green-400' : budgetData.budgetUsedPercentage <= 95 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {budgetData.budgetUsedPercentage.toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-3xl font-bold text-orange-400">
+                    ${budgetData.totalSpend.toFixed(0)}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    of ${budgetData.totalBudget.toFixed(0)} budget
+                  </div>
+                </div>
+                {/* Budget Progress Bar */}
+                <div className="mt-3 w-full bg-gray-800/50 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      budgetData.budgetUsedPercentage <= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                      budgetData.budgetUsedPercentage <= 95 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                      'bg-gradient-to-r from-red-500 to-pink-500'
+                    }`}
+                    style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Metrics Grid - Responsive columns */}
-            <div className="flex-1">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2 lg:gap-3 h-full">
-                {/* Row 1 - Top 4 metrics */}
-                <div>
-                  <BlendedMetricCard
-                    icon={DollarSign}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Ad Spend"
-                    value={metaMetrics.adSpend}
-                    change={metaMetrics.adSpendGrowth}
-                    prefix="$"
-                    decimals={2}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-                    ]}
-                  />
+            {/* Secondary Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-400 mb-1">Impressions</div>
+                <div className="text-lg font-semibold text-white">{metaMetrics.impressions.toLocaleString()}</div>
+                <div className={`text-xs ${metaMetrics.impressionGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {metaMetrics.impressionGrowth >= 0 ? '+' : ''}{metaMetrics.impressionGrowth?.toFixed(1) || 0}%
                 </div>
-                
-                <div>
-                  <BlendedMetricCard
-                    icon={Eye}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Impressions"
-                    value={metaMetrics.impressions}
-                    change={metaMetrics.impressionGrowth}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-                    ]}
-                  />
-                </div>
+              </div>
 
-                <div>
-                  <BlendedMetricCard
-                    icon={MousePointer}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Clicks"
-                    value={metaMetrics.clicks}
-                    change={metaMetrics.clickGrowth}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-                    ]}
-                  />
+              <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-400 mb-1">Clicks</div>
+                <div className="text-lg font-semibold text-white">{metaMetrics.clicks.toLocaleString()}</div>
+                <div className={`text-xs ${metaMetrics.clickGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {metaMetrics.clickGrowth >= 0 ? '+' : ''}{metaMetrics.clickGrowth?.toFixed(1) || 0}%
                 </div>
+              </div>
 
-                <div>
-                  <BlendedMetricCard
-                    icon={Target}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Conversions"
-                    value={metaMetrics.conversions}
-                    change={metaMetrics.conversionGrowth}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-                    ]}
-                  />
+              <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-400 mb-1">Conversions</div>
+                <div className="text-lg font-semibold text-white">{metaMetrics.conversions.toLocaleString()}</div>
+                <div className={`text-xs ${metaMetrics.conversionGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {metaMetrics.conversionGrowth >= 0 ? '+' : ''}{metaMetrics.conversionGrowth?.toFixed(1) || 0}%
                 </div>
+              </div>
 
-                {/* Row 2 - Bottom 4 metrics */}
-                <div>
-                  <BlendedMetricCard
-                    icon={Percent}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="CTR"
-                    value={metaMetrics.ctr}
-                    change={metaMetrics.ctrGrowth}
-                    suffix="%"
-                    decimals={2}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
-                    ]}
-                  />
+              <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-400 mb-1">Frequency</div>
+                <div className="text-lg font-semibold text-white">{metaMetrics.frequency.toFixed(2)}</div>
+                <div className="text-xs text-gray-500">Avg per user</div>
+              </div>
+            </div>
+
+            {/* Platform Status */}
+            <div className="bg-[#0f0f0f]/30 border border-[#333]/30 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-300">Platform Status</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Image src="https://i.imgur.com/6hyyRrs.png" alt="Meta" width={16} height={16} className="object-contain" />
+                      <span className="text-xs text-green-400 font-medium">Meta Active</span>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-50">
+                      <Image src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={16} height={16} className="object-contain grayscale" />
+                      <span className="text-xs text-gray-500">TikTok Coming Soon</span>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-50">
+                      <Image src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={16} height={16} className="object-contain grayscale" />
+                      <span className="text-xs text-gray-500">Google Ads Coming Soon</span>
+                    </div>
+                  </div>
                 </div>
-
-                <div>
-                  <BlendedMetricCard
-                    icon={DollarSign}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="CPC"
-                    value={metaMetrics.cpc}
-                    change={metaMetrics.cpcGrowth}
-                    prefix="$"
-                    decimals={2}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <BlendedMetricCard
-                    icon={TrendingUp}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="ROAS"
-                    value={metaMetrics.roas}
-                    change={metaMetrics.roasGrowth}
-                    suffix="x"
-                    decimals={2}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <BlendedMetricCard
-                    icon={Users}
-                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-                    title="Frequency"
-                    value={metaMetrics.frequency}
-                    change={null}
-                    decimals={2}
-                    platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true },
-                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00", active: false },
-                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00", active: false }
-                    ]}
-                  />
+                <div className="text-xs text-gray-500">
+                  Last updated: {new Date().toLocaleTimeString()}
                 </div>
               </div>
             </div>
