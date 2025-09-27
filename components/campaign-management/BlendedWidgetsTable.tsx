@@ -830,7 +830,7 @@ export default function BlendedWidgetsTable({
 
           {/* Row 5 - CTR & CPC */}
           <BlendedMetricCard
-            icon={PercentIcon}
+            icon={Percent}
             iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
             title="Total Blended CTR"
             value={metaMetrics.ctr / 100}
