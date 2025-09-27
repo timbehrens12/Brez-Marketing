@@ -305,189 +305,191 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl overflow-hidden h-full max-h-[680px] flex flex-col">
-      {/* Modern Header */}
-      <div className="relative bg-gradient-to-r from-blue-600/20 via-cyan-600/20 to-indigo-600/20 p-6 border-b border-white/10">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 animate-pulse"></div>
-        <div className="relative">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl
-                            flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
-                <ImageIcon className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Creative Performance</h2>
-                <p className="text-blue-200 text-sm">Analyze ad effectiveness and audience engagement</p>
-              </div>
+    <div className="relative h-full">
+      {/* Glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl"></div>
+
+      <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl h-full flex flex-col">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-white/5 via-white/2 to-transparent border-b border-white/10 rounded-t-3xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
+              <ImageIcon className="w-7 h-7 text-white" />
             </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur-sm">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-emerald-300 text-sm font-medium">Live Data</span>
-              </div>
-
-              <div className="text-right">
-                <div className="text-2xl font-bold text-white">{filteredAndSortedAds.length}</div>
-                <div className="text-xs text-slate-400">Active Creatives</div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-white mb-1">Ad Creative Performance</h2>
+              <div className="flex items-center gap-3">
+                <Badge className="bg-gradient-to-br from-blue-500/20 to-blue-600/30 text-blue-300 border-blue-500/40 text-sm font-medium px-3 py-1">
+                  {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
+                </Badge>
+                <span className="text-gray-400 text-sm">•</span>
+                <span className="text-gray-400 text-sm">
+                  Sorted by {sortBy === 'ctr' ? 'CTR' : sortBy} {sortOrder === 'desc' ? '↓' : '↑'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Search and Filters */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                placeholder="Search creatives by name, headline, or campaign..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-800/50 border-slate-600/50 text-white placeholder:text-slate-400 focus:border-blue-400/50 focus:ring-blue-400/20"
-              />
-            </div>
-
+          {/* Enhanced Controls */}
+          <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50">
-                  <Settings className="w-4 h-4 mr-2" />
+                <Button variant="outline" size="sm" className="bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-4 py-2 rounded-2xl">
+                  <Settings className="h-4 w-4 mr-2" />
                   Sort & Filter
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-slate-800 border-slate-600 min-w-64">
-                <DropdownMenuLabel className="text-slate-200">Sort By Performance</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-600" />
-                {[
-                  { key: 'spent', label: 'Ad Spend', icon: DollarSign },
-                  { key: 'impressions', label: 'Impressions', icon: Eye },
-                  { key: 'clicks', label: 'Clicks', icon: MousePointer },
-                  { key: 'ctr', label: 'CTR', icon: Target },
-                  { key: 'conversions', label: 'Conversions', icon: Zap }
-                ].map(({ key, label, icon: Icon }) => (
+              <DropdownMenuContent align="end" className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-white/20 w-64 p-2 rounded-2xl shadow-2xl backdrop-blur-sm">
+                <DropdownMenuLabel className="text-gray-300 font-semibold px-2 py-1">Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
                   <DropdownMenuItem
-                    key={key}
-                    onSelect={() => setSortBy(key)}
-                    className="text-slate-200 hover:bg-slate-700 focus:bg-slate-700"
+                    key={metric}
+                    onSelect={() => setSortBy(metric)}
+                    className="text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
                   >
-                    <Icon className="h-4 w-4 mr-3" />
-                    <span className="flex-1">{label}</span>
-                    {sortBy === key && (
-                      <Badge className="bg-blue-600 text-white text-xs">
-                        {sortOrder === 'desc' ? '↓' : '↑'}
-                      </Badge>
-                    )}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        {metric === 'spent' && <DollarSign className="h-4 w-4 text-green-400" />}
+                        {metric === 'impressions' && <Eye className="h-4 w-4 text-blue-400" />}
+                        {metric === 'clicks' && <MousePointer className="h-4 w-4 text-purple-400" />}
+                        {metric === 'ctr' && <Target className="h-4 w-4 text-cyan-400" />}
+                        {metric === 'conversions' && <Zap className="h-4 w-4 text-orange-400" />}
+                        <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
+                      </div>
+                      {sortBy === metric && (
+                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/40 text-xs">
+                          {sortOrder === 'desc' ? '↓' : '↑'}
+                        </Badge>
+                      )}
+                    </div>
                   </DropdownMenuItem>
                 ))}
-
-                <DropdownMenuSeparator className="bg-slate-600" />
+                <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem
                   onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }}
-                  className="text-slate-200 hover:bg-slate-700 focus:bg-slate-700"
+                  className="text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center">
-                      {showInactive ? <Eye className="h-4 w-4 mr-3" /> : <EyeOff className="h-4 w-4 mr-3" />}
+                    <div className="flex items-center gap-2">
+                      {showInactive ? <Eye className="h-4 w-4 text-green-400" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
                       Show Inactive Ads
                     </div>
-                    <Switch
-                      checked={showInactive}
-                      onCheckedChange={setShowInactive}
-                      className="data-[state=checked]:bg-blue-500"
-                    />
+                    <Switch checked={showInactive} className="data-[state=checked]:bg-blue-500" />
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
+
+        {/* Enhanced Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            placeholder="Search ads, campaigns, or headlines..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 pr-4 py-3 bg-gradient-to-br from-white/5 to-white/2 border-white/10 text-white placeholder:text-gray-400 w-full rounded-2xl focus:border-white/30 focus:ring-2 focus:ring-white/20"
+          />
+        </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 p-6 overflow-hidden">
-        <div className="h-full overflow-y-auto custom-scrollbar">
-          {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-slate-600/20 to-slate-700/30 rounded-2xl flex items-center justify-center border border-slate-600/50">
-                <ImageIcon className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">No Creatives Found</h3>
-              <p className="text-slate-400 mb-6 max-w-md mx-auto">
-                {searchQuery ? 'Try adjusting your search criteria' : 'No ad creatives found. Start creating ads to see performance data here.'}
-              </p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 border border-indigo-500/30 rounded-full">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                <span className="text-indigo-300 text-sm font-medium">Ready for your ads...</span>
-              </div>
+      {/* Content */}
+      <CardContent className="flex-1 p-6 overflow-hidden">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+        {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
+              <ImageIcon className="w-8 h-8 text-gray-400" />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <h3 className="text-lg font-semibold text-white">No Ad Creatives Found</h3>
+            <p className="text-sm text-gray-400 mt-2 max-w-xs mx-auto">
+              {
+                'No ad creatives found for your selected criteria. Try adjusting your filters or check if your Meta campaigns have active ads.'
+              }
+            </p>
+          </div>
+        ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
               {filteredAndSortedAds.map((ad) => {
-                const roas = calculateROAS(ad.conversions, ad.spent)
-                const ctrColor = ad.ctr >= 2 ? 'text-green-400' : ad.ctr >= 1 ? 'text-yellow-400' : 'text-red-400'
-                const roasColor = roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
+              const roas = calculateROAS(ad.conversions, ad.spent)
+              
+              // 🔍 CONVERSIONS DEBUG - Ad Creative Breakdown
+              console.log(`🔍 AdCreative ${ad.ad_name} (${ad.ad_id}) Debug:`, {
+                conversions: ad.conversions,
+                spent: ad.spent,
+                costPerConversion: ad.cost_per_conversion,
+                calculatedROAS: roas,
+                campaignId: ad.campaign_id,
+                adsetId: ad.adset_id,
+                status: ad.status,
+                effectiveStatus: ad.effective_status
+              });
+              
+              return (
+                <div key={ad.ad_id} className="relative group">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                return (
-                  <div key={ad.ad_id} className="group relative backdrop-blur-xl bg-gradient-to-br from-slate-800/30 to-slate-900/30 border border-slate-700/50 rounded-2xl overflow-hidden hover:border-indigo-400/30 transition-all duration-300">
-                    {/* Animated background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                    <div className="relative">
-                      {/* Creative Preview Section */}
-                      <div className="p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-b border-slate-700/50">
-                        <div className="relative aspect-video bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden group-hover:border-slate-600/50 transition-colors">
+                  <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl hover:border-white/20 transition-all duration-300 shadow-2xl hover:shadow-white/10 group-hover:scale-[1.02] overflow-hidden flex flex-col">
+                    <CardContent className="p-0 flex-1 flex flex-col">
+                      {/* Enhanced Creative Image */}
+                      <div className="p-4 bg-gradient-to-br from-white/5 to-white/2 flex-shrink-0">
+                        <div className="relative h-32 lg:h-36 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/20 transition-all duration-300">
                           {ad.thumbnail_url || ad.image_url ? (
                             <Image
                               src={ad.thumbnail_url || ad.image_url || ''}
                               alt={ad.ad_name}
                               fill
-                              className="object-cover"
+                              className="object-cover rounded-2xl"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="w-8 h-8 text-slate-500" />
-                            </div>
+                            <ImageIcon className="h-8 w-8 lg:h-10 lg:w-10 text-gray-500" />
                           )}
 
-                          {/* Overlay Elements */}
-                          <div className="absolute top-3 left-3">
-                            <div className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-slate-600/50">
+                          {/* Enhanced Platform Logo */}
+                          <div className="absolute top-2 left-2">
+                            <div className="w-6 h-6 lg:w-7 lg:h-7 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center border border-white/20 shadow-lg">
                               <Image
                                 src="https://i.imgur.com/6hyyRrs.png"
                                 alt="Meta"
-                                width={16}
-                                height={16}
+                                width={14}
+                                height={14}
                                 className="object-contain"
                               />
                             </div>
                           </div>
 
-                          <div className="absolute top-3 right-3">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm border ${
+                          {/* Enhanced Status Badge */}
+                          <div className="absolute top-2 right-2">
+                            <Badge className={`text-xs px-2 py-1 rounded-xl border-2 ${
                               ad.status === 'ACTIVE'
-                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
                             }`}>
                               {ad.status}
-                            </div>
+                            </Badge>
                           </div>
 
-                          {/* Preview Button */}
+                          {/* Enhanced Preview Link */}
                           {ad.preview_url && (
-                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm hover:bg-slate-700/80 text-white border border-slate-600/50"
+                                      className="h-7 w-7 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg backdrop-blur-sm"
                                       onClick={() => window.open(ad.preview_url!, '_blank')}
                                     >
-                                      <ExternalLink className="w-4 h-4" />
+                                      <ExternalLink className="h-3 w-3" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent className="bg-slate-800 border-slate-600">
-                                    <p className="text-white text-xs">Preview Ad</p>
+                                  <TooltipContent className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-2 rounded-xl shadow-2xl">
+                                    <p className="text-white text-xs font-medium">Preview Ad</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -495,71 +497,107 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                           )}
                         </div>
                       </div>
-
-                      {/* Content Section */}
-                      <div className="p-4">
-                        {/* Ad Details */}
-                        <div className="mb-4">
-                          <h4 className="font-semibold text-white text-base mb-2 line-clamp-2 group-hover:text-indigo-200 transition-colors">
-                            {ad.ad_name}
-                          </h4>
-                          {ad.headline && (
-                            <p className="text-sm text-slate-400 mb-2 line-clamp-2">
-                              {ad.headline}
-                            </p>
-                          )}
-                          <div className="text-xs text-slate-500 space-y-1">
-                            <div className="truncate" title={ad.campaign_name}>{ad.campaign_name}</div>
-                            <div className="truncate" title={ad.adset_name}>{ad.adset_name}</div>
+                    
+                    {/* Ad Details - Flexible container with proper overflow handling */}
+                    <div className="p-3 lg:p-4 pt-0 flex-1 flex flex-col min-h-0">
+                      <div className="mb-3 lg:mb-4 flex-shrink-0">
+                        {/* Ad name with responsive text sizing and proper line clamping */}
+                        <h4 className="font-semibold text-white text-xs lg:text-sm mb-1 tracking-tight 
+                                     break-words overflow-hidden text-ellipsis line-clamp-2">
+                          {ad.ad_name}
+                        </h4>
+                        {ad.headline && (
+                          <p className="text-xs text-gray-400 mb-2 break-words overflow-hidden text-ellipsis line-clamp-2">
+                            {ad.headline}
+                          </p>
+                        )}
+                        {/* Campaign and adset names with responsive overflow handling */}
+                        <div className="text-xs text-gray-500 space-y-0.5 lg:space-y-1">
+                          <p className="text-gray-400 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.campaign_name}>
+                            {ad.campaign_name}
+                          </p>
+                          <p className="text-gray-500 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.adset_name}>
+                            {ad.adset_name}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Performance Metrics - Fully responsive grid */}
+                      <div className="grid grid-cols-2 gap-1.5 lg:gap-2 text-xs flex-1">
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Spend
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatCurrency(ad.spent)}
                           </div>
                         </div>
-
-                        {/* Performance Metrics Grid */}
-                        <div className="grid grid-cols-3 gap-3 mb-4">
-                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                            <div className="text-lg font-bold text-white mb-1">{formatCurrency(ad.spent)}</div>
-                            <div className="text-xs text-slate-400">Spend</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Impress.
                           </div>
-
-                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                            <div className="text-lg font-bold text-white mb-1">{(ad.impressions / 1000).toFixed(0)}K</div>
-                            <div className="text-xs text-slate-400">Impressions</div>
-                          </div>
-
-                          <div className="text-center p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                            <div className="text-lg font-bold text-white mb-1">{ad.clicks.toLocaleString()}</div>
-                            <div className="text-xs text-slate-400">Clicks</div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.impressions)}
                           </div>
                         </div>
-
-                        {/* Key Performance Indicators */}
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="text-center">
-                            <div className={`text-lg font-bold mb-1 ${ctrColor}`}>{formatPercentage(ad.ctr)}</div>
-                            <div className="text-xs text-slate-400">CTR</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Clicks
                           </div>
-
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-white mb-1">{ad.conversions}</div>
-                            <div className="text-xs text-slate-400">Conversions</div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.clicks)}
                           </div>
-
-                          <div className="text-center">
-                            <div className={`text-lg font-bold mb-1 ${roasColor}`}>
-                              {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
-                            </div>
-                            <div className="text-xs text-slate-400">ROAS</div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            CTR
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatPercentage(ad.ctr)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Conver.
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.conversions)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            ROAS
+                          </div>
+                          <div className={`font-bold text-xs lg:text-sm break-words flex-1 flex items-end ${
+                            roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>
+                            {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
+                  </CardContent>
+                </Card>
+              )
               })}
             </div>
-          )}
+        )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 } 
