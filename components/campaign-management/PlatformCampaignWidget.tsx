@@ -219,6 +219,71 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   const [recommendationDialogOpen, setRecommendationDialogOpen] = useState(false)
   const [selectedRecommendation, setSelectedRecommendation] = useState<Campaign | null>(null)
 
+  // Filter and sort campaigns based on search and filter criteria
+  const filteredAndSortedCampaigns = useMemo(() => {
+    let filtered = localCampaigns
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(campaign =>
+        campaign.campaign_name?.toLowerCase().includes(query) ||
+        campaign.objective?.toLowerCase().includes(query) ||
+        campaign.account_name?.toLowerCase().includes(query) ||
+        campaign.account_id?.toString().includes(query)
+      )
+    }
+
+    // Filter by active/inactive status
+    if (!showInactive) {
+      filtered = filtered.filter(campaign => campaign.status === 'ACTIVE')
+    }
+
+    // Sort campaigns
+    filtered.sort((a, b) => {
+      let aValue: any
+      let bValue: any
+
+      switch (sortBy) {
+        case 'spent':
+          aValue = a.spent || 0
+          bValue = b.spent || 0
+          break
+        case 'impressions':
+          aValue = a.impressions || 0
+          bValue = b.impressions || 0
+          break
+        case 'clicks':
+          aValue = a.clicks || 0
+          bValue = b.clicks || 0
+          break
+        case 'ctr':
+          aValue = a.ctr || 0
+          bValue = b.ctr || 0
+          break
+        case 'conversions':
+          aValue = a.conversions || 0
+          bValue = b.conversions || 0
+          break
+        case 'roas':
+          aValue = a.roas || 0
+          bValue = b.roas || 0
+          break
+        default:
+          aValue = a.spent || 0
+          bValue = b.spent || 0
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue - bValue
+      } else {
+        return bValue - aValue
+      }
+    })
+
+    return filtered
+  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder])
+
   // Use preloaded campaigns when they change - but allow for fresh data refreshes
   useEffect(() => {
     if (preloadedCampaigns && preloadedCampaigns.length > 0) {
