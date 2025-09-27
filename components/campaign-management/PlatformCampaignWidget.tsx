@@ -1577,32 +1577,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     </Card>
   )
 }
-                          }) : 'Unknown'
-                        }
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        Next refresh: {selectedRecommendation.recommendation.next_refresh ? 
-                          new Date(selectedRecommendation.recommendation.next_refresh).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit'
-                          }) : 'Monday 12AM'
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 mt-6">
-            {/* Campaign Overview */}
-            <div className="bg-gradient-to-br from-[#111] to-[#1a1a1a] rounded-2xl p-6 border border-[#333]">
-              <h3 className="text-lg font-semibold text-white mb-4">Campaign Overview</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 border border-[#333] text-center">
                   <div className="text-2xl font-bold text-white">{formatCurrency(selectedRecommendation?.spent || 0)}</div>
                   <div className="text-sm text-gray-400 mt-1">Spent</div>
                 </div>
