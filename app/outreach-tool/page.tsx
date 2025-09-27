@@ -5515,7 +5515,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         
                         <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
                           <div 
-                            className="bg-[#333] h-1.5 rounded-full transition-all duration-300"
+                            className="bg-white h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${(data.score / data.max) * 100}%` }}
                           ></div>
                         </div>
