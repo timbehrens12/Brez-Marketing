@@ -31,7 +31,7 @@ import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgets
 
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Brain, Clock, Check } from "lucide-react"
+import { RefreshCw, Brain, Clock, Check, TrendingUp, Target, Sparkles, Zap, Palette, MessageSquare, FileText, Send } from "lucide-react"
 
 // Extend Window interface for global state management
 declare global {
@@ -1242,53 +1242,173 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full space-y-6 mb-12 relative">
+    <div className="w-full min-h-screen bg-[#0B0B0B] relative">
       <GridOverlay />
       <div className="relative z-10">
-        <>
-
-          {/* Meta Connection Status Banner - Responsive padding */}
-          <MetaConnectionStatus 
-            brandId={selectedBrandId} 
-            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
-          />
-
-          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
-          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
-            
-            {/* Top Section - Blended Performance Metrics spans full width */}
-            <div className="w-full">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                layout="horizontal"
-              />
-            </div>
-            
-            {/* Main Section - Responsive layout for widgets */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-              
-              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
-              <div className="xl:col-span-2 space-y-4">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                
-                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
+        
+        {/* Header Section with Meta Connection Status */}
+        <div className="sticky top-0 z-20 bg-[#0B0B0B]/95 backdrop-blur-sm border-b border-[#1A1A1A]">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/10 border border-[#FF2A2A]/30 flex items-center justify-center">
+                    <Brain className="w-5 h-5 text-[#FF2A2A]" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-white">Marketing Assistant</h1>
+                    <p className="text-sm text-gray-400">AI-powered campaign optimization</p>
+                  </div>
                 </div>
               </div>
-
-              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
-              <div className="xl:col-span-1">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+              
+              <div className="flex items-center gap-3">
+                <DateRangePicker
+                  date={dateRange}
+                  onDateChange={setDateRange}
+                  className="bg-[#1A1A1A] border-[#333]"
+                />
+                <Button
+                  onClick={refreshAllWidgets}
+                  disabled={isRefreshingAll || refreshCooldown}
+                  className="bg-[#1A1A1A] hover:bg-[#2A2A2A] border border-[#333] text-white"
+                  size="sm"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                  {isRefreshingAll ? 'Refreshing...' : 'Refresh'}
+                </Button>
               </div>
-
             </div>
-
+            
+            <MetaConnectionStatus brandId={selectedBrandId} className="mt-4" />
           </div>
-        </>
+        </div>
+
+        {/* Main Dashboard Content */}
+        <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+          
+          {/* Profit Overview Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Profit Overview</h2>
+                <p className="text-sm text-gray-400">Key metrics for maximizing ad profitability</p>
+              </div>
+            </div>
+            
+            <BlendedWidgetsTable 
+              metaMetrics={metaMetrics}
+              layout="cards"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            />
+          </section>
+
+          {/* Campaign Performance Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+                  <Target className="w-4 h-4 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Campaign Performance</h2>
+                  <p className="text-sm text-gray-400">Monitor and optimize your active campaigns</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
+              <div className="xl:col-span-1">
+                <PerformanceChart 
+                  preloadedPerformanceData={preloadedData.performanceData}
+                  className="h-full"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Creative & AI Insights Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Creative & AI Insights</h2>
+                <p className="text-sm text-gray-400">Data-driven recommendations for better performance</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdCreativeBreakdown 
+                preloadedAds={preloadedData.adCreatives}
+                className="h-full"
+              />
+              <AIOptimizationDashboard 
+                preloadedData={preloadedData.optimizationData}
+                className="h-full"
+              />
+            </div>
+          </section>
+
+          {/* Quick Actions Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-orange-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Quick Actions</h2>
+                <p className="text-sm text-gray-400">Fast access to optimization tools</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button
+                className="h-20 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#333] hover:border-[#444] text-left p-4 flex flex-col items-start justify-center"
+                onClick={() => window.open('/ad-creative-studio', '_blank')}
+              >
+                <Palette className="w-5 h-5 text-blue-400 mb-2" />
+                <span className="text-white font-medium">Create Ads</span>
+                <span className="text-xs text-gray-400">Design new creatives</span>
+              </Button>
+              
+              <Button
+                className="h-20 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#333] hover:border-[#444] text-left p-4 flex flex-col items-start justify-center"
+                onClick={() => window.open('/ai-marketing-consultant', '_blank')}
+              >
+                <MessageSquare className="w-5 h-5 text-green-400 mb-2" />
+                <span className="text-white font-medium">AI Chat</span>
+                <span className="text-xs text-gray-400">Get recommendations</span>
+              </Button>
+              
+              <Button
+                className="h-20 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#333] hover:border-[#444] text-left p-4 flex flex-col items-start justify-center"
+                onClick={() => window.open('/brand-report', '_blank')}
+              >
+                <FileText className="w-5 h-5 text-purple-400 mb-2" />
+                <span className="text-white font-medium">Brand Report</span>
+                <span className="text-xs text-gray-400">Generate insights</span>
+              </Button>
+              
+              <Button
+                className="h-20 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#333] hover:border-[#444] text-left p-4 flex flex-col items-start justify-center"
+                onClick={() => window.open('/outreach-tool', '_blank')}
+              >
+                <Send className="w-5 h-5 text-orange-400 mb-2" />
+                <span className="text-white font-medium">Outreach</span>
+                <span className="text-xs text-gray-400">Find new clients</span>
+              </Button>
+            </div>
+          </section>
+
+        </div>
       </div>
     </div>
   )
