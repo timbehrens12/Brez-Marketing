@@ -103,8 +103,6 @@ function BlendedMetricCard({
         <Icon className="w-4 h-4 text-gray-400" />
         <span className="text-sm text-gray-400">{title}</span>
       </div>
-        
-      </div>
 
       {/* Simple Value and Change */}
       <div className="space-y-2">

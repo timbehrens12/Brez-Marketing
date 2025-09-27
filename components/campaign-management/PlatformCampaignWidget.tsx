@@ -1993,4 +1993,3 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     </div>
   )
 }
-}
