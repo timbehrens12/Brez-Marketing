@@ -1372,4 +1372,3 @@ export default function MarketingAssistantPage() {
     </div>
   )
 } 
-} 
