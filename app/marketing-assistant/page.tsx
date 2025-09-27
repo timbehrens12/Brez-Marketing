@@ -1242,167 +1242,53 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full min-h-screen relative overflow-hidden">
+    <div className="w-full space-y-6 mb-12 relative">
       <GridOverlay />
       <div className="relative z-10">
-        {/* Meta Connection Status Banner - Fixed at top */}
-        <div className="sticky top-0 z-30 backdrop-blur-sm bg-black/80 border-b border-white/10">
-          <MetaConnectionStatus
-            brandId={selectedBrandId}
-            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 py-3"
+        <>
+
+          {/* Meta Connection Status Banner - Responsive padding */}
+          <MetaConnectionStatus 
+            brandId={selectedBrandId} 
+            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
-        </div>
 
-        {/* Hero Section - Profitability Focus */}
-        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 pt-8 pb-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#0f0f0f] to-[#1a1a1a] rounded-3xl border border-[#333]/50 p-8 relative overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-                  backgroundSize: '30px 30px'
-                }}></div>
-              </div>
-
-              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                  <div>
-                    <h1 className="text-4xl lg:text-5xl font-black text-white mb-4 leading-tight">
-                      Marketing <span className="text-[#FF2A2A]">Profitability</span> Engine
-                    </h1>
-                    <p className="text-xl text-gray-300 leading-relaxed">
-                      AI-powered insights to maximize your ad spend ROI and scale profitable campaigns.
-                      Turn every dollar into revenue with data-driven optimization.
-                    </p>
-                  </div>
-
-                  {/* Quick Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
-                      <div className="text-2xl font-black text-green-400">
-                        ${(metaMetrics.roas * metaMetrics.adSpend).toFixed(0)}
-                      </div>
-                      <div className="text-sm text-gray-400">Revenue Generated</div>
-                    </div>
-                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
-                      <div className="text-2xl font-black text-[#FF2A2A]">
-                        ${metaMetrics.adSpend.toFixed(0)}
-                      </div>
-                      <div className="text-sm text-gray-400">Total Spent</div>
-                    </div>
-                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
-                      <div className="text-2xl font-black text-blue-400">
-                        {metaMetrics.roas.toFixed(1)}x
-                      </div>
-                      <div className="text-sm text-gray-400">Average ROAS</div>
-                    </div>
-                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
-                      <div className="text-2xl font-black text-purple-400">
-                        {metaMetrics.conversions}
-                      </div>
-                      <div className="text-sm text-gray-400">Conversions</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Actions Panel */}
-                <div className="lg:col-span-1">
-                  <div className="bg-[#2A2A2A] rounded-2xl p-6 border border-[#333] shadow-2xl">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-[#FF2A2A]" />
-                      Quick Actions
-                    </h3>
-                    <div className="space-y-3">
-                      <Button
-                        onClick={refreshAllWidgets}
-                        disabled={isRefreshingAll || refreshCooldown}
-                        className="w-full bg-[#FF2A2A] hover:bg-[#e02424] text-white font-medium py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
-                      >
-                        {isRefreshingAll ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-4 h-4" />
-                        )}
-                        Refresh Data
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="w-full border-[#333] bg-transparent hover:bg-[#333] text-gray-300 hover:text-white py-2.5 rounded-xl transition-all duration-200"
-                      >
-                        <Clock className="w-4 h-4 mr-2" />
-                        Schedule Report
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="w-full border-[#333] bg-transparent hover:bg-[#333] text-gray-300 hover:text-white py-2.5 rounded-xl transition-all duration-200"
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Export Data
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Dashboard Content */}
-        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 pb-12">
-
-          {/* Profitability Overview - Enhanced Metrics */}
-          <div className="max-w-7xl mx-auto mb-8">
-            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] rounded-2xl border border-[#333]/50 p-6">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <DollarSign className="w-6 h-6 text-green-400" />
-                Profitability Overview
-              </h2>
-              <BlendedWidgetsTable
+          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
+          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
+            
+            {/* Top Section - Blended Performance Metrics spans full width */}
+            <div className="w-full">
+              <BlendedWidgetsTable 
                 metaMetrics={metaMetrics}
                 layout="horizontal"
               />
             </div>
-          </div>
-
-          {/* Core Optimization Sections */}
-          <div className="max-w-7xl mx-auto space-y-8">
-
-            {/* AI Optimization Insights - Prominent placement */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-              <div className="xl:col-span-1">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-              </div>
-
-              {/* Campaign Performance - Enhanced layout */}
-              <div className="xl:col-span-3 space-y-6">
+            
+            {/* Main Section - Responsive layout for widgets */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+              
+              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
+              <div className="xl:col-span-2 space-y-4">
                 <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-
-                {/* Creative & Performance Analysis */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart
+                  <PerformanceChart 
                     preloadedPerformanceData={preloadedData.performanceData}
                   />
                 </div>
               </div>
+
+              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
+              <div className="xl:col-span-1">
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+              </div>
+
             </div>
 
-            {/* Data Refresh Indicator */}
-            {lastPageRefresh && (
-              <div className="text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-[#333] rounded-full text-sm text-gray-400">
-                  <RefreshCw className="w-4 h-4" />
-                  Last updated: {lastPageRefresh.toLocaleTimeString()}
-                </div>
-              </div>
-            )}
-
           </div>
-        </div>
+        </>
       </div>
     </div>
   )
