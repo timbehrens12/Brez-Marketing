@@ -4,8 +4,11 @@ import { useState, useEffect } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Brain
+import {
+  Brain,
+  TrendingUp,
+  Target,
+  Zap
 } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
