@@ -298,141 +298,112 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <div className="relative h-full">
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl"></div>
-
-      <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl h-full flex flex-col">
-        {/* Enhanced Header */}
-        <div className="bg-gradient-to-r from-white/5 via-white/2 to-transparent border-b border-white/10 rounded-t-3xl p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
-                <BarChart3 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-white mb-1">Performance Trends</h2>
-                <p className="text-gray-300 font-medium text-lg">{getMetricLabel()} across platforms</p>
-              </div>
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg h-full flex flex-col">
+      {/* Header - matches other widgets style */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
-
-            {/* Enhanced Controls */}
-            <div className="flex items-center gap-3">
-              {/* Enhanced Metric Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-4 py-2 rounded-2xl">
-                    <Settings2 className="h-4 w-4 mr-2" />
-                    Configure
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-white/20 w-64 p-3 rounded-2xl shadow-2xl backdrop-blur-sm">
-                  <DropdownMenuLabel className="text-gray-300 font-semibold px-2 py-1">Select Metric</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem
-                    onClick={() => setSelectedMetric('spend')}
-                    className={`text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors ${selectedMetric === 'spend' ? 'bg-blue-500/20 border border-blue-500/40' : ''}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Daily Spend</span>
-                      {selectedMetric === 'spend' && <div className="w-2 h-2 bg-blue-400 rounded-full"></div>}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedMetric('roas')}
-                    className={`text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors ${selectedMetric === 'roas' ? 'bg-emerald-500/20 border border-emerald-500/40' : ''}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">ROAS</span>
-                      {selectedMetric === 'roas' && <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedMetric('impressions')}
-                    className={`text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors ${selectedMetric === 'impressions' ? 'bg-blue-500/20 border border-blue-500/40' : ''}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Impressions</span>
-                      {selectedMetric === 'impressions' && <div className="w-2 h-2 bg-blue-400 rounded-full"></div>}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedMetric('clicks')}
-                    className={`text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors ${selectedMetric === 'clicks' ? 'bg-purple-500/20 border border-purple-500/40' : ''}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Clicks</span>
-                      {selectedMetric === 'clicks' && <div className="w-2 h-2 bg-purple-400 rounded-full"></div>}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedMetric('conversions')}
-                    className={`text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors ${selectedMetric === 'conversions' ? 'bg-orange-500/20 border border-orange-500/40' : ''}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Conversions</span>
-                      {selectedMetric === 'conversions' && <div className="w-2 h-2 bg-orange-400 rounded-full"></div>}
-                    </div>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuLabel className="text-gray-300 font-semibold px-2 py-1">Platforms</DropdownMenuLabel>
-                  <DropdownMenuCheckboxItem
-                    checked={enabledPlatforms.meta}
-                    onCheckedChange={() => togglePlatform('meta')}
-                    className="text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="https://i.imgur.com/6hyyRrs.png"
-                        alt="Meta"
-                        width={16}
-                        height={16}
-                        className="object-contain"
-                      />
-                      <span className="font-medium">Meta</span>
-                      {enabledPlatforms.meta && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={enabledPlatforms.tiktok}
-                    onCheckedChange={() => togglePlatform('tiktok')}
-                    disabled
-                    className="text-gray-500 opacity-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="https://i.imgur.com/AXHa9UT.png"
-                        alt="TikTok"
-                        width={16}
-                        height={16}
-                        className="object-contain grayscale opacity-40"
-                      />
-                      <span>TikTok (Not Connected)</span>
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={enabledPlatforms.google}
-                    onCheckedChange={() => togglePlatform('google')}
-                    disabled
-                    className="text-gray-500 opacity-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="https://i.imgur.com/TavV4UJ.png"
-                        alt="Google Ads"
-                        width={16}
-                        height={16}
-                        className="object-contain grayscale opacity-40"
-                      />
-                      <span>Google Ads (Not Connected)</span>
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-white">Performance Trends</h2>
+              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
             </div>
           </div>
+          
+          {/* Settings Dropdown */}
+          <div className="flex items-center gap-2">
+            {/* Metric Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8">
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1a] border-[#333]">
+                <DropdownMenuLabel className="text-gray-400">Select Metric</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('spend')}
+                  className={selectedMetric === 'spend' ? 'bg-white/10' : ''}
+                >
+                  Daily Spend
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('roas')}
+                  className={selectedMetric === 'roas' ? 'bg-white/10' : ''}
+                >
+                  ROAS
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('impressions')}
+                  className={selectedMetric === 'impressions' ? 'bg-white/10' : ''}
+                >
+                  Impressions
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('clicks')}
+                  className={selectedMetric === 'clicks' ? 'bg-white/10' : ''}
+                >
+                  Clicks
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('conversions')}
+                  className={selectedMetric === 'conversions' ? 'bg-white/10' : ''}
+                >
+                  Conversions
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuLabel className="text-gray-400">Platforms</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.meta}
+                  onCheckedChange={() => togglePlatform('meta')}
+                >
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain mr-2"
+                  />
+                  Meta
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.tiktok}
+                  onCheckedChange={() => togglePlatform('tiktok')}
+                  disabled
+                >
+                  <Image 
+                    src="https://i.imgur.com/AXHa9UT.png" 
+                    alt="TikTok" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain grayscale opacity-40 mr-2"
+                  />
+                  TikTok (Not Connected)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.google}
+                  onCheckedChange={() => togglePlatform('google')}
+                  disabled
+                >
+                  <Image 
+                    src="https://i.imgur.com/TavV4UJ.png" 
+                    alt="Google Ads" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain grayscale opacity-40 mr-2"
+                  />
+                  Google Ads (Not Connected)
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+      </div>
       
       {/* Content */}
       <CardContent className="p-6">
@@ -596,101 +567,78 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
           </div>
         )}
         
-        {/* Enhanced Platform Toggle Section */}
-        <div className="mt-6 p-6 bg-gradient-to-br from-white/5 to-white/2 rounded-2xl border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h4 className="text-lg font-bold text-white mb-1">Platform Comparison</h4>
-              <p className="text-sm text-gray-400">Click to toggle platforms in the chart</p>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Active platforms</span>
-            </div>
+        {/* Platform Toggle Section */}
+        <div className="mt-6 p-4 bg-[#0a0a0a] rounded-lg border border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-gray-400">Platform Comparison</h4>
+            <span className="text-xs text-gray-500">Click to toggle platforms</span>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Enhanced Meta Platform */}
+          
+          <div className="grid grid-cols-3 gap-3">
+            {/* Meta Platform */}
             <button
               onClick={() => togglePlatform('meta')}
-              className={`relative p-4 rounded-2xl border-2 transition-all duration-300 group ${
-                enabledPlatforms.meta
-                  ? 'bg-gradient-to-br from-white/10 to-white/5 border-white/30 shadow-lg hover:shadow-white/20'
-                  : 'bg-gradient-to-br from-gray-800/30 to-gray-900/20 border-gray-600/50 hover:border-gray-500/70'
+              className={`relative p-4 rounded-lg border transition-all duration-200 ${
+                enabledPlatforms.meta 
+                  ? 'bg-gray-800/50 border-gray-600 shadow-lg' 
+                  : 'bg-[#0f0f0f] border-white/10 opacity-60'
               }`}
             >
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <Image
-                    src="https://i.imgur.com/6hyyRrs.png"
-                    alt="Meta"
-                    width={28}
-                    height={28}
-                    className={`object-contain transition-all duration-300 ${
-                      !enabledPlatforms.meta ? 'grayscale opacity-60' : ''
-                    }`}
-                  />
-                  {enabledPlatforms.meta && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white/20 animate-pulse shadow-lg"></div>
-                  )}
-                </div>
-                <div className="text-center">
-                  <span className={`text-sm font-bold transition-colors ${
-                    enabledPlatforms.meta ? 'text-white' : 'text-gray-500'
-                  }`}>
-                    Meta
-                  </span>
-                  <div className={`text-xs mt-1 transition-colors ${
-                    enabledPlatforms.meta ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    {enabledPlatforms.meta ? 'Connected' : 'Connect to enable'}
-                  </div>
-                </div>
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta" 
+                  width={24} 
+                  height={24} 
+                  className={`object-contain transition-all ${
+                    !enabledPlatforms.meta ? 'grayscale' : ''
+                  }`}
+                />
+                <span className="text-xs font-medium text-white">Meta</span>
+                <span className={`text-xs ${enabledPlatforms.meta ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Connected
+                </span>
               </div>
               {enabledPlatforms.meta && (
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-2xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               )}
             </button>
 
-            {/* Enhanced TikTok Platform */}
-            <div className="relative p-4 rounded-2xl border-2 bg-gradient-to-br from-gray-800/20 to-gray-900/10 border-gray-600/30 cursor-not-allowed opacity-60">
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <Image
-                    src="https://i.imgur.com/AXHa9UT.png"
-                    alt="TikTok"
-                    width={28}
-                    height={28}
-                    className="object-contain grayscale opacity-40"
-                  />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-600 rounded-full border border-gray-700"></div>
-                </div>
-                <div className="text-center">
-                  <span className="text-sm font-bold text-gray-500">TikTok</span>
-                  <div className="text-xs mt-1 text-gray-600">Not Connected</div>
-                </div>
+            {/* TikTok Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-lg border bg-[#0f0f0f] border-white/10 opacity-40 cursor-not-allowed"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/AXHa9UT.png" 
+                  alt="TikTok" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain grayscale"
+                />
+                <span className="text-xs font-medium text-gray-500">TikTok</span>
+                <span className="text-xs text-gray-600">Not Connected</span>
               </div>
-            </div>
+            </button>
 
-            {/* Enhanced Google Ads Platform */}
-            <div className="relative p-4 rounded-2xl border-2 bg-gradient-to-br from-gray-800/20 to-gray-900/10 border-gray-600/30 cursor-not-allowed opacity-60">
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <Image
-                    src="https://i.imgur.com/TavV4UJ.png"
-                    alt="Google Ads"
-                    width={28}
-                    height={28}
-                    className="object-contain grayscale opacity-40"
-                  />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-600 rounded-full border border-gray-700"></div>
-                </div>
-                <div className="text-center">
-                  <span className="text-sm font-bold text-gray-500">Google Ads</span>
-                  <div className="text-xs mt-1 text-gray-600">Not Connected</div>
-                </div>
+            {/* Google Ads Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-lg border bg-[#0f0f0f] border-white/10 opacity-40 cursor-not-allowed"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/TavV4UJ.png" 
+                  alt="Google Ads" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain grayscale"
+                />
+                <span className="text-xs font-medium text-gray-500">Google Ads</span>
+                <span className="text-xs text-gray-600">Not Connected</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </CardContent>

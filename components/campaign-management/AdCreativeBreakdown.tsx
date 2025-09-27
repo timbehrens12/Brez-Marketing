@@ -305,100 +305,89 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="relative h-full">
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl"></div>
-
-      <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl h-full flex flex-col">
-      {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-white/5 via-white/2 to-transparent border-b border-white/10 rounded-t-3xl p-6">
-        <div className="flex items-center justify-between mb-4">
+    <Card className="bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl h-full max-h-[720px] flex flex-col overflow-hidden">
+      {/* Modern Header with Glass Effect */}
+      <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
-              <ImageIcon className="w-7 h-7 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl 
+                          flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
+              <ImageIcon className="w-8 h-8 text-[#FF2A2A]" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white mb-1">Ad Creative Performance</h2>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-gradient-to-br from-blue-500/20 to-blue-600/30 text-blue-300 border-blue-500/40 text-sm font-medium px-3 py-1">
+              <h2 className="text-3xl text-white font-bold tracking-tight mb-1">Ad Creative Performance</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
                   {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
                 </Badge>
-                <span className="text-gray-400 text-sm">•</span>
-                <span className="text-gray-400 text-sm">
-                  Sorted by {sortBy === 'ctr' ? 'CTR' : sortBy} {sortOrder === 'desc' ? '↓' : '↑'}
-                </span>
               </div>
             </div>
           </div>
-
-          {/* Enhanced Controls */}
-          <div className="flex items-center gap-3">
+          
+          <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-4 py-2 rounded-2xl">
+                <Button variant="outline" size="sm" className="bg-transparent border-[#333] text-white hover:bg-gray-800/50">
                   <Settings className="h-4 w-4 mr-2" />
-                  Sort & Filter
+                  Options
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-white/20 w-64 p-2 rounded-2xl shadow-2xl backdrop-blur-sm">
-                <DropdownMenuLabel className="text-gray-300 font-semibold px-2 py-1">Sort By</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuContent align="end" className="bg-gray-900 border-[#333]">
+                <DropdownMenuLabel className="text-white">Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#333]" />
                 {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
-                  <DropdownMenuItem
-                    key={metric}
+                  <DropdownMenuItem 
+                    key={metric} 
                     onSelect={() => setSortBy(metric)}
-                    className="text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
+                    className="text-white hover:bg-gray-800"
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        {metric === 'spent' && <DollarSign className="h-4 w-4 text-green-400" />}
-                        {metric === 'impressions' && <Eye className="h-4 w-4 text-blue-400" />}
-                        {metric === 'clicks' && <MousePointer className="h-4 w-4 text-purple-400" />}
-                        {metric === 'ctr' && <Target className="h-4 w-4 text-cyan-400" />}
-                        {metric === 'conversions' && <Zap className="h-4 w-4 text-orange-400" />}
-                        <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
-                      </div>
-                      {sortBy === metric && (
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/40 text-xs">
-                          {sortOrder === 'desc' ? '↓' : '↑'}
-                        </Badge>
-                      )}
-                    </div>
+                    {metric === 'spent' && <DollarSign className="h-4 w-4 mr-2" />}
+                    {metric === 'impressions' && <Eye className="h-4 w-4 mr-2" />}
+                    {metric === 'clicks' && <MousePointer className="h-4 w-4 mr-2" />}
+                    {metric === 'ctr' && <Target className="h-4 w-4 mr-2" />}
+                    {metric === 'conversions' && <Zap className="h-4 w-4 mr-2" />}
+                    <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
+                    {sortBy === metric && (
+                      <Badge className="ml-2 bg-blue-600 text-white">
+                        {sortOrder === 'desc' ? '↓' : '↑'}
+                      </Badge>
+                    )}
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem
-                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }}
-                  className="text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuItem 
+                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }} 
+                  className="text-white hover:bg-gray-800"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      {showInactive ? <Eye className="h-4 w-4 text-green-400" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
+                    <div className="flex items-center">
+                      {showInactive ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
                       Show Inactive Ads
                     </div>
-                    <Switch checked={showInactive} className="data-[state=checked]:bg-blue-500" />
+                    <Switch checked={showInactive} />
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-
-        {/* Enhanced Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        
+        {/* Search Bar */}
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search ads, campaigns, or headlines..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 pr-4 py-3 bg-gradient-to-br from-white/5 to-white/2 border-white/10 text-white placeholder:text-gray-400 w-full rounded-2xl focus:border-white/30 focus:ring-2 focus:ring-white/20"
+            className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-gray-400 
+                     focus:border-white/20 focus:ring-1 focus:ring-white/20"
           />
         </div>
-      </div>
+      </CardHeader>
 
       {/* Content */}
       <CardContent className="flex-1 p-6 overflow-hidden">
-        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+        <div className="h-full overflow-y-auto custom-scrollbar">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
@@ -429,74 +418,72 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               });
               
               return (
-                <div key={ad.ad_id} className="relative group">
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                  <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl hover:border-white/20 transition-all duration-300 shadow-2xl hover:shadow-white/10 group-hover:scale-[1.02] overflow-hidden flex flex-col">
-                    <CardContent className="p-0 flex-1 flex flex-col">
-                      {/* Enhanced Creative Image */}
-                      <div className="p-4 bg-gradient-to-br from-white/5 to-white/2 flex-shrink-0">
-                        <div className="relative h-32 lg:h-36 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/20 transition-all duration-300">
-                          {ad.thumbnail_url || ad.image_url ? (
+                <Card key={ad.ad_id} className="bg-gradient-to-br from-[#1A1A1A]/80 to-[#0F0F0F]/80 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col rounded-xl hover:transform hover:scale-105">
+                  <CardContent className="p-0 flex-1 flex flex-col">
+                    {/* Creative Image - Responsive sizing */}
+                    <div className="p-3 lg:p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
+                      <div className="relative h-28 lg:h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
+                                    flex items-center justify-center overflow-hidden group-hover:border-[#3a3a3a] transition-colors">
+                        {ad.thumbnail_url || ad.image_url ? (
+                          <Image 
+                            src={ad.thumbnail_url || ad.image_url || ''} 
+                            alt={ad.ad_name}
+                            fill
+                            className="object-cover rounded-xl"
+                          />
+                        ) : (
+                          <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                        )}
+                        
+                        {/* Platform Logo */}
+                        <div className="absolute top-1.5 lg:top-2 left-1.5 lg:left-2">
+                          <div className="w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
                             <Image
-                              src={ad.thumbnail_url || ad.image_url || ''}
-                              alt={ad.ad_name}
-                              fill
-                              className="object-cover rounded-2xl"
+                              src="https://i.imgur.com/6hyyRrs.png"
+                              alt="Meta"
+                              width={12}
+                              height={12}
+                              className="object-contain lg:w-[14px] lg:h-[14px]"
                             />
-                          ) : (
-                            <ImageIcon className="h-8 w-8 lg:h-10 lg:w-10 text-gray-500" />
-                          )}
-
-                          {/* Enhanced Platform Logo */}
-                          <div className="absolute top-2 left-2">
-                            <div className="w-6 h-6 lg:w-7 lg:h-7 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center border border-white/20 shadow-lg">
-                              <Image
-                                src="https://i.imgur.com/6hyyRrs.png"
-                                alt="Meta"
-                                width={14}
-                                height={14}
-                                className="object-contain"
-                              />
-                            </div>
                           </div>
-
-                          {/* Enhanced Status Badge */}
-                          <div className="absolute top-2 right-2">
-                            <Badge className={`text-xs px-2 py-1 rounded-xl border-2 ${
-                              ad.status === 'ACTIVE'
-                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                                : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
-                            }`}>
-                              {ad.status}
-                            </Badge>
-                          </div>
-
-                          {/* Enhanced Preview Link */}
-                          {ad.preview_url && (
-                            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg backdrop-blur-sm"
-                                      onClick={() => window.open(ad.preview_url!, '_blank')}
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-2 rounded-xl shadow-2xl">
-                                    <p className="text-white text-xs font-medium">Preview Ad</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          )}
                         </div>
+                        
+                        {/* Status Badge */}
+                        <div className="absolute top-1.5 lg:top-2 right-1.5 lg:right-2">
+                          <Badge className={`text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+                            ad.status === 'ACTIVE' 
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                          }`}>
+                            {ad.status}
+                          </Badge>
+                        </div>
+                        
+                        {/* Preview Link - Hidden on smaller screens */}
+                        {ad.preview_url && (
+                          <div className="absolute bottom-1.5 lg:bottom-2 right-1.5 lg:right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 lg:h-6 lg:w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
+                                    onClick={() => window.open(ad.preview_url!, '_blank')}
+                                  >
+                                    <ExternalLink className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-[#0a0a0a] border-[#2a2a2a]">
+                                  <p className="text-white text-xs">Preview Ad</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
                       </div>
+                    </div>
                     
                     {/* Ad Details - Flexible container with proper overflow handling */}
                     <div className="p-3 lg:p-4 pt-0 flex-1 flex flex-col min-h-0">

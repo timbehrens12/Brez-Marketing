@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 import Image from "next/image"
-import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon as Percent, CreditCard, Layers, AlertTriangle, Users } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon as Percent, CreditCard, Layers, AlertTriangle, Users, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
@@ -56,12 +56,8 @@ interface BudgetData {
 interface BlendedWidgetsTableProps {
   metaMetrics: MetaMetrics
   layout?: 'vertical' | 'horizontal'
-  // Remove loading props
-  // isLoadingMetrics: boolean
-  // isRefreshingData: boolean
 }
 
-// Custom metric card component for blended metrics
 function BlendedMetricCard({
   icon: Icon,
   iconColor,
@@ -73,8 +69,6 @@ function BlendedMetricCard({
   decimals = 0,
   isPercentage = false,
   customContent,
-  // Remove loading prop
-  // loading,
   platforms
 }: {
   icon: any
@@ -87,8 +81,6 @@ function BlendedMetricCard({
   decimals?: number
   isPercentage?: boolean
   customContent?: React.ReactNode
-  // Remove loading prop
-  // loading: boolean
   platforms: { name: string; icon: string; value: string | number; active: boolean }[]
 }) {
   const formatValue = (val: number) => {
@@ -105,107 +97,66 @@ function BlendedMetricCard({
   }
 
   return (
-    <div className="relative group">
-      {/* Glow effect on hover */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-      {/* Main card */}
-      <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 hover:border-white/20 transition-all duration-300 shadow-2xl hover:shadow-white/10 group-hover:scale-[1.02]">
-        {/* Icon and Title */}
-        <div className="flex items-start justify-between mb-4">
+    <div className="relative group h-full">
+      <div className="bg-gradient-to-br from-[#1A1A1A]/80 to-[#0F0F0F]/80 backdrop-blur-sm border border-white/10 rounded-xl p-5 h-full hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 overflow-hidden">
+        {/* Subtle Glow Effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4 relative z-10">
           <div className="flex items-center gap-3">
-            <div className={cn("p-3 rounded-2xl shadow-lg", iconColor)}>
-              <Icon className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-xl flex items-center justify-center border border-[#FF2A2A]/20">
+              <Icon className="w-5 h-5 text-[#FF2A2A]" />
             </div>
-            <h3 className="text-lg font-bold text-white">{title}</h3>
+            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">{title}</h3>
           </div>
-
-          {/* Platform icons - Enhanced */}
+        
+          {/* Platform icons */}
           <div className="flex items-center gap-2">
             {platforms.map((platform) => (
               <TooltipProvider key={platform.name}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative group cursor-pointer">
-                      <div className={cn(
-                        "p-2 rounded-xl transition-all duration-300 border-2",
-                        platform.active
-                          ? "bg-white/10 border-white/30 hover:bg-white/20 hover:scale-110 shadow-lg"
-                          : "bg-gray-800/50 border-gray-600/50 grayscale opacity-40 hover:opacity-60"
-                      )}>
-                        <Image
-                          src={platform.icon}
-                          alt={platform.name}
-                          width={20}
-                          height={20}
-                          className="object-contain rounded"
-                        />
-                      </div>
+                      <Image 
+                        src={platform.icon} 
+                        alt={platform.name} 
+                        width={20} 
+                        height={20} 
+                        className={cn(
+                          "object-contain transition-all duration-300 rounded-lg",
+                          platform.active 
+                            ? "opacity-100 hover:scale-110 shadow-lg" 
+                            : "grayscale opacity-30 hover:opacity-50"
+                        )}
+                      />
                       {platform.active && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0A0A0A] animate-pulse" />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]" />
                       )}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-4 rounded-xl shadow-2xl max-w-xs backdrop-blur-sm"
+                  <TooltipContent 
+                    side="bottom" 
+                    className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-3 rounded-xl shadow-2xl"
                     sideOffset={8}
                   >
-                    <div className="space-y-3">
-                      {/* Platform Header */}
-                      <div className="flex items-center gap-3 pb-2 border-b border-[#333]">
-                        <Image
-                          src={platform.icon}
-                          alt={platform.name}
-                          width={24}
-                          height={24}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Image 
+                          src={platform.icon} 
+                          alt={platform.name} 
+                          width={16} 
+                          height={16} 
                           className="object-contain"
                         />
-                        <div>
-                          <h4 className="font-semibold text-white">{platform.name}</h4>
-                          <p className="text-xs text-gray-400">
-                            {platform.active ? "Connected & Active" : "Not Connected"}
-                          </p>
-                        </div>
+                        <span className="font-medium text-white">{platform.name}</span>
                       </div>
-
-                      {/* Platform Value */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-300">{title} Value:</span>
-                          <span className="font-semibold text-white">{platform.value}</span>
-                        </div>
-
-                        {platform.active ? (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-300">Contribution:</span>
-                              <span className="font-semibold text-green-400">100%</span>
-                            </div>
-                            <div className="w-full bg-[#333] rounded-full h-2">
-                              <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full w-full"></div>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-2">
-                              Currently the only active platform contributing to this metric.
-                            </p>
-                          </>
-                        ) : (
-                          <div className="text-center py-2">
-                            <p className="text-xs text-gray-400">
-                              Connect {platform.name} to see contribution data
-                            </p>
-                          </div>
-                        )}
+                      <div className="text-sm text-gray-400">
+                        {platform.active ? "Connected & Active" : "Not Connected"}
                       </div>
-
-                      {/* Future Enhancement Note */}
-                      {!platform.active && (
-                        <div className="mt-3 p-2 bg-[#222] rounded-lg border-l-2 border-blue-500">
-                          <p className="text-xs text-blue-300">
-                            💡 Connect {platform.name} for blended analytics across all platforms
-                          </p>
-                        </div>
-                      )}
+                      <div className="text-sm font-medium text-white">
+                        {title}: {platform.value}
+                      </div>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -214,36 +165,41 @@ function BlendedMetricCard({
           </div>
         </div>
 
-        {/* Value and Change - Enhanced */}
-        <div className="space-y-3">
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-white">
-              {formatValue(value)}
-            </span>
-            {change !== null && change !== undefined && (
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium",
-                change > 0 ? "text-green-400 bg-green-500/10" : change < 0 ? "text-red-400 bg-red-500/10" : "text-gray-400 bg-gray-500/10"
-              )}>
-                {change > 0 ? (
-                  <TrendingUp className="w-4 h-4" />
-                ) : change < 0 ? (
-                  <TrendingDown className="w-4 h-4" />
-                ) : (
-                  <div className="w-4 h-4" />
-                )}
-                <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
-              </div>
-            )}
+        {/* Enhanced Value and Change */}
+        <div className="space-y-3 relative z-10">
+          <div className="text-3xl font-black text-white tracking-tight leading-none">
+            {customContent || formatValue(value)}
           </div>
-
+          
+          {change !== null && change !== undefined && (
+            <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold ${
+              change > 0 
+                ? 'text-green-400 bg-green-500/10 border border-green-500/20' 
+                : change < 0 
+                ? 'text-red-400 bg-red-500/10 border border-red-500/20'
+                : 'text-gray-400 bg-gray-500/10 border border-gray-500/20'
+            }`}>
+              {change > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : change < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <Minus className="w-3 h-3" />
+              )}
+              <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
+            </div>
+          )}
+          
           {/* Custom content */}
           {customContent && (
-            <div className="mt-4">
+            <div className="mt-3">
               {customContent}
             </div>
           )}
         </div>
+        
+        {/* Accent line at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF2A2A] to-[#FF2A2A]/60"></div>
       </div>
     </div>
   )
@@ -252,9 +208,6 @@ function BlendedMetricCard({
 export default function BlendedWidgetsTable({ 
   metaMetrics,
   layout = 'vertical'
-  // Remove loading props
-  // isLoadingMetrics, 
-  // isRefreshingData 
 }: BlendedWidgetsTableProps) {
   const { brands, selectedBrand } = useBrandContext()
   const { userId } = useAuth()
@@ -265,9 +218,6 @@ export default function BlendedWidgetsTable({
     brands: []
   })
 
-  // Remove loading state calculation
-  // const loading = isLoadingMetrics || isRefreshingData
-
   useEffect(() => {
     if (!userId || !selectedBrand) return
     fetchBudgetData()
@@ -276,11 +226,9 @@ export default function BlendedWidgetsTable({
   const fetchBudgetData = async () => {
     try {
       if (!selectedBrand) {
-        // console.log(`[BlendedWidgets] No brand selected, skipping budget fetch`)
         return
       }
 
-      // console.log(`[BlendedWidgets] ⭐ BUDGET FETCH STARTED ⭐ for selected brand: ${selectedBrand.name} (${selectedBrand.id})`, { selectedBrand, metaMetrics })
       const supabase = getStandardSupabaseClient()
       
       let totalBudget = 0
@@ -289,79 +237,66 @@ export default function BlendedWidgetsTable({
 
       // Only process the selected brand
       const brand = selectedBrand
-        // console.log(`[BlendedWidgets] 🔍 Processing brand: ${brand.name} (${brand.id})`)
-        try {
-          // Get active campaigns for this brand using the same API as CampaignWidget
-          const response = await fetch(`/api/meta/campaigns?brandId=${brand.id}&status=ACTIVE`)
-          const apiData = await response.json()
-          
-          const campaigns = apiData.campaigns || []
-          const error = response.ok ? null : { message: `HTTP ${response.status}` }
+      try {
+        // Get active campaigns for this brand using the same API as CampaignWidget
+        const response = await fetch(`/api/meta/campaigns?brandId=${brand.id}&status=ACTIVE`)
+        const apiData = await response.json()
+        
+        const campaigns = apiData.campaigns || []
+        const error = response.ok ? null : { message: `HTTP ${response.status}` }
 
-          // console.log(`[BlendedWidgets] API result for brand ${brand.name} (${brand.id}):`, { campaigns: campaigns.length, error, apiData })
+        let budget = 0
+        
+        if (error) {
+          // Fallback to brand_budgets table
+          try {
+            const { data: brandBudgetConfig, error: budgetError } = await supabase
+              .from('brand_budgets')
+              .select('daily_budget')
+              .eq('brand_id', brand.id)
+              .eq('user_id', userId)
+              .single()
 
-          let budget = 0
-          
-          if (error) {
-            // console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
-          }
-          
-          if (error) {
-            
-            // Fallback to brand_budgets table if meta_campaigns fails
-            try {
-              const { data: brandBudgetConfig, error: budgetError } = await supabase
-                .from('brand_budgets')
-                .select('daily_budget')
-                .eq('brand_id', brand.id)
-                .eq('user_id', userId)
-                .single()
-
-              if (!budgetError && brandBudgetConfig?.daily_budget) {
-                budget = brandBudgetConfig.daily_budget
-                // console.log(`[BlendedWidgets] Using fallback budget from brand_budgets: $${budget}`)
-              }
-            } catch (fallbackError) {
-              // console.log(`[BlendedWidgets] Fallback budget query also failed:`, fallbackError)
+            if (!budgetError && brandBudgetConfig?.daily_budget) {
+              budget = brandBudgetConfig.daily_budget
             }
-          } else {
-            // Filter and sum up all active campaign budgets for this brand
-            const validCampaigns = campaigns.filter((campaign: any) => {
-              const campaignBudget = parseFloat(campaign.budget || '0')
-              return campaignBudget > 0
-            })
-            
-            budget = validCampaigns.reduce((sum: number, campaign: any) => {
-              const campaignBudget = parseFloat(campaign.budget || '0')
-              return sum + campaignBudget
-            }, 0)
-            
-            // console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns.length} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
-            // console.log(`[BlendedWidgets] Valid campaigns:`, validCampaigns.map((c: any) => ({ name: c.campaign_name, budget: c.budget, status: c.status })))
+          } catch (fallbackError) {
+            // Silent fallback
           }
-          totalBudget = budget  // Use this brand's budget as the total
-          brandBudgets.push({
-            brand_id: brand.id,
-            brand_name: brand.name,
-            budget,
-            spend: totalSpend,
-            percentage: budget > 0 ? (totalSpend / budget) * 100 : 0
+        } else {
+          // Calculate budget from active campaigns
+          const validCampaigns = campaigns.filter((campaign: any) => {
+            const campaignBudget = parseFloat(campaign.budget || '0')
+            return campaignBudget > 0
           })
-        } catch (brandError) {
-          // console.log(`[BlendedWidgets] Error fetching budget for brand ${brand.name}:`, brandError)
-          // Still add the brand with 0 budget
-          brandBudgets.push({
-            brand_id: brand.id,
-            brand_name: brand.name,
-            budget: 0,
-            spend: 0,
-            percentage: 0
-          })
+          
+          budget = validCampaigns.reduce((sum: number, campaign: any) => {
+            const campaignBudget = parseFloat(campaign.budget || '0')
+            return sum + campaignBudget
+          }, 0)
         }
 
-      const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
+        totalBudget += budget
+        brandBudgets.push({
+          brand_id: brand.id,
+          brand_name: brand.name,
+          budget: budget,
+          spend: totalSpend,
+          percentage: budget > 0 ? (totalSpend / budget) * 100 : 0
+        })
+      } catch (brandError) {
+        // Still add the brand with 0 budget
+        brandBudgets.push({
+          brand_id: brand.id,
+          brand_name: brand.name,
+          budget: 0,
+          spend: 0,
+          percentage: 0
+        })
+      }
 
-      // console.log(`[BlendedWidgets] Budget calculation: Total Budget: $${totalBudget}, Total Spend: $${totalSpend}, Usage: ${budgetUsedPercentage.toFixed(1)}%`)
+      // Calculate budget used percentage
+      const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
 
       setBudgetData({
         totalBudget,
@@ -382,545 +317,172 @@ export default function BlendedWidgetsTable({
     }
   }
 
-
-
   if (layout === 'horizontal') {
     return (
-      <div className="relative">
-        {/* Header - Enhanced with better visual hierarchy */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
-              <Layers className="w-7 h-7 text-white" />
+      <div className="relative bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Modern Header with Glass Effect */}
+        <div className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
+                <Layers className="w-7 h-7 text-[#FF2A2A]" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white tracking-tight mb-1">Performance Overview</h2>
+                <p className="text-gray-400 font-medium">Unified view across all platforms</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Blended Performance Metrics</h2>
-              <p className="text-gray-400 font-medium text-lg">Unified view across all advertising platforms</p>
+            
+            {/* Live Status Indicator */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-green-400 text-sm font-medium">Live Data</span>
             </div>
-          </div>
-          <div className="hidden md:flex items-center gap-3 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Live Data</span>
-            </div>
-            <div className="w-px h-4 bg-gray-600"></div>
-            <span>Last updated: {new Date().toLocaleTimeString()}</span>
           </div>
         </div>
-
-        {/* Main Content Container */}
-        <div className="space-y-6">
-          {/* Budget Usage Card - Enhanced design */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 via-transparent to-gray-600/5 rounded-3xl blur-xl"></div>
-            <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-2xl">
-              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                {/* Budget Icon & Title */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-2xl flex items-center justify-center border border-gray-500/30 shadow-lg">
-                    <CreditCard className="w-7 h-7 text-white" />
+        
+        {/* Enhanced Content Section */}
+        <div className="p-6 space-y-6">
+          <div className="flex flex-col xl:flex-row gap-6">
+            
+            {/* Enhanced Budget Usage Card */}
+            <div className="flex-shrink-0 xl:w-80 w-full">
+              <div className="bg-gradient-to-br from-[#1A1A1A]/80 to-[#0F0F0F]/80 backdrop-blur-sm border border-white/10 rounded-xl p-6 h-full">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      budgetData.budgetUsedPercentage >= 80 
+                        ? 'bg-orange-500/20 border border-orange-500/30' 
+                        : 'bg-green-500/20 border border-green-500/30'
+                    }`}>
+                      <CreditCard className={`w-6 h-6 ${
+                        budgetData.budgetUsedPercentage >= 80 ? 'text-orange-400' : 'text-green-400'
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Budget Status</h3>
+                      <p className="text-sm text-gray-400">Campaign spend tracking</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Budget Utilization</h3>
-                    <p className="text-gray-400 text-sm">Daily spend vs allocated budget</p>
-                  </div>
-                </div>
-
-                {/* Budget Metrics */}
-                <div className="flex-1 min-w-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div className="text-center lg:text-left">
-                      <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
+                  
+                  <div className="flex-1 flex flex-col justify-center space-y-4">
+                    <div className="text-center">
+                      <div className="text-3xl font-black text-white mb-2">
                         {(budgetData.budgetUsedPercentage).toFixed(1)}%
                       </div>
-                      <div className="text-sm text-gray-400">Usage Rate</div>
-                    </div>
-                    <div className="text-center lg:text-left">
-                      <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                        ${budgetData.totalSpend.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-400">Total Spend</div>
-                    </div>
-                    <div className="text-center lg:text-left">
-                      <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                        ${budgetData.totalBudget.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-400">Total Budget</div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar - Enhanced */}
-                  <div className="relative">
-                    <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden backdrop-blur-sm border border-white/20">
-                      <div
-                        className="h-full bg-gradient-to-r from-gray-500 via-gray-400 to-white/60 rounded-full transition-all duration-1000 ease-out shadow-lg relative"
-                        style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                      <div className="text-sm text-gray-400 font-medium">
+                        ${budgetData.totalSpend.toLocaleString()} of ${budgetData.totalBudget.toLocaleString()}
                       </div>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-2">
-                      <span>0%</span>
-                      <span className="font-medium">{Math.round(budgetData.budgetUsedPercentage)}% Used</span>
-                      <span>100%</span>
+                    
+                    {/* Enhanced Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="bg-[#0A0A0A] rounded-full h-3 overflow-hidden border border-white/5">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-700 ease-out relative ${
+                            budgetData.budgetUsedPercentage >= 80 
+                              ? 'bg-gradient-to-r from-orange-400 to-orange-500' 
+                              : 'bg-gradient-to-r from-green-400 to-green-500'
+                          }`}
+                          style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                        >
+                          <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Metrics Grid - Enhanced with better cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-            <BlendedMetricCard
-              icon={DollarSign}
-              iconColor="bg-gradient-to-br from-green-600/20 to-green-700/30 border-green-500/30"
-              title="Ad Spend"
-              value={metaMetrics.adSpend}
-              change={metaMetrics.adSpendGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
+            {/* Enhanced Metrics Grid */}
+            <div className="flex-1">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+                {/* Ad Spend */}
+                <BlendedMetricCard
+                  icon={DollarSign}
+                  iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                  title="Ad Spend"
+                  value={metaMetrics.adSpend}
+                  change={metaMetrics.adSpendGrowth}
+                  prefix="$"
+                  decimals={2}
+                  platforms={[
+                    { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
+                    { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                    { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
+                  ]}
+                />
+                
+                {/* Impressions */}
+                <BlendedMetricCard
+                  icon={Eye}
+                  iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                  title="Impressions"
+                  value={metaMetrics.impressions}
+                  change={metaMetrics.impressionGrowth}
+                  platforms={[
+                    { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
+                    { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                    { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                  ]}
+                />
 
-            <BlendedMetricCard
-              icon={Eye}
-              iconColor="bg-gradient-to-br from-blue-600/20 to-blue-700/30 border-blue-500/30"
-              title="Impressions"
-              value={metaMetrics.impressions}
-              change={metaMetrics.impressionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
+                {/* Clicks */}
+                <BlendedMetricCard
+                  icon={MousePointer}
+                  iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                  title="Clicks"
+                  value={metaMetrics.clicks}
+                  change={metaMetrics.clickGrowth}
+                  platforms={[
+                    { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
+                    { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                    { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                  ]}
+                />
 
-            <BlendedMetricCard
-              icon={MousePointer}
-              iconColor="bg-gradient-to-br from-purple-600/20 to-purple-700/30 border-purple-500/30"
-              title="Clicks"
-              value={metaMetrics.clicks}
-              change={metaMetrics.clickGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
-
-            <BlendedMetricCard
-              icon={Target}
-              iconColor="bg-gradient-to-br from-orange-600/20 to-orange-700/30 border-orange-500/30"
-              title="Conversions"
-              value={metaMetrics.conversions}
-              change={metaMetrics.conversionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
-
-            <BlendedMetricCard
-              icon={Percent}
-              iconColor="bg-gradient-to-br from-cyan-600/20 to-cyan-700/30 border-cyan-500/30"
-              title="CTR"
-              value={metaMetrics.ctr}
-              change={metaMetrics.ctrGrowth}
-              suffix="%"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
-              ]}
-            />
-
-            <BlendedMetricCard
-              icon={DollarSign}
-              iconColor="bg-gradient-to-br from-red-600/20 to-red-700/30 border-red-500/30"
-              title="CPC"
-              value={metaMetrics.cpc}
-              change={metaMetrics.cpcGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
-
-            <BlendedMetricCard
-              icon={TrendingUp}
-              iconColor="bg-gradient-to-br from-emerald-600/20 to-emerald-700/30 border-emerald-500/30"
-              title="ROAS"
-              value={metaMetrics.roas}
-              change={metaMetrics.roasGrowth}
-              suffix="x"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
-              ]}
-            />
-
-            <BlendedMetricCard
-              icon={Users}
-              iconColor="bg-gradient-to-br from-indigo-600/20 to-indigo-700/30 border-indigo-500/30"
-              title="Frequency"
-              value={metaMetrics.frequency}
-              change={null}
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00", active: false }
-              ]}
-            />
+                {/* ROAS */}
+                <BlendedMetricCard
+                  icon={Target}
+                  iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                  title="ROAS"
+                  value={metaMetrics.roas}
+                  change={metaMetrics.roasGrowth}
+                  suffix="x"
+                  decimals={2}
+                  platforms={[
+                    { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
+                    { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
+                    { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
+                  ]}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
+  // Vertical layout (original)
   return (
-    <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="relative">
-        {/* Header - matches AIDailyReport style */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Layers className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
-              <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
-            </div>
+    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-6 shadow-lg">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center border border-white/20">
+            <DollarSign className="w-5 h-5 text-white" />
           </div>
+          <h3 className="text-xl font-semibold text-white">Performance Metrics</h3>
         </div>
-        
-
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-auto">
-          {/* 2-column grid with modern cards */}
-          <div className="grid grid-cols-2 gap-3">
-          
-          {/* Row 1 - Budget Usage (spanning 2 columns) */}
-          <div className="col-span-2">
-            <BlendedMetricCard
-              icon={CreditCard}
-              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-              title="Total Blended Budget Usage"
-              value={budgetData.budgetUsedPercentage / 100}
-              change={null} // No change data for budget
-              isPercentage={true}
-              decimals={1}
-              customContent={
-                <div className="mt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Spend: ${budgetData.totalSpend.toFixed(2)}</span>
-                    <span className="text-gray-400">Budget: ${budgetData.totalBudget.toFixed(2)}</span>
-                  </div>
-                  <div className="w-full bg-[#333] rounded-full h-2">
-                    <div 
-                      className="h-2 rounded-full bg-white transition-all duration-300"
-                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              }
-              platforms={[
-                { 
-                  name: "Meta", 
-                  icon: "https://i.imgur.com/6hyyRrs.png", 
-                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
-                  active: budgetData.totalBudget > 0
-                },
-                { 
-                  name: "TikTok", 
-                  icon: "https://i.imgur.com/AXHa9UT.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                },
-                { 
-                  name: "Google Ads", 
-                  icon: "https://i.imgur.com/TavV4UJ.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                }
-              ]}
-            />
-          </div>
-          
-          {/* Row 2 - Spend & ROAS */}
-          <BlendedMetricCard
-            icon={DollarSign}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Spend"
-            value={metaMetrics.adSpend}
-            change={metaMetrics.adSpendGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${metaMetrics.adSpend?.toFixed(2) || '0.00'}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={Target}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended ROAS"
-            value={metaMetrics.roas}
-            change={metaMetrics.roasGrowth}
-            suffix="x"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `${metaMetrics.roas?.toFixed(2) || '0.00'}x`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0.00x",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0.00x",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 3 - Revenue & Conversions */}
-          <BlendedMetricCard
-            icon={CreditCard}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Revenue"
-            value={metaMetrics.roas * metaMetrics.adSpend}
-            change={metaMetrics.roasGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={Target}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Conversions"
-            value={metaMetrics.conversions}
-            change={metaMetrics.conversionGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.conversions?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 4 - Impressions & Clicks */}
-          <BlendedMetricCard
-            icon={Eye}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Impressions"
-            value={metaMetrics.impressions}
-            change={metaMetrics.impressionGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.impressions?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={MousePointer}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Clicks"
-            value={metaMetrics.clicks}
-            change={metaMetrics.clickGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.clicks?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 5 - CTR & CPC */}
-          <BlendedMetricCard
-            icon={Percent}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended CTR"
-            value={metaMetrics.ctr / 100}
-            change={metaMetrics.ctrGrowth}
-            isPercentage={true}
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `${metaMetrics.ctr?.toFixed(2) || '0.00'}%`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0.00%",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0.00%",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={DollarSign}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended CPC"
-            value={metaMetrics.cpc}
-            change={metaMetrics.cpcGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${metaMetrics.cpc?.toFixed(2) || '0.00'}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-
-        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {/* Original vertical metric cards would go here */}
+        <div className="text-center text-gray-400 col-span-full">
+          Vertical layout - coming soon
         </div>
       </div>
     </div>
   )
-} 
+}

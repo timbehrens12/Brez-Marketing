@@ -378,14 +378,14 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
 
   if (isLoading) {
     return (
-      <Card className="h-full bg-gradient-to-br from-[#1a1a1a] to-[#222] border border-[#333]">
-        <CardHeader>
+      <Card className="h-full bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-6 w-48 bg-gray-700/30" />
-            <Skeleton className="h-8 w-20 bg-gray-700/30" />
+            <Skeleton className="h-8 w-48 bg-white/10 rounded-xl" />
+            <Skeleton className="h-10 w-24 bg-white/10 rounded-xl" />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6 p-6">
           <div className="grid grid-cols-4 gap-3">
             {[1,2,3,4].map(i => (
               <Skeleton key={i} className="h-20 bg-gray-700/30" />
@@ -402,178 +402,111 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
 
   if (!summary || adsets.length === 0) {
     return (
-      <div className="relative h-full">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl"></div>
-        <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl h-full">
-          <CardContent className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-purple-600/30 rounded-2xl flex items-center justify-center border border-purple-500/30 mx-auto mb-6">
-                <Brain className="w-8 h-8 text-purple-400" />
-              </div>
-              <p className="text-gray-300 text-lg font-medium mb-2">No adsets available for optimization analysis</p>
-              <p className="text-sm text-gray-500">Connect campaigns to start getting AI-powered recommendations</p>
+      <Card className="h-full bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <CardContent className="flex items-center justify-center h-64 p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg mx-auto mb-4">
+              <Brain className="w-8 h-8 text-[#FF2A2A]" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-white font-medium text-lg mb-2">No optimization data available</p>
+            <p className="text-gray-400 text-sm">Connect campaigns to start getting AI-powered recommendations</p>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
-  return (
-    <div className="relative h-full">
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl blur-xl"></div>
-
-      <Card className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl h-full overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-white/5 via-white/2 to-transparent border-b border-white/10 rounded-t-3xl pb-6">
-          <CardTitle className="text-2xl font-bold text-white">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-purple-600/30 rounded-2xl flex items-center justify-center border border-purple-500/30">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <span>AI Optimization Center</span>
-            </div>
-          </CardTitle>
-          <p className="text-gray-400 font-medium text-base mt-2">Intelligent campaign optimization and profit maximization</p>
-        </CardHeader>
-
-        <CardContent className="p-6 pt-0">
-          {/* Enhanced KPI Cards */}
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-2xl p-6 border border-emerald-500/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-emerald-400 mb-2 font-medium">Total Profit Today</div>
-                  <div className="text-3xl font-bold text-white">{formatCurrency(summary.total_profit)}</div>
-                  <div className="text-sm text-gray-400 mt-1">
-                    {summary.profit_trend === 'up' ? '↗' : summary.profit_trend === 'down' ? '↘' : '→'}
-                    {summary.profit_change_percent.toFixed(1)}% from last week
-                  </div>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-emerald-600/30 rounded-2xl flex items-center justify-center border border-emerald-500/40">
-                  <TrendingUp className="w-6 h-6 text-emerald-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-2xl p-4 border border-blue-500/20">
-                <div className="text-sm text-blue-400 mb-2 font-medium">Average ROAS</div>
-                <div className="text-2xl font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
-                <div className="text-xs text-gray-400 mt-1">Return on ad spend</div>
-              </div>
-
-              <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-2xl p-4 border border-orange-500/20">
-                <div className="text-sm text-orange-400 mb-2 font-medium">Optimization Actions</div>
-                <div className="text-2xl font-bold text-white">{summary.optimizations_available}</div>
-                <div className="text-xs text-gray-400 mt-1">Available improvements</div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-2xl p-6 border border-purple-500/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-purple-400 mb-2 font-medium">Potential Profit Increase</div>
-                  <div className="text-2xl font-bold text-white">{formatCurrency(summary.potential_profit_increase)}</div>
-                  <div className="text-sm text-gray-400 mt-1">From AI recommendations</div>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-purple-600/30 rounded-2xl flex items-center justify-center border border-purple-500/40">
-                  <Target className="w-6 h-6 text-purple-400" />
-                </div>
-              </div>
-            </div>
-          </div>
+   return (
+     <Card className="bg-gradient-to-br from-[#0D0D0D] via-[#111] to-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden h-full">
+       <CardHeader className="bg-gradient-to-r from-[#111]/90 to-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/10 p-6">
+         <div className="flex items-center gap-4">
+           <div className="w-14 h-14 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
+             <Brain className="w-7 h-7 text-[#FF2A2A]" />
+           </div>
+           <div>
+             <CardTitle className="text-2xl font-bold text-white tracking-tight mb-1">AI Optimization</CardTitle>
+             <p className="text-gray-400 font-medium">Smart campaign insights</p>
+           </div>
+         </div>
+       </CardHeader>
         
-          {/* Enhanced Performance Summary */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/30 rounded-xl flex items-center justify-center border border-blue-500/30">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-bold text-white">AdSet Performance Analysis</h3>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-              {adsets.map((adset) => {
-                const statusFormatted = formatAdSetStatus(adset.status)
-                return (
-                  <div
-                    key={adset.adset_id}
-                    className="relative group"
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                    <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:border-white/20 transition-all duration-300 group-hover:scale-[1.02] shadow-lg hover:shadow-white/10">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-lg font-bold text-white truncate mb-1">{adset.adset_name}</h4>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`text-xs px-2 py-1 h-5 flex items-center gap-1.5 rounded-full ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
-                                {statusFormatted.displayText}
-                              </Badge>
-                              <span className="text-xs text-gray-500">•</span>
-                              <span className="text-xs text-gray-400">{adset.campaign_name}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-xl font-bold text-white">{formatCurrency(adset.profit)}</p>
-                          <p className="text-xs text-gray-400">Daily Profit</p>
-                        </div>
+      <CardContent className="p-6 h-full">
+        {/* Modern KPI Cards */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+            <div className="text-xs text-gray-400 mb-1">Profit Today</div>
+            <div className="text-lg font-bold text-white">{formatCurrency(summary.total_profit)}</div>
+          </div>
+          <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+            <div className="text-xs text-gray-400 mb-1">Avg ROAS</div>
+            <div className="text-lg font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
+          </div>
+          <div className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3">
+            <div className="text-xs text-gray-400 mb-1">Actions</div>
+            <div className="text-lg font-bold text-white">{summary.optimizations_available}</div>
+          </div>
+        </div>
+        
+        {/* Performance Summary */}
+        <div className="space-y-3 mt-4">
+          {adsets.map((adset) => {
+            const statusFormatted = formatAdSetStatus(adset.status)
+            return (
+              <div 
+                key={adset.adset_id}
+                className="bg-[#0f0f0f]/50 border border-[#333]/50 rounded-lg p-3"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-medium text-white truncate">{adset.adset_name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className={`text-xs px-1.5 py-0 h-4 flex items-center gap-1 ${statusFormatted.bgColor} ${statusFormatted.textColor} border ${statusFormatted.borderColor}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${statusFormatted.dotColor}`}></div>
+                          {statusFormatted.displayText}
+                        </Badge>
                       </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-3 border border-blue-500/20 text-center">
-                          <p className="text-xs text-blue-400 mb-1 font-medium">ROAS</p>
-                          <p className="text-sm font-bold text-white">{adset.roas.toFixed(2)}x</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-3 border border-green-500/20 text-center">
-                          <p className="text-xs text-green-400 mb-1 font-medium">Spend</p>
-                          <p className="text-sm font-bold text-white">{formatCurrency(adset.spent)}</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-3 border border-purple-500/20 text-center">
-                          <p className="text-xs text-purple-400 mb-1 font-medium">CTR</p>
-                          <p className="text-sm font-bold text-white">{adset.ctr.toFixed(2)}%</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl p-3 border border-orange-500/20 text-center">
-                          <p className="text-xs text-orange-400 mb-1 font-medium">Score</p>
-                          <p className="text-sm font-bold text-white">{adset.performance_score}/100</p>
-                        </div>
-                      </div>
-
-                      {adset.recommendations.length > 0 && (
-                        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-3 border border-purple-500/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-5 h-5 bg-gradient-to-br from-purple-500/20 to-purple-600/30 rounded-lg flex items-center justify-center border border-purple-500/40">
-                              <Brain className="w-2.5 h-2.5 text-purple-400" />
-                            </div>
-                            <span className="text-xs text-purple-400 font-medium">AI Recommendations</span>
-                          </div>
-                          {adset.recommendations.slice(0, 2).map((rec, idx) => (
-                            <div key={idx} className="text-xs text-gray-300 mb-1 flex items-center gap-2">
-                              <div className="w-1 h-1 bg-purple-400 rounded-full flex-shrink-0"></div>
-                              <span className="font-medium text-white">{rec.title}</span>
-                              <span className="text-purple-400">•</span>
-                              <span className="text-green-400 font-medium">{formatCurrency(rec.estimated_profit_change)}</span>
-                              <span className="text-gray-500">potential gain</span>
-                            </div>
-                          ))}
-                          {adset.recommendations.length > 2 && (
-                            <div className="text-xs text-purple-400 mt-2 font-medium">
-                              +{adset.recommendations.length - 2} more recommendations
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-white">{formatCurrency(adset.profit)}</p>
+                    <p className="text-xs text-gray-400">Profit</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-4 mb-2">
+                  <div>
+                    <p className="text-xs text-gray-400">ROAS</p>
+                    <p className="text-sm font-medium text-white">{adset.roas.toFixed(2)}x</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Spend</p>
+                    <p className="text-sm font-medium text-white">{formatCurrency(adset.spent)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">CTR</p>
+                    <p className="text-sm font-medium text-white">{adset.ctr.toFixed(2)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Score</p>
+                    <p className="text-sm font-medium text-white">{adset.performance_score}/100</p>
+                  </div>
+                </div>
+                
+                {adset.recommendations.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-[#333]/50">
+                    <div className="text-xs text-gray-400 mb-1">AI Recommendations:</div>
+                    {adset.recommendations.slice(0, 2).map((rec, idx) => (
+                      <div key={idx} className="text-xs text-gray-300 mb-1">
+                        • {rec.title} - {formatCurrency(rec.estimated_profit_change)} potential gain
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )

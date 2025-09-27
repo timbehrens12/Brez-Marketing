@@ -1084,291 +1084,275 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedBrandId, syncMetaInsights, refreshAllWidgets, isRefreshingAll, loadAllData])
 
-  // Show loading state with enhanced modern design
+  // Show loading state with enhanced progress display
   if (isDataLoading) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#0F0F0F] to-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden animate-in fade-in duration-500">
-        {/* Enhanced animated background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.15),transparent_60%)] animate-pulse"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,42,42,0.08),transparent_60%)] animate-pulse delay-1000"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-white/8 to-transparent rounded-full blur-3xl animate-pulse delay-500"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-l from-[#FF2A2A]/8 to-transparent rounded-full blur-3xl animate-pulse delay-1500"></div>
-
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
-            backgroundSize: '24px 24px'
-          }}></div>
-        </div>
-
-        <div className="relative z-10 text-center max-w-2xl mx-auto px-8">
-          {/* Enhanced loading icon */}
-          <div className="w-24 h-24 mx-auto mb-10 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10 backdrop-blur-sm"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] border-r-transparent animate-spin"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-b-white/20 border-l-transparent animate-spin delay-300"></div>
-            <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-2xl">
-              {agencySettings.agency_logo_url && (
-                <img
-                  src={agencySettings.agency_logo_url}
-                  alt={`${agencySettings.agency_name} Logo`}
-                  className="w-14 h-14 object-contain rounded-lg shadow-lg"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Enhanced title */}
-          <div className="space-y-4 mb-8">
-            <h1 className="text-4xl lg:text-5xl font-bold text-white tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-              Marketing Assistant
-            </h1>
-            <div className="w-32 h-1 bg-gradient-to-r from-[#FF2A2A] to-white/50 rounded-full mx-auto"></div>
-          </div>
-
-          {/* Dynamic loading phase with enhanced styling */}
-          <div className="bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-8">
-            <p className="text-xl lg:text-2xl text-gray-200 mb-2 font-medium min-h-[32px] flex items-center justify-center">
-              {loadingPhase}
-            </p>
-            <div className="text-sm text-gray-400">
-              {loadingProgress < 25 && "Initializing your marketing intelligence..."}
-              {loadingProgress >= 25 && loadingProgress < 50 && "Connecting to your advertising platforms..."}
-              {loadingProgress >= 50 && loadingProgress < 75 && "Analyzing campaign performance data..."}
-              {loadingProgress >= 75 && "Preparing AI-powered insights..."}
-            </div>
-          </div>
-
-          {/* Enhanced progress bar */}
-          <div className="w-full max-w-lg mx-auto mb-8">
-            <div className="flex items-center justify-between text-sm text-gray-300 mb-3">
-              <span className="font-medium">Loading Progress</span>
-              <span className="font-bold text-[#FF2A2A]">{loadingProgress}%</span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden backdrop-blur-sm border border-white/20">
-              <div
-                className="h-full bg-gradient-to-r from-[#FF2A2A] via-[#FF2A2A]/80 to-white/60 rounded-full transition-all duration-700 ease-out shadow-lg"
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Enhanced loading phases checklist */}
-          <div className="bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-8">
-            <div className="text-left space-y-4 text-sm">
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 15 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 15 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 15 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">Loading advertising data</span>
-              </div>
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 30 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 30 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">Syncing latest performance data</span>
-              </div>
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 50 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 50 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">AI analyzing campaign performance</span>
-              </div>
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 70 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 70 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">Loading creative insights</span>
-              </div>
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 85 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 85 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">Preparing AI marketing consultant</span>
-              </div>
-              <div className={`flex items-center gap-4 transition-all duration-300 ${loadingProgress >= 95 ? 'text-gray-200' : 'text-gray-500'}`}>
-                <div className={`w-5 h-5 rounded-full transition-all duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A] shadow-lg shadow-[#FF2A2A]/30' : 'bg-white/20'}`}>
-                  {loadingProgress >= 95 && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="font-medium">Finalizing dashboard</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Enhanced loading tip */}
-          <div className="text-sm text-gray-400 italic bg-gradient-to-r from-transparent via-white/5 to-transparent backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3">
-            🔮 Building your personalized marketing intelligence dashboard...
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show no brand selected state with modern design
-  if (!selectedBrandId) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#0F0F0F] to-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)] animate-pulse"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,42,42,0.05),transparent_50%)] animate-pulse delay-1000"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-white/5 to-transparent rounded-full blur-3xl animate-pulse delay-500"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-l from-[#FF2A2A]/5 to-transparent rounded-full blur-3xl animate-pulse delay-1500"></div>
-
-        {/* Grid pattern overlay */}
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
             backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
             backgroundSize: '20px 20px'
           }}></div>
         </div>
-
-        <div className="relative z-10 text-center max-w-2xl mx-auto px-8">
-          {/* Enhanced logo section */}
-          <div className="w-24 h-24 mx-auto mb-10 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10 backdrop-blur-sm"></div>
-            <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-2xl">
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Main loading icon */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               {agencySettings.agency_logo_url && (
-                <img
-                  src={agencySettings.agency_logo_url}
-                  alt={`${agencySettings.agency_name} Logo`}
-                  className="w-14 h-14 object-contain rounded-lg shadow-lg"
+                <img 
+                  src={agencySettings.agency_logo_url} 
+                  alt={`${agencySettings.agency_name} Logo`} 
+                  className="w-12 h-12 object-contain rounded" 
                 />
               )}
             </div>
           </div>
-
-          {/* Enhanced title */}
-          <div className="space-y-4 mb-8">
-            <h1 className="text-4xl lg:text-5xl font-bold text-white tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-              Marketing Assistant
-            </h1>
-            <div className="w-32 h-1 bg-gradient-to-r from-[#FF2A2A] to-white/50 rounded-full mx-auto"></div>
-          </div>
-
-          {/* Status message with enhanced styling */}
-          <div className="bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-8">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-gray-500/20 to-gray-600/30 rounded-2xl flex items-center justify-center border border-gray-500/30">
-              <Brain className="w-8 h-8 text-gray-400" />
+          
+          {/* Loading title */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Marketing Assistant
+          </h1>
+          
+          {/* Dynamic loading phase */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            {loadingPhase}
+          </p>
+          
+          {/* Progress bar */}
+          <div className="w-full max-w-md mx-auto mb-6">
+            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+              <span>Progress</span>
+              <span>{loadingProgress}%</span>
             </div>
-            <p className="text-2xl lg:text-3xl text-gray-200 mb-4 font-medium">
-              No brand selected
-            </p>
-            <p className="text-gray-400 text-lg leading-relaxed">
-              Choose a brand from the sidebar to unlock AI-powered marketing insights, campaign recommendations, and comprehensive performance analytics.
-            </p>
+            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
           </div>
-
-          {/* Call-to-action */}
-          <div className="bg-gradient-to-r from-[#FF2A2A]/10 via-white/5 to-[#FF2A2A]/10 backdrop-blur-sm border border-[#FF2A2A]/20 rounded-2xl p-6">
-            <p className="text-gray-300 text-lg mb-4">
-              🚀 Ready to supercharge your marketing performance?
-            </p>
-            <p className="text-gray-400 text-sm">
-              Select a brand to access your personalized marketing intelligence dashboard
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 text-sm text-gray-500 italic">
-            💡 Your AI marketing assistant is waiting to help optimize your campaigns
+          
+          {/* Loading phases checklist */}
+                      <div className="text-left space-y-2 text-sm text-gray-400">
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
+                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 15 ? 'bg-[#FF2A2A]' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}>
+                  {loadingProgress >= 15 && <Check className="w-2.5 h-2.5 text-white" />}
+                </div>
+                <span>Loading advertising data</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
+                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}>
+                  {loadingProgress >= 30 && <Check className="w-2.5 h-2.5 text-white" />}
+                </div>
+                <span>Syncing latest performance data</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
+                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}>
+                  {loadingProgress >= 50 && <Check className="w-2.5 h-2.5 text-white" />}
+                </div>
+                <span>AI analyzing campaign performance</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
+                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}>
+                  {loadingProgress >= 70 && <Check className="w-2.5 h-2.5 text-white" />}
+                </div>
+              <span>Loading creative insights</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 85 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
+                <span>Preparing AI marketing consultant</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
+                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}>
+                  {loadingProgress >= 95 && <Check className="w-2.5 h-2.5 text-white" />}
+                </div>
+                <span>Finalizing dashboard</span>
+              </div>
+            </div>
+          
+          {/* Subtle loading tip */}
+          <div className="mt-8 text-xs text-gray-500 italic">
+            Building your personalized marketing insights dashboard...
           </div>
         </div>
       </div>
     )
   }
 
+  // Show no brand selected state - return directly without wrapper to match loading state
+  if (!selectedBrandId) {
+  return (
+      <div className="w-full h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+          {/* Background pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+              backgroundSize: '20px 20px'
+            }}></div>
+          </div>
+          
+          <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+            {/* Main logo - exact same structure as loading state */}
+            <div className="w-20 h-20 mx-auto mb-8 relative">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                {agencySettings.agency_logo_url && (
+                  <img 
+                    src={agencySettings.agency_logo_url} 
+                    alt={`${agencySettings.agency_name} Logo`} 
+                    className="w-12 h-12 object-contain rounded" 
+                  />
+                )}
+              </div>
+            </div>
+            
+            {/* Title - exact same styling as loading state */}
+            <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+              Marketing Assistant
+            </h1>
+            
+            {/* Subtitle - same positioning as loading phase */}
+            <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+              No brand selected
+            </p>
+            
+            {/* Message - same max-width and positioning */}
+            <div className="w-full max-w-md mx-auto mb-6">
+              <p className="text-gray-400 text-base">
+                Choose a brand from the sidebar to access AI-powered marketing insights, campaign recommendations, and performance analytics.
+              </p>
+            </div>
+            
+            {/* Footer text - exact same styling as loading state */}
+            <div className="mt-8 text-xs text-gray-500 italic">
+              Select a brand to unlock your marketing dashboard...
+            </div>
+          </div>
+        </div>
+    )
+  }
+
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#0F0F0F] to-[#0A0A0A] relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)] animate-pulse"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,42,42,0.05),transparent_50%)] animate-pulse delay-1000"></div>
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-white/5 to-transparent rounded-full blur-3xl animate-pulse delay-500"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-l from-[#FF2A2A]/5 to-transparent rounded-full blur-3xl animate-pulse delay-1500"></div>
-
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0F0F0F] to-[#0B0B0B] relative">
       <GridOverlay />
-      <div className="relative z-10">
-        {/* Meta Connection Status Banner - Enhanced with backdrop blur */}
-        <div className="backdrop-blur-sm bg-black/10">
-          <MetaConnectionStatus
-            brandId={selectedBrandId}
-            className="px-6 lg:px-12 xl:px-20 2xl:px-32 py-4"
-          />
+      
+      {/* Modern Floating Header */}
+      <div className="relative z-20 px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+        <div className="max-w-[2000px] mx-auto">
+          <div className="bg-gradient-to-r from-[#111]/80 to-[#0A0A0A]/80 backdrop-blur-lg border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/20 shadow-lg">
+                  <Brain className="w-8 h-8 text-[#FF2A2A]" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight text-white mb-1">
+                    Marketing Assistant
+                  </h1>
+                  <p className="text-gray-400 font-medium">
+                    AI-powered campaign insights & optimization
+                  </p>
+                </div>
+              </div>
+              
+              {/* Quick Actions */}
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={refreshAllWidgets}
+                  disabled={isRefreshingAll || refreshCooldown}
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                  Refresh All
+                </Button>
+                
+                {lastPageRefresh && (
+                  <div className="text-xs text-gray-500 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Last updated: {format(lastPageRefresh, 'h:mm a')}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Main Content Container - Modern spacing and flow */}
-        <div className="px-6 lg:px-12 xl:px-20 2xl:px-32 space-y-8 lg:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Meta Connection Status */}
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[2000px] mx-auto">
+          <MetaConnectionStatus brandId={selectedBrandId} />
+        </div>
+      </div>
 
-          {/* Hero Section - Blended Performance Metrics with enhanced presentation */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-3xl blur-xl"></div>
-            <div className="relative bg-gradient-to-br from-white/5 via-white/2 to-transparent backdrop-blur-sm border border-white/10 rounded-3xl p-8 lg:p-12 shadow-2xl">
-              <BlendedWidgetsTable
-                metaMetrics={metaMetrics}
-                layout="horizontal"
+      {/* Main Dashboard Content */}
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-[2000px] mx-auto space-y-8">
+          
+          {/* Performance Overview Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-2 h-8 bg-gradient-to-b from-[#FF2A2A] to-[#FF2A2A]/60 rounded-full"></div>
+              <h2 className="text-xl font-bold text-white">Performance Overview</h2>
+            </div>
+            
+            <BlendedWidgetsTable 
+              metaMetrics={metaMetrics}
+              layout="horizontal"
+            />
+          </div>
+          
+          {/* Campaign Management Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-2 h-8 bg-gradient-to-b from-[#FF2A2A] to-[#FF2A2A]/60 rounded-full"></div>
+              <h2 className="text-xl font-bold text-white">Campaign Management</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 2xl:grid-cols-12 gap-8">
+              {/* Campaign Widget - Takes up more space */}
+              <div className="2xl:col-span-8">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
+              
+              {/* AI Optimization - Sidebar on larger screens */}
+              <div className="2xl:col-span-4">
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+              </div>
+            </div>
+          </div>
+          
+          {/* Creative Analytics Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-2 h-8 bg-gradient-to-b from-[#FF2A2A] to-[#FF2A2A]/60 rounded-full"></div>
+              <h2 className="text-xl font-bold text-white">Creative Analytics</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              <PerformanceChart 
+                preloadedPerformanceData={preloadedData.performanceData}
               />
             </div>
           </div>
 
-          {/* Main Dashboard Grid - Enhanced responsive layout */}
-          <div className="grid grid-cols-1 2xl:grid-cols-12 gap-6 lg:gap-8">
-
-            {/* Left Column - Campaign Management & Creatives */}
-            <div className="2xl:col-span-8 space-y-6 lg:space-y-8">
-
-              {/* Campaign Management Section - Enhanced with better visual hierarchy */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/5 via-transparent to-white/2 rounded-3xl blur-xl"></div>
-                <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 lg:p-8 shadow-2xl">
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                </div>
-              </div>
-
-              {/* Bottom Row - Creative Performance & Analytics */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-
-                {/* Ad Creative Performance - Enhanced visual presentation */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 rounded-3xl blur-xl"></div>
-                  <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 lg:p-8 shadow-2xl h-full">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  </div>
-                </div>
-
-                {/* Performance Analytics - Enhanced chart presentation */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-blue-500/5 rounded-3xl blur-xl"></div>
-                  <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 lg:p-8 shadow-2xl h-full">
-                    <PerformanceChart
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Right Column - AI Optimization & Insights */}
-            <div className="2xl:col-span-4 space-y-6 lg:space-y-8">
-
-              {/* AI Optimization Dashboard - Enhanced with premium styling */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-white/2 to-blue-500/5 rounded-3xl blur-xl"></div>
-                <div className="relative bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-sm border border-white/10 rounded-3xl p-6 lg:p-8 shadow-2xl h-full min-h-[600px]">
-                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Footer spacing */}
-          <div className="h-12 lg:h-16"></div>
-
         </div>
       </div>
+      
+      {/* Bottom padding for scroll */}
+      <div className="h-20"></div>
     </div>
   )
 } 
