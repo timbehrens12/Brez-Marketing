@@ -31,7 +31,7 @@ import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgets
 
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Brain, Clock, Check } from "lucide-react"
+import { RefreshCw, Brain, Clock, Check, BarChart3 } from "lucide-react"
 
 // Extend Window interface for global state management
 declare global {
