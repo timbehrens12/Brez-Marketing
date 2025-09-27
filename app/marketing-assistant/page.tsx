@@ -1242,173 +1242,167 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full min-h-screen bg-[#0B0B0B] relative">
+    <div className="w-full min-h-screen relative overflow-hidden">
       <GridOverlay />
       <div className="relative z-10">
+        {/* Meta Connection Status Banner - Fixed at top */}
+        <div className="sticky top-0 z-30 backdrop-blur-sm bg-black/80 border-b border-white/10">
+          <MetaConnectionStatus
+            brandId={selectedBrandId}
+            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 py-3"
+          />
+        </div>
 
-        {/* Meta Connection Status Banner */}
-        <MetaConnectionStatus
-          brandId={selectedBrandId}
-          className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32"
-        />
+        {/* Hero Section - Profitability Focus */}
+        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 pt-8 pb-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#0f0f0f] to-[#1a1a1a] rounded-3xl border border-[#333]/50 p-8 relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+                  backgroundSize: '30px 30px'
+                }}></div>
+              </div>
 
-        {/* Modern Profitability-Focused Layout */}
-        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 py-6 space-y-8 animate-in fade-in duration-300">
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div>
+                    <h1 className="text-4xl lg:text-5xl font-black text-white mb-4 leading-tight">
+                      Marketing <span className="text-[#FF2A2A]">Profitability</span> Engine
+                    </h1>
+                    <p className="text-xl text-gray-300 leading-relaxed">
+                      AI-powered insights to maximize your ad spend ROI and scale profitable campaigns.
+                      Turn every dollar into revenue with data-driven optimization.
+                    </p>
+                  </div>
 
-          {/* Section 1: Executive Overview - Top Metrics for Quick Profit Assessment */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
-                Executive Overview
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
+                      <div className="text-2xl font-black text-green-400">
+                        ${(metaMetrics.roas * metaMetrics.adSpend).toFixed(0)}
+                      </div>
+                      <div className="text-sm text-gray-400">Revenue Generated</div>
+                    </div>
+                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
+                      <div className="text-2xl font-black text-[#FF2A2A]">
+                        ${metaMetrics.adSpend.toFixed(0)}
+                      </div>
+                      <div className="text-sm text-gray-400">Total Spent</div>
+                    </div>
+                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
+                      <div className="text-2xl font-black text-blue-400">
+                        {metaMetrics.roas.toFixed(1)}x
+                      </div>
+                      <div className="text-sm text-gray-400">Average ROAS</div>
+                    </div>
+                    <div className="bg-[#2A2A2A] rounded-xl p-4 border border-[#333]">
+                      <div className="text-2xl font-black text-purple-400">
+                        {metaMetrics.conversions}
+                      </div>
+                      <div className="text-sm text-gray-400">Conversions</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions Panel */}
+                <div className="lg:col-span-1">
+                  <div className="bg-[#2A2A2A] rounded-2xl p-6 border border-[#333] shadow-2xl">
+                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-[#FF2A2A]" />
+                      Quick Actions
+                    </h3>
+                    <div className="space-y-3">
+                      <Button
+                        onClick={refreshAllWidgets}
+                        disabled={isRefreshingAll || refreshCooldown}
+                        className="w-full bg-[#FF2A2A] hover:bg-[#e02424] text-white font-medium py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        {isRefreshingAll ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                        Refresh Data
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="w-full border-[#333] bg-transparent hover:bg-[#333] text-gray-300 hover:text-white py-2.5 rounded-xl transition-all duration-200"
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        Schedule Report
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="w-full border-[#333] bg-transparent hover:bg-[#333] text-gray-300 hover:text-white py-2.5 rounded-xl transition-all duration-200"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Export Data
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Dashboard Content */}
+        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 pb-12">
+
+          {/* Profitability Overview - Enhanced Metrics */}
+          <div className="max-w-7xl mx-auto mb-8">
+            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] rounded-2xl border border-[#333]/50 p-6">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <DollarSign className="w-6 h-6 text-green-400" />
+                Profitability Overview
               </h2>
-              <Button
-                onClick={refreshAllWidgets}
-                disabled={isRefreshingAll || refreshCooldown}
-                className="bg-[#2A2A2A] hover:bg-[#333] text-white border border-[#444] px-4 py-2 text-sm"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
-                {isRefreshingAll ? 'Refreshing...' : 'Refresh All'}
-              </Button>
-            </div>
-
-            {/* Key Profitability Metrics - Horizontal Layout */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">ROAS</span>
-                  <div className={`w-2 h-2 rounded-full ${metaMetrics.roas >= 3 ? 'bg-green-400' : metaMetrics.roas >= 2 ? 'bg-yellow-400' : 'bg-red-400'}`}></div>
-                </div>
-                <div className="text-2xl font-bold text-white">{metaMetrics.roas.toFixed(2)}x</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}% vs last period
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total Spent</span>
-                  <div className={`w-2 h-2 rounded-full ${metaMetrics.adSpendGrowth >= 0 ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                </div>
-                <div className="text-2xl font-bold text-white">${metaMetrics.adSpend.toLocaleString()}</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {metaMetrics.adSpendGrowth > 0 ? '+' : ''}{metaMetrics.adSpendGrowth.toFixed(1)}% vs last period
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Conversions</span>
-                  <div className={`w-2 h-2 rounded-full ${metaMetrics.conversionGrowth >= 0 ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                </div>
-                <div className="text-2xl font-bold text-white">{metaMetrics.conversions.toLocaleString()}</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {metaMetrics.conversionGrowth > 0 ? '+' : ''}{metaMetrics.conversionGrowth.toFixed(1)}% vs last period
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Profit Score</span>
-                  <div className={`w-2 h-2 rounded-full ${metaMetrics.roas >= 4 ? 'bg-green-400' : metaMetrics.roas >= 2.5 ? 'bg-yellow-400' : 'bg-red-400'}`}></div>
-                </div>
-                <div className="text-2xl font-bold text-white">{((metaMetrics.roas - 1) * 100).toFixed(0)}%</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Based on ROAS performance
-                </div>
-              </div>
+              <BlendedWidgetsTable
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
             </div>
           </div>
 
-          {/* Section 2: Campaign Performance & Optimization */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
-              Campaign Performance & Optimization
-            </h2>
+          {/* Core Optimization Sections */}
+          <div className="max-w-7xl mx-auto space-y-8">
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Campaign Management */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Campaign Management</h3>
-                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
-                      {preloadedData.campaigns?.length || 0} Active Campaigns
-                    </div>
-                  </div>
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                </div>
+            {/* AI Optimization Insights - Prominent placement */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              <div className="xl:col-span-1">
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
               </div>
 
-              {/* AI Optimization Dashboard */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">AI Optimization</h3>
-                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
-                      Smart Recommendations
-                    </div>
-                  </div>
-                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                </div>
-              </div>
-            </div>
-          </div>
+              {/* Campaign Performance - Enhanced layout */}
+              <div className="xl:col-span-3 space-y-6">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
 
-          {/* Section 3: Creative Performance & Analytics */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
-              Creative Performance & Analytics
-            </h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Ad Creative Performance */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Ad Creative Performance</h3>
-                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
-                      {preloadedData.adCreatives?.length || 0} Creatives
-                    </div>
-                  </div>
+                {/* Creative & Performance Analysis */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                </div>
-              </div>
-
-              {/* Performance Trends */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Performance Trends</h3>
-                    <div className="text-xs text-gray-400 bg-[#2A2A2A] px-2 py-1 rounded">
-                      7-Day View
-                    </div>
-                  </div>
                   <PerformanceChart
                     preloadedPerformanceData={preloadedData.performanceData}
                   />
                 </div>
               </div>
             </div>
+
+            {/* Data Refresh Indicator */}
+            {lastPageRefresh && (
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-[#333] rounded-full text-sm text-gray-400">
+                  <RefreshCw className="w-4 h-4" />
+                  Last updated: {lastPageRefresh.toLocaleTimeString()}
+                </div>
+              </div>
+            )}
+
           </div>
-
-          {/* Section 4: Detailed Performance Metrics */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-3 h-3 bg-[#FF2A2A] rounded-full"></div>
-              Detailed Performance Metrics
-            </h2>
-
-            <BlendedWidgetsTable
-              metaMetrics={metaMetrics}
-              layout="horizontal"
-            />
-          </div>
-
         </div>
-
       </div>
     </div>
   )
