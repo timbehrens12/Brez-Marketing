@@ -1247,47 +1247,482 @@ export default function MarketingAssistantPage() {
       <div className="relative z-10">
         <>
 
-          {/* Meta Connection Status Banner - Responsive padding */}
-          <MetaConnectionStatus 
-            brandId={selectedBrandId} 
-            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
-          />
+        {/* Meta Connection Status Banner */}
+        <MetaConnectionStatus
+          brandId={selectedBrandId}
+          className="px-4 sm:px-6 lg:px-8"
+        />
 
-          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
-          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
-            
-            {/* Top Section - Blended Performance Metrics spans full width */}
-            <div className="w-full">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                layout="horizontal"
-              />
+        {/* Modern Marketing Assistant Layout */}
+        <div className="px-4 sm:px-6 lg:px-8 space-y-6 animate-in fade-in duration-300">
+
+          {/* HERO SECTION - Key Performance Indicators */}
+          <div className="bg-gradient-to-r from-[#0B0B0B] via-[#111] to-[#0B0B0B] border border-[#2A2A2A] rounded-2xl p-6 lg:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
+                  Marketing Performance Dashboard
+                </h1>
+                <p className="text-gray-400 text-sm lg:text-base">
+                  Optimize your campaigns for maximum profitability
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={refreshAllWidgets}
+                  disabled={isRefreshingAll || refreshCooldown}
+                  size="sm"
+                  className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/90 text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                  {isRefreshingAll ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Last updated</p>
+                  <p className="text-sm text-white font-medium">
+                    {lastPageRefresh ? format(lastPageRefresh, 'HH:mm') : 'Never'}
+                  </p>
+                </div>
+              </div>
             </div>
-            
-            {/* Main Section - Responsive layout for widgets */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-              
-              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
-              <div className="xl:col-span-2 space-y-4">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                
-                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
+
+            {/* Key Metrics Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">ROAS</span>
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    metaMetrics.roas > 3 ? 'bg-green-500/20 text-green-400' :
+                    metaMetrics.roas > 2 ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    {metaMetrics.roas > 0 ? `${metaMetrics.roas.toFixed(1)}x` : '0x'}
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  ${metaMetrics.roas > 0 ? (metaMetrics.adSpend * metaMetrics.roas).toLocaleString() : '0'}
+                </div>
+                <p className="text-xs text-gray-500">Revenue Generated</p>
+                <div className={`text-xs mt-1 flex items-center gap-1 ${
+                  metaMetrics.roasGrowth > 0 ? 'text-green-400' :
+                  metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-500'
+                }`}>
+                  <span>{metaMetrics.roasGrowth > 0 ? '↗' : metaMetrics.roasGrowth < 0 ? '↘' : '→'}</span>
+                  {metaMetrics.roasGrowth !== null ? `${Math.abs(metaMetrics.roasGrowth).toFixed(1)}%` : 'N/A'}
                 </div>
               </div>
 
-              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
-              <div className="xl:col-span-1">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Spend</span>
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    metaMetrics.adSpend < 1000 ? 'bg-green-500/20 text-green-400' :
+                    metaMetrics.adSpend < 5000 ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    ${metaMetrics.adSpend.toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  ${metaMetrics.adSpend.toLocaleString()}
+                </div>
+                <p className="text-xs text-gray-500">Total Ad Spend</p>
+                <div className={`text-xs mt-1 flex items-center gap-1 ${
+                  metaMetrics.adSpendGrowth > 0 ? 'text-green-400' :
+                  metaMetrics.adSpendGrowth < 0 ? 'text-red-400' : 'text-gray-500'
+                }`}>
+                  <span>{metaMetrics.adSpendGrowth > 0 ? '↗' : metaMetrics.adSpendGrowth < 0 ? '↘' : '→'}</span>
+                  {metaMetrics.adSpendGrowth !== null ? `${Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%` : 'N/A'}
+                </div>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">CTR</span>
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    metaMetrics.ctr > 2 ? 'bg-green-500/20 text-green-400' :
+                    metaMetrics.ctr > 1 ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    {metaMetrics.ctr.toFixed(2)}%
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {metaMetrics.ctr.toFixed(2)}%
+                </div>
+                <p className="text-xs text-gray-500">Click Through Rate</p>
+                <div className={`text-xs mt-1 flex items-center gap-1 ${
+                  metaMetrics.ctrGrowth > 0 ? 'text-green-400' :
+                  metaMetrics.ctrGrowth < 0 ? 'text-red-400' : 'text-gray-500'
+                }`}>
+                  <span>{metaMetrics.ctrGrowth > 0 ? '↗' : metaMetrics.ctrGrowth < 0 ? '↘' : '→'}</span>
+                  {metaMetrics.ctrGrowth !== null ? `${Math.abs(metaMetrics.ctrGrowth).toFixed(1)}%` : 'N/A'}
+                </div>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Profit</span>
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    ((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend) > 0 ? 'bg-green-500/20 text-green-400' :
+                    ((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend) < 0 ? 'bg-red-500/20 text-red-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    ${(((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend)).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  ${(((metaMetrics.roas * metaMetrics.adSpend) - metaMetrics.adSpend)).toLocaleString()}
+                </div>
+                <p className="text-xs text-gray-500">Net Profit</p>
+                <div className="text-xs mt-1 text-gray-500">
+                  Target: $5,000+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN CONTENT AREA - Optimized Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* LEFT COLUMN - Campaign Management & Analysis */}
+            <div className="lg:col-span-8 space-y-6">
+
+              {/* Campaign Performance Overview */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-white">Campaign Performance</h2>
+                  <Button variant="outline" size="sm" className="border-[#333] text-gray-300 hover:bg-[#333] hover:text-white">
+                    View All Campaigns
+                  </Button>
+                </div>
+
+                {/* Campaign Status Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-[#2A2A2A] rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-400">Active Campaigns</p>
+                        <p className="text-xl font-bold text-white">3</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-400">Paused Campaigns</p>
+                        <p className="text-xl font-bold text-white">1</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-400">Low Performance</p>
+                        <p className="text-xl font-bold text-white">2</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campaign List Preview */}
+                <div className="space-y-3">
+                  <div className="bg-[#333] rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Prospecting Campaign</p>
+                        <p className="text-xs text-gray-400">ROAS: 3.2x • Budget: $500/day</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-green-400">+$1,600</p>
+                      <p className="text-xs text-gray-500">Profit</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#333] rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Retargeting Campaign</p>
+                        <p className="text-xs text-gray-400">ROAS: 4.1x • Budget: $200/day</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-green-400">+$820</p>
+                      <p className="text-xs text-gray-500">Profit</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ad Creative Performance */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-white">Ad Creative Performance</h2>
+                  <Button variant="outline" size="sm" className="border-[#333] text-gray-300 hover:bg-[#333] hover:text-white">
+                    View All Creatives
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#2A2A2A] rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">A1</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">High-Converting Carousel</p>
+                        <p className="text-xs text-gray-400">Best performing creative</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">CTR</span>
+                        <span className="text-green-400 font-medium">3.2%</span>
+                      </div>
+                      <div className="w-full bg-[#333] rounded-full h-1.5">
+                        <div className="bg-green-400 h-1.5 rounded-full" style={{ width: '85%' }}></div>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">ROAS</span>
+                        <span className="text-green-400 font-medium">4.1x</span>
+                      </div>
+                      <div className="w-full bg-[#333] rounded-full h-1.5">
+                        <div className="bg-green-400 h-1.5 rounded-full" style={{ width: '95%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">A2</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Video Ad Test</p>
+                        <p className="text-xs text-gray-400">Underperforming</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">CTR</span>
+                        <span className="text-red-400 font-medium">1.1%</span>
+                      </div>
+                      <div className="w-full bg-[#333] rounded-full h-1.5">
+                        <div className="bg-red-400 h-1.5 rounded-full" style={{ width: '35%' }}></div>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">ROAS</span>
+                        <span className="text-red-400 font-medium">1.8x</span>
+                      </div>
+                      <div className="w-full bg-[#333] rounded-full h-1.5">
+                        <div className="bg-red-400 h-1.5 rounded-full" style={{ width: '40%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* RIGHT COLUMN - AI Optimization & Insights */}
+            <div className="lg:col-span-4 space-y-6">
+
+              {/* AI Optimization Dashboard - Redesigned */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-white">AI Optimization</h2>
+                  <Button variant="outline" size="sm" className="border-[#333] text-gray-300 hover:bg-[#333] hover:text-white">
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Mode
+                  </Button>
+                </div>
+
+                {/* Optimization Opportunities */}
+                <div className="space-y-4">
+                  <div className="bg-[#2A2A2A] rounded-xl p-4 border-l-4 border-green-500">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Budget Optimization</p>
+                        <p className="text-xs text-gray-400">Increase budget by $150/day</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-green-400">Expected: +$450 profit</span>
+                      <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1">
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] rounded-xl p-4 border-l-4 border-yellow-500">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Creative Refresh</p>
+                        <p className="text-xs text-gray-400">A2 performing 23% below average</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-yellow-400">Impact: Medium</span>
+                      <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-3 py-1">
+                        Test New
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] rounded-xl p-4 border-l-4 border-red-500">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Pause Recommendation</p>
+                        <p className="text-xs text-gray-400">Weekend traffic too low</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-red-400">Save: $200/weekend</span>
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1">
+                        Schedule
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Confidence Score */}
+                <div className="mt-6 pt-6 border-t border-[#333]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-400">AI Confidence</span>
+                    <span className="text-sm font-medium text-white">87%</span>
+                  </div>
+                  <div className="w-full bg-[#333] rounded-full h-2">
+                    <div className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Trends */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-6">Performance Trends</h2>
+
+                {/* Mini Chart */}
+                <div className="h-32 bg-[#2A2A2A] rounded-lg p-4 mb-4">
+                  <div className="flex items-end gap-1 h-full">
+                    {Array.from({ length: 14 }, (_, i) => (
+                      <div
+                        key={i}
+                        className="bg-gradient-to-t from-green-500 to-green-400 rounded-sm flex-1"
+                        style={{ height: `${Math.random() * 80 + 20}%` }}
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-green-400">+12%</p>
+                    <p className="text-xs text-gray-400">vs Last Week</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-400">+8%</p>
+                    <p className="text-xs text-gray-400">vs Last Month</p>
+                  </div>
+                </div>
               </div>
 
             </div>
 
           </div>
+
+          {/* BOTTOM SECTION - Detailed Analytics */}
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Detailed Performance Analytics</h2>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="border-[#333] text-gray-300 hover:bg-[#333] hover:text-white">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Advanced View
+                </Button>
+              </div>
+            </div>
+
+            {/* Performance Chart */}
+            <div className="h-64 bg-[#2A2A2A] rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-white">ROAS Trend (Last 7 Days)</h3>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <span className="text-gray-400">ROAS</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span className="text-gray-400">Spend</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Simplified chart visualization */}
+              <div className="flex items-end gap-2 h-32">
+                {Array.from({ length: 7 }, (_, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className="bg-gradient-to-t from-green-500 to-green-400 rounded-sm w-full"
+                      style={{ height: `${Math.random() * 60 + 40}%` }}
+                    ></div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { weekday: 'short' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance Metrics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">3.2x</p>
+                <p className="text-xs text-gray-400">Avg ROAS</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">2.1%</p>
+                <p className="text-xs text-gray-400">Avg CTR</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">$2.45</p>
+                <p className="text-xs text-gray-400">Avg CPC</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">1.2M</p>
+                <p className="text-xs text-gray-400">Impressions</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
         </>
       </div>
     </div>
