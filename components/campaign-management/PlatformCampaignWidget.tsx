@@ -1577,47 +1577,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     </Card>
   )
 }
-                  <div className="text-2xl font-bold text-white">{formatCurrency(selectedRecommendation?.spent || 0)}</div>
-                  <div className="text-sm text-gray-400 mt-1">Spent</div>
-                </div>
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 border border-[#333] text-center">
-                  <div className="text-2xl font-bold text-white">{formatPercentage(selectedRecommendation?.ctr || 0)}</div>
-                  <div className="text-sm text-gray-400 mt-1">CTR</div>
-                </div>
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 border border-[#333] text-center">
-                  <div className="text-2xl font-bold text-white">{formatCurrency(selectedRecommendation?.cpc || 0)}</div>
-                  <div className="text-sm text-gray-400 mt-1">CPC</div>
-                </div>
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 border border-[#333] text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {selectedRecommendation?.roas && typeof selectedRecommendation.roas === 'number' 
-                      ? selectedRecommendation.roas.toFixed(2) : '0.00'}x
-                  </div>
-                  <div className="text-sm text-gray-400 mt-1">ROAS</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Main Recommendation */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl flex items-center justify-center border border-[#333]">
-                  <span className="text-sm font-bold text-white">1</span>
-                </div>
-                <h3 className="text-lg font-semibold text-white">Recommended Action</h3>
-              </div>
-              
-              <div className="bg-gradient-to-br from-[#111] to-[#1a1a1a] rounded-2xl p-6 border border-[#333]">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 rounded-xl border border-white/20">
-                    <span className="text-white font-semibold">
-                      {selectedRecommendation?.recommendation?.action || 'No specific recommendation available'}
-                    </span>
-                  </div>
-                  <div className="px-3 py-1 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg border border-green-500/30">
-                    <span className="text-green-400 text-sm font-medium">
-                      {Math.round((selectedRecommendation?.recommendation?.confidence || 8.5) * 10)}% Confidence
-                    </span>
                   </div>
                 </div>
                 
