@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { BarChart3, Settings2, TrendingUp } from 'lucide-react'
+import { BarChart3, Settings2, TrendingUp, DollarSign } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
