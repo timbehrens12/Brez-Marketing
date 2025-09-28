@@ -418,8 +418,8 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                                  translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   
                   <CardContent className="relative z-10 p-0 flex flex-col h-full">
-                    {/* Creative Image Section */}
-                    <div className="relative h-32 bg-gradient-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center overflow-hidden">
+                    {/* Compact Creative Preview */}
+                    <div className="relative h-20 bg-gradient-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center overflow-hidden">
                       {ad.thumbnail_url || ad.image_url ? (
                         <Image 
                           src={ad.thumbnail_url || ad.image_url || ''} 
@@ -428,95 +428,35 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                           className="object-cover"
                         />
                       ) : (
-                        <ImageIcon className="h-8 w-8 text-gray-500" />
+                        <ImageIcon className="h-4 w-4 text-gray-500" />
                       )}
                       
-                      {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      
-                      {/* Platform Logo */}
-                      <div className="absolute top-3 left-3 z-10">
-                        <div className="w-7 h-7 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
-                          <Image
-                            src="https://i.imgur.com/6hyyRrs.png"
-                            alt="Meta"
-                            width={16}
-                            height={16}
-                            className="object-contain"
-                          />
-                        </div>
+                      {/* Compact indicators */}
+                      <div className="absolute top-1 left-1">
+                        <Image
+                          src="https://i.imgur.com/6hyyRrs.png"
+                          alt="Meta"
+                          width={12}
+                          height={12}
+                          className="object-contain rounded-sm"
+                        />
                       </div>
                       
-                      {/* Status Badge */}
-                      <div className="absolute top-3 right-3 z-10">
-                        <Badge className={`text-xs px-2 py-1 backdrop-blur-sm border ${
-                          ad.status === 'ACTIVE' 
-                            ? 'bg-green-500/20 text-green-300 border-green-500/40' 
-                            : 'bg-gray-500/20 text-gray-300 border-gray-500/40'
-                        }`}>
-                          {ad.status}
-                        </Badge>
+                      <div className="absolute top-1 right-1">
+                        <div className={`w-2 h-2 rounded-full ${
+                          ad.status === 'ACTIVE' ? 'bg-emerald-400' : 
+                          ad.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
+                        }`}></div>
                       </div>
                       
-                      {/* Performance Indicator */}
-                      <div className="absolute bottom-3 left-3 z-10">
-                        <div className={`px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border ${
-                          roas >= 3 
-                            ? 'bg-green-500/20 text-green-300 border-green-500/40' 
-                            : roas >= 2 
-                              ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40' 
-                              : 'bg-red-500/20 text-red-300 border-red-500/40'
-                        }`}>
-                          {roas > 0 ? `${roas.toFixed(2)}x ROAS` : 'No ROAS'}
-                        </div>
-                      </div>
-                      
-                      {/* Preview Link */}
-                      {ad.preview_url && (
-                        <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 bg-black/60 backdrop-blur-sm hover:bg-white/20 text-white border border-white/20 rounded-xl"
-                                  onClick={() => window.open(ad.preview_url!, '_blank')}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-[#0a0a0a] border-[#333]">
-                                <p className="text-white text-xs">Preview Ad</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      )}
                     </div>
                     
-                    {/* Content Section */}
-                    <div className="p-4 flex-1 flex flex-col">
-                      {/* Ad Details */}
-                      <div className="mb-4">
-                        <h4 className="font-bold text-white text-sm mb-2 line-clamp-2 leading-tight">
-                          {ad.ad_name}
-                        </h4>
-                        {ad.headline && (
-                          <p className="text-xs text-gray-400 mb-3 line-clamp-2 leading-relaxed">
-                            {ad.headline}
-                          </p>
-                        )}
-                        {/* Campaign info */}
-                        <div className="space-y-1">
-                          <p className="text-xs text-gray-500 line-clamp-1" title={ad.campaign_name}>
-                            📊 {ad.campaign_name}
-                          </p>
-                          <p className="text-xs text-gray-600 line-clamp-1" title={ad.adset_name}>
-                            🎯 {ad.adset_name}
-                          </p>
-                        </div>
-                      </div>
+                    {/* Compact Content */}
+                    <div className="p-3 flex-1">
+                      {/* Title */}
+                      <h3 className="text-white font-medium text-xs mb-2 line-clamp-2 leading-tight">
+                        {ad.ad_name}
+                      </h3>
                       
                       {/* Performance Metrics Grid */}
                       <div className="grid grid-cols-3 gap-2 mt-auto">

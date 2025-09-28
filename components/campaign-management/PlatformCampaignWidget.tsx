@@ -908,169 +908,117 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
-        <div className="relative z-10 p-4">
-          {/* Header with platform and status */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#333] flex-shrink-0">
+        <div className="relative z-10 p-3">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="w-6 h-6 bg-[#1a1a1a] rounded-lg flex items-center justify-center border border-[#333] flex-shrink-0">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta" 
-                  width={24} 
-                  height={24} 
+                  width={14} 
+                  height={14} 
                   className="object-contain rounded"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-white font-semibold text-lg truncate mb-1">
+                <h3 className="text-white font-medium text-sm truncate">
                   {campaign.campaign_name}
                 </h3>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span className="px-2 py-0.5 bg-[#1a1a1a] rounded-md text-xs">{campaign.objective}</span>
-                  <span className="text-gray-500">•</span>
-                  <span className="px-2 py-0.5 bg-[#1a1a1a] rounded-md text-xs">{campaign.budget_type}</span>
+                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                  <span>{campaign.objective}</span>
+                  <span>•</span>
+                  <span>{campaign.budget_type}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex-shrink-0">
               {isBeingChecked ? (
-                <Badge className="px-3 py-1.5 bg-[#1a1a1a] text-gray-400 border border-[#333] rounded-xl text-xs">
-                  <div className="w-2 h-2 rounded-full bg-gray-500 mr-2 animate-pulse"></div>
-                  Checking...
-                </Badge>
+                <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></div>
               ) : (
-                <Badge className={`px-3 py-1.5 rounded-xl text-xs font-medium border ${getStatusColor(campaign.status)}`}>
-                  <div className={`w-2 h-2 rounded-full mr-2 ${
-                    campaign.status === 'ACTIVE' ? 'bg-emerald-400' : 
-                    campaign.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
-                  }`}></div>
-                  {campaign.status}
-                </Badge>
+                <div className={`w-2 h-2 rounded-full ${
+                  campaign.status === 'ACTIVE' ? 'bg-emerald-400' : 
+                  campaign.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
+                }`}></div>
               )}
             </div>
           </div>
 
-          {/* Key metrics in a flowing grid */}
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Spent</div>
-              <div className="text-lg font-bold text-white">{formatCurrency(campaign.spent)}</div>
-              <div className="text-xs text-gray-600 mt-0.5">
-                {campaign.budget > 0 ? `${((campaign.spent / campaign.budget) * 100).toFixed(0)}% of budget` : 'No budget'}
+          {/* Compact Metrics - 2 rows, 3 columns */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">Spent</div>
+                <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
+              </div>
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">ROAS</div>
+                <div className={`text-sm font-bold ${getROASColor(campaign.roas)}`}>
+                  {campaign.roas?.toFixed(2) || '0.00'}x
+                </div>
+              </div>
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">Clicks</div>
+                <div className="text-sm font-bold text-white">{formatNumber(campaign.clicks)}</div>
               </div>
             </div>
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">ROAS</div>
-              <div className={`text-lg font-bold ${getROASColor(campaign.roas)}`}>
-                {campaign.roas?.toFixed(2) || '0.00'}x
+            <div className="flex gap-2">
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">Impressions</div>
+                <div className="text-sm font-bold text-white">{formatNumber(campaign.impressions)}</div>
               </div>
-            </div>
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Impressions</div>
-              <div className="text-lg font-bold text-white">{formatNumber(campaign.impressions)}</div>
-            </div>
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Clicks</div>
-              <div className="text-lg font-bold text-white">{formatNumber(campaign.clicks)}</div>
-            </div>
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">CTR</div>
-              <div className="text-lg font-bold text-white">{formatPercentage(campaign.ctr)}</div>
-            </div>
-            <div className="bg-[#1a1a1a]/60 rounded-xl p-3 border border-[#333]/50">
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">CPC</div>
-              <div className="text-lg font-bold text-white">{formatCurrency(campaign.cpc)}</div>
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">CTR</div>
+                <div className="text-sm font-bold text-white">{formatPercentage(campaign.ctr)}</div>
+              </div>
+              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+                <div className="text-xs text-gray-600 mb-0.5">CPC</div>
+                <div className="text-sm font-bold text-white">{formatCurrency(campaign.cpc)}</div>
+              </div>
             </div>
           </div>
 
-          {/* AI Recommendation Section - Streamlined */}
+          {/* Compact AI Recommendation */}
           {campaign.recommendation ? (
-            <div className="bg-gradient-to-r from-[#1a1a1a]/80 to-[#222]/60 rounded-xl p-4 border border-[#333]/70">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/10 rounded-lg 
-                                 flex items-center justify-center border border-[#FF2A2A]/30">
-                    <Brain className="w-4 h-4 text-[#FF2A2A]" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">AI Recommendation</div>
-                    <div className="text-xs text-gray-400">
-                      {Math.round((campaign.recommendation.confidence || 8.5) * 10)}% confidence
-                    </div>
-                  </div>
-                </div>
-                
+            <div className="mt-3 bg-white/[0.01] rounded-lg p-2 border border-white/5">
+              <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  {/* Status indicator */}
-                  <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${
-                    campaign.recommendation?.status === 'completed'
-                      ? 'bg-green-600/20 border-green-500/50 text-green-400'
-                      : 'bg-[#333]/50 border-[#444] text-gray-500'
-                  }`}>
-                    {campaign.recommendation?.status === 'completed' ? (
-                      <CheckCircle className="w-3 h-3" />
-                    ) : (
-                      <div className="w-2 h-2 rounded-full bg-gray-500" />
-                    )}
-                  </div>
-                  
-                  <Button
-                    onClick={() => {
-                      setSelectedRecommendation(campaign)
-                      setRecommendationDialogOpen(true)
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="bg-[#333]/50 border-[#444] text-gray-300 hover:bg-[#444] 
-                             hover:text-white text-xs px-3 py-1 h-8 rounded-lg"
-                  >
-                    View Details
-                  </Button>
+                  <Brain className="w-3 h-3 text-[#FF2A2A]" />
+                  <span className="text-xs font-medium text-white">AI Insight</span>
                 </div>
+                <Button
+                  onClick={() => {
+                    setSelectedRecommendation(campaign)
+                    setRecommendationDialogOpen(true)
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs px-2 py-1 h-6 text-gray-400 hover:text-white"
+                >
+                  View
+                </Button>
               </div>
-              
-              <div className="text-sm text-gray-300 leading-relaxed">
-                <span className="text-white font-medium">{campaign.recommendation.action}</span>
-                {campaign.recommendation.reasoning && (
-                  <span className="text-gray-400 ml-1">
-                    - {campaign.recommendation.reasoning.slice(0, 100)}...
-                  </span>
-                )}
+              <div className="text-xs text-gray-400 leading-relaxed">
+                {campaign.recommendation.action.slice(0, 80)}...
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-r from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-4 border border-[#333]/50 
-                           border-dashed flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#333]/50 rounded-lg flex items-center justify-center border border-[#444]">
-                  <Brain className="w-4 h-4 text-gray-500" />
+            <div className="mt-3 bg-white/[0.005] rounded-lg p-2 border border-white/5 border-dashed">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-3 h-3 text-gray-600" />
+                  <span className="text-xs text-gray-500">Generate AI insight</span>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-400">Generate AI Recommendation</div>
-                  <div className="text-xs text-gray-500">Get optimization insights for this campaign</div>
-                </div>
+                <Button
+                  onClick={() => generateRecommendation(campaign)}
+                  disabled={isGeneratingRecommendation}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs px-2 py-1 h-6 text-gray-500 hover:text-white disabled:opacity-50"
+                >
+                  {isGeneratingRecommendation ? "..." : "Generate"}
+                </Button>
               </div>
-              
-              <Button
-                onClick={() => generateRecommendation(campaign)}
-                disabled={isGeneratingRecommendation}
-                variant="outline"
-                size="sm"
-                className="bg-[#333]/50 border-[#444] text-gray-300 hover:bg-[#444] 
-                         hover:text-white text-xs px-4 py-2 h-8 rounded-lg disabled:opacity-50"
-              >
-                {isGeneratingRecommendation ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin mr-2" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3 h-3 mr-2" />
-                    Generate
-                  </>
-                )}
-              </Button>
             </div>
           )}
         </div>

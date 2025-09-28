@@ -374,113 +374,116 @@ export default function BlendedWidgetsTable({
             </div>
           </div>
         
-        {/* Flowing Metrics Grid - No container */}
-        <div className="">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
-            
-            {/* Budget Usage Card */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2 xl:col-span-2">
+        {/* Fluid Metrics Layout */}
+        <div className="space-y-4">
+          {/* Primary Metrics Row - Most Important */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-48">
               <BudgetUsageCard budgetData={budgetData} />
             </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={DollarSign}
+                title="Spend"
+                value={metaMetrics.adSpend}
+                change={metaMetrics.adSpendGrowth}
+                prefix="$"
+                decimals={2}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
+                ]}
+              />
+            </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={TrendingUp}
+                title="ROAS"
+                value={metaMetrics.roas}
+                change={metaMetrics.roasGrowth}
+                suffix="x"
+                decimals={2}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
+                ]}
+              />
+            </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={Target}
+                title="Conversions"
+                value={metaMetrics.conversions}
+                change={metaMetrics.conversionGrowth}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                ]}
+              />
+            </div>
+          </div>
 
-            {/* Spend */}
-            <CompactMetricCard
-              icon={DollarSign}
-              title="Spend"
-              value={metaMetrics.adSpend}
-              change={metaMetrics.adSpendGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
-            
-            {/* ROAS */}
-            <CompactMetricCard
-              icon={TrendingUp}
-              title="ROAS"
-              value={metaMetrics.roas}
-              change={metaMetrics.roasGrowth}
-              suffix="x"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
-              ]}
-            />
-
-            {/* Impressions */}
-            <CompactMetricCard
-              icon={Eye}
-              title="Impressions"
-              value={metaMetrics.impressions}
-              change={metaMetrics.impressionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
-
-            {/* Clicks */}
-            <CompactMetricCard
-              icon={MousePointer}
-              title="Clicks"
-              value={metaMetrics.clicks}
-              change={metaMetrics.clickGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
-
-            {/* Conversions */}
-            <CompactMetricCard
-              icon={Target}
-              title="Conversions"
-              value={metaMetrics.conversions}
-              change={metaMetrics.conversionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
-
-            {/* CTR */}
-            <CompactMetricCard
-              icon={Percent}
-              title="CTR"
-              value={metaMetrics.ctr}
-              change={metaMetrics.ctrGrowth}
-              suffix="%"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
-              ]}
-            />
-
-            {/* CPC */}
-            <CompactMetricCard
-              icon={DollarSign}
-              title="CPC"
-              value={metaMetrics.cpc}
-              change={metaMetrics.cpcGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
+          {/* Secondary Metrics Row - Supporting Data */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={Eye}
+                title="Impressions"
+                value={metaMetrics.impressions}
+                change={metaMetrics.impressionGrowth}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                ]}
+              />
+            </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={MousePointer}
+                title="Clicks"
+                value={metaMetrics.clicks}
+                change={metaMetrics.clickGrowth}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                ]}
+              />
+            </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={Percent}
+                title="CTR"
+                value={metaMetrics.ctr}
+                change={metaMetrics.ctrGrowth}
+                suffix="%"
+                decimals={2}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
+                ]}
+              />
+            </div>
+            <div className="flex-1 min-w-32">
+              <CompactMetricCard
+                icon={DollarSign}
+                title="CPC"
+                value={metaMetrics.cpc}
+                change={metaMetrics.cpcGrowth}
+                prefix="$"
+                decimals={2}
+                platforms={[
+                  { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
+                  { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                  { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
+                ]}
+              />
+            </div>
           </div>
         </div>
         </div>

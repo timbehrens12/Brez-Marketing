@@ -431,39 +431,25 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
        </div>
         
       <div className="">
-        {/* Lightweight KPI Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="group relative bg-white/[0.01] border border-white/5 rounded-lg p-3 
+        {/* Compact KPI Cards */}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1 group relative bg-white/[0.01] border border-white/5 rounded-lg p-2 
                           hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg 
-                              flex items-center justify-center border border-green-500/30">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                </div>
-                <div className="text-xs text-gray-600 uppercase tracking-wide font-medium">Profit Today</div>
-              </div>
-              <div className="text-lg font-bold text-white">{formatCurrency(summary.total_profit)}</div>
-              <div className="text-xs text-gray-700 mt-0.5">24h earnings</div>
+              <div className="text-xs text-gray-600 mb-0.5">Profit</div>
+              <div className="text-sm font-bold text-emerald-400">{formatCurrency(summary.total_profit)}</div>
             </div>
           </div>
           
-          <div className="group relative bg-white/[0.01] border border-white/5 rounded-lg p-3 
+          <div className="flex-1 group relative bg-white/[0.01] border border-white/5 rounded-lg p-2 
                           hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg 
-                              flex items-center justify-center border border-blue-500/30">
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                </div>
-                <div className="text-xs text-gray-600 uppercase tracking-wide font-medium">Avg ROAS</div>
-              </div>
-              <div className="text-lg font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
-              <div className="text-xs text-gray-700 mt-0.5">Return on spend</div>
+              <div className="text-xs text-gray-600 mb-0.5">ROAS</div>
+              <div className="text-sm font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
             </div>
           </div>
           
@@ -485,15 +471,15 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
           </div>
         </div>
         
-        {/* Enhanced Adset Performance Cards */}
-        <div className="space-y-4">
+        {/* Compact Adset Performance */}
+        <div className="space-y-3">
           {adsets.map((adset) => {
             const statusFormatted = formatAdSetStatus(adset.status)
             return (
               <div 
                 key={adset.adset_id}
                 className="group relative bg-white/[0.01] border border-white/5 
-                          rounded-xl p-4 hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 overflow-hidden"
+                          rounded-lg p-3 hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 overflow-hidden"
               >
                 {/* Subtle shimmer effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 

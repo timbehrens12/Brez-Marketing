@@ -421,8 +421,8 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
         {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (
           <div className="px-6 py-4 flex-1">
-            {/* Quick Stats Bar */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            {/* Compact Stats */}
+            <div className="flex gap-3 mb-4">
               <div className="bg-[#0f0f0f]/60 rounded-xl p-4 border border-[#333]/50">
                 <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Peak Value</div>
                 <div className="text-lg font-bold text-white">
