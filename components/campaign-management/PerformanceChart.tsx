@@ -300,11 +300,11 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   return (
     <div className="relative h-full flex flex-col">
       {/* Seamless Header */}
-      <div className="p-6 pb-4">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-white/70" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-3 h-3 text-white/60" />
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-white">Analytics Hub</h2>
@@ -416,7 +416,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
         </div>
       </div>
       
-      {/* Content */}
+      {/* Flowing Content */}
       <div className="flex-1 flex flex-col">
         {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (

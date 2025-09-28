@@ -97,10 +97,10 @@ function CompactMetricCard({
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-lg bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
-                    border border-white/10 hover:border-white/20 transition-all duration-300 p-3 h-20">
+    <div className="group relative overflow-hidden rounded-lg bg-white/[0.01] 
+                    border border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 p-3 h-20">
       {/* Subtle shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                      translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
       
       <div className="relative z-10 h-full flex flex-col">
@@ -185,10 +185,10 @@ function BudgetUsageCard({ budgetData }: { budgetData: any }) {
   const usagePercentage = budgetData.budgetUsedPercentage || 0
   
   return (
-    <div className="group relative overflow-hidden rounded-lg bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
-                    border border-white/10 hover:border-white/20 transition-all duration-300 p-3 h-20">
+    <div className="group relative overflow-hidden rounded-lg bg-white/[0.01] 
+                    border border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-all duration-300 p-3 h-20">
       {/* Subtle shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                      translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
       
       <div className="relative z-10 h-full flex flex-col">
@@ -362,21 +362,20 @@ export default function BlendedWidgetsTable({
   if (layout === 'horizontal') {
     return (
       <div className="relative">
-        {/* Seamless Header - No background separation */}
-        <div className="p-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
-              <Layers className="w-4 h-4 text-white/70" />
+        {/* Seamless Header - No container */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
+              <Layers className="w-3 h-3 text-white/60" />
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-white">Performance Overview</h2>
               <p className="text-gray-500 text-sm">Unified metrics across platforms</p>
             </div>
           </div>
-        </div>
         
-        {/* Integrated Metrics Grid */}
-        <div className="px-6 pb-6">
+        {/* Flowing Metrics Grid - No container */}
+        <div className="">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
             
             {/* Budget Usage Card */}
@@ -483,6 +482,7 @@ export default function BlendedWidgetsTable({
               ]}
             />
           </div>
+        </div>
         </div>
       </div>
     )

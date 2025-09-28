@@ -901,11 +901,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-      <div key={campaign.campaign_id} className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
-                                                border border-white/10 hover:border-white/20 rounded-xl 
+      <div key={campaign.campaign_id} className="group relative bg-white/[0.01] 
+                                                border border-white/5 hover:border-white/10 hover:bg-white/[0.02] rounded-xl 
                                                 transition-all duration-300 overflow-hidden">
         {/* Subtle shimmer effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
         <div className="relative z-10 p-4">
@@ -1301,7 +1301,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-    <div className="space-y-4 relative">
+    <div className="relative">
       {/* Remove Loading Overlay - completely commented out */}
       {/* 
       {isRefreshing && (
@@ -1317,27 +1317,25 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
       */}
       
-      {/* Seamless Integration - No Card Container */}
-      <div className="relative">
-        <div className="p-6 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
-                <Target className="w-4 h-4 text-white/70" />
-              </div>
-              <div>
-                <h2 className="text-white text-lg font-semibold tracking-tight">Campaign Hub</h2>
-                <p className="text-gray-500 text-sm">Manage your advertising campaigns</p>
-              </div>
-            </div>
+      {/* Seamless Section - No container */}
+      {/* Flowing Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
+            <Target className="w-3 h-3 text-white/60" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-white">Campaign Hub</h2>
+            <p className="text-gray-500 text-sm">Manage your advertising campaigns</p>
           </div>
         </div>
-        
-        <div className="relative">
-
-          {/* Modern Flowing Tabs */}
-          <div className="p-6">
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+      </div>
+      
+      {/* Integrated Content */}
+      <div className="">
+        {/* Modern Flowing Tabs */}
+        <div className="">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/60 border border-[#333]/50 rounded-2xl p-2 h-14 backdrop-blur-sm">
               <TabsTrigger 
                 value="all" 
@@ -1419,7 +1417,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               ))}
             </div>
           </Tabs>
-          </div>
         </div>
       </div>
 

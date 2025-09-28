@@ -307,11 +307,11 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   return (
     <div className="relative h-full max-h-[680px] flex flex-col">
       {/* Seamless Header */}
-      <div className="p-6 pb-4">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
-              <ImageIcon className="w-4 h-4 text-white/70" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
+              <ImageIcon className="w-3 h-3 text-white/60" />
             </div>
             <div>
               <h2 className="text-lg text-white font-semibold tracking-tight">Creative Studio</h2>
@@ -387,11 +387,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20 rounded-xl backdrop-blur-sm"
           />
         </div>
-        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 p-6 overflow-hidden">
+      {/* Flowing Content */}
+      <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
@@ -411,11 +410,11 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <Card key={ad.ad_id} className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
-                                              border border-white/10 hover:border-white/20 rounded-xl 
+                <Card key={ad.ad_id} className="group relative bg-white/[0.01] 
+                                              border border-white/5 hover:border-white/10 hover:bg-white/[0.02] rounded-xl 
                                               transition-all duration-300 overflow-hidden">
                   {/* Subtle shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
                                  translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   
                   <CardContent className="relative z-10 p-0 flex flex-col h-full">
