@@ -1253,43 +1253,78 @@ export default function MarketingAssistantPage() {
             className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* Unified Flowing Layout - Compact & Streamlined */}
-          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 space-y-4 animate-in fade-in duration-300">
+          {/* Unified Marketing Command Center - Single Flowing Dashboard */}
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 animate-in fade-in duration-500">
             
-            {/* Performance Overview - Streamlined */}
-            <div className="w-full">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                layout="horizontal"
-              />
-            </div>
-            
-            {/* Main Content Grid - More unified */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Single Unified Dashboard Container */}
+            <div className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-3xl shadow-2xl overflow-hidden">
               
-              {/* Primary Content - Campaigns & Analytics */}
-              <div className="lg:col-span-3 space-y-4">
+              {/* Unified Header - Command Center Style */}
+              <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border-b border-[#333] p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-3xl 
+                                  flex items-center justify-center border border-white/10 shadow-xl">
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A] to-[#FF4A4A] rounded-xl 
+                                    flex items-center justify-center">
+                        <div className="w-4 h-4 bg-white rounded-sm"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold tracking-tight text-white">Marketing Command Center</h1>
+                      <p className="text-gray-400 font-medium text-lg">Unified campaign management & optimization hub</p>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Actions */}
+                  <div className="flex items-center gap-3">
+                    <div className="px-4 py-2 bg-[#1a1a1a]/60 border border-[#333] rounded-xl text-sm text-gray-400">
+                      Last updated: {new Date().toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Unified Content - No Gaps, Flowing Sections */}
+              <div className="p-6 space-y-6">
                 
-                {/* Campaign Management */}
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                {/* Performance Overview - Compact Header */}
+                <BlendedWidgetsTable 
+                  metaMetrics={metaMetrics}
+                  layout="horizontal"
+                />
                 
-                {/* Analytics Row - Side by side */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
+                {/* Main Management Grid - Flowing Layout */}
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                  
+                  {/* Campaign & Creative Management - Primary Flow */}
+                  <div className="xl:col-span-3 space-y-6">
+                    
+                    {/* Campaign Management Section */}
+                    <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                    
+                    {/* Analytics & Creative Flow */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                      <PerformanceChart preloadedPerformanceData={preloadedData.performanceData} />
+                    </div>
+                    
+                  </div>
+
+                  {/* AI Optimization - Integrated Sidebar */}
+                  <div className="xl:col-span-1">
+                    <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+                  </div>
+
                 </div>
                 
               </div>
-
-              {/* AI Insights - Compact sidebar */}
-              <div className="lg:col-span-1">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-              </div>
-
+              
             </div>
-
+            
+            {/* Bottom spacing */}
+            <div className="h-6"></div>
+            
           </div>
         </>
       </div>

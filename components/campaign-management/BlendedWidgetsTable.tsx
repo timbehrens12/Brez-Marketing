@@ -361,128 +361,142 @@ export default function BlendedWidgetsTable({
 
   if (layout === 'horizontal') {
     return (
-      <div className="relative bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl overflow-hidden">
-        {/* Modern Header */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Layers className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">Performance Overview</h2>
-              <p className="text-gray-400 font-medium">Unified metrics across all advertising platforms</p>
-            </div>
+      <div className="relative bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-2xl p-4">
+        {/* Compact Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
+                        flex items-center justify-center border border-white/20">
+            <Layers className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Performance Overview</h3>
+            <p className="text-xs text-gray-500">Real-time metrics across platforms</p>
           </div>
         </div>
         
-        {/* Compact Metrics Grid */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
-            
-            {/* Budget Usage Card */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2 xl:col-span-2">
-              <BudgetUsageCard budgetData={budgetData} />
+        {/* Ultra Compact Metrics Flow */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          
+          {/* Budget Usage - Compact */}
+          <div className="col-span-2 bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-3 h-3 text-white/70" />
+                <span className="text-xs font-medium text-gray-400">Budget</span>
+              </div>
+              <span className="text-xs text-gray-600">
+                ${budgetData.totalSpend?.toFixed(0) || 0}/${budgetData.totalBudget?.toFixed(0) || 0}
+              </span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-base font-bold text-white">{(budgetData.budgetUsedPercentage || 0).toFixed(1)}%</span>
+              <div className="flex-1 mx-2">
+                <div className="w-full bg-[#0a0a0a] rounded-full h-1">
+                  <div 
+                    className="bg-gradient-to-r from-gray-500 to-gray-400 h-1 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(budgetData.budgetUsedPercentage || 0, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-            {/* Spend */}
-            <CompactMetricCard
-              icon={DollarSign}
-              title="Spend"
-              value={metaMetrics.adSpend}
-              change={metaMetrics.adSpendGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
-            
-            {/* ROAS */}
-            <CompactMetricCard
-              icon={TrendingUp}
-              title="ROAS"
-              value={metaMetrics.roas}
-              change={metaMetrics.roasGrowth}
-              suffix="x"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
-              ]}
-            />
+          {/* Spend */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">Spend</span>
+            </div>
+            <div className="text-base font-bold text-white">${metaMetrics.adSpend.toFixed(0)}</div>
+            {metaMetrics.adSpendGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.adSpendGrowth > 0 ? 'text-green-400' : metaMetrics.adSpendGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.adSpendGrowth > 0 ? '+' : ''}{metaMetrics.adSpendGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
+          
+          {/* ROAS */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">ROAS</span>
+            </div>
+            <div className="text-base font-bold text-white">{metaMetrics.roas.toFixed(2)}x</div>
+            {metaMetrics.roasGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.roasGrowth > 0 ? 'text-green-400' : metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
-            {/* Impressions */}
-            <CompactMetricCard
-              icon={Eye}
-              title="Impressions"
-              value={metaMetrics.impressions}
-              change={metaMetrics.impressionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
+          {/* Impressions */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">Impressions</span>
+            </div>
+            <div className="text-base font-bold text-white">{(metaMetrics.impressions / 1000).toFixed(0)}K</div>
+            {metaMetrics.impressionGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.impressionGrowth > 0 ? 'text-green-400' : metaMetrics.impressionGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.impressionGrowth > 0 ? '+' : ''}{metaMetrics.impressionGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
-            {/* Clicks */}
-            <CompactMetricCard
-              icon={MousePointer}
-              title="Clicks"
-              value={metaMetrics.clicks}
-              change={metaMetrics.clickGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
+          {/* Clicks */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <MousePointer className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">Clicks</span>
+            </div>
+            <div className="text-base font-bold text-white">{metaMetrics.clicks.toLocaleString()}</div>
+            {metaMetrics.clickGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.clickGrowth > 0 ? 'text-green-400' : metaMetrics.clickGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.clickGrowth > 0 ? '+' : ''}{metaMetrics.clickGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
-            {/* Conversions */}
-            <CompactMetricCard
-              icon={Target}
-              title="Conversions"
-              value={metaMetrics.conversions}
-              change={metaMetrics.conversionGrowth}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
-              ]}
-            />
+          {/* Conversions */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">Conversions</span>
+            </div>
+            <div className="text-base font-bold text-white">{metaMetrics.conversions}</div>
+            {metaMetrics.conversionGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.conversionGrowth > 0 ? 'text-green-400' : metaMetrics.conversionGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.conversionGrowth > 0 ? '+' : ''}{metaMetrics.conversionGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
-            {/* CTR */}
-            <CompactMetricCard
-              icon={Percent}
-              title="CTR"
-              value={metaMetrics.ctr}
-              change={metaMetrics.ctrGrowth}
-              suffix="%"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
-              ]}
-            />
+          {/* CTR */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <Percent className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">CTR</span>
+            </div>
+            <div className="text-base font-bold text-white">{metaMetrics.ctr.toFixed(2)}%</div>
+            {metaMetrics.ctrGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.ctrGrowth > 0 ? 'text-green-400' : metaMetrics.ctrGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.ctrGrowth > 0 ? '+' : ''}{metaMetrics.ctrGrowth.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
-            {/* CPC */}
-            <CompactMetricCard
-              icon={DollarSign}
-              title="CPC"
-              value={metaMetrics.cpc}
-              change={metaMetrics.cpcGrowth}
-              prefix="$"
-              decimals={2}
-              platforms={[
-                { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
-                { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
-                { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
-              ]}
-            />
+          {/* CPC */}
+          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-3 h-3 text-white/70" />
+              <span className="text-xs font-medium text-gray-400">CPC</span>
+            </div>
+            <div className="text-base font-bold text-white">${metaMetrics.cpc.toFixed(2)}</div>
+            {metaMetrics.cpcGrowth !== null && (
+              <div className={`text-xs ${metaMetrics.cpcGrowth < 0 ? 'text-green-400' : metaMetrics.cpcGrowth > 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {metaMetrics.cpcGrowth > 0 ? '+' : ''}{metaMetrics.cpcGrowth.toFixed(1)}%
+              </div>
+            )}
           </div>
         </div>
       </div>
