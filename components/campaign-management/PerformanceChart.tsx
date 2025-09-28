@@ -298,18 +298,18 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl shadow-2xl h-full flex flex-col overflow-hidden">
-      {/* Modern Header */}
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
+    <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl backdrop-blur-sm h-full flex flex-col overflow-hidden">
+      {/* Minimal Header */}
+      <div className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] p-4 border-b border-white/10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                          flex items-center justify-center border border-white/10">
+              <BarChart3 className="w-4 h-4 text-white/70" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">Analytics Hub</h2>
-              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} trends & insights</p>
+              <h2 className="text-lg font-semibold tracking-tight text-white">Analytics Hub</h2>
+              <p className="text-gray-500 text-sm">{getMetricLabel()} trends & insights</p>
             </div>
           </div>
           
@@ -431,7 +431,6 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     const peakValue = Math.max(...chartData.map(d => d.meta || 0))
                     if (selectedMetric === 'spend') return `$${peakValue.toFixed(2)}`
                     if (selectedMetric === 'roas') return `${peakValue.toFixed(2)}x`
-                    if (selectedMetric === 'ctr') return `${peakValue.toFixed(2)}%`
                     return peakValue.toLocaleString()
                   })()}
                 </div>
@@ -443,7 +442,6 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     const totalValue = chartData.reduce((sum, d) => sum + (d.meta || 0), 0)
                     if (selectedMetric === 'spend') return `$${totalValue.toFixed(2)}`
                     if (selectedMetric === 'roas') return `${(totalValue / chartData.length).toFixed(2)}x`
-                    if (selectedMetric === 'ctr') return `${(totalValue / chartData.length).toFixed(2)}%`
                     return totalValue.toLocaleString()
                   })()}
                 </div>

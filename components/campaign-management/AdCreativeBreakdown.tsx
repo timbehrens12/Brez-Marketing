@@ -305,22 +305,22 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl shadow-2xl h-full max-h-[680px] flex flex-col overflow-hidden">
-      {/* Modern Header */}
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
+    <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl backdrop-blur-sm h-full max-h-[680px] flex flex-col overflow-hidden">
+      {/* Minimal Header */}
+      <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] border-b border-white/10 p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <ImageIcon className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                          flex items-center justify-center border border-white/10">
+              <ImageIcon className="w-4 h-4 text-white/70" />
             </div>
             <div>
-              <h2 className="text-2xl text-white font-bold tracking-tight">Creative Studio</h2>
+              <h2 className="text-lg text-white font-semibold tracking-tight">Creative Studio</h2>
               <div className="flex items-center gap-3 mt-1">
-                <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-semibold px-3 py-1 rounded-full">
+                <Badge className="bg-white/5 text-gray-300 border-white/20 text-xs font-semibold px-2 py-0.5 rounded-lg">
                   {filteredAndSortedAds.length} Active Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
                 </Badge>
-                <span className="text-gray-400 text-sm">Performance insights and optimization</span>
+                <span className="text-gray-500 text-sm">Performance insights</span>
               </div>
             </div>
           </div>
@@ -411,11 +411,11 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <Card key={ad.ad_id} className="group relative bg-gradient-to-br from-[#0A0A0A] to-[#111] 
-                                              border border-[#222] hover:border-[#333] rounded-2xl 
-                                              transition-all duration-300 overflow-hidden shadow-lg hover:shadow-2xl">
-                  {/* Shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+                <Card key={ad.ad_id} className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
+                                              border border-white/10 hover:border-white/20 rounded-xl 
+                                              transition-all duration-300 overflow-hidden">
+                  {/* Subtle shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                                  translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   
                   <CardContent className="relative z-10 p-0 flex flex-col h-full">

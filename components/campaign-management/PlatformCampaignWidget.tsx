@@ -901,11 +901,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-      <div key={campaign.campaign_id} className="group relative bg-gradient-to-br from-[#0A0A0A] to-[#111] 
-                                                border border-[#222] hover:border-[#333] rounded-2xl 
+      <div key={campaign.campaign_id} className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] 
+                                                border border-white/10 hover:border-white/20 rounded-xl 
                                                 transition-all duration-300 overflow-hidden">
         {/* Subtle shimmer effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
         <div className="relative z-10 p-4">
@@ -1317,18 +1317,18 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
       */}
       
-      {/* Modern Compact Header */}
-      <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
+      {/* Minimal Lightweight Header */}
+      <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] border-b border-white/10 p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Target className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                            flex items-center justify-center border border-white/10">
+                <Target className="w-4 h-4 text-white/70" />
               </div>
               <div>
-                <CardTitle className="text-white text-2xl font-bold tracking-tight">Campaign Hub</CardTitle>
-                <p className="text-gray-400 text-base font-medium">Manage and optimize your advertising campaigns</p>
+                <CardTitle className="text-white text-lg font-semibold tracking-tight">Campaign Hub</CardTitle>
+                <p className="text-gray-500 text-sm">Manage your advertising campaigns</p>
               </div>
             </div>
           </div>

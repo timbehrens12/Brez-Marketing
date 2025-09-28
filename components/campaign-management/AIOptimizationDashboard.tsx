@@ -415,73 +415,73 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
   }
 
    return (
-     <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] overflow-hidden border border-[#222] rounded-2xl shadow-2xl">
-       <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-         <div className="flex items-center gap-4">
-           <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                         flex items-center justify-center border border-white/10 shadow-lg">
-             <Brain className="w-6 h-6 text-white" />
+     <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] overflow-hidden border border-white/10 rounded-xl backdrop-blur-sm">
+       <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] p-4 border-b border-white/10">
+         <div className="flex items-center gap-3">
+           <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                         flex items-center justify-center border border-white/10">
+             <Brain className="w-4 h-4 text-white/70" />
            </div>
            <div>
-             <CardTitle className="text-2xl font-bold tracking-tight text-white">
+             <CardTitle className="text-lg font-semibold tracking-tight text-white">
                AI Performance Center
              </CardTitle>
-             <p className="text-gray-400 font-medium text-base">Intelligent optimization insights</p>
+             <p className="text-gray-500 text-sm">Intelligent optimization insights</p>
            </div>
          </div>
        </CardHeader>
         
       <CardContent className="p-6">
-        {/* Enhanced KPI Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="group relative bg-gradient-to-br from-[#0f0f0f]/60 to-[#1a1a1a]/40 border border-[#333]/50 rounded-xl p-4 
-                          hover:border-[#444] transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+        {/* Lightweight KPI Cards */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-lg p-3 
+                          hover:border-white/20 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg 
+                <div className="w-5 h-5 bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg 
                               flex items-center justify-center border border-green-500/30">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
                 </div>
-                <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Profit Today</div>
+                <div className="text-xs text-gray-600 uppercase tracking-wide font-medium">Profit Today</div>
               </div>
-              <div className="text-xl font-bold text-white">{formatCurrency(summary.total_profit)}</div>
-              <div className="text-xs text-gray-600 mt-1">24h earnings</div>
+              <div className="text-lg font-bold text-white">{formatCurrency(summary.total_profit)}</div>
+              <div className="text-xs text-gray-700 mt-0.5">24h earnings</div>
             </div>
           </div>
           
-          <div className="group relative bg-gradient-to-br from-[#0f0f0f]/60 to-[#1a1a1a]/40 border border-[#333]/50 rounded-xl p-4 
-                          hover:border-[#444] transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+          <div className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-lg p-3 
+                          hover:border-white/20 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg 
+                <div className="w-5 h-5 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg 
                               flex items-center justify-center border border-blue-500/30">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
                 </div>
-                <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Avg ROAS</div>
+                <div className="text-xs text-gray-600 uppercase tracking-wide font-medium">Avg ROAS</div>
               </div>
-              <div className="text-xl font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
-              <div className="text-xs text-gray-600 mt-1">Return on spend</div>
+              <div className="text-lg font-bold text-white">{summary.average_roas.toFixed(2)}x</div>
+              <div className="text-xs text-gray-700 mt-0.5">Return on spend</div>
             </div>
           </div>
           
-          <div className="group relative bg-gradient-to-br from-[#0f0f0f]/60 to-[#1a1a1a]/40 border border-[#333]/50 rounded-xl p-4 
-                          hover:border-[#444] transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+          <div className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-lg p-3 
+                          hover:border-white/20 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-lg 
+                <div className="w-5 h-5 bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-lg 
                               flex items-center justify-center border border-purple-500/30">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
                 </div>
-                <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">AI Actions</div>
+                <div className="text-xs text-gray-600 uppercase tracking-wide font-medium">AI Actions</div>
               </div>
-              <div className="text-xl font-bold text-white">{summary.optimizations_available}</div>
-              <div className="text-xs text-gray-600 mt-1">Recommendations</div>
+              <div className="text-lg font-bold text-white">{summary.optimizations_available}</div>
+              <div className="text-xs text-gray-700 mt-0.5">Recommendations</div>
             </div>
           </div>
         </div>
@@ -493,11 +493,11 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
             return (
               <div 
                 key={adset.adset_id}
-                className="group relative bg-gradient-to-br from-[#0f0f0f]/60 to-[#1a1a1a]/40 border border-[#333]/50 
-                          rounded-2xl p-5 hover:border-[#444] transition-all duration-300 overflow-hidden"
+                className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 
+                          rounded-xl p-4 hover:border-white/20 transition-all duration-300 overflow-hidden"
               >
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+                {/* Subtle shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent 
                                translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 
                 <div className="relative z-10">
