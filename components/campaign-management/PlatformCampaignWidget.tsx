@@ -901,126 +901,127 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-      <div key={campaign.campaign_id} className="group relative bg-white/[0.01] 
-                                                border border-white/5 hover:border-white/10 hover:bg-white/[0.02] rounded-xl 
+      <div key={campaign.campaign_id} className="group relative bg-gradient-to-br from-[#0A0A0A] to-[#111] 
+                                                border border-[#222] hover:border-[#333] rounded-2xl 
                                                 transition-all duration-300 overflow-hidden">
         {/* Subtle shimmer effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
-        <div className="relative z-10 p-3">
-          {/* Compact Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-6 h-6 bg-[#1a1a1a] rounded-lg flex items-center justify-center border border-[#333] flex-shrink-0">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta" 
-                  width={14} 
-                  height={14} 
-                  className="object-contain rounded"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-white font-medium text-sm truncate">
-                  {campaign.campaign_name}
-                </h3>
-                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                  <span>{campaign.objective}</span>
-                  <span>•</span>
-                  <span>{campaign.budget_type}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex-shrink-0">
-              {isBeingChecked ? (
-                <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></div>
-              ) : (
-                <div className={`w-2 h-2 rounded-full ${
-                  campaign.status === 'ACTIVE' ? 'bg-emerald-400' : 
-                  campaign.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
-                }`}></div>
-              )}
-            </div>
+         <div className="relative z-10 p-3">
+           {/* Header with platform and status */}
+           <div className="flex items-center justify-between mb-3">
+             <div className="flex items-center gap-2 min-w-0 flex-1">
+               <div className="w-8 h-8 bg-[#1a1a1a] rounded-lg flex items-center justify-center border border-[#333] flex-shrink-0">
+                 <Image 
+                   src="https://i.imgur.com/6hyyRrs.png" 
+                   alt="Meta" 
+                   width={16} 
+                   height={16} 
+                   className="object-contain rounded"
+                 />
+               </div>
+               <div className="min-w-0 flex-1">
+                 <h3 className="text-white font-medium text-sm truncate mb-1">
+                   {campaign.campaign_name}
+                 </h3>
+                 <div className="flex items-center gap-1 text-xs text-gray-500">
+                   <span>{campaign.objective}</span>
+                   <span>•</span>
+                   <span>{campaign.budget_type}</span>
+                 </div>
+               </div>
+             </div>
+             <div className="flex items-center gap-1 flex-shrink-0">
+               {isBeingChecked ? (
+                 <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></div>
+               ) : (
+                 <div className={`w-2 h-2 rounded-full ${
+                   campaign.status === 'ACTIVE' ? 'bg-emerald-400' : 
+                   campaign.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
+                 }`}></div>
+               )}
+               <span className="text-xs text-gray-500">{campaign.status}</span>
+             </div>
           </div>
 
-          {/* Compact Metrics - 2 rows, 3 columns */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">Spent</div>
-                <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
-              </div>
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">ROAS</div>
-                <div className={`text-sm font-bold ${getROASColor(campaign.roas)}`}>
-                  {campaign.roas?.toFixed(2) || '0.00'}x
-                </div>
-              </div>
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">Clicks</div>
-                <div className="text-sm font-bold text-white">{formatNumber(campaign.clicks)}</div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">Impressions</div>
-                <div className="text-sm font-bold text-white">{formatNumber(campaign.impressions)}</div>
-              </div>
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">CTR</div>
-                <div className="text-sm font-bold text-white">{formatPercentage(campaign.ctr)}</div>
-              </div>
-              <div className="flex-1 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-                <div className="text-xs text-gray-600 mb-0.5">CPC</div>
-                <div className="text-sm font-bold text-white">{formatCurrency(campaign.cpc)}</div>
-              </div>
-            </div>
-          </div>
+           {/* Compact metrics */}
+           <div className="grid grid-cols-3 gap-2 mb-3">
+             <div className="bg-[#1a1a1a]/40 rounded-lg p-2 border border-[#333]/30">
+               <div className="text-xs text-gray-600 mb-0.5">Spent</div>
+               <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
+             </div>
+             <div className="bg-[#1a1a1a]/40 rounded-lg p-2 border border-[#333]/30">
+               <div className="text-xs text-gray-600 mb-0.5">ROAS</div>
+               <div className={`text-sm font-bold ${getROASColor(campaign.roas)}`}>
+                 {campaign.roas?.toFixed(2) || '0.00'}x
+               </div>
+             </div>
+             <div className="bg-[#1a1a1a]/40 rounded-lg p-2 border border-[#333]/30">
+               <div className="text-xs text-gray-600 mb-0.5">CTR</div>
+               <div className="text-sm font-bold text-white">{formatPercentage(campaign.ctr)}</div>
+             </div>
+           </div>
+           
+           {/* Secondary metrics */}
+           <div className="grid grid-cols-3 gap-2 mb-3">
+             <div className="text-center">
+               <div className="text-xs text-gray-600">Impressions</div>
+               <div className="text-sm font-medium text-white">{formatNumber(campaign.impressions)}</div>
+             </div>
+             <div className="text-center">
+               <div className="text-xs text-gray-600">Clicks</div>
+               <div className="text-sm font-medium text-white">{formatNumber(campaign.clicks)}</div>
+             </div>
+             <div className="text-center">
+               <div className="text-xs text-gray-600">CPC</div>
+               <div className="text-sm font-medium text-white">{formatCurrency(campaign.cpc)}</div>
+             </div>
+           </div>
 
-          {/* Compact AI Recommendation */}
-          {campaign.recommendation ? (
-            <div className="mt-3 bg-white/[0.01] rounded-lg p-2 border border-white/5">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-3 h-3 text-[#FF2A2A]" />
-                  <span className="text-xs font-medium text-white">AI Insight</span>
-                </div>
-                <Button
-                  onClick={() => {
-                    setSelectedRecommendation(campaign)
-                    setRecommendationDialogOpen(true)
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs px-2 py-1 h-6 text-gray-400 hover:text-white"
-                >
-                  View
-                </Button>
-              </div>
-              <div className="text-xs text-gray-400 leading-relaxed">
-                {campaign.recommendation.action.slice(0, 80)}...
-              </div>
-            </div>
-          ) : (
-            <div className="mt-3 bg-white/[0.005] rounded-lg p-2 border border-white/5 border-dashed">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-3 h-3 text-gray-600" />
-                  <span className="text-xs text-gray-500">Generate AI insight</span>
-                </div>
-                <Button
-                  onClick={() => generateRecommendation(campaign)}
-                  disabled={isGeneratingRecommendation}
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs px-2 py-1 h-6 text-gray-500 hover:text-white disabled:opacity-50"
-                >
-                  {isGeneratingRecommendation ? "..." : "Generate"}
-                </Button>
-              </div>
-            </div>
-          )}
+           {/* Compact AI Recommendation */}
+           {campaign.recommendation ? (
+             <div className="bg-[#1a1a1a]/40 rounded-lg p-2 border border-[#333]/30">
+               <div className="flex items-center justify-between mb-1">
+                 <div className="flex items-center gap-2">
+                   <Brain className="w-3 h-3 text-[#FF2A2A]" />
+                   <span className="text-xs font-medium text-white">AI Insight</span>
+                 </div>
+                 <Button
+                   onClick={() => {
+                     setSelectedRecommendation(campaign)
+                     setRecommendationDialogOpen(true)
+                   }}
+                   variant="ghost"
+                   size="sm"
+                   className="text-xs px-2 py-1 h-6 text-gray-400 hover:text-white"
+                 >
+                   View
+                 </Button>
+               </div>
+               <div className="text-xs text-gray-400 leading-relaxed">
+                 {campaign.recommendation.action.slice(0, 60)}...
+               </div>
+             </div>
+           ) : (
+             <div className="bg-[#1a1a1a]/20 rounded-lg p-2 border border-[#333]/20 border-dashed">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <Brain className="w-3 h-3 text-gray-600" />
+                   <span className="text-xs text-gray-500">Generate AI insight</span>
+                 </div>
+                 <Button
+                   onClick={() => generateRecommendation(campaign)}
+                   disabled={isGeneratingRecommendation}
+                   variant="ghost"
+                   size="sm"
+                   className="text-xs px-2 py-1 h-6 text-gray-500 hover:text-white disabled:opacity-50"
+                 >
+                   {isGeneratingRecommendation ? "..." : "Generate"}
+                 </Button>
+               </div>
+             </div>
+           )}
         </div>
       </div>
     )
@@ -1249,7 +1250,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-    <div className="relative">
+    <div className="space-y-4 relative">
       {/* Remove Loading Overlay - completely commented out */}
       {/* 
       {isRefreshing && (
@@ -1265,26 +1266,29 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
       */}
       
-      {/* Seamless Section - No container */}
-      {/* Flowing Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
-            <Target className="w-3 h-3 text-white/60" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-white">Campaign Hub</h2>
-            <p className="text-gray-500 text-sm">Manage your advertising campaigns</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Integrated Content */}
-      <div className="">
-        {/* Modern Flowing Tabs */}
-        <div className="">
-          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/60 border border-[#333]/50 rounded-2xl p-2 h-14 backdrop-blur-sm">
+       {/* Streamlined Header */}
+       <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-xl overflow-hidden">
+         <CardHeader className="border-b border-[#333]/50 p-4">
+           <div className="flex items-center justify-between">
+             <div className="flex items-center gap-3">
+               <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                             flex items-center justify-center border border-white/10">
+                 <Target className="w-4 h-4 text-white" />
+               </div>
+               <div>
+                 <CardTitle className="text-white text-lg font-semibold">Campaign Hub</CardTitle>
+                 <p className="text-gray-500 text-xs">Manage campaigns</p>
+               </div>
+             </div>
+           </div>
+         </CardHeader>
+        
+        <CardContent className="p-0">
+
+           {/* Compact Tabs */}
+           <div className="p-4">
+             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+               <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/60 border border-[#333]/50 rounded-xl p-1 h-10 backdrop-blur-sm">
               <TabsTrigger 
                 value="all" 
                 className="flex items-center justify-center gap-3 data-[state=active]:bg-white/10 data-[state=active]:text-white
@@ -1365,8 +1369,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               ))}
             </div>
           </Tabs>
-        </div>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>

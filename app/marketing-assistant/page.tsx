@@ -1253,56 +1253,42 @@ export default function MarketingAssistantPage() {
             className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* Unified Flowing Dashboard - No containers, seamless sections */}
-          <div className="px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24 animate-in fade-in duration-500">
+          {/* Unified Flowing Layout - Compact & Streamlined */}
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 space-y-4 animate-in fade-in duration-300">
             
-            {/* Performance Overview - Seamless top section */}
-            <div className="mb-12">
+            {/* Performance Overview - Streamlined */}
+            <div className="w-full">
               <BlendedWidgetsTable 
                 metaMetrics={metaMetrics}
                 layout="horizontal"
               />
             </div>
             
-            {/* Unified Content Flow - No grid containers */}
-            <div className="lg:flex lg:gap-12 xl:gap-16 space-y-12 lg:space-y-0">
+            {/* Main Content Grid - More unified */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               
-              {/* Primary Content Stream */}
-              <div className="lg:flex-1 space-y-12">
+              {/* Primary Content - Campaigns & Analytics */}
+              <div className="lg:col-span-3 space-y-4">
                 
-                {/* Campaign Hub */}
-                <div>
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                </div>
+                {/* Campaign Management */}
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 
-                {/* Analytics Flow - Side by side on larger screens */}
-                <div className="xl:flex xl:gap-12 space-y-12 xl:space-y-0">
-                  {/* Creative Studio */}
-                  <div className="xl:flex-[2]">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  </div>
-                  
-                  {/* Performance Trends */}
-                  <div className="xl:flex-1">
-                    <PerformanceChart 
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
-                  </div>
+                {/* Analytics Row - Side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  <PerformanceChart 
+                    preloadedPerformanceData={preloadedData.performanceData}
+                  />
                 </div>
                 
               </div>
 
-              {/* AI Insights Flow - Natural sidebar */}
-              <div className="lg:w-80 xl:w-96">
-                <div className="lg:sticky lg:top-6">
-                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                </div>
+              {/* AI Insights - Compact sidebar */}
+              <div className="lg:col-span-1">
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
               </div>
 
             </div>
-
-            {/* Natural bottom spacing */}
-            <div className="h-16"></div>
 
           </div>
         </>

@@ -305,23 +305,24 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="relative h-full max-h-[680px] flex flex-col">
-      {/* Seamless Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
-              <ImageIcon className="w-3 h-3 text-white/60" />
-            </div>
-            <div>
-              <h2 className="text-lg text-white font-semibold tracking-tight">Creative Studio</h2>
-              <div className="flex items-center gap-3 mt-1">
-                <Badge className="bg-white/5 text-gray-300 border-white/20 text-xs font-semibold px-2 py-0.5 rounded-lg">
-                  {filteredAndSortedAds.length} Active Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
-                </Badge>
-                <span className="text-gray-500 text-sm">Performance insights</span>
-              </div>
-            </div>
+     <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-xl h-full max-h-[680px] flex flex-col overflow-hidden">
+       {/* Streamlined Header */}
+       <CardHeader className="border-b border-[#333]/50 p-4">
+         <div className="flex items-center justify-between">
+           <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+                           flex items-center justify-center border border-white/10">
+               <ImageIcon className="w-4 h-4 text-white" />
+             </div>
+             <div>
+               <h2 className="text-lg text-white font-semibold">Creative Studio</h2>
+               <div className="flex items-center gap-2 mt-0.5">
+                 <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium px-2 py-0.5 rounded-md">
+                   {filteredAndSortedAds.length} Active
+                 </Badge>
+                 <span className="text-gray-500 text-xs">Performance insights</span>
+               </div>
+             </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -387,10 +388,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20 rounded-xl backdrop-blur-sm"
           />
         </div>
-      </div>
+      </CardHeader>
 
-      {/* Flowing Content */}
-      <div className="flex-1 overflow-hidden">
+       {/* Content */}
+       <CardContent className="flex-1 p-4 overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
@@ -410,16 +411,16 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <Card key={ad.ad_id} className="group relative bg-white/[0.01] 
-                                              border border-white/5 hover:border-white/10 hover:bg-white/[0.02] rounded-xl 
-                                              transition-all duration-300 overflow-hidden">
-                  {/* Subtle shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.005] to-transparent 
-                                 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  
-                  <CardContent className="relative z-10 p-0 flex flex-col h-full">
-                    {/* Compact Creative Preview */}
-                    <div className="relative h-20 bg-gradient-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center overflow-hidden">
+                 <Card key={ad.ad_id} className="group relative bg-gradient-to-br from-[#0A0A0A] to-[#111] 
+                                               border border-[#222] hover:border-[#333] rounded-xl 
+                                               transition-all duration-300 overflow-hidden">
+                   {/* Shimmer effect */}
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
+                                   translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                   
+                   <CardContent className="relative z-10 p-0 flex flex-col h-full">
+                     {/* Creative Image Section */}
+                     <div className="relative h-24 bg-gradient-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center overflow-hidden">
                       {ad.thumbnail_url || ad.image_url ? (
                         <Image 
                           src={ad.thumbnail_url || ad.image_url || ''} 
@@ -428,69 +429,63 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                           className="object-cover"
                         />
                       ) : (
-                        <ImageIcon className="h-4 w-4 text-gray-500" />
+                        <ImageIcon className="h-8 w-8 text-gray-500" />
                       )}
                       
-                      {/* Compact indicators */}
-                      <div className="absolute top-1 left-1">
-                        <Image
-                          src="https://i.imgur.com/6hyyRrs.png"
-                          alt="Meta"
-                          width={12}
-                          height={12}
-                          className="object-contain rounded-sm"
-                        />
-                      </div>
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       
-                      <div className="absolute top-1 right-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          ad.status === 'ACTIVE' ? 'bg-emerald-400' : 
-                          ad.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
-                        }`}></div>
-                      </div>
-                      
+                       {/* Compact indicators */}
+                       <div className="absolute top-1 left-1">
+                         <Image
+                           src="https://i.imgur.com/6hyyRrs.png"
+                           alt="Meta"
+                           width={12}
+                           height={12}
+                           className="object-contain rounded-sm"
+                         />
+                       </div>
+                       
+                       <div className="absolute top-1 right-1">
+                         <div className={`w-2 h-2 rounded-full ${
+                           ad.status === 'ACTIVE' ? 'bg-emerald-400' : 
+                           ad.status === 'PAUSED' ? 'bg-amber-400' : 'bg-gray-400'
+                         }`}></div>
+                       </div>
                     </div>
                     
-                    {/* Compact Content */}
-                    <div className="p-3 flex-1">
-                      {/* Title */}
-                      <h3 className="text-white font-medium text-xs mb-2 line-clamp-2 leading-tight">
-                        {ad.ad_name}
-                      </h3>
+                     {/* Content Section */}
+                     <div className="p-3 flex-1">
+                       {/* Title */}
+                       <h3 className="text-white font-medium text-xs mb-2 line-clamp-2 leading-tight">
+                         {ad.ad_name}
+                       </h3>
                       
-                      {/* Performance Metrics Grid */}
-                      <div className="grid grid-cols-3 gap-2 mt-auto">
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 mb-1">Spend</div>
-                          <div className="text-sm font-bold text-white">
-                            {formatCurrency(ad.spent)}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 mb-1">Clicks</div>
-                          <div className="text-sm font-bold text-white">
-                            {formatNumber(ad.clicks)}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 mb-1">CTR</div>
-                          <div className="text-sm font-bold text-white">
-                            {formatPercentage(ad.ctr)}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Bottom metrics bar */}
-                      <div className="mt-3 pt-3 border-t border-[#333]/50 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Impressions:</span>
-                          <span className="text-white font-medium">{formatNumber(ad.impressions)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Conversions:</span>
-                          <span className="text-white font-medium">{formatNumber(ad.conversions)}</span>
-                        </div>
-                      </div>
+                       {/* Compact Performance Metrics */}
+                       <div className="grid grid-cols-2 gap-2 text-xs">
+                         <div>
+                           <span className="text-gray-600">Spend:</span>
+                           <span className="text-white font-medium ml-1">{formatCurrency(ad.spent)}</span>
+                         </div>
+                         <div>
+                           <span className="text-gray-600">ROAS:</span>
+                           <span className={`font-medium ml-1 ${
+                             roas >= 3 ? 'text-green-400' : 
+                             roas >= 2 ? 'text-yellow-400' : 
+                             'text-red-400'
+                           }`}>
+                             {roas > 0 ? `${roas.toFixed(1)}x` : 'N/A'}
+                           </span>
+                         </div>
+                         <div>
+                           <span className="text-gray-600">Clicks:</span>
+                           <span className="text-white font-medium ml-1">{formatNumber(ad.clicks)}</span>
+                         </div>
+                         <div>
+                           <span className="text-gray-600">CTR:</span>
+                           <span className="text-white font-medium ml-1">{formatPercentage(ad.ctr)}</span>
+                         </div>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -499,7 +494,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </div>
         )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 } 

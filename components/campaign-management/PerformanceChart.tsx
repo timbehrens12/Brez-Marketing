@@ -298,17 +298,18 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <div className="relative h-full flex flex-col">
-      {/* Seamless Header */}
-      <div className="mb-6">
+    <Card className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl shadow-2xl h-full flex flex-col overflow-hidden">
+      {/* Modern Header */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-3 h-3 text-white/60" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-white">Analytics Hub</h2>
-              <p className="text-gray-500 text-sm">{getMetricLabel()} trends & insights</p>
+              <h2 className="text-2xl font-bold tracking-tight text-white">Analytics Hub</h2>
+              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} trends & insights</p>
             </div>
           </div>
           
@@ -416,13 +417,13 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
         </div>
       </div>
       
-      {/* Flowing Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Content */}
+      <CardContent className="p-0 flex-1 flex flex-col">
         {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (
           <div className="px-6 py-4 flex-1">
-            {/* Compact Stats */}
-            <div className="flex gap-3 mb-4">
+            {/* Quick Stats Bar */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-[#0f0f0f]/60 rounded-xl p-4 border border-[#333]/50">
                 <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Peak Value</div>
                 <div className="text-lg font-bold text-white">
@@ -430,6 +431,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     const peakValue = Math.max(...chartData.map(d => d.meta || 0))
                     if (selectedMetric === 'spend') return `$${peakValue.toFixed(2)}`
                     if (selectedMetric === 'roas') return `${peakValue.toFixed(2)}x`
+                    if (selectedMetric === 'ctr') return `${peakValue.toFixed(2)}%`
                     return peakValue.toLocaleString()
                   })()}
                 </div>
@@ -441,6 +443,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     const totalValue = chartData.reduce((sum, d) => sum + (d.meta || 0), 0)
                     if (selectedMetric === 'spend') return `$${totalValue.toFixed(2)}`
                     if (selectedMetric === 'roas') return `${(totalValue / chartData.length).toFixed(2)}x`
+                    if (selectedMetric === 'ctr') return `${(totalValue / chartData.length).toFixed(2)}%`
                     return totalValue.toLocaleString()
                   })()}
                 </div>
@@ -650,7 +653,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 } 
