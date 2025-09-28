@@ -1242,77 +1242,70 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="min-h-screen bg-[#0A0A0A] relative">
-      
-      {/* Clean, Minimal Header */}
-      <div className="sticky top-0 z-20 bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-white">Marketing Assistant</h1>
-                <p className="text-sm text-gray-400">AI-powered insights</p>
-              </div>
+    <div className="w-full space-y-6 mb-12 relative">
+      <GridOverlay />
+      <div className="relative z-10">
+        <>
+
+          {/* Meta Connection Status Banner - Responsive padding */}
+          <MetaConnectionStatus 
+            brandId={selectedBrandId} 
+            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
+          />
+
+          {/* Enhanced Flowing Layout - Modern & Dynamic */}
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24 space-y-6 lg:space-y-8 animate-in fade-in duration-500">
+            
+            {/* Hero Performance Overview - Prominent placement */}
+            <div className="w-full">
+              <BlendedWidgetsTable 
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={refreshAllWidgets}
-                disabled={isRefreshingAll || refreshCooldown}
-                variant="ghost"
-                size="sm"
-                className="text-gray-400 hover:text-white hover:bg-white/5"
-              >
-                <RefreshCw className={`w-4 h-4 ${isRefreshingAll ? 'animate-spin' : ''}`} />
-              </Button>
+            {/* Flowing Main Dashboard - Asymmetric but balanced */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               
-              {lastPageRefresh && (
-                <div className="text-xs text-gray-500">
-                  {format(lastPageRefresh, 'h:mm a')}
+              {/* Primary Content Flow - Campaigns & Analytics */}
+              <div className="lg:col-span-8 xl:col-span-9 space-y-6">
+                
+                {/* Campaign Hub - Priority placement */}
+                <div className="w-full">
+                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 </div>
-              )}
+                
+                {/* Analytics Grid - Responsive flow */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  {/* Creative Studio - Wider emphasis */}
+                  <div className="xl:col-span-2">
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  </div>
+                  
+                  {/* Performance Trends - Compact but prominent */}
+                  <div className="xl:col-span-1">
+                    <PerformanceChart 
+                      preloadedPerformanceData={preloadedData.performanceData}
+                    />
+                  </div>
+                </div>
+                
+              </div>
+
+              {/* AI Insights Sidebar - Strategic placement */}
+              <div className="lg:col-span-4 xl:col-span-3">
+                <div className="sticky top-6">
+                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+                </div>
+              </div>
+
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Meta Connection Status */}
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <MetaConnectionStatus brandId={selectedBrandId} />
-      </div>
+            {/* Spacer for better visual balance */}
+            <div className="h-8"></div>
 
-      {/* Flowing Content */}
-      <div className="max-w-7xl mx-auto px-6 pb-12 space-y-12">
-        
-        {/* Performance Overview - No heavy sections */}
-        <div className="space-y-6">
-          <BlendedWidgetsTable 
-            metaMetrics={metaMetrics}
-            layout="horizontal"
-          />
-        </div>
-        
-        {/* Campaign & AI - Side by side flow */}
-        <div className="grid grid-cols-1 2xl:grid-cols-3 gap-8">
-          <div className="2xl:col-span-2">
-            <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
           </div>
-          <div className="2xl:col-span-1">
-            <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-          </div>
-        </div>
-        
-        {/* Creative Analytics - Flowing grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-          <PerformanceChart 
-            preloadedPerformanceData={preloadedData.performanceData}
-          />
-        </div>
-
+        </>
       </div>
     </div>
   )
