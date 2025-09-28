@@ -1317,24 +1317,23 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
       */}
       
-      {/* Minimal Lightweight Header */}
-      <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
-        <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] border-b border-white/10 p-4">
+      {/* Seamless Integration - No Card Container */}
+      <div className="relative">
+        <div className="p-6 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
-                            flex items-center justify-center border border-white/10">
+              <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
                 <Target className="w-4 h-4 text-white/70" />
               </div>
               <div>
-                <CardTitle className="text-white text-lg font-semibold tracking-tight">Campaign Hub</CardTitle>
+                <h2 className="text-white text-lg font-semibold tracking-tight">Campaign Hub</h2>
                 <p className="text-gray-500 text-sm">Manage your advertising campaigns</p>
               </div>
             </div>
           </div>
-        </CardHeader>
+        </div>
         
-        <CardContent className="p-0">
+        <div className="relative">
 
           {/* Modern Flowing Tabs */}
           <div className="p-6">
@@ -1421,8 +1420,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
           </Tabs>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>

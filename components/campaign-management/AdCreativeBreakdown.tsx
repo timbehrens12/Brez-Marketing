@@ -305,13 +305,12 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl backdrop-blur-sm h-full max-h-[680px] flex flex-col overflow-hidden">
-      {/* Minimal Header */}
-      <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] border-b border-white/10 p-4">
+    <div className="relative h-full max-h-[680px] flex flex-col">
+      {/* Seamless Header */}
+      <div className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
-                          flex items-center justify-center border border-white/10">
+            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
               <ImageIcon className="w-4 h-4 text-white/70" />
             </div>
             <div>
@@ -388,10 +387,11 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20 rounded-xl backdrop-blur-sm"
           />
         </div>
-      </CardHeader>
+        </div>
+      </div>
 
       {/* Content */}
-      <CardContent className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 p-6 overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
@@ -560,7 +560,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </div>
         )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 } 

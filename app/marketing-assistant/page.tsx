@@ -1253,56 +1253,71 @@ export default function MarketingAssistantPage() {
             className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* Enhanced Flowing Layout - Modern & Dynamic */}
-          <div className="px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24 space-y-6 lg:space-y-8 animate-in fade-in duration-500">
+          {/* Unified Flowing Dashboard - Seamless Integration */}
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24 animate-in fade-in duration-500">
             
-            {/* Hero Performance Overview - Prominent placement */}
-            <div className="w-full">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                layout="horizontal"
-              />
-            </div>
-            
-            {/* Flowing Main Dashboard - Asymmetric but balanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            {/* Unified Background Container - Single flowing surface */}
+            <div className="relative bg-gradient-to-br from-white/[0.01] to-white/[0.03] backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
               
-              {/* Primary Content Flow - Campaigns & Analytics */}
-              <div className="lg:col-span-8 xl:col-span-9 space-y-6">
+              {/* Connecting Grid Overlay for Visual Unity */}
+              <div className="absolute inset-0 opacity-[0.02]">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)',
+                  backgroundSize: '24px 24px'
+                }}></div>
+              </div>
+              
+              {/* Performance Overview - Integrated into main flow */}
+              <div className="relative z-10 border-b border-white/5">
+                <BlendedWidgetsTable 
+                  metaMetrics={metaMetrics}
+                  layout="horizontal"
+                />
+              </div>
+              
+              {/* Main Dashboard Flow - No gaps, seamless integration */}
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12">
                 
-                {/* Campaign Hub - Priority placement */}
-                <div className="w-full">
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                </div>
-                
-                {/* Analytics Grid - Responsive flow */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                  {/* Creative Studio - Wider emphasis */}
-                  <div className="xl:col-span-2">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                {/* Primary Content Stream - Campaigns & Analytics */}
+                <div className="lg:col-span-8 xl:col-span-9 border-r border-white/5">
+                  
+                  {/* Campaign Hub - Connected to overview */}
+                  <div className="border-b border-white/5">
+                    <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                   </div>
                   
-                  {/* Performance Trends - Compact but prominent */}
-                  <div className="xl:col-span-1">
-                    <PerformanceChart 
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
+                  {/* Analytics Flow - Side by side with connecting line */}
+                  <div className="grid grid-cols-1 xl:grid-cols-3">
+                    
+                    {/* Creative Studio - Wider section */}
+                    <div className="xl:col-span-2 border-r border-white/5">
+                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                    </div>
+                    
+                    {/* Performance Trends - Integrated sidebar */}
+                    <div className="xl:col-span-1">
+                      <PerformanceChart 
+                        preloadedPerformanceData={preloadedData.performanceData}
+                      />
+                    </div>
+                    
+                  </div>
+                  
+                </div>
+
+                {/* AI Insights Stream - Unified sidebar */}
+                <div className="lg:col-span-4 xl:col-span-3">
+                  <div className="sticky top-0 h-screen overflow-auto">
+                    <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
                   </div>
                 </div>
-                
-              </div>
 
-              {/* AI Insights Sidebar - Strategic placement */}
-              <div className="lg:col-span-4 xl:col-span-3">
-                <div className="sticky top-6">
-                  <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                </div>
               </div>
-
+              
+              {/* Subtle footer connection */}
+              <div className="h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+              
             </div>
-
-            {/* Spacer for better visual balance */}
-            <div className="h-8"></div>
 
           </div>
         </>

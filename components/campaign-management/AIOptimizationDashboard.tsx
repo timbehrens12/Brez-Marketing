@@ -415,23 +415,22 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
   }
 
    return (
-     <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] overflow-hidden border border-white/10 rounded-xl backdrop-blur-sm">
-       <CardHeader className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] p-4 border-b border-white/10">
+     <div className="relative h-full">
+       <div className="p-6 pb-4">
          <div className="flex items-center gap-3">
-           <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
-                         flex items-center justify-center border border-white/10">
+           <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
              <Brain className="w-4 h-4 text-white/70" />
            </div>
            <div>
-             <CardTitle className="text-lg font-semibold tracking-tight text-white">
+             <h2 className="text-lg font-semibold tracking-tight text-white">
                AI Performance Center
-             </CardTitle>
+             </h2>
              <p className="text-gray-500 text-sm">Intelligent optimization insights</p>
            </div>
          </div>
-       </CardHeader>
+       </div>
         
-      <CardContent className="p-6">
+      <div className="p-6 pt-2">
         {/* Lightweight KPI Cards */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="group relative bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-lg p-3 
@@ -613,7 +612,7 @@ export default function AIOptimizationDashboard({ preloadedData }: AIOptimizatio
             )
           })}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

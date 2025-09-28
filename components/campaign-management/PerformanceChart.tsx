@@ -298,13 +298,12 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <Card className="bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/10 rounded-xl backdrop-blur-sm h-full flex flex-col overflow-hidden">
-      {/* Minimal Header */}
-      <div className="bg-gradient-to-r from-white/[0.01] to-white/[0.02] p-4 border-b border-white/10">
+    <div className="relative h-full flex flex-col">
+      {/* Seamless Header */}
+      <div className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
-                          flex items-center justify-center border border-white/10">
+            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-white/70" />
             </div>
             <div>
@@ -418,7 +417,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
       </div>
       
       {/* Content */}
-      <CardContent className="p-0 flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col">
         {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (
           <div className="px-6 py-4 flex-1">
@@ -651,7 +650,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 } 

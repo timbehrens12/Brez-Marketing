@@ -361,12 +361,11 @@ export default function BlendedWidgetsTable({
 
   if (layout === 'horizontal') {
     return (
-      <div className="relative bg-gradient-to-br from-[#0A0A0A]/40 to-[#111]/40 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden">
-        {/* Minimal Header */}
-        <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/30 p-4 border-b border-white/5">
+      <div className="relative">
+        {/* Seamless Header - No background separation */}
+        <div className="p-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
-                          flex items-center justify-center border border-white/10">
+            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
               <Layers className="w-4 h-4 text-white/70" />
             </div>
             <div>
@@ -376,8 +375,8 @@ export default function BlendedWidgetsTable({
           </div>
         </div>
         
-        {/* Lighter Metrics Grid */}
-        <div className="p-4">
+        {/* Integrated Metrics Grid */}
+        <div className="px-6 pb-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
             
             {/* Budget Usage Card */}
