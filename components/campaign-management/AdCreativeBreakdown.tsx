@@ -388,7 +388,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20 rounded-xl backdrop-blur-sm"
           />
         </div>
-      </CardHeader>
+      </div>
 
        {/* Content */}
        <div className="flex-1 p-4 overflow-hidden">
@@ -496,7 +496,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </div>
         )}
         </div>
-      </CardContent>
-    </Card>
+       </div>
+    </div>
   )
 } 

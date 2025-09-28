@@ -1368,8 +1368,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
           </Tabs>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
