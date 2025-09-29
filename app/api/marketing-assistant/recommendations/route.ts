@@ -401,9 +401,9 @@ export async function POST(request: NextRequest) {
 
     const { action, campaignId, actionId, brandId } = await request.json()
 
-    if (action === 'apply_action') {
-      // Apply the optimization action
-      const result = await applyOptimizationAction(campaignId, actionId, brandId, userId)
+    if (action === 'mark_done') {
+      // Mark action as manually completed
+      const result = await markActionAsDone(campaignId, actionId, brandId, userId)
       return NextResponse.json(result)
     }
 
@@ -418,6 +418,53 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error handling recommendation action:', error)
     return NextResponse.json({ error: 'Failed to process action' }, { status: 500 })
+  }
+}
+
+async function markActionAsDone(campaignId: string, actionId: string, brandId: string, userId: string) {
+  // Get the recommendation
+  const { data: recommendation } = await supabase
+    .from('ai_campaign_recommendations')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .eq('brand_id', brandId)
+    .single()
+
+  if (!recommendation) {
+    throw new Error('Recommendation not found')
+  }
+
+  const action = recommendation.recommendation.actions.find((a: any) => a.id === actionId)
+  if (!action) {
+    throw new Error('Action not found')
+  }
+
+  // Log the action as manually completed
+  await supabase
+    .from('optimization_action_log')
+    .insert({
+      user_id: userId,
+      brand_id: brandId,
+      campaign_id: campaignId,
+      action_type: action.type,
+      action_details: action,
+      recommendation_id: recommendation.id,
+      status: 'completed_manually',
+      applied_at: new Date().toISOString()
+    })
+
+  // Mark recommendation as completed
+  await supabase
+    .from('ai_campaign_recommendations')
+    .update({ 
+      expires_at: new Date().toISOString() // Expire it immediately
+    })
+    .eq('id', recommendation.id)
+
+  return {
+    success: true,
+    message: `Action "${action.label}" marked as completed`,
+    status: 'completed_manually'
   }
 }
 

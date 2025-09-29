@@ -242,24 +242,64 @@ export default function MarketingAssistantPage() {
         const trends = trendsData.trends
         const generatedAlerts: AlertItem[] = []
 
-        // Trend-based alerts with real performance analysis
-        if (trends?.spend && trends.spend.change > 50 && trends.spend.current > 200) {
-          generatedAlerts.push({
-            id: 'spend-surge',
-            type: 'warning',
-            title: 'Ad Spend Surging',
-            description: `Spend increased ${trends.spend.change}% to $${trends.spend.current.toLocaleString()} - monitor ROAS closely`,
-            timestamp: new Date(),
-            acknowledged: false
-          })
+        // Always generate some basic alerts for testing
+        if (metrics) {
+          // Low performance alerts
+          if (metrics.ctr < 2.0) {
+            generatedAlerts.push({
+              id: 'low-engagement',
+              type: 'warning',
+              title: 'Low Click-Through Rate',
+              description: `CTR of ${metrics.ctr.toFixed(2)}% is below 2% benchmark - creative refresh may improve performance`,
+              timestamp: new Date(),
+              acknowledged: false
+            })
+          }
+
+          // High CPC alerts
+          if (metrics.cpc > 1.0) {
+            generatedAlerts.push({
+              id: 'high-cpc',
+              type: 'error',
+              title: 'High Cost Per Click',
+              description: `CPC of $${metrics.cpc.toFixed(2)} is above $1.00 - consider optimizing targeting or ad quality`,
+              timestamp: new Date(),
+              acknowledged: false
+            })
+          }
+
+          // Low ROAS alerts
+          if (metrics.roas < 2.0 && metrics.spend > 1) {
+            generatedAlerts.push({
+              id: 'low-roas',
+              type: 'error',
+              title: 'Low Return on Ad Spend',
+              description: `ROAS of ${metrics.roas.toFixed(2)}x is below 2x target - review campaign effectiveness`,
+              timestamp: new Date(),
+              acknowledged: false
+            })
+          }
+
+          // Revenue tracking alerts
+          if (metrics.spend > 1 && metrics.revenue === 0) {
+            generatedAlerts.push({
+              id: 'no-revenue-tracking',
+              type: 'warning',
+              title: 'Revenue Tracking Issue',
+              description: `Campaign has spend of $${metrics.spend.toFixed(2)} but no tracked revenue - verify conversion tracking`,
+              timestamp: new Date(),
+              acknowledged: false
+            })
+          }
         }
 
-        if (trends?.cac && trends.cac.change > 30 && trends.cac.current > 25) {
+        // Trend-based alerts with lower thresholds
+        if (trends?.spend && trends.spend.change > 20 && trends.spend.current > 5) {
           generatedAlerts.push({
-            id: 'cac-rising',
-            type: 'error',
-            title: 'CAC Rising Fast',
-            description: `Customer acquisition cost up ${trends.cac.change}% to $${trends.cac.current.toFixed(2)} - check targeting efficiency`,
+            id: 'spend-increase',
+            type: 'info',
+            title: 'Ad Spend Increased',
+            description: `Spend increased ${trends.spend.change}% to $${trends.spend.current.toLocaleString()} - monitor performance closely`,
             timestamp: new Date(),
             acknowledged: false
           })
@@ -331,52 +371,54 @@ export default function MarketingAssistantPage() {
   }
 
 
-  const handleApplyAction = async (cardId: string, actionId: string) => {
+  const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) return
 
+      // Log the action as manually completed
       const response = await fetch('/api/marketing-assistant/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'apply_action',
-          campaignId: card.actions[0]?.id || card.id,
+          action: 'mark_done',
+          campaignId: card.id,
           actionId,
-          brandId: selectedBrandId
+          brandId: selectedBrandId,
+          status: 'completed_manually'
         })
       })
 
       if (response.ok) {
-        const result = await response.json()
-        
-        // Add to experiment queue as running
+        // Move to experiment queue as completed
         setExperimentQueue(prev => [...prev, {
           id: `exp_${Date.now()}`,
-          type: 'running',
+          type: 'completed',
           campaignName: card.title,
           action: card.actions.find(a => a.id === actionId)?.label || 'Unknown action',
-          projectedImpact: `+$${card.projectedImpact.revenue.toLocaleString()}`,
+          projectedImpact: 'Manual completion',
           risk: 'low'
         }])
 
-        // Remove the applied recommendation
+        // Remove the completed recommendation
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
-        
-        // Reload data
-        loadDashboardData()
       }
     } catch (error) {
-      console.error('Error applying action:', error)
+      console.error('Error marking as done:', error)
     }
   }
 
   const handleSimulateAction = async (cardId: string, actionId: string) => {
     try {
       const card = optimizationCards.find(c => c.id === cardId)
-      if (!card) return
+      if (!card) {
+        console.error('Card not found:', cardId)
+        return
+      }
+
+      console.log('Simulating action:', { cardId, actionId, card })
 
       const response = await fetch('/api/marketing-assistant/recommendations', {
         method: 'POST',
@@ -391,14 +433,21 @@ export default function MarketingAssistantPage() {
         })
       })
 
+      console.log('Simulation response status:', response.status)
+      
       if (response.ok) {
         const result = await response.json()
+        console.log('Simulation result:', result)
+        
         setSimulationData({
           card,
           action: card.actions.find(a => a.id === actionId),
           simulation: result.simulation
         })
         setShowSimulation(true)
+      } else {
+        const errorText = await response.text()
+        console.error('Simulation failed:', response.status, errorText)
       }
     } catch (error) {
       console.error('Error simulating action:', error)
@@ -704,15 +753,14 @@ export default function MarketingAssistantPage() {
                           </div>
                           <div>
                             <h3 className="text-white font-semibold">{card.title}</h3>
-                            <Badge variant={card.priority === 'high' ? 'destructive' : card.priority === 'medium' ? 'default' : 'secondary'}>
-                              {card.priority} priority
-                            </Badge>
+                            <p className="text-gray-400 text-sm">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-green-400 font-semibold">+${card.projectedImpact.revenue.toLocaleString()}</p>
-                          <p className="text-gray-400 text-sm">{card.projectedImpact.confidence}% confidence</p>
-                        </div>
+                         <div className="text-right">
+                           <Badge variant={card.priority === 'high' ? 'destructive' : card.priority === 'medium' ? 'default' : 'secondary'}>
+                             {card.priority} priority
+                           </Badge>
+                         </div>
                       </div>
                       
                       <p className="text-gray-300 text-sm mb-3">{card.description}</p>
@@ -736,14 +784,14 @@ export default function MarketingAssistantPage() {
                              className="border-[#333] text-gray-300"
                              onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
                            >
-                             Simulate
+                             Preview
                            </Button>
                            <Button 
                              size="sm" 
-                             className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80"
-                             onClick={() => handleApplyAction(card.id, card.actions[0]?.id)}
+                             className="bg-green-600 hover:bg-green-700"
+                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                            >
-                             Apply
+                             Mark as Done
                            </Button>
                          </div>
                       </div>
@@ -985,20 +1033,20 @@ export default function MarketingAssistantPage() {
                {/* Action Buttons */}
                <div className="flex gap-3">
                  <Button 
-                   className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 flex-1"
+                   className="bg-green-600 hover:bg-green-700 flex-1"
                    onClick={() => {
-                     handleApplyAction(simulationData.card.id, simulationData.action.id)
+                     handleMarkAsDone(simulationData.card.id, simulationData.action.id)
                      setShowSimulation(false)
                    }}
                  >
-                   Apply This Change
+                   Mark as Completed
                  </Button>
                  <Button 
                    variant="outline" 
                    className="border-[#333] text-gray-300"
                    onClick={() => setShowSimulation(false)}
                  >
-                   Cancel
+                   Close
                  </Button>
                </div>
              </div>
