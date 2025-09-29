@@ -207,15 +207,25 @@ export async function GET(request: NextRequest) {
         confidence,
         risk
       }
-    }).filter((allocation: any) => 
-      // Only show campaigns with any spend and budget differences
-      allocation.currentBudget > 1 && 
-      Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 1
+    })
+    
+    console.log(`🔍 BUDGET DEBUG: Generated ${Object.values(campaignGroups).length} raw allocations`)
+    console.log(`🔍 BUDGET DEBUG: Sample allocation before filter:`, Object.values(campaignGroups).length > 0 ? {
+      currentBudget: Math.round((Object.values(campaignGroups)[0] as any).totalSpend / (Object.values(campaignGroups)[0] as any).days),
+      days: (Object.values(campaignGroups)[0] as any).days,
+      totalSpend: (Object.values(campaignGroups)[0] as any).totalSpend
+    } : 'No campaigns')
+    
+    const filteredAllocations = allocations.filter((allocation: any) => 
+      // Only show campaigns with any spend and budget differences (lowered threshold to $0.10)
+      allocation.currentBudget > 0.10 && 
+      Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 0.05
     ).sort((a: any, b: any) => b.confidence - a.confidence) // Sort by confidence
 
-    console.log(`Budget allocation: Returning ${allocations.length} allocation opportunities`)
+    console.log(`🔍 BUDGET DEBUG: After filtering: ${filteredAllocations.length} allocations`)
+    console.log(`Budget allocation: Returning ${filteredAllocations.length} allocation opportunities`)
 
-    return NextResponse.json({ allocations })
+    return NextResponse.json({ allocations: filteredAllocations })
 
   } catch (error) {
     console.error('Error fetching budget allocations:', error)
