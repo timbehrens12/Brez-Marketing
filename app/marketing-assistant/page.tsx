@@ -683,11 +683,11 @@ export default function MarketingAssistantPage() {
           </div>
        )}
       
-      <div className="w-full px-2 sm:px-4 py-4 min-h-screen overflow-x-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 min-h-[calc(100vh-2rem)] max-w-[1920px] mx-auto">
-          
-          {/* Left Rail */}
-          <div className="col-span-1 lg:col-span-3 space-y-4 flex flex-col min-w-0">
+       <div className="w-full px-2 sm:px-4 lg:px-6 py-4 min-h-screen overflow-x-hidden">
+         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 min-h-[calc(100vh-2rem)] max-w-[1920px] mx-auto">
+           
+            {/* Left Rail */}
+           <div className="col-span-1 xl:col-span-3 space-y-4 flex flex-col min-w-0">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
@@ -841,7 +841,7 @@ export default function MarketingAssistantPage() {
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
                         <p className="text-sm">Loading audience data...</p>
-                      </div>
+                            </div>
                     )}
                     {!loading && audienceExpansions.length > 0 && audienceExpansions.map(expansion => (
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
@@ -898,8 +898,8 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-          {/* Middle Column - Main Work Area */}
-          <div className="col-span-1 lg:col-span-6 space-y-4 flex flex-col min-w-0">
+            {/* Middle Column - Main Work Area */}
+           <div className="col-span-1 xl:col-span-6 space-y-4 flex flex-col min-w-0">
             
             {/* KPI Band */}
             {kpiMetrics && (
@@ -1086,8 +1086,8 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-          {/* Right Rail */}
-          <div className="col-span-1 lg:col-span-3 space-y-4 flex flex-col min-w-0">
+            {/* Right Rail */}
+           <div className="col-span-1 xl:col-span-3 space-y-4 flex flex-col min-w-0">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
