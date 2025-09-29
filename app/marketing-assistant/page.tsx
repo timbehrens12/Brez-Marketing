@@ -821,7 +821,7 @@ export default function MarketingAssistantPage() {
                           </Button>
                           <Button 
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
+                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
                             onClick={() => handleMarkBudgetAsDone(allocation.id)}
                           >
                             <span className="truncate">Mark as Done</span>
@@ -879,7 +879,7 @@ export default function MarketingAssistantPage() {
                           </Button>
                           <Button 
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
+                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
                             onClick={() => handleMarkAudienceAsDone(expansion.id)}
                           >
                             <span className="truncate">Mark as Done</span>
@@ -1066,7 +1066,7 @@ export default function MarketingAssistantPage() {
                   </Button>
                   <Button
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
+                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                   >
                             <span className="truncate">Mark as Done</span>
