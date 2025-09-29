@@ -16,12 +16,12 @@ import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-lo
 // Icons
 import { 
   BarChart3, 
-  TrendingUp, 
+  TrendingUp,
   Target, 
   Zap, 
-  DollarSign, 
-  Eye, 
-  MousePointer, 
+  DollarSign,
+  Eye,
+  MousePointer,
   ShoppingCart,
   AlertTriangle,
   CheckCircle,
@@ -62,8 +62,8 @@ interface OptimizationCard {
     type: string
     label: string
     impact: {
-      revenue: number
-      roas: number
+  revenue: number
+  roas: number
       confidence: number
     }
     estimatedTimeToStabilize: string
@@ -72,7 +72,7 @@ interface OptimizationCard {
   recommendedValue: string
   projectedImpact: {
     revenue: number
-    roas: number
+  roas: number
     confidence: number
   }
 }
@@ -363,8 +363,8 @@ export default function MarketingAssistantPage() {
         }
 
         setAlerts(generatedAlerts)
-      }
-    } catch (error) {
+            }
+          } catch (error) {
       console.error('Error loading alerts:', error)
       setAlerts([])
     }
@@ -378,15 +378,15 @@ export default function MarketingAssistantPage() {
 
       // Log the action as manually completed
       const response = await fetch('/api/marketing-assistant/recommendations', {
-        method: 'POST',
+                    method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+                    body: JSON.stringify({
           action: 'mark_done',
           campaignId: card.id,
           actionId,
-          brandId: selectedBrandId,
+                      brandId: selectedBrandId,
           status: 'completed_manually'
         })
       })
@@ -404,8 +404,8 @@ export default function MarketingAssistantPage() {
 
         // Remove the completed recommendation
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
-      }
-    } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -494,7 +494,7 @@ export default function MarketingAssistantPage() {
     )
   }
 
-  return (
+    return (
     <div className="min-h-screen bg-[#0B0B0B] relative" 
          style={{
            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
@@ -518,15 +518,15 @@ export default function MarketingAssistantPage() {
            <div className="bg-[#111] border border-[#333] rounded-lg p-6 text-center">
              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-3"></div>
              <p className="text-white text-sm">Refreshing data...</p>
-           </div>
-         </div>
+            </div>
+          </div>
        )}
       
-      <div className="w-full px-6 py-4">
-        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)]">
+      <div className="w-full px-6 py-4 min-h-screen">
+        <div className="grid grid-cols-12 gap-4 min-h-[calc(100vh-2rem)]">
           
           {/* Left Rail */}
-          <div className="col-span-3 space-y-4 overflow-y-auto pr-2 h-full">
+          <div className="col-span-3 space-y-4 flex flex-col">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
@@ -535,12 +535,12 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <Filter className="w-5 h-5 text-white" />
-                  </div>
+            </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Scope & Filters</h3>
                     <p className="text-gray-400 text-sm">Configure analysis parameters</p>
-                  </div>
-                </div>
+            </div>
+          </div>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div>
@@ -549,7 +549,7 @@ export default function MarketingAssistantPage() {
                     dateRange={dateRange}
                     setDateRange={setDateRange}
                   />
-                </div>
+        </div>
                 
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
@@ -564,7 +564,7 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="tiktok">TikTok Only</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+      </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Campaign Status</label>
@@ -578,8 +578,8 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="paused">Paused Only</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
+        </div>
+        
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Attribution Window</label>
                   <Select defaultValue="7d_click_1d_view">
@@ -592,24 +592,24 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="28d_click_1d_view">28-day click, 1-day view</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+            </div>
               </CardContent>
             </Card>
 
             {/* Experiment Queue */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                   flex items-center justify-center border border-white/10">
                       <Zap className="w-5 h-5 text-white" />
-                    </div>
+          </div>
                     <div>
                       <h3 className="text-lg font-bold text-white">Experiment Queue</h3>
                       <p className="text-gray-400 text-sm">{experimentQueue.length} staged actions</p>
-                    </div>
-                  </div>
+        </div>
+      </div>
                   {experimentQueue.filter(exp => exp.type === 'staged').length > 0 && (
                     <Button 
                       onClick={() => handleBatchApply(experimentQueue.filter(exp => exp.type === 'staged').map(exp => exp.id))}
@@ -620,7 +620,7 @@ export default function MarketingAssistantPage() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-4 flex-1 overflow-y-auto">
                 <div className="space-y-3">
                   {experimentQueue.map(exp => (
                     <div key={exp.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
@@ -652,10 +652,10 @@ export default function MarketingAssistantPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+                </div>
 
           {/* Middle Column - Main Work Area */}
-          <div className="col-span-6 space-y-4 overflow-y-auto px-2 h-full">
+          <div className="col-span-6 space-y-4 flex flex-col">
             
             {/* KPI Band */}
             {kpiMetrics && (
@@ -666,12 +666,12 @@ export default function MarketingAssistantPage() {
                      <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10">
                        <DollarSign className="w-5 h-5 text-gray-400" />
-                      </div>
+                            </div>
                       <div>
                         <p className="text-gray-400 text-xs">Total Spend</p>
                         <p className="text-white text-lg font-bold">${kpiMetrics.spend.toLocaleString()}</p>
-                      </div>
-                    </div>
+                          </div>
+                        </div>
                   </CardContent>
                 </Card>
 
@@ -681,7 +681,7 @@ export default function MarketingAssistantPage() {
                      <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10">
                        <TrendingUp className="w-5 h-5 text-gray-400" />
-                      </div>
+                    </div>
                       <div>
                         <p className="text-gray-400 text-xs">ROAS</p>
                         <p className="text-white text-lg font-bold">{kpiMetrics.roas.toFixed(2)}x</p>
@@ -696,12 +696,12 @@ export default function MarketingAssistantPage() {
                      <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10">
                        <Eye className="w-5 h-5 text-gray-400" />
-                      </div>
+                            </div>
                       <div>
                         <p className="text-gray-400 text-xs">Impressions</p>
                         <p className="text-white text-lg font-bold">{kpiMetrics.impressions.toLocaleString()}</p>
-                      </div>
-                    </div>
+                          </div>
+                        </div>
                   </CardContent>
                 </Card>
 
@@ -711,26 +711,26 @@ export default function MarketingAssistantPage() {
                      <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10">
                        <MousePointer className="w-5 h-5 text-gray-400" />
-                      </div>
+                    </div>
                       <div>
                         <p className="text-gray-400 text-xs">CTR</p>
                         <p className="text-white text-lg font-bold">{kpiMetrics.ctr.toFixed(2)}%</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+              </CardContent>
+            </Card>
               </div>
             )}
 
             {/* Optimization Feed */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                   flex items-center justify-center border border-white/10">
                       <Brain className="w-6 h-6 text-white" />
-                    </div>
+                          </div>
                     <div>
                       <h2 className="text-2xl font-bold text-white">AI Optimization Feed</h2>
                       <p className="text-gray-400">Prioritized recommendations based on performance analysis</p>
@@ -739,10 +739,10 @@ export default function MarketingAssistantPage() {
                   <Button variant="outline" size="sm" className="border-[#333] text-gray-300">
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh
-                  </Button>
-                </div>
+                          </Button>
+                        </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-6 flex-1 overflow-y-auto">
                 <div className="space-y-4">
                   {optimizationCards.map(card => (
                     <div key={card.id} className="p-4 bg-[#1A1A1A] border border-[#333] rounded-lg">
@@ -750,7 +750,7 @@ export default function MarketingAssistantPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
                             <Target className="w-4 h-4 text-gray-400" />
-                          </div>
+                    </div>
                           <div>
                             <h3 className="text-white font-semibold">{card.title}</h3>
                             <p className="text-gray-400 text-sm">{card.projectedImpact.confidence}% confidence</p>
@@ -761,8 +761,8 @@ export default function MarketingAssistantPage() {
                              {card.priority} priority
                            </Badge>
                          </div>
-                      </div>
-                      
+                </div>
+
                       <p className="text-gray-300 text-sm mb-3">{card.description}</p>
                       
                       <div className="bg-[#0F0F0F] p-3 rounded-lg mb-3">
@@ -777,22 +777,22 @@ export default function MarketingAssistantPage() {
                           <span className="text-gray-400 mx-2">→</span>
                           <span className="text-green-400">{card.recommendedValue}</span>
                         </div>
-                         <div className="flex gap-2">
-                           <Button 
+                <div className="flex gap-2">
+                  <Button
                              size="sm" 
                              variant="outline" 
                              className="border-[#333] text-gray-300"
                              onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
                            >
                              Preview
-                           </Button>
-                           <Button 
+                  </Button>
+                  <Button
                              size="sm" 
                              className="bg-green-600 hover:bg-green-700"
                              onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                           >
+                  >
                              Mark as Done
-                           </Button>
+                  </Button>
                          </div>
                       </div>
                     </div>
@@ -808,10 +808,10 @@ export default function MarketingAssistantPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+        </div>
 
           {/* Right Rail */}
-          <div className="col-span-3 space-y-4 overflow-y-auto pl-2 h-full">
+          <div className="col-span-3 space-y-4 flex flex-col">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
@@ -820,11 +820,11 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
-                  </div>
+                </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Performance Trends</h3>
                     <p className="text-gray-400 text-sm">7-day overview</p>
-                  </div>
+              </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
@@ -835,34 +835,34 @@ export default function MarketingAssistantPage() {
                         <div>
                           <p className="text-gray-400 text-sm">Spend</p>
                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
-                        </div>
+              </div>
                         <div className={`flex items-center gap-1 ${trends.spend.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
                           {trends.spend.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
-                        </div>
-                      </div>
+                </div>
+              </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
-                        </div>
+                </div>
                         <div className={`flex items-center gap-1 ${trends.revenue.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
                           {trends.revenue.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
-                        </div>
-                      </div>
+              </div>
+                </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">ROAS</p>
                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-                        </div>
+              </div>
                         <div className={`flex items-center gap-1 ${trends.roas.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
                           {trends.roas.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                        </div>
-                      </div>
+                </div>
+                </div>
                     </>
                   )}
                   {!trends && (
@@ -874,14 +874,14 @@ export default function MarketingAssistantPage() {
                         </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <span className="text-sm">—</span>
-                        </div>
-                      </div>
-                      
+              </div>
+            </div>
+
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
-                        </div>
+                          </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <span className="text-sm">—</span>
                         </div>
@@ -903,20 +903,20 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Alerts */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <AlertTriangle className="w-5 h-5 text-gray-400" />
-                  </div>
+                        </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Alerts</h3>
                     <p className="text-gray-400 text-sm">{alerts.filter(a => !a.acknowledged).length} unread</p>
-                  </div>
-                </div>
+                        </div>
+                      </div>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-4 flex-1 overflow-y-auto">
                 <div className="space-y-3">
                   {alerts.map(alert => (
                     <div key={alert.id} className={`p-3 rounded-lg border ${
@@ -950,8 +950,8 @@ export default function MarketingAssistantPage() {
 
            </div>
          </div>
-       </div>
-
+                        </div>
+                        
        {/* Simulation Modal */}
        {showSimulation && simulationData && (
          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -960,23 +960,23 @@ export default function MarketingAssistantPage() {
                <div>
                  <h3 className="text-xl font-bold text-white">Simulation Results</h3>
                  <p className="text-gray-400">{simulationData.card.title}</p>
-               </div>
-               <Button 
+                            </div>
+                            <Button
                  variant="outline" 
-                 size="sm" 
+                              size="sm"
                  onClick={() => setShowSimulation(false)}
                  className="border-[#333] text-gray-300"
                >
                  Close
-               </Button>
-             </div>
+                            </Button>
+                          </div>
 
              <div className="space-y-6">
                {/* Action Details */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
                  <h4 className="text-white font-semibold mb-2">Proposed Action</h4>
                  <p className="text-gray-300 text-sm">{simulationData.action?.label}</p>
-               </div>
+                          </div>
 
                {/* Projected Impact */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -985,21 +985,21 @@ export default function MarketingAssistantPage() {
                    <div>
                      <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
                      <p className="text-green-400 text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
-                   </div>
+                        </div>
                    <div>
                      <p className="text-gray-400 text-xs">Projected ROAS</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.roas?.toFixed(2) || 0}x</p>
-                   </div>
+                      </div>
                    <div>
                      <p className="text-gray-400 text-xs">Confidence Level</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
-                   </div>
+                    </div>
                    <div>
                      <p className="text-gray-400 text-xs">Time to Stabilize</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.timeline || 'Unknown'}</p>
-                   </div>
-                 </div>
-               </div>
+            </div>
+          </div>
+        </div>
 
                {/* Risks & Safeguards */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1015,7 +1015,7 @@ export default function MarketingAssistantPage() {
                          </li>
                        ))}
                      </ul>
-                   </div>
+                    </div>
                    <div>
                      <p className="text-gray-400 text-xs mb-1">Safeguards in Place</p>
                      <ul className="text-gray-300 text-sm space-y-1">
@@ -1026,9 +1026,9 @@ export default function MarketingAssistantPage() {
                          </li>
                        ))}
                      </ul>
-                   </div>
-                 </div>
-               </div>
+                </div>
+                  </div>
+                  </div>
 
                {/* Action Buttons */}
                <div className="flex gap-3">
@@ -1047,12 +1047,12 @@ export default function MarketingAssistantPage() {
                    onClick={() => setShowSimulation(false)}
                  >
                    Close
-                 </Button>
-               </div>
-             </div>
-           </div>
-         </div>
+                    </Button>
+                  </div>
+                      </div>
+                    </div>
+                </div>
        )}
-     </div>
-   )
- }
+    </div>
+  )
+}
