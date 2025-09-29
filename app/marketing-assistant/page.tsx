@@ -129,6 +129,8 @@ export default function MarketingAssistantPage() {
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [simulationData, setSimulationData] = useState<any>(null)
   const [showSimulation, setShowSimulation] = useState(false)
+  const [explanationData, setExplanationData] = useState<any>(null)
+  const [showExplanation, setShowExplanation] = useState(false)
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days  
     to: new Date()
@@ -411,6 +413,103 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  const handleExplainRecommendation = async (cardId: string) => {
+    try {
+      const card = optimizationCards.find(c => c.id === cardId)
+      if (!card) return
+
+      const response = await fetch('/api/marketing-assistant/explain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'recommendation',
+          data: card,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        const explanation = await response.json()
+        setExplanationData(explanation)
+        setShowExplanation(true)
+      }
+    } catch (error) {
+      console.error('Error getting explanation:', error)
+    }
+  }
+
+  const handleExplainBudgetAllocation = async (allocationId: string) => {
+    try {
+      const allocation = budgetAllocations.find(a => a.id === allocationId)
+      if (!allocation) return
+
+      const response = await fetch('/api/marketing-assistant/explain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'budget_allocation',
+          data: allocation,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        const explanation = await response.json()
+        setExplanationData(explanation)
+        setShowExplanation(true)
+      }
+    } catch (error) {
+      console.error('Error getting budget explanation:', error)
+    }
+  }
+
+  const handleExplainAudienceExpansion = async (expansionId: string) => {
+    try {
+      const expansion = audienceExpansions.find(e => e.id === expansionId)
+      if (!expansion) return
+
+      const response = await fetch('/api/marketing-assistant/explain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'audience_expansion',
+          data: expansion,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        const explanation = await response.json()
+        setExplanationData(explanation)
+        setShowExplanation(true)
+      }
+    } catch (error) {
+      console.error('Error getting audience explanation:', error)
+    }
+  }
+
+  const handleMarkBudgetAsDone = async (allocationId: string) => {
+    try {
+      setBudgetAllocations(prev => prev.filter(a => a.id !== allocationId))
+    } catch (error) {
+      console.error('Error marking budget allocation as done:', error)
+    }
+  }
+
+  const handleMarkAudienceAsDone = async (expansionId: string) => {
+    try {
+      setAudienceExpansions(prev => prev.filter(e => e.id !== expansionId))
+    } catch (error) {
+      console.error('Error marking audience expansion as done:', error)
+    }
+  }
+
   const handleSimulateAction = async (cardId: string, actionId: string) => {
     try {
       const card = optimizationCards.find(c => c.id === cardId)
@@ -627,8 +726,22 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" className="text-xs">Simulate</Button>
-                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Mark as Done</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-xs"
+                            onClick={() => handleExplainBudgetAllocation(allocation.id)}
+                          >
+                            <Brain className="w-3 h-3 mr-1" />
+                            Explain
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs"
+                            onClick={() => handleMarkBudgetAsDone(allocation.id)}
+                          >
+                            Mark as Done
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -664,8 +777,22 @@ export default function MarketingAssistantPage() {
                         </div>
                         <p className="text-blue-400 text-xs mt-1">Est. CPA: ${expansion.estimatedCpa}</p>
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" className="text-xs">Preview</Button>
-                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Mark as Done</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-xs"
+                            onClick={() => handleExplainAudienceExpansion(expansion.id)}
+                          >
+                            <Brain className="w-3 h-3 mr-1" />
+                            Explain
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs"
+                            onClick={() => handleMarkAudienceAsDone(expansion.id)}
+                          >
+                            Mark as Done
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -818,13 +945,14 @@ export default function MarketingAssistantPage() {
                             size="sm" 
                             variant="outline" 
                             className="border-[#333] text-gray-300 text-xs flex-1"
-                            onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
+                            onClick={() => handleExplainRecommendation(card.id)}
                           >
-                            Preview
+                            <Brain className="w-3 h-3 mr-1" />
+                            Explain
                           </Button>
                           <Button
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-xs flex-1"
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1"
                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                           >
                             Mark as Done
@@ -1084,6 +1212,105 @@ export default function MarketingAssistantPage() {
                       </div>
                     </div>
                 </div>
+       )}
+
+       {/* AI Explanation Modal */}
+       {showExplanation && explanationData && (
+         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-[#111] border border-[#333] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+             <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                               flex items-center justify-center border border-white/10">
+                   <Brain className="w-5 h-5 text-white" />
+                 </div>
+                 <div>
+                   <h3 className="text-xl font-bold text-white">AI Analysis</h3>
+                   <p className="text-gray-400">In-depth recommendation explanation</p>
+                 </div>
+               </div>
+               <Button
+                 variant="outline" 
+                 size="sm"
+                 onClick={() => setShowExplanation(false)}
+                 className="border-[#333] text-gray-300"
+               >
+                 Close
+               </Button>
+             </div>
+
+             <div className="space-y-6">
+               {/* Why This Matters */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                   <Target className="w-4 h-4" />
+                   Why This Recommendation Matters
+                 </h4>
+                 <p className="text-gray-300 text-sm leading-relaxed">{explanationData.reasoning}</p>
+               </div>
+
+               {/* Data Analysis */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                   <BarChart3 className="w-4 h-4" />
+                   Data-Driven Insights
+                 </h4>
+                 <div className="space-y-2">
+                   {explanationData.insights?.map((insight: string, index: number) => (
+                     <div key={index} className="flex items-start gap-2">
+                       <span className="text-blue-400 mt-1">•</span>
+                       <p className="text-gray-300 text-sm">{insight}</p>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Expected Outcomes */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                   <TrendingUp className="w-4 h-4" />
+                   Expected Outcomes
+                 </h4>
+                 <div className="grid grid-cols-2 gap-4">
+                   {explanationData.outcomes?.map((outcome: any, index: number) => (
+                     <div key={index} className="text-center">
+                       <p className="text-gray-400 text-xs">{outcome.label}</p>
+                       <p className={`text-lg font-bold ${outcome.positive ? 'text-green-400' : 'text-red-400'}`}>
+                         {outcome.value}
+                       </p>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Implementation Steps */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                   <CheckCircle className="w-4 h-4" />
+                   How to Implement
+                 </h4>
+                 <div className="space-y-2">
+                   {explanationData.steps?.map((step: string, index: number) => (
+                     <div key={index} className="flex items-start gap-2">
+                       <span className="text-[#FF2A2A] text-sm font-bold mt-1">{index + 1}.</span>
+                       <p className="text-gray-300 text-sm">{step}</p>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             </div>
+
+             {/* Close Button */}
+             <div className="flex justify-end pt-6">
+               <Button 
+                 className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black"
+                 onClick={() => setShowExplanation(false)}
+               >
+                 Got It
+               </Button>
+             </div>
+           </div>
+         </div>
        )}
     </div>
   )
