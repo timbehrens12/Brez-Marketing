@@ -1882,7 +1882,7 @@ export default function LeadGeneratorPage() {
                         
                         {usageData.remaining > 0 && (
                           <div className="text-right">
-                            <div className="text-sm font-medium text-blue-400">
+                            <div className="text-xs font-medium text-white bg-red-600 px-2 py-1 rounded-full">
                               Ready
                             </div>
                           </div>
