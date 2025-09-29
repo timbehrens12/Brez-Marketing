@@ -186,35 +186,79 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       
       console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
 
-      // Budget optimization - if campaign has decent spend and engagement, recommend scale
+      // Smart Budget Optimization with Multiple Scaling Options
       if ((roas > 1.5 || (perf.totalClicks > 5 && ctr > 1.0)) && avgDailySpend > 5) {
         const currentBudget = campaign.daily_budget || avgDailySpend
-        const recommendedBudget = Math.round(currentBudget * 1.5)
-        const projectedRevenue = (recommendedBudget - currentBudget) * roas
-
+        const efficiency = ctr * (roas || 1) // Combined efficiency metric
+        
+        // Smart scaling based on performance strength
+        let scalingMultiplier = 1.2 // Conservative default
+        let priority: 'high' | 'medium' | 'low' = 'medium'
+        let confidence = 70
+        
+        if (roas > 3 && ctr > 1.5) {
+          scalingMultiplier = 2.0 // Aggressive scaling for winners
+          priority = 'high'
+          confidence = 90
+        } else if (roas > 2 || ctr > 1.2) {
+          scalingMultiplier = 1.5 // Moderate scaling
+          confidence = 80
+        }
+        
+        const recommendedBudget = Math.round(currentBudget * scalingMultiplier)
+        const projectedRevenue = (recommendedBudget - currentBudget) * (roas || 2)
+        
+        // Generate dynamic scaling options
+        const conservativeIncrease = Math.round(currentBudget * 1.2)
+        const aggressiveIncrease = Math.round(currentBudget * 2.0)
+        
         recommendations.push({
           type: 'budget',
-          priority: roas > 4 ? 'high' : 'medium',
-          title: 'Scale High-Performing Campaign',
-          description: `Campaign "${campaign.campaign_name}" has strong ROAS of ${roas.toFixed(1)}x. Consider increasing budget to capture more profitable traffic.`,
-          rootCause: `Analysis shows this campaign generates ${roas.toFixed(1)}x ROAS with consistent daily spend of $${avgDailySpend.toFixed(0)}. Market opportunity exists for scale.`,
-          actions: [{
-            id: 'increase_budget',
-            type: 'budget_increase',
-            label: `Increase daily budget to $${recommendedBudget}`,
-            impact: {
-              revenue: projectedRevenue,
-              roas: roas * 0.9, // Slight decrease due to scale
-              confidence: 85
+          priority,
+          title: `Smart Budget Scaling - ${campaign.campaign_name}`,
+          description: `Campaign shows strong signals (${ctr.toFixed(2)}% CTR, ${roas.toFixed(1)}x ROAS). Scale intelligently to maximize opportunity while managing risk.`,
+          rootCause: `Efficiency Score: ${efficiency.toFixed(1)} (CTR × ROAS). Campaign is performing ${efficiency > 3 ? 'exceptionally' : efficiency > 2 ? 'well' : 'adequately'} vs benchmarks. Current daily spend of $${avgDailySpend.toFixed(0)} leaves headroom for profitable scaling.`,
+          actions: [
+            {
+              id: 'conservative_scale',
+              type: 'budget_increase',
+              label: `Conservative Scale: +20% to $${conservativeIncrease}/day`,
+              impact: {
+                revenue: (conservativeIncrease - currentBudget) * (roas || 2),
+                roas: roas * 0.95,
+                confidence: Math.min(confidence + 10, 95)
+              },
+              estimatedTimeToStabilize: '2-3 days'
             },
-            estimatedTimeToStabilize: '3-5 days'
-          }],
-          currentValue: `$${currentBudget}/day`,
-          recommendedValue: `$${recommendedBudget}/day`,
+            {
+              id: 'optimal_scale',
+              type: 'budget_increase', 
+              label: `Optimal Scale: +${Math.round((scalingMultiplier - 1) * 100)}% to $${recommendedBudget}/day`,
+              impact: {
+                revenue: projectedRevenue,
+                roas: roas * 0.9,
+                confidence
+              },
+              estimatedTimeToStabilize: '3-5 days'
+            },
+            ...(efficiency > 3 ? [{
+              id: 'aggressive_scale',
+              type: 'budget_increase',
+              label: `Aggressive Scale: +100% to $${aggressiveIncrease}/day`,
+              impact: {
+                revenue: (aggressiveIncrease - currentBudget) * (roas || 2) * 0.8,
+                roas: roas * 0.8,
+                confidence: Math.max(confidence - 15, 60)
+              },
+              estimatedTimeToStabilize: '5-7 days'
+            }] : [])
+          ],
+          currentValue: `$${currentBudget.toFixed(0)}/day`,
+          recommendedValue: `$${recommendedBudget}/day (${Math.round((scalingMultiplier - 1) * 100)}% increase)`,
           projectedImpact: {
             revenue: projectedRevenue,
             roas: roas * 0.9,
-            confidence: 85
+            confidence
           },
           campaignId: campaign.campaign_id,
           campaignName: campaign.campaign_name,
@@ -222,31 +266,52 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
         })
       }
 
-      // CTR optimization - if low CTR, recommend creative refresh
-      if (ctr < 1.5 && perf.totalImpressions > 50) {
+      // Advanced Creative Performance Analysis
+      if (ctr < 1.8 && perf.totalImpressions > 50) {
+        const severity = ctr < 0.8 ? 'critical' : ctr < 1.2 ? 'high' : 'medium'
+        const urgency = severity === 'critical' ? 'high' : 'medium'
+        
+        // Calculate potential improvements
+        const benchmarkCTR = 2.0 // Industry benchmark
+        const potentialCTRIncrease = benchmarkCTR - ctr
+        const costSavings = (cpc * perf.totalClicks * 0.3) // 30% CPC reduction from better CTR
+        
         recommendations.push({
           type: 'creative',
-          priority: ctr < 1 ? 'high' : 'medium',
-          title: 'Improve Ad Creative Performance',
-          description: `Campaign "${campaign.campaign_name}" has low CTR of ${ctr.toFixed(2)}%. New creatives could improve engagement and reduce costs.`,
-          rootCause: `CTR of ${ctr.toFixed(2)}% is below industry benchmark of 2-3%. Ad fatigue or poor creative-audience fit likely causing high CPCs.`,
-          actions: [{
-            id: 'refresh_creative',
-            type: 'creative_refresh',
-            label: 'Add new ad creatives and test variations',
-            impact: {
-              revenue: perf.totalSpend * 0.3, // 30% improvement
-              roas: roas * 1.4,
-              confidence: 75
+          priority: urgency,
+          title: `Creative Performance ${severity === 'critical' ? 'Emergency' : 'Optimization'} - ${campaign.campaign_name}`,
+          description: `CTR of ${ctr.toFixed(2)}% is ${severity === 'critical' ? 'critically' : 'significantly'} below benchmarks. Immediate creative refresh needed to reduce costs and improve performance.`,
+          rootCause: `Performance Analysis: CTR ${ctr.toFixed(2)}% vs ${benchmarkCTR}% benchmark (${((benchmarkCTR - ctr) / benchmarkCTR * 100).toFixed(0)}% gap). Current CPC of $${cpc.toFixed(2)} is likely inflated due to poor engagement. ${perf.totalImpressions} impressions with only ${perf.totalClicks} clicks indicates creative fatigue or audience mismatch.`,
+          actions: [
+            {
+              id: 'immediate_creative_test',
+              type: 'creative_refresh',
+              label: `Launch A/B test with 3 new creative variations`,
+              impact: {
+                revenue: costSavings * (roas || 2),
+                roas: roas * 1.3,
+                confidence: 85
+              },
+              estimatedTimeToStabilize: '5-7 days'
             },
-            estimatedTimeToStabilize: '7-10 days'
-          }],
-          currentValue: `${ctr.toFixed(2)}% CTR`,
-          recommendedValue: `${(ctr * 1.5).toFixed(2)}% CTR`,
+            {
+              id: 'creative_strategy_overhaul',
+              type: 'creative_strategy',
+              label: `Complete creative strategy refresh with new angles`,
+              impact: {
+                revenue: costSavings * (roas || 2) * 1.5,
+                roas: roas * 1.6,
+                confidence: 70
+              },
+              estimatedTimeToStabilize: '10-14 days'
+            }
+          ],
+          currentValue: `${ctr.toFixed(2)}% CTR, $${cpc.toFixed(2)} CPC`,
+          recommendedValue: `${benchmarkCTR.toFixed(1)}% CTR, $${(cpc * 0.7).toFixed(2)} CPC`,
           projectedImpact: {
-            revenue: perf.totalSpend * 0.3,
+            revenue: costSavings * (roas || 2),
             roas: roas * 1.4,
-            confidence: 75
+            confidence: 80
           },
           campaignId: campaign.campaign_id,
           campaignName: campaign.campaign_name,

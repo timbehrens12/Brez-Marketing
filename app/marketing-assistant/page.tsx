@@ -109,6 +109,8 @@ export default function MarketingAssistantPage() {
   const [loading, setLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
+  const [simulationData, setSimulationData] = useState<any>(null)
+  const [showSimulation, setShowSimulation] = useState(false)
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days  
     to: new Date()
@@ -368,6 +370,38 @@ export default function MarketingAssistantPage() {
       }
     } catch (error) {
       console.error('Error applying action:', error)
+    }
+  }
+
+  const handleSimulateAction = async (cardId: string, actionId: string) => {
+    try {
+      const card = optimizationCards.find(c => c.id === cardId)
+      if (!card) return
+
+      const response = await fetch('/api/marketing-assistant/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'simulate_action',
+          campaignId: card.id,
+          actionId,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setSimulationData({
+          card,
+          action: card.actions.find(a => a.id === actionId),
+          simulation: result.simulation
+        })
+        setShowSimulation(true)
+      }
+    } catch (error) {
+      console.error('Error simulating action:', error)
     }
   }
 
@@ -695,18 +729,23 @@ export default function MarketingAssistantPage() {
                           <span className="text-gray-400 mx-2">→</span>
                           <span className="text-green-400">{card.recommendedValue}</span>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="border-[#333] text-gray-300">
-                            Simulate
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80"
-                            onClick={() => handleApplyAction(card.id, card.actions[0]?.id)}
-                          >
-                            Apply
-                          </Button>
-                        </div>
+                         <div className="flex gap-2">
+                           <Button 
+                             size="sm" 
+                             variant="outline" 
+                             className="border-[#333] text-gray-300"
+                             onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
+                           >
+                             Simulate
+                           </Button>
+                           <Button 
+                             size="sm" 
+                             className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80"
+                             onClick={() => handleApplyAction(card.id, card.actions[0]?.id)}
+                           >
+                             Apply
+                           </Button>
+                         </div>
                       </div>
                     </div>
                   ))}
@@ -861,9 +900,111 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+           </div>
+         </div>
+       </div>
+
+       {/* Simulation Modal */}
+       {showSimulation && simulationData && (
+         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-[#111] border border-[#333] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+             <div className="flex items-center justify-between mb-6">
+               <div>
+                 <h3 className="text-xl font-bold text-white">Simulation Results</h3>
+                 <p className="text-gray-400">{simulationData.card.title}</p>
+               </div>
+               <Button 
+                 variant="outline" 
+                 size="sm" 
+                 onClick={() => setShowSimulation(false)}
+                 className="border-[#333] text-gray-300"
+               >
+                 Close
+               </Button>
+             </div>
+
+             <div className="space-y-6">
+               {/* Action Details */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-2">Proposed Action</h4>
+                 <p className="text-gray-300 text-sm">{simulationData.action?.label}</p>
+               </div>
+
+               {/* Projected Impact */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3">7-Day Projection</h4>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
+                     <p className="text-green-400 text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
+                   </div>
+                   <div>
+                     <p className="text-gray-400 text-xs">Projected ROAS</p>
+                     <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.roas?.toFixed(2) || 0}x</p>
+                   </div>
+                   <div>
+                     <p className="text-gray-400 text-xs">Confidence Level</p>
+                     <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
+                   </div>
+                   <div>
+                     <p className="text-gray-400 text-xs">Time to Stabilize</p>
+                     <p className="text-white text-lg font-bold">{simulationData.simulation?.timeline || 'Unknown'}</p>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Risks & Safeguards */}
+               <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
+                 <h4 className="text-white font-semibold mb-3">Risks & Safeguards</h4>
+                 <div className="space-y-3">
+                   <div>
+                     <p className="text-gray-400 text-xs mb-1">Potential Risks</p>
+                     <ul className="text-gray-300 text-sm space-y-1">
+                       {simulationData.simulation?.risks?.map((risk: string, index: number) => (
+                         <li key={index} className="flex items-start gap-2">
+                           <span className="text-yellow-400 mt-1">⚠</span>
+                           {risk}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                   <div>
+                     <p className="text-gray-400 text-xs mb-1">Safeguards in Place</p>
+                     <ul className="text-gray-300 text-sm space-y-1">
+                       {simulationData.simulation?.safeguards?.map((safeguard: string, index: number) => (
+                         <li key={index} className="flex items-start gap-2">
+                           <span className="text-green-400 mt-1">✓</span>
+                           {safeguard}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Action Buttons */}
+               <div className="flex gap-3">
+                 <Button 
+                   className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 flex-1"
+                   onClick={() => {
+                     handleApplyAction(simulationData.card.id, simulationData.action.id)
+                     setShowSimulation(false)
+                   }}
+                 >
+                   Apply This Change
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   className="border-[#333] text-gray-300"
+                   onClick={() => setShowSimulation(false)}
+                 >
+                   Cancel
+                 </Button>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   )
+ }
