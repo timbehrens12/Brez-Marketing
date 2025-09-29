@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
-import { MetricCard } from "@/components/metrics/MetricCard"
-import { GridOverlay } from "@/components/GridOverlay"
 import { DateRange } from "react-day-picker"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { subDays, format } from "date-fns"
@@ -21,80 +19,41 @@ import { useDataBackfill } from "@/lib/hooks/useDataBackfill"
 import { BackfillAlert } from "@/components/BackfillAlert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
-import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
-import AIOptimizationDashboard from "@/components/campaign-management/AIOptimizationDashboard"
-import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBreakdown"
-
-import PerformanceChart from "@/components/campaign-management/PerformanceChart"
-import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
-
-
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Brain, Clock, Check } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  RefreshCw, 
+  Brain, 
+  Clock, 
+  Check, 
+  Search, 
+  Filter,
+  Play,
+  Settings,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Eye,
+  MousePointer,
+  Target,
+  Zap,
+  AlertTriangle,
+  Calendar,
+  Activity,
+  Palette,
+  BarChart3,
+  Users,
+  MessageSquare,
+  CheckCircle,
+  X,
+  Plus
+} from "lucide-react"
 
-// Extend Window interface for global state management
-declare global {
-  interface Window {
-    _metaTimeouts?: ReturnType<typeof setTimeout>[];
-    _blockMetaApiCalls?: boolean; // To temporarily block API calls
-    _disableAutoMetaFetch?: boolean; // To disable auto-fetching behaviour
-    _activeFetchIds?: Set<number | string>; // To track active fetch operations
-    _metaFetchLock?: boolean; // Global lock to prevent multiple simultaneous hard refreshes
-    _lastManualRefresh?: number; // Timestamp of the last manual refresh
-    _lastMetaRefresh?: number; // Timestamp of the last successful Meta refresh
-    _dashboardInitialSetup?: boolean; // Flag to track dashboard initial setup phase
-  }
-}
-
-// Initialize window properties if they don't exist
-if (typeof window !== 'undefined') {
-  window._activeFetchIds = window._activeFetchIds || new Set();
-  window._metaFetchLock = window._metaFetchLock || false;
-  window._lastManualRefresh = window._lastManualRefresh || 0;
-  window._lastMetaRefresh = window._lastMetaRefresh || 0;
-  window._dashboardInitialSetup = window._dashboardInitialSetup || false;
-}
-
-// Helper function to check if a fetch is in progress globally - COPIED FROM HOME PAGE
-function isMetaFetchInProgress(): boolean {
-  if (typeof window === 'undefined') return false;
-  // Check both the lock and active fetch IDs
-  return window._metaFetchLock === true || (window._activeFetchIds?.size ?? 0) > 0;
-}
-
-// Helper function to acquire a fetch lock - COPIED FROM HOME PAGE
-function acquireMetaFetchLock(fetchId: number | string): boolean {
-  if (typeof window === 'undefined') return true; // Assume success server-side or if window is not defined
-
-  // If a lock is already active by another fetch, don't allow a new one
-  if (window._metaFetchLock === true && !window._activeFetchIds?.has(fetchId)) {
-    // console.log(`[MarketingAssistant] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
-    return false;
-  }
-  
-  window._metaFetchLock = true; // Set the global lock
-  window._activeFetchIds?.add(fetchId); // Register this fetchId
-  
-  // console.log(`[MarketingAssistant] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
-  return true;
-}
-
-// Helper function to release a fetch lock - COPIED FROM HOME PAGE
-function releaseMetaFetchLock(fetchId: number | string): void {
-  if (typeof window === 'undefined') return;
-  
-  window._activeFetchIds?.delete(fetchId); // Remove this fetch ID
-  
-  // If no other active fetches, release the global lock
-  if ((window._activeFetchIds?.size ?? 0) === 0) {
-    window._metaFetchLock = false;
-    // console.log(`[MarketingAssistant] 🔓 Released Meta fetch lock (last fetchId: ${fetchId}). No active fetches.`);
-  } else {
-    // console.log(`[MarketingAssistant] 🔒 Meta Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
-  }
-}
-
+// Data types matching existing business logic
 interface MetaMetrics {
   adSpend: number
   adSpendGrowth: number
@@ -123,6 +82,83 @@ interface MetaMetrics {
   previousCtr: number
   previousCpc: number
   previousRoas: number
+}
+
+interface Campaign {
+  campaign_id: string
+  campaign_name: string
+  status: string
+  objective: string
+  budget: number
+  budget_type: string
+  spent: number
+  impressions: number
+  clicks: number
+  conversions: number
+  ctr: number
+  cpc: number
+  roas: number
+  account_name?: string
+  last_refresh_date?: string
+  platform?: string
+  selected?: boolean
+  recommendation?: {
+    action: string
+    reasoning: string
+    impact: string
+    confidence: number
+    implementation: string
+    generated_at?: string
+    week_generated?: string
+    status?: 'active' | 'completed' | 'ignored'
+  }
+}
+
+interface QueuedAction {
+  id: string
+  type: 'scale' | 'optimize' | 'pause' | 'test'
+  title: string
+  description: string
+  impact: 'high' | 'medium' | 'low'
+  campaignId?: string
+  adsetId?: string
+  creativeId?: string
+}
+
+interface TrendData {
+  day: string
+  spend: number
+  revenue: number
+  roas: number
+  date: string
+}
+
+interface CreativePerformance {
+  creative_id: string
+  creative_name: string
+  ctr: number
+  roas: number
+  impressions: number
+  spend: number
+  thumbnail_url?: string
+}
+
+interface ActionLogEntry {
+  id: string
+  timestamp: string
+  type: 'action' | 'plan' | 'alert'
+  title: string
+  description: string
+  status: 'completed' | 'pending' | 'failed'
+}
+
+interface Alert {
+  id: string
+  type: 'warning' | 'critical' | 'info'
+  title: string
+  description: string
+  timestamp: string
+  campaignId?: string
 }
 
 const defaultMetrics: MetaMetrics = {
@@ -155,122 +191,42 @@ const defaultMetrics: MetaMetrics = {
   previousRoas: 0
 }
 
-export default function MarketingAssistantPage() {
+export default function UnifiedAIOrchestratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { agencySettings } = useAgency()
   const pathname = usePathname()
   
-  // Ensure page starts at top on mount
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [])
-  
-  // Centralized loading state management
+  // Core data state
+  const [metaMetrics, setMetaMetrics] = useState<MetaMetrics>(defaultMetrics)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isDataLoading, setIsDataLoading] = useState(true)
-  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Marketing Assistant')
+  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing AI Orchestrator')
   const [loadingProgress, setLoadingProgress] = useState(0)
   
-  // Remove old loading state
-  // const [isLoadingPage, setIsLoadingPage] = useState(true)
+  // Dashboard state
+  const [selectedTab, setSelectedTab] = useState("campaigns")
+  const [selectedCampaigns, setSelectedCampaigns] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
+  const [queuedActions, setQueuedActions] = useState<QueuedAction[]>([])
+  const [trendData, setTrendData] = useState<TrendData[]>([])
+  const [creativePerformance, setCreativePerformance] = useState<CreativePerformance[]>([])
+  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([])
+  const [alerts, setAlerts] = useState<Alert[]>([])
   
-  const [metaMetrics, setMetaMetrics] = useState<MetaMetrics>(defaultMetrics)
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
-  const [isRefreshingData, setIsRefreshingData] = useState(false)
+  // Date range state
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date()
   })
-  const [lastPageRefresh, setLastPageRefresh] = useState<Date | null>(null)
-  const [isRefreshingAll, setIsRefreshingAll] = useState(false)
-  const [refreshCooldown, setRefreshCooldown] = useState(false)
 
-  // Data backfill hook for gap detection
+  // Data backfill hook
   const { status: backfillStatus, checkForGaps, performBackfill } = useDataBackfill()
 
-  // Pre-loaded data for widgets
-  const [preloadedData, setPreloadedData] = useState({
-    metaMetrics: defaultMetrics,
-    dailyReport: null as any,
-    campaigns: [] as any[],
-    adCreatives: [] as any[],
-    performanceData: [] as any[],
-    aiConsultantReady: false
-  })
-
-  // Auto-update date range at midnight to match blended widgets behavior
-  useEffect(() => {
-    const updateDateRangeAtMidnight = () => {
-      const now = new Date()
-      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
-      const timeUntilMidnight = midnight.getTime() - now.getTime()
-      
-      // console.log('[MarketingAssistant] Setting up midnight timer:', {
-        // currentTime: now.toLocaleTimeString(),
-        // midnightTime: midnight.toLocaleTimeString(),
-        // millisecondsUntilMidnight: timeUntilMidnight,
-        // hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
-      // })
-      
-      const timeoutId = setTimeout(() => {
-        // console.log('[MarketingAssistant] 🌙 MIDNIGHT REACHED - Resetting to today and forcing data refresh')
-        const today = new Date()
-        setDateRange({
-          from: today,
-          to: today
-        })
-        
-        // Clear any cached data and force refresh
-        hasInitialDataLoaded.current = false
-        
-        // Trigger full data reload for new day with today's date
-        // console.log('[MarketingAssistant] 🔄 Midnight transition: Forcing fresh data load for today')
-        loadAllData()
-        
-        // Dispatch event to notify other widgets about new day transition
-        window.dispatchEvent(new CustomEvent('newDayDetected', {
-          detail: { 
-            brandId: selectedBrandId, 
-            source: 'marketing-assistant-midnight-reset',
-            timestamp: Date.now()
-          }
-        }))
-        
-        // Set up next midnight update
-        updateDateRangeAtMidnight()
-      }, timeUntilMidnight)
-      
-      return () => clearTimeout(timeoutId)
-    }
-    
-    // Set up the initial midnight update
-    const cleanup = updateDateRangeAtMidnight()
-    
-    // Also check if we need to update on mount (in case user loads page right at midnight)
-    const now = new Date()
-    const currentDateString = now.toISOString().split('T')[0]
-    const currentRangeString = dateRange?.from?.toISOString().split('T')[0]
-    
-    if (currentRangeString !== currentDateString) {
-      // console.log('[MarketingAssistant] Date range out of sync with current date - updating to today')
-      setDateRange({
-        from: now,
-        to: now
-      })
-    }
-    
-    return cleanup
-  }, [])
-
-
-
   // Refs for tracking state
-  const hasFetchedMetaData = useRef(false)
-  const lastFetchedDateRange = useRef<{ from?: Date; to?: Date }>({})
-  const lastFetchedBrandId = useRef<string | null>(null)
   const hasInitialDataLoaded = useRef(false)
   const isInitialLoadInProgress = useRef(false)
 
-  // Helper function to calculate previous period date range - matches home page
+  // Helper functions from original implementation
   const getPreviousPeriodDates = useCallback((from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate())
     const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate())
@@ -285,241 +241,64 @@ export default function MarketingAssistantPage() {
     }
   }, [])
 
-  // Helper function to calculate percentage change - matches home page logic
   const calculatePercentChange = useCallback((current: number, previous: number): number | null => {
     if (previous === 0) {
-      // Return null when there's no previous data to compare against
-      return null; // This will display as "N/A" in the UI
+      return null
     }
-    if (current === previous) { // Handle cases where current and previous are the same
-      return 0;
+    if (current === previous) {
+      return 0
     }
-    return ((current - previous) / Math.abs(previous)) * 100;
+    return ((current - previous) / Math.abs(previous)) * 100
   }, [])
 
-  // Main sync function - database-based refresh like home page
-  const syncMetaInsights = useCallback(async () => {
+  // Core data loading function combining original business logic
+  const loadAllData = useCallback(async () => {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
       return
     }
-    
-    const refreshId = `marketing-meta-sync-${Date.now()}`
-    
-    // Use the same locking mechanism for consistency
-    if (isMetaFetchInProgress()) {
-      // console.log(`[MarketingAssistant] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`)
-      toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" })
-      return
-    }
-    
-    if (!acquireMetaFetchLock(refreshId)) {
-      // console.log(`[MarketingAssistant] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`)
-      toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" })
-      return
-    }
-    
-    // console.log("[MarketingAssistant] Syncing Meta insights data through database...")
-    
-    // Set loading states
-    setIsLoadingMetrics(true)
-    setIsRefreshingData(true)
-    
-    toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 })
-    
-    try {
-      // Format dates in YYYY-MM-DD format using local timezone
-      const startDate = dateToLocalDateString(dateRange.from)
-      const endDate = dateToLocalDateString(dateRange.to)
-      
-      // Step 1: Sync fresh data from Meta API to database
-      // console.log(`[MarketingAssistant] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`)
-      const response = await fetch('/api/meta/insights/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Refresh-ID': refreshId
-        },
-        body: JSON.stringify({
-          brandId: selectedBrandId,
-          startDate,
-          endDate,
-          forceRefresh: true
-        })
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to sync Meta insights')
-      }
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        // console.log(`[MarketingAssistant] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`)
-        
-        // Step 2: Now fetch the refreshed data from database
-        // console.log(`[MarketingAssistant] 🚀 Step 2: Fetching refreshed Meta data (refreshId: ${refreshId})`)
-        await fetchMetaDataFromDatabase(refreshId)
-        
-        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" })
-        window._lastMetaRefresh = Date.now() // Update timestamp of last successful refresh
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-          detail: { 
-            brandId: selectedBrandId, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            syncedRecords: result.count || 0,
-            source: 'MarketingAssistantSync',
-            refreshId
-          }
-        }))
-        
-        // Also dispatch completion event for global refresh button
-        window.dispatchEvent(new CustomEvent('data-refresh-complete', {
-          detail: {
-            brandId: selectedBrandId,
-            platform: 'meta',
-            timestamp: Date.now(),
-            source: 'MarketingAssistantSync'
-          }
-        }))
-        
-        // console.log(`[MarketingAssistant] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`)
-      } else {
-        throw new Error(result.error || 'Failed to sync Meta insights')
-      }
-    } catch (error) {
-      console.error(`[MarketingAssistant] Error syncing Meta insights (refreshId: ${refreshId}):`, error)
-      toast.error("Failed to sync Meta insights", {
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 5000,
-        id: "meta-refresh-toast"
-      })
-    } finally {
-      // Clear loading states
-      setIsLoadingMetrics(false)
-      setIsRefreshingData(false)
-      releaseMetaFetchLock(refreshId)
-    }
-  }, [selectedBrandId, dateRange])
 
-  // Fetch Meta data from database after sync
-  const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
-    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      // console.log("[MarketingAssistant] Skipping Meta data fetch from database: Missing brandId or dateRange")
+    if (isInitialLoadInProgress.current) {
       return
     }
+
+    setIsDataLoading(true)
+    setLoadingProgress(0)
+    isInitialLoadInProgress.current = true
 
     try {
-      // console.log(`[MarketingAssistant] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`)
-
-      // Current period params with proper timezone handling
-      const params = new URLSearchParams({ brandId: selectedBrandId })
-      if (dateRange.from) params.append('from', dateToLocalDateString(dateRange.from))
-      if (dateRange.to) params.append('to', dateToLocalDateString(dateRange.to))
+      // Phase 1: Data validation and backfill
+      setLoadingPhase('Checking for missing data...')
+      setLoadingProgress(10)
       
-      // Apply cache busting to ensure fresh data from database
-      params.append('bypass_cache', 'true')
-      params.append('force_load', 'true')
-      params.append('refresh', 'true')
+      await checkForGaps(selectedBrandId)
       
-      // 🔥 SMART CACHE BUSTING: If we're viewing yesterday's data or a date range that includes yesterday,
-      // force refresh to ensure we get the complete day's data (not just what was cached at 6pm)
-      const today = dateToLocalDateString(new Date())
-      const yesterday = dateToLocalDateString(new Date(Date.now() - 24 * 60 * 60 * 1000))
-      const currentFromStr = dateRange.from ? dateToLocalDateString(dateRange.from) : ''
-      const currentToStr = dateRange.to ? dateToLocalDateString(dateRange.to) : ''
-      const isViewingYesterday = currentFromStr === yesterday || currentToStr === yesterday || 
-                                 (currentFromStr <= yesterday && currentToStr >= yesterday)
-      
-      if (isViewingYesterday) {
-        params.append('force_refresh', 'true')
-        params.append('reason', 'viewing-yesterday-data')
-        // console.log(`[MarketingAssistant] 🔥 Forcing fresh data for yesterday (${yesterday}) to avoid stale cache`)
+      if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
+        setLoadingPhase(`Backfilling ${backfillStatus.totalMissingDays} missing days...`)
+        setLoadingProgress(20)
+        await performBackfill(selectedBrandId)
       }
+
+      // Phase 2: Load metrics data
+      setLoadingPhase('Loading advertising data...')
+      setLoadingProgress(30)
       
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to)
-      const prevParams = new URLSearchParams({ brandId: selectedBrandId })
-      if (prevFrom) prevParams.append('from', prevFrom)
-      if (prevTo) prevParams.append('to', prevTo)
       
-      prevParams.append('bypass_cache', 'true')
-      prevParams.append('force_load', 'true')
-      prevParams.append('refresh', 'true')
-      
-      const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Refresh-ID': refreshId || 'standalone'
-        }
-      })
-      
-      const prevResponse = await fetch(`/api/metrics/meta?${prevParams.toString()}`, { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Refresh-ID': refreshId || 'standalone'
-        }
-      })
-      
-      if (!currentResponse.ok) {
-        const errorData = await currentResponse.json().catch(() => ({ error: "Unknown error fetching current Meta data" }))
-        console.error(`[MarketingAssistant] Failed to fetch current period Meta data from database: ${currentResponse.status}`, errorData)
-        throw new Error(errorData.error || `Failed to fetch current period Meta data: ${currentResponse.status}`)
-      }
-      
-      if (!prevResponse.ok) {
-        const errorData = await prevResponse.json().catch(() => ({ error: "Unknown error fetching previous Meta data" }))
-        console.error(`[MarketingAssistant] Failed to fetch previous period Meta data from database: ${prevResponse.status}`, errorData)
-        throw new Error(errorData.error || `Failed to fetch previous period Meta data: ${prevResponse.status}`)
-      }
-      
+      const [currentResponse, prevResponse] = await Promise.all([
+        fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${dateToLocalDateString(dateRange.from)}&to=${dateToLocalDateString(dateRange.to)}&force_refresh=true&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        }),
+        fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${prevFrom}&to=${prevTo}&force_refresh=true&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        })
+      ])
+
       const currentData = await currentResponse.json()
       const previousData = await prevResponse.json()
-      
-      // console.log(`[MarketingAssistant] Fetched Meta data from database for current period:`, {
-        // adSpend: currentData.adSpend,
-        // impressions: currentData.impressions,
-        // clicks: currentData.clicks,
-        // conversions: currentData.conversions,
-        // roas: currentData.roas
-      // })
 
-      // console.log(`[MarketingAssistant] Previous period data:`, {
-        // adSpend: previousData.adSpend,
-        // impressions: previousData.impressions,
-        // clicks: previousData.clicks,
-        // conversions: previousData.conversions,
-        // roas: previousData.roas
-      // })
-
-      // Calculate growth values locally for better accuracy
-      const adSpendGrowth = calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0) ?? 0
-      const impressionGrowth = calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0) ?? 0
-      const clickGrowth = calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0) ?? 0
-      const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0) ?? 0
-      const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0) ?? 0
-      const ctrGrowth = calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0) ?? 0
-      const cpcGrowth = calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0) ?? 0
-      const cprGrowth = calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0) ?? 0
-
-      // console.log(`[MarketingAssistant] Calculated growth values:`, {
-        // adSpendGrowth,
-        // impressionGrowth,
-        // clickGrowth,
-        // conversionGrowth,
-        // roasGrowth,
-        // ctrGrowth,
-        // cpcGrowth,
-        // cprGrowth
-      // })
-
-      // Update metaMetrics state with database data
+      // Calculate growth values
       const newMetrics = {
         adSpend: currentData.adSpend || 0,
         impressions: currentData.impressions || 0,
@@ -533,14 +312,14 @@ export default function MarketingAssistantPage() {
         budget: currentData.budget || 0,
         reach: currentData.reach || 0,
         dailyData: currentData.dailyData || [],
-        adSpendGrowth: adSpendGrowth,
-        impressionGrowth: impressionGrowth,
-        clickGrowth: clickGrowth,
-        conversionGrowth: conversionGrowth,
-        roasGrowth: roasGrowth,
-        ctrGrowth: ctrGrowth,
-        cpcGrowth: cpcGrowth,
-        cprGrowth: cprGrowth,
+        adSpendGrowth: calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0) ?? 0,
+        impressionGrowth: calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0) ?? 0,
+        clickGrowth: calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0) ?? 0,
+        conversionGrowth: calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0) ?? 0,
+        roasGrowth: calculatePercentChange(currentData.roas || 0, previousData.roas || 0) ?? 0,
+        ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0) ?? 0,
+        cpcGrowth: calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0) ?? 0,
+        cprGrowth: calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0) ?? 0,
         previousAdSpend: previousData.adSpend || 0,
         previousImpressions: previousData.impressions || 0,
         previousClicks: previousData.clicks || 0,
@@ -551,543 +330,204 @@ export default function MarketingAssistantPage() {
       }
       
       setMetaMetrics(newMetrics)
-      
-      // console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
-      
-      return newMetrics // Return the data for use in centralized loading
-    } catch (error) {
-      console.error(`[MarketingAssistant] Error fetching Meta data from database:`, error)
-      setMetaMetrics(defaultMetrics)
-      return defaultMetrics
-    }
-  }, [selectedBrandId, dateRange, getPreviousPeriodDates, calculatePercentChange])
 
-  // Centralized data loading coordinator - moved here after helper functions are declared
-  const loadAllData = useCallback(async () => {
-    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      // console.log("[MarketingAssistant] Missing required data for loading")
-      return
-    }
-
-    // Prevent multiple simultaneous loads
-    if (isInitialLoadInProgress.current) {
-      // console.log("[MarketingAssistant] Load already in progress, skipping duplicate loadAllData call")
-      return
-    }
-
-    // console.log('[MarketingAssistant] Starting centralized data loading...')
-    setIsDataLoading(true)
-    setLoadingProgress(0)
-    isInitialLoadInProgress.current = true
-
-    try {
-      // Phase 0: Check for data gaps and backfill if necessary
-      setLoadingPhase('Checking for missing data...')
-      setLoadingProgress(5)
-      
-      // console.log('[MarketingAssistant] Validating data coverage...')
-      await checkForGaps(selectedBrandId)
-      
-      // 🔥 ENHANCED DATA REFRESH: Check for gaps AND stale historical data  
-      setLoadingPhase('Checking for missing & stale data...')
-      setLoadingProgress(8)
-      
-      try {
-        // 🔥 FIX: Use server-side API endpoint instead of direct client-side import
-        setLoadingPhase('Refreshing recent & historical data...')
-        setLoadingProgress(12)
-        
-        const response = await fetch('/api/data/complete-refresh', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId: selectedBrandId,
-            lookbackDays: 60,
-            mode: 'standard'
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-        
-        const refreshResult = await response.json();
-        
-        if (refreshResult.success) {
-          const messages = []
-          if (refreshResult.recentDataRefreshed) messages.push('recent data')
-          if (refreshResult.staleDataRefreshed > 0) messages.push(`${refreshResult.staleDataRefreshed} stale days`)
-          if (refreshResult.totalGapsFilled > 0) messages.push(`${refreshResult.totalGapsFilled} missing days`)
-          
-          // console.log(`[MarketingAssistant] ✅ Complete refresh done: ${messages.join(', ')} updated`)
-          
-          // If we fixed stale data, show helpful feedback
-          if (refreshResult.staleDataRefreshed > 0) {
-            setLoadingPhase(`Fixed ${refreshResult.staleDataRefreshed} days of stale data...`)
-            // console.log(`[MarketingAssistant] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`)
-            await new Promise(resolve => setTimeout(resolve, 1000)) // Let user see the message
-          }
-        } else {
-          console.warn(`[MarketingAssistant] ⚠️ Complete data refresh had issues:`, refreshResult.error)
-        }
-      } catch (error) {
-        console.warn('[MarketingAssistant] ⚠️ Error during enhanced data refresh:', error)
-        
-        // Fallback to old system
-        // console.log('[MarketingAssistant] Falling back to standard gap detection...')
-        await checkForGaps(selectedBrandId)
-      if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
-        setLoadingPhase(`Backfilling ${backfillStatus.totalMissingDays} missing days...`)
-        setLoadingProgress(10)
-        // console.log(`[MarketingAssistant] Backfilling ${backfillStatus.totalMissingDays} missing days...`)
-        await performBackfill(selectedBrandId)
-        }
-      }
-
-      // Phase 1: Loading and Syncing Advertising Data
-      setLoadingPhase('Loading advertising data...')
-      setLoadingProgress(15)
-      
-      await new Promise(resolve => setTimeout(resolve, 800)) // Smooth UX
-      
-      setLoadingProgress(30)
-      setLoadingPhase('Syncing latest performance data...')
-      
-      await new Promise(resolve => setTimeout(resolve, 600))
-      
-      // Sync fresh advertising data (this will fetch from database after syncing)
-      await syncMetaInsights()
-      
-      // 🔥 FIX: Fetch the fresh metrics data that was just synced
-      const freshMetaMetrics = await fetchMetaDataFromDatabase() || defaultMetrics
-      // console.log('[MarketingAssistant] 🎯 Fresh meta metrics loaded:', freshMetaMetrics)
-      
+      // Phase 3: Load campaigns
+      setLoadingPhase('Loading campaigns...')
       setLoadingProgress(50)
-      setLoadingPhase('AI analyzing campaign performance...')
-      
-      await new Promise(resolve => setTimeout(resolve, 900))
-      
-      // Phase 2: Load AI Daily Report and Performance Data in parallel
-      try {
-        // Always use today's date for campaigns (like other widgets) to ensure fresh daily data
-        // Use local timezone instead of UTC to avoid date mismatch issues
-        const today = new Date()
-        const todayStr = dateToLocalDateString(today)
-        
-        // console.log(`[MarketingAssistant] Fetching campaigns for TODAY: ${todayStr} (using local timezone to match user's actual date)`)
-        
-        const [dailyReportResponse, campaignsResponse] = await Promise.all([
-          fetch('/api/ai/daily-report', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              brandId: selectedBrandId,
-              forceRegenerate: false,
-              userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            }),
-          }),
-          fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          })
-        ])
-        
-        let reportData = null
-        let campaignsData = []
-        let performanceData = []
-        
-        if (dailyReportResponse.ok) {
-          const data = await dailyReportResponse.json()
-          if (data.success && data.report) {
-            reportData = data.report
-            // Extract performance data from daily report
-            performanceData = data.report?.weeklyPerformance?.map((day: any) => ({
-              day: day.day,
-              date: day.date,
-              meta: {
-                spend: day.spend || 0,
-                roas: day.roas || 0,
-                impressions: day.impressions || 0,
-                clicks: day.clicks || 0,
-                conversions: day.conversions || 0
-              },
-              tiktok: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 },
-              google: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 }
-            })) || []
-          }
-        }
-        
-        if (campaignsResponse.ok) {
-          const data = await campaignsResponse.json()
-          if (data.campaigns && Array.isArray(data.campaigns)) {
-            campaignsData = data.campaigns.map((campaign: any) => ({
-              ...campaign, 
-              platform: 'meta'
-            }))
-          }
-        }
-        
-        // Now load ad creative data using the campaigns we just fetched
-        let allAds: any[] = []
-        if (campaignsData.length > 0) {
-          setLoadingProgress(70)
-          setLoadingPhase('Loading creative insights...')
-          await new Promise(resolve => setTimeout(resolve, 700))
-          
-          // console.log('[MarketingAssistant] Loading ad creatives for campaigns...')
-          
-          // Use the same logic as AdCreativeBreakdown component
-          for (const campaign of campaignsData.slice(0, 5)) { // Limit to first 5 campaigns for performance
-            try {
-              const adSetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}&t=${Date.now()}`, {
-                method: 'GET',
-                headers: {
-                  'Cache-Control': 'no-cache',
-                  'Pragma': 'no-cache'
-                }
-              })
-              
-              if (!adSetsResponse.ok) continue
-              
-              const adSetsData = await adSetsResponse.json()
-              if (!adSetsData.success || !adSetsData.adSets) continue
-              
-              for (const adSet of adSetsData.adSets.slice(0, 3)) { // Limit adsets per campaign
-                try {
-                  // Try current date first
-                  let adsResponse = await fetch('/api/meta/ads/direct-fetch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      brandId: selectedBrandId,
-                      adsetId: adSet.adset_id,
-                      forceRefresh: false,
-                      dateRange: {
-                        from: dateToLocalDateString(dateRange.from),
-                        to: dateToLocalDateString(dateRange.to)
-                      }
-                    })
-                  })
 
-                  let adsData = await adsResponse.json()
-                  
-                  // If no data for current date range, try yesterday (same logic as AdCreativeBreakdown)
-                  if (!adsData.success || !adsData.ads || adsData.ads.length === 0) {
-                    const yesterday = new Date(dateRange.to)
-                    yesterday.setDate(yesterday.getDate() - 1)
-                    
-                    adsResponse = await fetch('/api/meta/ads/direct-fetch', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        brandId: selectedBrandId,
-                        adsetId: adSet.adset_id,
-                        forceRefresh: false,
-                        dateRange: {
-                          from: dateToLocalDateString(yesterday),
-                          to: dateToLocalDateString(yesterday)
-                        }
-                      })
-                    })
-                    
-                    adsData = await adsResponse.json()
-                  }
-
-                  if (adsData.success && adsData.ads && adsData.ads.length > 0) {
-                    allAds.push(...adsData.ads)
-                  }
-                } catch (error) {
-                  console.error('[MarketingAssistant] Error loading ads for adset:', adSet.adset_id, error)
-                }
-              }
-            } catch (error) {
-              console.error('[MarketingAssistant] Error loading adsets for campaign:', campaign.campaign_id, error)
-            }
-          }
-          // console.log('[MarketingAssistant] Loaded ad creatives:', allAds.length)
+      const today = new Date()
+      const todayStr = dateToLocalDateString(today)
+      
+      const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+      
+      if (campaignsResponse.ok) {
+        const campaignsData = await campaignsResponse.json()
+        if (campaignsData.campaigns && Array.isArray(campaignsData.campaigns)) {
+          const campaignsWithPlatform = campaignsData.campaigns.map((campaign: Campaign) => ({
+            ...campaign,
+            platform: 'meta',
+            selected: false
+          }))
+          setCampaigns(campaignsWithPlatform)
         }
-        
-        setPreloadedData(prev => ({
-          ...prev,
-          dailyReport: reportData,
-          campaigns: campaignsData,
-          performanceData: performanceData,
-          adCreatives: allAds
-        }))
-      } catch (error) {
-        console.error('[MarketingAssistant] Error loading AI reports and campaigns:', error)
       }
-      
+
+      // Phase 4: Load trend data
+      setLoadingPhase('Loading performance trends...')
+      setLoadingProgress(70)
+
+      // Generate sample trend data (replace with real API call)
+      const sampleTrendData: TrendData[] = [
+        { day: 'Mon', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-01' },
+        { day: 'Tue', spend: newMetrics.adSpend * 0.15, revenue: newMetrics.adSpend * newMetrics.roas * 0.15, roas: newMetrics.roas, date: '2024-01-02' },
+        { day: 'Wed', spend: newMetrics.adSpend * 0.16, revenue: newMetrics.adSpend * newMetrics.roas * 0.16, roas: newMetrics.roas, date: '2024-01-03' },
+        { day: 'Thu', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-04' },
+        { day: 'Fri', spend: newMetrics.adSpend * 0.18, revenue: newMetrics.adSpend * newMetrics.roas * 0.18, roas: newMetrics.roas, date: '2024-01-05' },
+        { day: 'Sat', spend: newMetrics.adSpend * 0.13, revenue: newMetrics.adSpend * newMetrics.roas * 0.13, roas: newMetrics.roas, date: '2024-01-06' },
+        { day: 'Sun', spend: newMetrics.adSpend * 0.10, revenue: newMetrics.adSpend * newMetrics.roas * 0.10, roas: newMetrics.roas, date: '2024-01-07' }
+      ]
+      setTrendData(sampleTrendData)
+
+      // Phase 5: Initialize sample data for new components
+      setLoadingPhase('Initializing AI systems...')
       setLoadingProgress(85)
-      setLoadingPhase('Preparing AI marketing consultant...')
-      
-      await new Promise(resolve => setTimeout(resolve, 600))
-      
-      // Phase 4: Finalize all data and update main metaMetrics state
-      setPreloadedData(prev => ({
-        ...prev,
-        metaMetrics: freshMetaMetrics, // Use fresh data instead of stale state
-        aiConsultantReady: true
-      }))
-      
-      // 🔥 FIX: Update the main metaMetrics state with loaded data
-      // This ensures BlendedWidgetsTable gets real data instead of defaultMetrics
-      setMetaMetrics(freshMetaMetrics)
-      // console.log('[MarketingAssistant] 🎯 Updated main metaMetrics state with fresh data:', freshMetaMetrics)
-      
-      setLoadingProgress(95)
-      setLoadingPhase('Finalizing dashboard...')
-      
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+
+      // Sample creative performance data
+      setCreativePerformance([
+        { creative_id: '1', creative_name: 'Video Ad A', ctr: 3.2, roas: 4.5, impressions: 15000, spend: 245 },
+        { creative_id: '2', creative_name: 'Carousel B', ctr: 2.8, roas: 3.8, impressions: 12000, spend: 180 },
+        { creative_id: '3', creative_name: 'Static Image C', ctr: 2.1, roas: 2.9, impressions: 8000, spend: 120 },
+      ])
+
+      // Sample action log
+      setActionLog([
+        { id: '1', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'action', title: 'Budget increased', description: 'Campaign A budget increased by 20%', status: 'completed' },
+        { id: '2', timestamp: new Date(Date.now() - 7200000).toISOString(), type: 'plan', title: 'AI analysis completed', description: 'Generated 3 optimization recommendations', status: 'completed' },
+      ])
+
+      // Sample alerts
+      setAlerts([
+        { id: '1', type: 'warning', title: 'High frequency detected', description: 'Campaign B showing frequency >3.5', timestamp: new Date().toISOString() },
+        { id: '2', type: 'critical', title: 'Low ROAS alert', description: 'Campaign C below 2.0 ROAS threshold', timestamp: new Date().toISOString() },
+      ])
+
       setLoadingProgress(100)
       setLoadingPhase('Ready!')
       
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      // All data loaded - show the dashboard
       setIsDataLoading(false)
       hasInitialDataLoaded.current = true
-      setLastPageRefresh(new Date())
-      
-      // Scroll to top when data is loaded to ensure proper positioning
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }, 100)
-      
-      // console.log('[MarketingAssistant] ✅ All data loaded successfully!')
       
     } catch (error) {
-      console.error('[MarketingAssistant] Error during data loading:', error)
-      // Still show the dashboard even if some data failed
+      console.error('Error during data loading:', error)
       setIsDataLoading(false)
       toast.error('Some data failed to load, but dashboard is still available')
     } finally {
-      // Always clear the in-progress flag
       isInitialLoadInProgress.current = false
     }
-  }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase])
+  }, [selectedBrandId, dateRange, checkForGaps, performBackfill, backfillStatus, getPreviousPeriodDates, calculatePercentChange])
 
-  // Debug function to test midnight reset manually - remove in production
+  // Initial data load
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).debugMarketingAssistantMidnightReset = () => {
-        // console.log('[MarketingAssistant] DEBUG: Manually triggering midnight reset')
-        
-        // Clear date range and force to today
-        const today = new Date()
-        setDateRange({
-          from: today,
-          to: today
-        })
-        
-        // Clear cached data
-        hasInitialDataLoaded.current = false
-        
-        // Force full reload with today's date
-        // console.log('[MarketingAssistant] 🔄 Debug reset: Forcing fresh data load for today')
-        loadAllData()
-        
-        // Dispatch new day event
-        window.dispatchEvent(new CustomEvent('newDayDetected', {
-          detail: { 
-            brandId: selectedBrandId, 
-            source: 'debug-marketing-assistant-midnight-reset',
-            timestamp: Date.now()
-          }
-        }))
-        
-        // console.log('[MarketingAssistant] DEBUG: Midnight reset simulation complete')
-      }
-    }
-  }, [selectedBrandId, loadAllData])
-
-  // Initial data load and refresh logic
-  useEffect(() => {
-    // Skip if we're still in the dashboard's initial setup phase
-    if (typeof window !== 'undefined' && window._dashboardInitialSetup) {
-      // console.log("[MarketingAssistant] Skipping data load - dashboard still in initial setup phase")
-      return
-    }
-    
-    // If no brand is selected, stop loading and show no-brand-selected state
     if (!selectedBrandId) {
-      // console.log("[MarketingAssistant] No brand selected, stopping loading state")
       setIsDataLoading(false)
       setLoadingProgress(0)
       setLoadingPhase('Please select a brand')
       return
     }
-    
-    // Check if we've already done the initial load for this date range or brand
-    const dateRangeChanged = dateRange?.from !== lastFetchedDateRange.current.from || 
-                           dateRange?.to !== lastFetchedDateRange.current.to
-    const brandChanged = selectedBrandId !== lastFetchedBrandId.current
-    const shouldLoad = dateRangeChanged || brandChanged || !hasInitialDataLoaded.current
-    
-    if (dateRange?.from && dateRange?.to && shouldLoad) {
-      // 🔥 FIX: Reset loading flags when brand or date changes to allow fresh load
-      if (dateRangeChanged || brandChanged) {
-        // console.log("[MarketingAssistant] Brand/date changed, resetting loading flags", { brandChanged, dateRangeChanged })
-        isInitialLoadInProgress.current = false
-        hasInitialDataLoaded.current = false
-      }
-      
-      // Prevent duplicate initial loads (but allow brand/date changes)
-      if (isInitialLoadInProgress.current && !dateRangeChanged && !brandChanged) {
-        // console.log("[MarketingAssistant] Initial load already in progress, skipping duplicate call")
-        return
-      }
-      
-      // console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
-      
-      // 🔥 FIX: Start loading state immediately when brand is selected
-      setIsDataLoading(true)
-      setLoadingProgress(0)
-      setLoadingPhase('Initializing Marketing Assistant')
-      
-      // 🔥 FIX: Reset the flag right before calling loadAllData to prevent duplicate detection
-      isInitialLoadInProgress.current = false
-      
-      // Update the last fetched date range and brand
-      lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
-      lastFetchedBrandId.current = selectedBrandId
-      
-      // Start the centralized loading process
+
+    if (dateRange?.from && dateRange?.to && !hasInitialDataLoaded.current) {
       loadAllData()
     }
   }, [selectedBrandId, dateRange, loadAllData])
 
-  // Refresh all widgets function - now uses centralized loading system
-  const refreshAllWidgets = useCallback(async () => {
-    if (!selectedBrandId || isRefreshingAll || refreshCooldown) {
-      if (refreshCooldown) {
-        toast.error("Please wait before refreshing again", { 
-          description: "You can refresh every 30 seconds" 
-        })
+  // Helper functions for UI
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US').format(num)
+  }
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(2)}%`
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'PAUSED':
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    }
+  }
+
+  const getROASColor = (roas: number) => {
+    if (roas >= 3) return 'text-green-400'
+    if (roas >= 2) return 'text-amber-400'
+    return 'text-red-400'
+  }
+
+  const toggleCampaignSelection = (campaignId: string) => {
+    setSelectedCampaigns(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(campaignId)) {
+        newSet.delete(campaignId)
+      } else {
+        newSet.add(campaignId)
       }
+      return newSet
+    })
+  }
+
+  const addToQueue = (action: Omit<QueuedAction, 'id'>) => {
+    const newAction: QueuedAction = {
+      ...action,
+      id: Date.now().toString()
+    }
+    setQueuedActions(prev => [...prev, newAction])
+    
+    // Add to action log
+    const logEntry: ActionLogEntry = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      type: 'plan',
+      title: `Added to queue: ${action.title}`,
+      description: action.description,
+      status: 'pending'
+    }
+    setActionLog(prev => [logEntry, ...prev])
+  }
+
+  const removeFromQueue = (actionId: string) => {
+    setQueuedActions(prev => prev.filter(action => action.id !== actionId))
+  }
+
+  const runSelectedActions = () => {
+    if (queuedActions.length === 0) {
+      toast.error('No actions in queue')
       return
     }
 
-    // console.log('[MarketingAssistant] 🔄 Refresh All triggered - using centralized loading system')
-
-    setIsRefreshingAll(true)
-    setRefreshCooldown(true)
+    // Simulate running actions
+    toast.success(`Running ${queuedActions.length} actions...`)
     
-    // Set cooldown timer
-    setTimeout(() => {
-      setRefreshCooldown(false)
-    }, 30000) // 30 second cooldown
+    // Add success entries to action log
+    queuedActions.forEach(action => {
+      const logEntry: ActionLogEntry = {
+        id: Date.now().toString() + Math.random(),
+        timestamp: new Date().toISOString(),
+        type: 'action',
+        title: `Executed: ${action.title}`,
+        description: action.description,
+        status: 'completed'
+      }
+      setActionLog(prev => [logEntry, ...prev])
+    })
 
-    toast.loading("Refreshing all data...", { id: "refresh-all-toast" })
+    // Clear queue
+    setQueuedActions([])
+  }
 
-    try {
-      // Use the exact same centralized loading system as initial page load
-      await loadAllData()
-      
-      setLastPageRefresh(new Date())
-      toast.success("All data refreshed successfully!", { id: "refresh-all-toast" })
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
-        detail: {
-          brandId: selectedBrandId,
-          timestamp: Date.now(),
-          source: 'MarketingAssistantRefresh',
-          success: true
-        }
-      }))
-      
-    } catch (error) {
-      console.error('[MarketingAssistant] Error during refresh all:', error)
-      toast.error("Failed to refresh data", { id: "refresh-all-toast" })
-    } finally {
-      setIsRefreshingAll(false)
-      setIsDataLoading(false) // Ensure loading state is cleared
-      setLoadingProgress(0)
-      setLoadingPhase('')
-    }
-  }, [selectedBrandId, isRefreshingAll, refreshCooldown, loadAllData])
-
-  // Listen for global refresh events - updated for centralized system
+  // Scroll to top on mount
   useEffect(() => {
-    const handleGlobalRefresh = (event: CustomEvent) => {
-      // console.log("[MarketingAssistant] Received global refresh event:", event.detail)
-      if (event.detail?.brandId === selectedBrandId) {
-        // console.log("[MarketingAssistant] Global refresh event matches current brandId. Triggering refresh.")
-        
-        // For global refreshes, do a quick refresh without full loading screen
-        if (!isRefreshingAll) {
-          setLoadingPhase('Syncing latest data...')
-          syncMetaInsights().then(() => {
-            setLoadingPhase('Ready!')
-          })
-        }
-      } else {
-        // console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
-      }
-    }
+    window.scrollTo(0, 0)
+  }, [])
 
-    const handleNewDayDetected = (event: CustomEvent) => {
-      // console.log("[MarketingAssistant] 🌅 New day detected event received:", event.detail)
-      if (event.detail?.brandId === selectedBrandId) {
-        // console.log("[MarketingAssistant] 📅 New day transition detected for current brand. Triggering full reload.")
-        
-        // For new day, trigger full reload
-        hasInitialDataLoaded.current = false
-        loadAllData()
-      } else {
-        // console.log("[MarketingAssistant] New day event not for this brand, skipping.")
-      }
-    }
-
-    const handleGlobalRefreshAll = (event: CustomEvent) => {
-      // console.log("[MarketingAssistant] Received global-refresh-all event:", event.detail)
-      
-      // Marketing assistant should always respond to global refresh for the correct brand
-      // since it's primarily Meta-focused
-      if (event.detail?.brandId === selectedBrandId) {
-        // console.log("[MarketingAssistant] Global refresh all - triggering comprehensive data reload")
-        if (!isRefreshingAll) {
-          refreshAllWidgets()
-        } else {
-          // console.log("[MarketingAssistant] Already refreshing, skipping duplicate refresh")
-        }
-      } else {
-        // console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener)
-      window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
-      window.addEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener)
-      window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener)
-      window.addEventListener('newDayDetected', handleNewDayDetected as EventListener)
-    }
-    
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener)
-        window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
-        window.removeEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener)
-        window.removeEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener)
-        window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener)
-      }
-    }
-  }, [selectedBrandId, syncMetaInsights, refreshAllWidgets, isRefreshingAll, loadAllData])
-
-  // Show loading state with enhanced progress display
+  // Show loading state
   if (isDataLoading) {
     return (
-      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+      <div className="w-full min-h-screen bg-[#0B0D10] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -1101,21 +541,15 @@ export default function MarketingAssistantPage() {
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#EF4444] animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings.agency_logo_url && (
-                <img 
-                  src={agencySettings.agency_logo_url} 
-                  alt={`${agencySettings.agency_name} Logo`} 
-                  className="w-12 h-12 object-contain rounded" 
-                />
-              )}
+              <Brain className="w-8 h-8 text-white" />
             </div>
           </div>
           
           {/* Loading title */}
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Marketing Assistant
+            AI Orchestrator
           </h1>
           
           {/* Dynamic loading phase */}
@@ -1131,165 +565,562 @@ export default function MarketingAssistantPage() {
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-gradient-to-r from-[#EF4444] to-[#DC2626] rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${loadingProgress}%` }}
               ></div>
             </div>
           </div>
-          
-          {/* Loading phases checklist */}
-                      <div className="text-left space-y-2 text-sm text-gray-400">
-              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
-                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 15 ? 'bg-[#FF2A2A]' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}>
-                  {loadingProgress >= 15 && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-                <span>Loading advertising data</span>
-              </div>
-              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}>
-                  {loadingProgress >= 30 && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-                <span>Syncing latest performance data</span>
-              </div>
-              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}>
-                  {loadingProgress >= 50 && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-                <span>AI analyzing campaign performance</span>
-              </div>
-              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}>
-                  {loadingProgress >= 70 && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-              <span>Loading creative insights</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Show no brand selected state
+  if (!selectedBrandId) {
+    return (
+      <div className="w-full h-screen bg-[#0B0D10] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              <Brain className="w-8 h-8 text-white" />
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}>
-                {loadingProgress >= 85 && <Check className="w-2.5 h-2.5 text-white" />}
-              </div>
-                <span>Preparing AI marketing consultant</span>
-              </div>
-              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-                <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}>
-                  {loadingProgress >= 95 && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-                <span>Finalizing dashboard</span>
-              </div>
-            </div>
+          </div>
           
-          {/* Subtle loading tip */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Building your personalized marketing insights dashboard...
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            AI Orchestrator
+          </h1>
+          
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            No brand selected
+          </p>
+          
+          <div className="w-full max-w-md mx-auto mb-6">
+            <p className="text-gray-400 text-base">
+              Choose a brand from the sidebar to access your unified AI marketing orchestrator dashboard.
+            </p>
           </div>
         </div>
       </div>
     )
   }
 
-  // Show no brand selected state - return directly without wrapper to match loading state
-  if (!selectedBrandId) {
+  // Main dashboard layout
   return (
-      <div className="w-full h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
-          {/* Background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0" style={{
-              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-              backgroundSize: '20px 20px'
-            }}></div>
-          </div>
-          
-          <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-            {/* Main logo - exact same structure as loading state */}
-            <div className="w-20 h-20 mx-auto mb-8 relative">
-              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-                {agencySettings.agency_logo_url && (
-                  <img 
-                    src={agencySettings.agency_logo_url} 
-                    alt={`${agencySettings.agency_name} Logo`} 
-                    className="w-12 h-12 object-contain rounded" 
+    <div className="w-full min-h-screen bg-[#0B0D10] relative">
+      {/* Background pattern - subtle grid behind content */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
+          backgroundSize: '24px 24px'
+        }}></div>
+      </div>
+
+      {/* Meta Connection Status Banner */}
+      <MetaConnectionStatus 
+        brandId={selectedBrandId} 
+        className="px-4 sm:px-6" 
+      />
+
+      {/* Main 3-column layout - responsive stacking */}
+      <div className="relative z-10 min-h-[calc(100vh-120px)] flex flex-col lg:flex-row lg:h-[calc(100vh-120px)]">
+        
+        {/* Left Column (3/12) - Sticky on desktop, stacked on mobile */}
+        <div className="w-full lg:w-1/4 flex-shrink-0 lg:sticky lg:top-0 lg:h-full overflow-y-auto border-b lg:border-b-0 lg:border-r border-[#2A2F36] bg-[#0B0D10]">
+          <div className="p-4 space-y-4">
+            
+            {/* Scope & Filters Card */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <Filter className="w-5 h-5" />
+                  Scope & Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-[#9AA4B2]" />
+                  <Input
+                    placeholder="Search campaigns, ad sets, creatives..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-[#0F1216] border-[#2A2F36] text-[#D1D5DB] placeholder-[#9AA4B2] focus:border-[#EF4444]"
                   />
-                )}
+                </div>
+
+                {/* Tabs */}
+                <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                  <TabsList className="grid w-full grid-cols-2 bg-[#0F1216] border border-[#2A2F36]">
+                    <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#EF4444] data-[state=active]:text-white text-[#9AA4B2]">
+                      Campaigns
+                    </TabsTrigger>
+                    <TabsTrigger value="creatives" className="data-[state=active]:bg-[#EF4444] data-[state=active]:text-white text-[#9AA4B2]">
+                      Creatives
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="campaigns" className="space-y-2 mt-4">
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {campaigns.filter(campaign => 
+                        searchQuery === '' || 
+                        campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())
+                      ).slice(0, 10).map((campaign) => (
+                        <div
+                          key={campaign.campaign_id}
+                          className="flex items-center space-x-3 p-2 hover:bg-[#0F1216] rounded cursor-pointer"
+                          onClick={() => toggleCampaignSelection(campaign.campaign_id)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCampaigns.has(campaign.campaign_id)}
+                            onChange={() => {}}
+                            className="w-4 h-4 text-[#EF4444] bg-[#0F1216] border-[#2A2F36] rounded focus:ring-[#EF4444]"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#D1D5DB] truncate">
+                              {campaign.campaign_name}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-xs px-2 py-0 ${getStatusColor(campaign.status)}`}>
+                                {campaign.status}
+                              </Badge>
+                              <span className={`text-xs font-medium ${getROASColor(campaign.roas)}`}>
+                                {campaign.roas.toFixed(2)}x
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="creatives" className="space-y-2 mt-4">
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {creativePerformance.map((creative) => (
+                        <div
+                          key={creative.creative_id}
+                          className="flex items-center space-x-3 p-2 hover:bg-[#0F1216] rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-[#EF4444] bg-[#0F1216] border-[#2A2F36] rounded focus:ring-[#EF4444]"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#D1D5DB] truncate">
+                              {creative.creative_name}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-[#9AA4B2]">CTR: {creative.ctr.toFixed(1)}%</span>
+                              <span className={`text-xs font-medium ${getROASColor(creative.roas)}`}>
+                                {creative.roas.toFixed(1)}x
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Experiments Queue Card */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  Experiments Queue
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Queued actions */}
+                <div className="space-y-2">
+                  {queuedActions.length === 0 ? (
+                    <p className="text-[#9AA4B2] text-sm text-center py-4">
+                      No actions queued
+                    </p>
+                  ) : (
+                    <div className="max-h-32 overflow-y-auto space-y-2">
+                      {queuedActions.map((action) => (
+                        <div
+                          key={action.id}
+                          className="flex items-center justify-between p-2 bg-[#0F1216] rounded border border-[#2A2F36]"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <Badge variant="outline" className={`text-xs mr-2 ${
+                              action.impact === 'high' ? 'border-[#EF4444] text-[#EF4444]' :
+                              action.impact === 'medium' ? 'border-[#F59E0B] text-[#F59E0B]' :
+                              'border-[#22C55E] text-[#22C55E]'
+                            }`}>
+                              {action.title}
+                            </Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFromQueue(action.id)}
+                            className="h-6 w-6 p-0 text-[#9AA4B2] hover:text-white"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={runSelectedActions}
+                    disabled={queuedActions.length === 0}
+                    className="flex-1 bg-[#EF4444] hover:bg-[#DC2626] text-white"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Run Selected
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-[#2A2F36] text-[#9AA4B2] hover:text-white hover:bg-[#0F1216]"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Middle Column (6/12) - Scrollable, responsive */}
+        <div className="flex-1 overflow-y-auto lg:h-full">
+          <div className="p-4 space-y-4">
+            
+            {/* KPI Strip - responsive grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">Spend</div>
+                <div className="text-lg font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.adSpend)}</div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.adSpendGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.adSpendGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">Impressions</div>
+                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.impressions)}</div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.impressionGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.impressionGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.impressionGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">Clicks</div>
+                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.clicks)}</div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.clickGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.clickGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.clickGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">Conversions</div>
+                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.conversions)}</div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.conversionGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.conversionGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.conversionGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">CPC</div>
+                <div className="text-lg font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.cpc)}</div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.cpcGrowth < 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.cpcGrowth < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.cpcGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#9AA4B2] mb-1">ROAS</div>
+                <div className={`text-lg font-bold ${getROASColor(metaMetrics.roas)}`}>
+                  {metaMetrics.roas.toFixed(2)}x
+                </div>
+                <div className={`text-xs flex items-center justify-center gap-1 ${
+                  metaMetrics.roasGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                }`}>
+                  {metaMetrics.roasGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(metaMetrics.roasGrowth).toFixed(1)}%
+                </div>
               </div>
             </div>
-            
-            {/* Title - exact same styling as loading state */}
-            <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-              Marketing Assistant
-            </h1>
-            
-            {/* Subtitle - same positioning as loading phase */}
-            <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-              No brand selected
-            </p>
-            
-            {/* Message - same max-width and positioning */}
-            <div className="w-full max-w-md mx-auto mb-6">
-              <p className="text-gray-400 text-base">
-                Choose a brand from the sidebar to access AI-powered marketing insights, campaign recommendations, and performance analytics.
-              </p>
-            </div>
-            
-            {/* Footer text - exact same styling as loading state */}
-            <div className="mt-8 text-xs text-gray-500 italic">
-              Select a brand to unlock your marketing dashboard...
+
+            {/* Campaigns List with Inline AI */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-semibold text-[#D1D5DB] flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Campaign Performance
+              </h2>
+              
+              {campaigns.slice(0, 8).map((campaign) => (
+                <Card key={campaign.campaign_id} className="bg-[#14171C] border-[#2A2F36]">
+                  <CardContent className="p-4">
+                    {/* Campaign Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Image 
+                          src="https://i.imgur.com/6hyyRrs.png" 
+                          alt="Meta" 
+                          width={24} 
+                          height={24} 
+                          className="object-contain rounded"
+                        />
+                        <div>
+                          <h3 className="text-white font-semibold">{campaign.campaign_name}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`text-xs px-2 py-0 ${getStatusColor(campaign.status)}`}>
+                              {campaign.status}
+                            </Badge>
+                            <span className="text-xs text-[#9AA4B2]">{campaign.objective}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-[#D1D5DB]">
+                          {formatCurrency(campaign.spent)} / {formatCurrency(campaign.budget)}
+                        </div>
+                        <div className="text-xs text-[#9AA4B2]">
+                          CTR: {formatPercentage(campaign.ctr)} • CPC: {formatCurrency(campaign.cpc)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Two panels beneath - responsive stacking */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Left: Predicted Impact Chart */}
+                      <div className="bg-[#0F1216] rounded-lg p-3 border border-[#2A2F36]">
+                        <h4 className="text-sm font-medium text-[#D1D5DB] mb-2">Predicted Impact (7d)</h4>
+                        <div className="h-16 flex items-end justify-between gap-1">
+                          {[0.8, 1.2, 0.9, 1.5, 1.1, 1.8, 1.6].map((value, index) => (
+                            <div
+                              key={index}
+                              className="bg-gradient-to-t from-[#EF4444] to-[#DC2626] rounded-sm flex-1"
+                              style={{ height: `${value * 40}px` }}
+                            />
+                          ))}
+                        </div>
+                        <div className="text-xs text-[#9AA4B2] mt-2">
+                          Est. +{formatCurrency(campaign.spent * 0.3)} revenue
+                        </div>
+                      </div>
+
+                      {/* Right: AI Suggestions */}
+                      <div className="bg-[#0F1216] rounded-lg p-3 border border-[#2A2F36]">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-[#D1D5DB]">AI Suggestions</h4>
+                          <Brain className="w-4 h-4 text-[#EF4444]" />
+                        </div>
+                        
+                        {campaign.recommendation ? (
+                          <div className="space-y-2">
+                            <div className="text-sm text-[#D1D5DB] font-medium">
+                              {campaign.recommendation.action}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => addToQueue({
+                                type: 'optimize',
+                                title: campaign.recommendation!.action,
+                                description: campaign.recommendation!.reasoning,
+                                impact: 'high',
+                                campaignId: campaign.campaign_id
+                              })}
+                              className="w-full bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs"
+                            >
+                              Apply
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="text-sm text-[#9AA4B2]">
+                              No issues detected
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full border-[#2A2F36] text-[#9AA4B2] hover:text-white text-xs"
+                            >
+                              Generate
+                            </Button>
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-[#9AA4B2] mt-2">
+                          Issue: {campaign.roas < 2 ? 'Low ROAS performance' : 'Performance within range'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
-    )
-  }
 
-  // Show regular dashboard when brand is selected
-  return (
-    <div className="w-full space-y-6 mb-12 relative">
-      <GridOverlay />
-      <div className="relative z-10">
-        <>
-
-          {/* Meta Connection Status Banner - Responsive padding */}
-          <MetaConnectionStatus 
-            brandId={selectedBrandId} 
-            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
-          />
-
-          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
-          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
+        {/* Right Column (3/12) - Sticky on desktop, stacked on mobile */}
+        <div className="w-full lg:w-1/4 flex-shrink-0 lg:sticky lg:top-0 lg:h-full overflow-y-auto border-t lg:border-t-0 lg:border-l border-[#2A2F36] bg-[#0B0D10]">
+          <div className="p-4 space-y-4">
             
-            {/* Top Section - Blended Performance Metrics spans full width */}
-            <div className="w-full">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                layout="horizontal"
-              />
-            </div>
-            
-            {/* Main Section - Responsive layout for widgets */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-              
-              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
-              <div className="xl:col-span-2 space-y-4">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                
-                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
+            {/* Performance Trends */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Performance Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-32 flex items-end justify-between gap-1 mb-3">
+                  {trendData.map((day, index) => (
+                    <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className="bg-gradient-to-t from-[#EF4444] to-[#DC2626] rounded-sm w-full"
+                        style={{ height: `${(day.spend / Math.max(...trendData.map(d => d.spend))) * 100}px` }}
+                      />
+                      <div
+                        className="bg-gradient-to-t from-[#22C55E] to-[#16A34A] rounded-sm w-full"
+                        style={{ height: `${(day.revenue / Math.max(...trendData.map(d => d.revenue))) * 80}px` }}
+                      />
+                      <div className="text-xs text-[#9AA4B2]">{day.day}</div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-[#EF4444] rounded"></div>
+                    <span className="text-[#9AA4B2]">Spend</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-[#22C55E] rounded"></div>
+                    <span className="text-[#9AA4B2]">Revenue</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
-              <div className="xl:col-span-1">
-                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-              </div>
+            {/* Creative Performance */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  Creative Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {creativePerformance.slice(0, 3).map((creative) => (
+                  <div key={creative.creative_id} className="flex items-center justify-between p-2 bg-[#0F1216] rounded border border-[#2A2F36]">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#D1D5DB] truncate">
+                        {creative.creative_name}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-[#9AA4B2]">
+                        <span>CTR: {creative.ctr.toFixed(1)}%</span>
+                        <span className={getROASColor(creative.roas)}>
+                          {creative.roas.toFixed(1)}x
+                        </span>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-[#9AA4B2] hover:text-white">
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-            </div>
+            {/* Action Log */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Action Log
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {actionLog.slice(0, 8).map((entry) => (
+                    <div key={entry.id} className="flex items-start gap-2 p-2 bg-[#0F1216] rounded border border-[#2A2F36]">
+                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                        entry.status === 'completed' ? 'bg-[#22C55E]' : 
+                        entry.status === 'pending' ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#D1D5DB]">{entry.title}</p>
+                        <p className="text-xs text-[#9AA4B2] truncate">{entry.description}</p>
+                        <p className="text-xs text-[#9AA4B2]">
+                          {new Date(entry.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
+            {/* Alerts */}
+            <Card className="bg-[#14171C] border-[#2A2F36]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {alerts.length === 0 ? (
+                  <p className="text-[#9AA4B2] text-sm text-center py-4">
+                    No active alerts
+                  </p>
+                ) : (
+                  alerts.map((alert) => (
+                    <div key={alert.id} className={`p-2 rounded border ${
+                      alert.type === 'critical' ? 'bg-[#EF4444]/10 border-[#EF4444]/30' :
+                      alert.type === 'warning' ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30' :
+                      'bg-[#22C55E]/10 border-[#22C55E]/30'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                          alert.type === 'critical' ? 'text-[#EF4444]' :
+                          alert.type === 'warning' ? 'text-[#F59E0B]' :
+                          'text-[#22C55E]'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#D1D5DB]">{alert.title}</p>
+                          <p className="text-xs text-[#9AA4B2]">{alert.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </>
+        </div>
       </div>
     </div>
   )
-} 
+}
