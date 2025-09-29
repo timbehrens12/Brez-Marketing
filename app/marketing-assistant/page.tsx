@@ -139,6 +139,7 @@ export default function MarketingAssistantPage() {
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
   const [recommendationsViewed, setRecommendationsViewed] = useState(false)
   const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
+  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
 
   // Calculate time until next Monday 12am
   const getNextMondayMidnight = () => {
@@ -451,6 +452,8 @@ export default function MarketingAssistantPage() {
 
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
+      setCompletedItems(prev => new Set(prev).add(`opt-${cardId}`))
+      
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) return
 
@@ -562,7 +565,7 @@ export default function MarketingAssistantPage() {
 
   const handleMarkBudgetAsDone = async (allocationId: string) => {
     try {
-      setBudgetAllocations(prev => prev.filter(a => a.id !== allocationId))
+      setCompletedItems(prev => new Set(prev).add(`budget-${allocationId}`))
     } catch (error) {
       console.error('Error marking budget allocation as done:', error)
     }
@@ -570,7 +573,7 @@ export default function MarketingAssistantPage() {
 
   const handleMarkAudienceAsDone = async (expansionId: string) => {
     try {
-      setAudienceExpansions(prev => prev.filter(e => e.id !== expansionId))
+      setCompletedItems(prev => new Set(prev).add(`audience-${expansionId}`))
     } catch (error) {
       console.error('Error marking audience expansion as done:', error)
     }
@@ -819,13 +822,23 @@ export default function MarketingAssistantPage() {
                             <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
                             <span className="truncate">Explain</span>
                           </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                            onClick={() => handleMarkBudgetAsDone(allocation.id)}
-                          >
-                            <span className="truncate">Mark as Done</span>
-                          </Button>
+                          {completedItems.has(`budget-${allocation.id}`) ? (
+                            <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
+                              <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <div className="text-xs text-gray-400 min-w-0">
+                                <div className="truncate">Completed</div>
+                                <div className="text-xs truncate">{timeUntilRefresh}</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
+                              onClick={() => handleMarkBudgetAsDone(allocation.id)}
+                            >
+                              <span className="truncate">Mark as Done</span>
+                            </Button>
+                          )}
                           </div>
                         </div>
                       ))}
@@ -877,13 +890,23 @@ export default function MarketingAssistantPage() {
                             <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
                             <span className="truncate">Explain</span>
                           </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                            onClick={() => handleMarkAudienceAsDone(expansion.id)}
-                          >
-                            <span className="truncate">Mark as Done</span>
-                          </Button>
+                          {completedItems.has(`audience-${expansion.id}`) ? (
+                            <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
+                              <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <div className="text-xs text-gray-400 min-w-0">
+                                <div className="truncate">Completed</div>
+                                <div className="text-xs truncate">{timeUntilRefresh}</div>
+                            </div>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
+                              onClick={() => handleMarkAudienceAsDone(expansion.id)}
+                            >
+                              <span className="truncate">Mark as Done</span>
+                            </Button>
+                          )}
                           </div>
                         </div>
                       ))}
@@ -1064,13 +1087,23 @@ export default function MarketingAssistantPage() {
                             <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
                             <span className="truncate">Explain</span>
                   </Button>
+                  {completedItems.has(`opt-${card.id}`) ? (
+                    <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
+                      <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <div className="text-xs text-gray-400 min-w-0">
+                        <div className="truncate">Completed</div>
+                        <div className="text-xs truncate">{timeUntilRefresh}</div>
+                      </div>
+                    </div>
+                  ) : (
                   <Button
-                            size="sm" 
-                            className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                            onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
+                              size="sm" 
+                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
+                              onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                   >
-                            <span className="truncate">Mark as Done</span>
+                              <span className="truncate">Mark as Done</span>
                   </Button>
+                  )}
                 </div>
           </div>
         </div>
@@ -1220,8 +1253,8 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4 flex-1 overflow-y-auto max-h-[400px]">
                 <div className="space-y-3">
-                  {alerts.filter(a => !a.acknowledged).map(alert => (
-                    <div key={alert.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors">
+                  {alerts.map(alert => (
+                    <div key={alert.id} className={`p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors ${alert.acknowledged ? 'opacity-50' : ''}`}>
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
@@ -1229,7 +1262,7 @@ export default function MarketingAssistantPage() {
                             alert.type === 'warning' ? 'bg-yellow-400' :
                             'bg-blue-400'
                           }`} />
-                          <h4 className="text-white font-medium text-sm">{alert.title}</h4>
+                          <h4 className={`text-white font-medium text-sm ${alert.acknowledged ? 'line-through' : ''}`}>{alert.title}</h4>
                             </div>
                             <Button
                           variant="ghost"
@@ -1237,14 +1270,14 @@ export default function MarketingAssistantPage() {
                           onClick={() => dismissAlert(alert.id)}
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10"
                         >
-                          <X className="h-3 w-3 text-gray-400" />
+                          <CheckCircle className="h-3 w-3 text-gray-400" />
                             </Button>
                           </div>
-                      <p className="text-gray-400 text-xs mb-2">{alert.description}</p>
+                      <p className={`text-gray-400 text-xs mb-2 ${alert.acknowledged ? 'line-through' : ''}`}>{alert.description}</p>
                       <p className="text-gray-500 text-xs">{alert.timestamp.toLocaleTimeString()}</p>
                     </div>
                   ))}
-                  {alerts.filter(a => !a.acknowledged).length === 0 && (
+                  {alerts.length === 0 && (
                     <div className="text-center py-6 text-gray-400">
                       <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">All systems running smoothly</p>
