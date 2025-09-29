@@ -1253,271 +1253,100 @@ export default function MarketingAssistantPage() {
             className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* Intelligent Marketing Assistant - Unified Experience */}
+          {/* AI-Powered Profitability Dashboard - Single Unified Experience */}
           <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 animate-in fade-in duration-500">
             
-            {/* Single Intelligent Dashboard */}
-            <div className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
+            {/* Main Dashboard Container - Zero Gaps, Maximum Flow */}
+            <div className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-3xl shadow-2xl overflow-hidden">
               
-              {/* Smart Header with Live Insights */}
-              <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border-b border-[#333] p-4">
+              {/* AI Marketing Intelligence Header */}
+              <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border-b border-[#333] p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#FF2A2A] to-[#FF4A4A] rounded-2xl 
-                                  flex items-center justify-center shadow-lg">
-                      <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#FF2A2A] rounded-sm"></div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF4A4A]/10 rounded-3xl 
+                                  flex items-center justify-center border border-[#FF2A2A]/30 shadow-xl">
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A] to-[#FF4A4A] rounded-xl 
+                                    flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
                     </div>
                     <div>
-                      <h1 className="text-2xl font-bold text-white">Marketing Intelligence</h1>
-                      <p className="text-gray-400 text-sm">AI-powered insights & campaign optimization</p>
+                      <h1 className="text-3xl font-bold tracking-tight text-white">AI Marketing Intelligence</h1>
+                      <p className="text-gray-400 font-medium text-lg">Maximize campaign profitability with intelligent optimization</p>
                     </div>
                   </div>
                   
-                  {/* Live Status */}
+                  {/* AI Status Indicator */}
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a]/60 border border-[#333] rounded-lg">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-gray-400">Live</span>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-[#FF2A2A]/10 border border-[#FF2A2A]/30 rounded-xl">
+                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full animate-pulse"></div>
+                      <span className="text-sm text-white font-medium">AI Active</span>
+                    </div>
+                    <div className="px-3 py-2 bg-[#1a1a1a]/60 border border-[#333] rounded-xl text-xs text-gray-400">
+                      {new Date().toLocaleTimeString()}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Unified Intelligence Dashboard */}
-              <div className="p-4">
+              {/* Unified Content Flow - No Spacing, Pure Integration */}
+              <div className="p-6 space-y-4">
                 
-                {/* Performance Overview Bar - Ultra Compact */}
-                <div className="mb-4">
-                  <BlendedWidgetsTable 
-                    metaMetrics={metaMetrics}
-                    layout="horizontal"
-                  />
-                </div>
+                {/* AI-Powered Performance Overview */}
+                <BlendedWidgetsTable 
+                  metaMetrics={metaMetrics}
+                  layout="horizontal"
+                />
                 
-                {/* Main Intelligence Grid - No Gaps */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Intelligent Campaign Optimization Flow */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                   
-                  {/* Primary Intelligence Column */}
-                  <div className="lg:col-span-2 space-y-4">
+                  {/* Main Optimization Dashboard */}
+                  <div className="lg:col-span-8 space-y-4">
                     
-                    {/* Smart Campaign Overview */}
-                    <div className="bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/10 rounded-lg 
+                    {/* AI Campaign Optimizer */}
+                    <div className="bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-2xl p-4">
+                      
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/10 rounded-xl 
                                         flex items-center justify-center border border-[#FF2A2A]/30">
-                            <div className="w-2 h-2 bg-[#FF2A2A] rounded-full"></div>
+                            <svg className="w-4 h-4 text-[#FF2A2A]" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                            </svg>
                           </div>
-                          <h3 className="text-lg font-bold text-white">Campaign Intelligence</h3>
+                          <div>
+                            <h3 className="text-lg font-bold text-white">Campaign Intelligence</h3>
+                            <p className="text-xs text-gray-500">AI-powered optimization and insights</p>
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {preloadedData.campaigns?.length || 0} active campaigns
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Auto-optimize:</span>
+                          <div className="w-8 h-4 bg-[#FF2A2A] rounded-full relative">
+                            <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Intelligent Campaign List */}
-                      <div className="space-y-2">
-                        {(preloadedData.campaigns || []).slice(0, 3).map((campaign: any) => (
-                          <div key={campaign.campaign_id} className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-[#1a1a1a] rounded flex items-center justify-center">
-                                  <div className={`w-2 h-2 rounded-full ${
-                                    campaign.status === 'ACTIVE' ? 'bg-green-400' : 'bg-gray-400'
-                                  }`}></div>
-                                </div>
-                                <span className="text-sm font-medium text-white truncate">
-                                  {campaign.campaign_name}
-                                </span>
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                ${campaign.spent?.toFixed(0) || 0} spent
-                              </div>
-                            </div>
-                            
-                            {/* Smart Metrics Row */}
-                            <div className="grid grid-cols-4 gap-2 text-xs">
-                              <div className="text-center">
-                                <div className="text-gray-600">ROAS</div>
-                                <div className={`font-medium ${
-                                  (campaign.roas || 0) >= 3 ? 'text-green-400' : 
-                                  (campaign.roas || 0) >= 2 ? 'text-yellow-400' : 'text-red-400'
-                                }`}>
-                                  {(campaign.roas || 0).toFixed(1)}x
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-600">CTR</div>
-                                <div className="text-white font-medium">{(campaign.ctr || 0).toFixed(1)}%</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-600">Clicks</div>
-                                <div className="text-white font-medium">{campaign.clicks || 0}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-600">Conv.</div>
-                                <div className="text-white font-medium">{campaign.conversions || 0}</div>
-                              </div>
-                            </div>
-                            
-                            {/* AI Insight */}
-                            {campaign.recommendation && (
-                              <div className="mt-2 pt-2 border-t border-[#333]/30">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div className="w-3 h-3 bg-[#FF2A2A]/20 rounded flex items-center justify-center">
-                                    <div className="w-1 h-1 bg-[#FF2A2A] rounded-full"></div>
-                                  </div>
-                                  <span className="text-xs font-medium text-white">AI Recommendation</span>
-                                </div>
-                                <div className="text-xs text-gray-400 leading-relaxed">
-                                  {campaign.recommendation.action.slice(0, 100)}...
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      {/* Integrated Campaign + AI Content */}
+                      <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                      
                     </div>
                     
-                    {/* Creative Performance Intelligence */}
-                    <div className="bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg 
-                                        flex items-center justify-center border border-blue-500/30">
-                            <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                          </div>
-                          <h3 className="text-lg font-bold text-white">Creative Intelligence</h3>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {preloadedData.adCreatives?.length || 0} active creatives
-                        </div>
-                      </div>
-                      
-                      {/* Top Performing Creatives */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {(preloadedData.adCreatives || []).slice(0, 4).map((ad: any) => {
-                          const roas = ad.conversions > 0 && ad.spent > 0 ? (ad.conversions * 50) / ad.spent : 0;
-                          return (
-                            <div key={ad.ad_id} className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded flex items-center justify-center overflow-hidden">
-                                  {ad.thumbnail_url ? (
-                                    <img src={ad.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-3 h-3 bg-gray-500 rounded"></div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-medium text-white truncate">
-                                    {ad.ad_name}
-                                  </div>
-                                  <div className={`text-xs ${
-                                    roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
-                                  }`}>
-                                    {roas > 0 ? `${roas.toFixed(1)}x ROAS` : 'No ROAS'}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-3 gap-1 text-xs">
-                                <div className="text-center">
-                                  <div className="text-gray-600">Spend</div>
-                                  <div className="text-white font-medium">${(ad.spent || 0).toFixed(0)}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-gray-600">Clicks</div>
-                                  <div className="text-white font-medium">{ad.clicks || 0}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-gray-600">CTR</div>
-                                  <div className="text-white font-medium">{(ad.ctr || 0).toFixed(1)}%</div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    {/* Performance Analytics Integration */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                      <PerformanceChart preloadedPerformanceData={preloadedData.performanceData} />
                     </div>
                     
                   </div>
 
-                  {/* AI Intelligence Sidebar */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-gradient-to-br from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-xl p-4 h-full">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-lg 
-                                      flex items-center justify-center border border-purple-500/30">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                        </div>
-                        <h3 className="text-lg font-bold text-white">AI Insights</h3>
-                      </div>
-                      
-                      {/* Smart Recommendations */}
-                      <div className="space-y-3">
-                        <div className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-4 h-4 bg-green-500/20 rounded flex items-center justify-center">
-                              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                            </div>
-                            <span className="text-sm font-medium text-white">Profit Opportunity</span>
-                          </div>
-                          <div className="text-lg font-bold text-green-400 mb-1">
-                            +${((metaMetrics.adSpend * metaMetrics.roas) - metaMetrics.adSpend).toFixed(0)}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            Potential daily profit from current campaigns
-                          </div>
-                        </div>
-                        
-                        <div className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-4 h-4 bg-blue-500/20 rounded flex items-center justify-center">
-                              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                            </div>
-                            <span className="text-sm font-medium text-white">Performance Score</span>
-                          </div>
-                          <div className="text-lg font-bold text-blue-400 mb-1">
-                            {Math.round(metaMetrics.roas * 30)}%
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            Overall campaign health rating
-                          </div>
-                        </div>
-                        
-                        <div className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-4 h-4 bg-yellow-500/20 rounded flex items-center justify-center">
-                              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                            </div>
-                            <span className="text-sm font-medium text-white">Next Action</span>
-                          </div>
-                          <div className="text-sm text-white mb-1">
-                            {metaMetrics.roas > 3 ? 'Scale top performers' : 
-                             metaMetrics.roas > 2 ? 'Optimize targeting' : 
-                             'Review creative strategy'}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            Recommended based on current performance
-                          </div>
-                        </div>
-                        
-                        {/* Performance Trend Chart - Compact */}
-                        <div className="bg-[#1a1a1a]/40 rounded-lg p-3 border border-[#333]/30">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-4 h-4 bg-gray-500/20 rounded flex items-center justify-center">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                            </div>
-                            <span className="text-sm font-medium text-white">Trend Analysis</span>
-                          </div>
-                          <div className="h-16 bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/30 rounded p-2 border border-[#333]/20">
-                            <PerformanceChart preloadedPerformanceData={preloadedData.performanceData} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  {/* AI Recommendations & Actions Sidebar */}
+                  <div className="lg:col-span-4">
+                    <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
                   </div>
 
                 </div>

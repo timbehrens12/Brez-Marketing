@@ -305,22 +305,19 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-     <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-2xl h-full max-h-[680px] flex flex-col overflow-hidden">
-       {/* Compact Header */}
-       <div className="p-4 border-b border-[#333]/50">
+     <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-xl h-full max-h-[600px] flex flex-col overflow-hidden">
+       {/* Ultra-Compact Header */}
+       <div className="p-3 border-b border-[#333]/30">
          <div className="flex items-center justify-between">
-           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
+           <div className="flex items-center gap-2">
+             <div className="w-6 h-6 bg-gradient-to-br from-white/10 to-white/5 rounded-lg 
                            flex items-center justify-center border border-white/20">
-               <ImageIcon className="w-4 h-4 text-white" />
+               <ImageIcon className="w-3 h-3 text-white" />
              </div>
              <div>
-               <h3 className="text-lg text-white font-bold">Creative Performance</h3>
-               <div className="flex items-center gap-2 mt-0.5">
-                 <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs px-2 py-0.5 rounded-md">
-                   {filteredAndSortedAds.length} Active
-                 </Badge>
-                 <span className="text-gray-500 text-xs">Ad performance insights</span>
+               <h4 className="text-sm text-white font-bold">Top Creatives</h4>
+               <div className="flex items-center gap-2">
+                 <span className="text-xs text-gray-500">{filteredAndSortedAds.length} performing ads</span>
                </div>
              </div>
            </div>
@@ -391,7 +388,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       </div>
 
        {/* Content */}
-       <div className="flex-1 p-4 overflow-hidden">
+       <div className="flex-1 p-3 overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
@@ -406,7 +403,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </p>
           </div>
         ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               

@@ -975,52 +975,26 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               </div>
             </div>
 
-            {/* Compact AI Recommendation */}
-            {campaign.recommendation ? (
-              <div className="bg-[#1a1a1a]/30 rounded-lg p-3 border border-[#333]/40">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-3 h-3 text-[#FF2A2A]" />
-                    <span className="text-xs font-medium text-white">AI Insight</span>
-                    <span className="text-xs text-gray-500">
-                      {Math.round((campaign.recommendation.confidence || 8.5) * 10)}%
-                    </span>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setSelectedRecommendation(campaign)
-                      setRecommendationDialogOpen(true)
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs px-2 py-1 h-6 text-gray-400 hover:text-white rounded-md"
-                  >
-                    View
-                  </Button>
+            {/* Profitability Indicator */}
+            <div className="bg-gradient-to-r from-[#1a1a1a]/40 to-[#222]/30 rounded-lg p-2 border border-[#333]/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    campaign.roas >= 3 ? 'bg-green-400' : 
+                    campaign.roas >= 2 ? 'bg-yellow-400' : 
+                    'bg-red-400'
+                  }`}></div>
+                  <span className="text-xs font-medium text-white">
+                    {campaign.roas >= 3 ? 'High Profit' : 
+                     campaign.roas >= 2 ? 'Profitable' : 
+                     'Needs Optimization'}
+                  </span>
                 </div>
-                <div className="text-xs text-gray-400 leading-relaxed">
-                  {campaign.recommendation.action.slice(0, 80)}...
+                <div className="text-xs text-gray-400">
+                  ${((campaign.spent * campaign.roas) - campaign.spent).toFixed(2)} profit
                 </div>
               </div>
-            ) : (
-              <div className="bg-[#1a1a1a]/20 rounded-lg p-3 border border-[#333]/20 border-dashed">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-3 h-3 text-gray-600" />
-                    <span className="text-xs text-gray-500">Generate AI insight</span>
-                  </div>
-                  <Button
-                    onClick={() => generateRecommendation(campaign)}
-                    disabled={isGeneratingRecommendation}
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs px-2 py-1 h-6 text-gray-500 hover:text-white disabled:opacity-50 rounded-md"
-                  >
-                    {isGeneratingRecommendation ? "..." : "Generate"}
-                  </Button>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )
                   }
@@ -1264,29 +1238,13 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
       */}
       
-       {/* Integrated Section Header */}
-       <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-2xl overflow-hidden">
-         <div className="p-4 border-b border-[#333]/50">
-           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
-                             flex items-center justify-center border border-white/20">
-                 <Target className="w-4 h-4 text-white" />
-               </div>
-               <div>
-                 <h3 className="text-lg font-bold text-white">Campaign Management</h3>
-                 <p className="text-xs text-gray-500">Active campaigns & optimization</p>
-               </div>
-             </div>
-           </div>
-         </div>
+       {/* Streamlined Campaign Optimizer - No Extra Headers */}
+       <div className="space-y-3">
         
-        <div className="p-0">
-
-          {/* Compact Flowing Tabs */}
-          <div className="p-4">
+          {/* Ultra-Compact Platform Tabs */}
+          <div className="mb-3">
             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/40 border border-[#333]/30 rounded-xl p-1 h-10 backdrop-blur-sm">
+              <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a]/30 border border-[#333]/20 rounded-lg p-1 h-8 backdrop-blur-sm">
               <TabsTrigger 
                 value="all" 
                 className="flex items-center justify-center gap-3 data-[state=active]:bg-white/10 data-[state=active]:text-white

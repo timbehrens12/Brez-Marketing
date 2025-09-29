@@ -298,45 +298,42 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-2xl h-full flex flex-col overflow-hidden">
-      {/* Compact Header */}
-      <div className="p-4 border-b border-[#333]/50">
+    <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-xl h-full flex flex-col overflow-hidden">
+      {/* Ultra-Compact Header */}
+      <div className="p-3 border-b border-[#333]/30">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gradient-to-br from-white/10 to-white/5 rounded-lg 
                           flex items-center justify-center border border-white/20">
-              <BarChart3 className="w-4 h-4 text-white" />
+              <BarChart3 className="w-3 h-3 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Performance Trends</h3>
-              <p className="text-xs text-gray-500">{getMetricLabel()} over time</p>
+              <h4 className="text-sm font-bold text-white">Trends</h4>
+              <p className="text-xs text-gray-500">{getMetricLabel()}</p>
             </div>
           </div>
           
-          {/* Compact Metric Selector */}
-          <div className="flex items-center gap-2">
+          {/* Mini Metric Selector */}
+          <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-[#1a1a1a]/40 border-[#333]/30 text-white hover:bg-[#2a2a2a] rounded-lg px-3 py-1 h-8 text-xs">
-                  <Settings2 className="h-3 h-3 mr-1" />
+                <Button variant="outline" size="sm" className="bg-[#1a1a1a]/30 border-[#333]/20 text-white hover:bg-[#2a2a2a] rounded-md px-2 py-1 h-6 text-xs">
+                  <Settings2 className="h-2 w-2 mr-1" />
                   {getMetricLabel()}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[#0a0a0a] border-[#333] p-2 rounded-xl">
-                <DropdownMenuLabel className="text-white text-xs px-2 py-1">Metric</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#333] my-1" />
-                
+              <DropdownMenuContent align="end" className="w-32 bg-[#0a0a0a] border-[#333] p-1 rounded-lg">
                 {[
                   { key: 'spend', label: 'Spend' },
                   { key: 'roas', label: 'ROAS' },
-                  { key: 'impressions', label: 'Impressions' },
+                  { key: 'impressions', label: 'Impr.' },
                   { key: 'clicks', label: 'Clicks' },
-                  { key: 'conversions', label: 'Conversions' }
+                  { key: 'conversions', label: 'Conv.' }
                 ].map(metric => (
                   <DropdownMenuItem 
                     key={metric.key}
                     onClick={() => setSelectedMetric(metric.key as any)}
-                    className={`rounded-lg mx-1 px-2 py-1 text-xs transition-colors ${
+                    className={`rounded px-2 py-1 text-xs transition-colors ${
                       selectedMetric === metric.key 
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-300 hover:bg-[#1a1a1a] hover:text-white'
@@ -344,7 +341,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                   >
                     {metric.label}
                     {selectedMetric === metric.key && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white ml-auto"></div>
+                      <div className="w-1 h-1 rounded-full bg-white ml-auto"></div>
                     )}
                   </DropdownMenuItem>
                 ))}
@@ -357,9 +354,9 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
       {/* Content */}
       <div className="p-0 flex-1 flex flex-col">
         {chartData.length > 0 ? (
-          <div className="px-4 py-3 flex-1">
-            {/* Compact Chart */}
-            <div className="h-64 bg-gradient-to-br from-[#0f0f0f]/30 to-[#1a1a1a]/30 rounded-xl p-3 border border-[#333]/30">
+          <div className="px-3 py-2 flex-1">
+            {/* Ultra-Compact Chart */}
+            <div className="h-48 bg-gradient-to-br from-[#0f0f0f]/30 to-[#1a1a1a]/30 rounded-lg p-2 border border-[#333]/30">
               <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
