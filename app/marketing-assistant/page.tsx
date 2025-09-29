@@ -1023,34 +1023,58 @@ export default function MarketingAssistantPage() {
                         <div>
                           <p className="text-gray-400 text-sm">Spend</p>
                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
-              </div>
-                        <div className={`flex items-center gap-1 ${trends.spend.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                        </div>
+                        <div 
+                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
+                        >
                           {trends.spend.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
-                </div>
-              </div>
+                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                            <div className="text-gray-400 mb-1">Comparing:</div>
+                            <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
+                            <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
+                          </div>
+                        </div>
+                      </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
-                </div>
-                        <div className={`flex items-center gap-1 ${trends.revenue.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                        </div>
+                        <div 
+                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
+                        >
                           {trends.revenue.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
-              </div>
-                </div>
+                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                            <div className="text-gray-400 mb-1">Comparing:</div>
+                            <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
+                            <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
+                          </div>
+                        </div>
+                      </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">ROAS</p>
                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-              </div>
-                        <div className={`flex items-center gap-1 ${trends.roas.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                        </div>
+                        <div 
+                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
+                        >
                           {trends.roas.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           <span className="text-sm">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                </div>
-                </div>
+                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                            <div className="text-gray-400 mb-1">Comparing:</div>
+                            <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
+                            <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
+                          </div>
+                        </div>
+                      </div>
                     </>
                   )}
                   {!trends && (
