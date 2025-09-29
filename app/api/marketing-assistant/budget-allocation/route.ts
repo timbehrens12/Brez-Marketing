@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get campaign performance data for budget allocation analysis
-    const { data: campaignStats } = await supabase
+    // Use a broader date range if the specified range returns no data
+    let { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select(`
         campaign_id,
@@ -39,6 +40,28 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
+
+    // If no data in specified range, try last 30 days
+    if (!campaignStats || campaignStats.length === 0) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const { data: fallbackStats } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .gte('date', thirtyDaysAgo)
+      
+      campaignStats = fallbackStats
+      console.log(`Budget allocation: Fallback to 30 days - found ${campaignStats?.length || 0} records`)
+    }
 
     console.log(`Budget allocation: Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
 
@@ -86,7 +109,12 @@ export async function GET(request: NextRequest) {
       let confidence = 50
       let risk: 'low' | 'medium' | 'high' = 'medium'
       
-      if (currentRoas > 2.5 && efficiency > 5) {
+      // Handle campaigns with zero revenue (need tracking setup)
+      if (campaign.totalRevenue === 0 && campaign.totalConversions > 0) {
+        budgetMultiplier = 0.9 // Slight decrease until tracking is fixed
+        confidence = 60
+        risk = 'high'
+      } else if (currentRoas > 2.5 && efficiency > 5) {
         budgetMultiplier = 1.5 // Increase by 50%
         confidence = 85
         risk = 'low'
@@ -106,6 +134,11 @@ export async function GET(request: NextRequest) {
         budgetMultiplier = 0.8 // Decrease by 20%
         confidence = 70
         risk = 'high'
+      } else if (avgDailySpend > 5 && ctr > 1.0) {
+        // Campaigns with good engagement but unclear ROAS
+        budgetMultiplier = 1.05 // Small test increase
+        confidence = 55
+        risk = 'medium'
       }
       
       const suggestedBudget = Math.round(avgDailySpend * budgetMultiplier)

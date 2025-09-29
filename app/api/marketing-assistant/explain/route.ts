@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,89 +39,97 @@ export async function POST(request: NextRequest) {
 }
 
 async function explainRecommendation(card: any) {
-  const prompt = `
-As an expert digital marketing consultant, provide a detailed explanation for this optimization recommendation:
-
-Title: ${card.title}
-Description: ${card.description}
-Current Value: ${card.currentValue}
-Recommended Value: ${card.recommendedValue}
-Priority: ${card.priority}
-Confidence: ${card.projectedImpact?.confidence}%
-
-Provide:
-1. Why this recommendation matters (2-3 sentences)
-2. 3-4 data-driven insights that support this recommendation
-3. Expected outcomes with specific metrics
-4. 4-5 step-by-step implementation instructions
-
-Be specific, actionable, and focus on the business impact.
-`
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert digital marketing consultant providing detailed explanations for campaign optimization recommendations. Be specific, data-driven, and actionable."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000
-    })
-
-    const response = completion.choices[0].message.content
-
-    // Parse the AI response into structured format
-    return {
-      reasoning: "This recommendation targets a critical performance bottleneck that's limiting your campaign's potential. Based on current performance data, implementing this change could significantly improve your ROAS while reducing cost inefficiencies.",
-      insights: [
-        "Current performance metrics indicate suboptimal resource allocation",
-        "Industry benchmarks suggest 20-30% improvement potential in this area", 
-        "Historical data shows similar optimizations deliver results within 3-5 days",
-        "This change aligns with your brand's growth objectives and budget constraints"
-      ],
-      outcomes: [
-        { label: "ROAS Improvement", value: "+0.5x", positive: true },
-        { label: "Cost Reduction", value: "-15%", positive: true },
-        { label: "Implementation Time", value: "2-3 days", positive: true },
-        { label: "Risk Level", value: "Low", positive: true }
-      ],
-      steps: [
-        "Access your campaign dashboard and navigate to the relevant campaign settings",
-        "Locate the specific metric or setting that needs adjustment",
-        "Implement the recommended change gradually over 24-48 hours",
-        "Monitor performance closely for the first 72 hours post-implementation",
-        "Adjust further based on initial performance data and trends"
-      ]
-    }
-  } catch (error) {
-    console.error('Error calling OpenAI:', error)
-    // Fallback response
-    return {
-      reasoning: "This recommendation is based on performance analysis and industry best practices to optimize your campaign effectiveness.",
-      insights: [
-        "Performance data indicates room for improvement in this area",
-        "Similar optimizations have shown positive results historically",
-        "This change aligns with current market trends and best practices"
-      ],
-      outcomes: [
-        { label: "Expected Improvement", value: "+15%", positive: true },
-        { label: "Implementation Time", value: "1-2 days", positive: true }
-      ],
-      steps: [
-        "Review the current campaign settings",
-        "Implement the recommended changes",
-        "Monitor performance for 24-48 hours",
-        "Adjust as needed based on results"
-      ]
-    }
+  // Generate explanation based on recommendation type and data
+  let reasoning, insights, outcomes, steps
+  
+  if (card.title?.includes('Budget') || card.title?.includes('Scaling')) {
+    reasoning = "This budget optimization targets campaigns showing strong efficiency signals. By scaling successful campaigns intelligently, you can capture more market opportunity while maintaining profitability."
+    insights = [
+      `Current performance shows ${card.projectedImpact?.confidence || 75}% confidence for scaling success`,
+      "Budget increases on high-performing campaigns typically maintain 85-95% of original efficiency",
+      "This scaling approach follows proven performance marketing best practices",
+      "Risk is minimized through gradual implementation and close monitoring"
+    ]
+    outcomes = [
+      { label: "Revenue Increase", value: "+25-40%", positive: true },
+      { label: "ROAS Maintenance", value: "90-95%", positive: true },
+      { label: "Scale Timeline", value: "3-7 days", positive: true },
+      { label: "Risk Level", value: "Low", positive: true }
+    ]
+    steps = [
+      "Navigate to your Meta Ads Manager campaign budget settings",
+      "Increase daily budget by 20-25% initially (not 100% immediately)",
+      "Monitor performance for 48-72 hours to ensure learning phase stability",
+      "If performance maintains, continue scaling in 25% increments",
+      "Set up automated rules to pause if ROAS drops below acceptable threshold"
+    ]
+  } else if (card.title?.includes('Creative') || card.title?.includes('Performance')) {
+    reasoning = "Creative performance optimization is critical for maintaining campaign effectiveness. Fresh creatives prevent audience fatigue and can dramatically improve engagement rates and conversion performance."
+    insights = [
+      "Creative fatigue typically sets in after 3-7 days of consistent exposure",
+      "New creative variants can improve CTR by 15-30% compared to fatigued ads",
+      "A/B testing different messaging approaches identifies winning combinations",
+      "Video content typically outperforms static images by 20-40% in most verticals"
+    ]
+    outcomes = [
+      { label: "CTR Improvement", value: "+15-30%", positive: true },
+      { label: "CPC Reduction", value: "-10-20%", positive: true },
+      { label: "Testing Timeline", value: "5-7 days", positive: true },
+      { label: "Success Rate", value: "70%", positive: true }
+    ]
+    steps = [
+      "Create 3-5 new creative variants with different hooks or messaging angles",
+      "Launch new creatives alongside existing ones in equal budget splits",
+      "Run for 3-5 days to gather statistically significant data",
+      "Pause underperforming creatives and scale the winners",
+      "Repeat this process weekly to maintain fresh creative rotation"
+    ]
+  } else if (card.title?.includes('Tracking') || card.title?.includes('Conversion')) {
+    reasoning = "Proper conversion tracking is fundamental to campaign optimization. Without accurate tracking, you're essentially flying blind and missing critical optimization opportunities."
+    insights = [
+      "Campaigns without proper tracking typically underperform by 30-50%",
+      "Conversion tracking enables advanced bidding strategies and better audience building",
+      "Proper attribution helps allocate budget to the most effective touchpoints",
+      "Server-side tracking is becoming essential due to iOS 14.5+ privacy changes"
+    ]
+    outcomes = [
+      { label: "Attribution Accuracy", value: "+80%", positive: true },
+      { label: "Optimization Capability", value: "Enabled", positive: true },
+      { label: "Setup Time", value: "2-4 hours", positive: true },
+      { label: "Data Quality", value: "High", positive: true }
+    ]
+    steps = [
+      "Install Facebook Pixel and Conversions API on your website",
+      "Configure purchase events with proper value and currency parameters",
+      "Test tracking using Facebook's Event Testing tool",
+      "Verify attribution in Meta Events Manager after test purchases",
+      "Allow 24-48 hours for the learning phase to optimize with new data"
+    ]
+  } else {
+    // Generic fallback
+    reasoning = "This optimization recommendation is based on performance analysis and industry best practices to improve your campaign effectiveness and return on ad spend."
+    insights = [
+      "Performance data indicates significant room for improvement in this area",
+      "Similar optimizations have shown positive results across comparable campaigns",
+      "This change aligns with current best practices and platform recommendations",
+      "Implementation carries manageable risk with high potential upside"
+    ]
+    outcomes = [
+      { label: "Expected Improvement", value: "+15-25%", positive: true },
+      { label: "Implementation Time", value: "1-3 days", positive: true },
+      { label: "Risk Level", value: "Low", positive: true },
+      { label: "Confidence", value: `${card.projectedImpact?.confidence || 70}%`, positive: true }
+    ]
+    steps = [
+      "Review the current campaign settings and performance metrics",
+      "Implement the recommended changes gradually to minimize risk",
+      "Monitor performance closely for the first 48-72 hours",
+      "Make adjustments based on initial performance data",
+      "Document results for future optimization reference"
+    ]
   }
+
+  return { reasoning, insights, outcomes, steps }
 }
 
 async function explainBudgetAllocation(allocation: any) {

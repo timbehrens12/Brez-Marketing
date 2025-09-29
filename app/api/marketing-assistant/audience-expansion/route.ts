@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get campaign and audience performance data
-    const { data: campaignStats } = await supabase
+    // Try different date ranges to find data
+    let { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select(`
         campaign_id,
@@ -38,6 +39,30 @@ export async function GET(request: NextRequest) {
       `)
       .eq('brand_id', brandId)
       .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 30 days
+
+    // If no data in last 30 days, try last 90 days
+    if (!campaignStats || campaignStats.length === 0) {
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const { data: fallbackStats } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          ctr,
+          cpc,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .gte('date', ninetyDaysAgo)
+      
+      campaignStats = fallbackStats
+      console.log(`Audience expansion: Fallback to 90 days - found ${campaignStats?.length || 0} records`)
+    }
 
     console.log(`Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
 
@@ -82,25 +107,52 @@ export async function GET(request: NextRequest) {
     }))
 
     // Generate lookalike audience opportunities from top performers
-    const topPerformers = campaigns
+    // Lower thresholds if no high performers exist
+    let topPerformers = campaigns
       .filter((campaign: any) => campaign.avgRoas > 1.5 && campaign.totalConversions > 2 && campaign.totalSpend > 50)
       .sort((a: any, b: any) => b.avgRoas - a.avgRoas)
       .slice(0, 3)
+
+    // If no high performers, use campaigns with any conversions and reasonable spend
+    if (topPerformers.length === 0) {
+      topPerformers = campaigns
+        .filter((campaign: any) => campaign.totalConversions > 0 && campaign.totalSpend > 10)
+        .sort((a: any, b: any) => b.totalConversions - a.totalConversions)
+        .slice(0, 2)
+    }
+
+    // If still no performers, use any campaigns with spend and clicks
+    if (topPerformers.length === 0) {
+      topPerformers = campaigns
+        .filter((campaign: any) => campaign.totalSpend > 5 && campaign.totalClicks > 5)
+        .sort((a: any, b: any) => b.avgCtr - a.avgCtr)
+        .slice(0, 1)
+    }
 
     console.log(`Found ${topPerformers.length} top performing campaigns`)
 
     topPerformers.forEach((campaign: any, index: number) => {
       const estimatedReach = Math.round(campaign.totalImpressions / campaign.days * 7) // Weekly reach estimate
       
+      // Adjust description based on performance level
+      let description
+      if (campaign.avgRoas > 1.5) {
+        description = `Create lookalike audience based on high-converting customers from this campaign (${campaign.avgRoas.toFixed(1)}x ROAS)`
+      } else if (campaign.totalConversions > 0) {
+        description = `Create lookalike audience based on customers who converted from this campaign (${campaign.totalConversions} conversions)`
+      } else {
+        description = `Create lookalike audience based on engaged users from this campaign (${campaign.avgCtr.toFixed(1)}% CTR)`
+      }
+      
       opportunities.push({
         id: `lookalike-${campaign.campaign_id}`,
         type: 'lookalike',
         title: `Lookalike ${index + 1}% - ${campaign.campaign_name || 'Campaign'}`,
-        description: `Create lookalike audience based on high-converting customers from this campaign (${campaign.avgRoas.toFixed(1)}x ROAS)`,
+        description,
         currentReach: estimatedReach,
         projectedReach: Math.round(estimatedReach * 2.5), // 2.5x expansion potential
-        estimatedCpa: Math.round(campaign.avgCpc * 1.15), // Slightly higher CPA for expansion
-        confidence: Math.min(95, Math.round(60 + (campaign.avgRoas - 1.5) * 15))
+        estimatedCpa: Math.round(Math.max(campaign.avgCpc * 1.15, 5)), // Slightly higher CPA for expansion, min $5
+        confidence: Math.min(95, Math.round(60 + Math.max(campaign.avgRoas - 1, campaign.totalConversions, campaign.avgCtr) * 5))
       })
     })
 
