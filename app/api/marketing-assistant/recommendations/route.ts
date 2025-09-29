@@ -13,6 +13,7 @@ const supabase = createClient(
 )
 
 interface OptimizationRecommendation {
+  id: string
   type: 'budget' | 'audience' | 'creative' | 'bid' | 'frequency'
   priority: 'high' | 'medium' | 'low'
   title: string
@@ -50,71 +51,109 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    const dateRange = {
-      from: searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      to: searchParams.get('to') || new Date().toISOString().split('T')[0]
-    }
+    const showHistory = searchParams.get('history') === 'true'
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Get AI campaign recommendations from database
-    const { data: existingRecommendations } = await supabase
-      .from('ai_campaign_recommendations')
+    // If requesting history, return all past recommendations
+    if (showHistory) {
+      const { data: history } = await supabase
+        .from('recommendation_states')
+        .select('*')
+        .eq('brand_id', brandId)
+        .in('status', ['dismissed', 'applied', 'testing', 'successful', 'failed', 'rolled_back'])
+        .order('generated_at', { ascending: false })
+        .limit(100)
+
+      return NextResponse.json({ recommendations: history || [] })
+    }
+
+    // Get only NEW recommendations (never seen before)
+    const { data: newRecommendations } = await supabase
+      .from('recommendation_states')
       .select('*')
       .eq('brand_id', brandId)
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
+      .eq('status', 'new')
+      .order('generated_at', { ascending: false })
 
-    if (existingRecommendations && existingRecommendations.length > 0) {
-      const recommendations = existingRecommendations.map(rec => ({
-        id: rec.id,
-        type: rec.recommendation.type || 'budget',
-        priority: rec.recommendation.priority || 'medium',
-        title: rec.recommendation.title || 'Optimization Opportunity',
-        description: rec.recommendation.description || '',
-        rootCause: rec.recommendation.rootCause || 'Performance analysis detected an opportunity',
-        actions: rec.recommendation.actions || [],
-        currentValue: rec.recommendation.currentValue || '',
-        recommendedValue: rec.recommendation.recommendedValue || '',
-        projectedImpact: rec.recommendation.projectedImpact || { revenue: 0, roas: 0, confidence: 0 },
-        campaignId: rec.campaign_id,
-        campaignName: rec.campaign_name,
-        platform: rec.platform
-      }))
+    // Get recommendations being tested (recently applied, still in test window)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: testingRecommendations } = await supabase
+      .from('recommendation_states')
+      .select('*')
+      .eq('brand_id', brandId)
+      .in('status', ['applied', 'testing'])
+      .gte('applied_at', sevenDaysAgo)
+      .order('applied_at', { ascending: false })
 
-      return NextResponse.json({ recommendations })
-    }
+    // Get recent wins (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: recentWins } = await supabase
+      .from('recommendation_states')
+      .select('*')
+      .eq('brand_id', brandId)
+      .eq('status', 'successful')
+      .gte('test_completed_at', thirtyDaysAgo)
+      .order('test_completed_at', { ascending: false })
+      .limit(10)
 
-    // Generate new recommendations if none exist
-    const recommendations = await generateRecommendations(brandId, dateRange)
-    
-    // Store recommendations in database
-    for (const rec of recommendations) {
-      await supabase
-        .from('ai_campaign_recommendations')
-        .upsert({
-          brand_id: brandId,
-          campaign_id: rec.campaignId,
-          campaign_name: rec.campaignName,
-          platform: rec.platform,
-          recommendation: {
-            type: rec.type,
-            priority: rec.priority,
+    // Check if we need to generate new recommendations
+    // Only generate if we have fewer than 3 NEW recommendations
+    if (!newRecommendations || newRecommendations.length < 3) {
+      console.log(`[Recommendations] Generating new recommendations for brand ${brandId}`)
+      
+      // Generate based on last 7 days of data
+      const dateRange = {
+        from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to: new Date().toISOString().split('T')[0]
+      }
+      
+      const generatedRecs = await generateRecommendations(brandId, dateRange, userId)
+      
+      // Store new recommendations in recommendation_states
+      for (const rec of generatedRecs) {
+        await supabase
+          .from('recommendation_states')
+          .insert({
+            brand_id: brandId,
+            user_id: userId,
+            recommendation_type: rec.type,
+            campaign_id: rec.campaignId,
+            campaign_name: rec.campaignName,
             title: rec.title,
             description: rec.description,
-            rootCause: rec.rootCause,
-            actions: rec.actions,
-            currentValue: rec.currentValue,
-            recommendedValue: rec.recommendedValue,
-            projectedImpact: rec.projectedImpact
-          },
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-        })
+            rationale: rec.rootCause,
+            key_signals: [],
+            predicted_impact: `${rec.projectedImpact.revenue > 0 ? `+$${rec.projectedImpact.revenue.toFixed(0)}` : ''} ${rec.projectedImpact.roas > 0 ? `${rec.projectedImpact.roas.toFixed(1)}x ROAS` : ''}`.trim(),
+            confidence_score: rec.projectedImpact.confidence,
+            estimated_days_to_stable: parseInt(rec.actions[0]?.estimatedTimeToStabilize?.match(/\d+/)?.[0] || '7'),
+            proposed_changes: { actions: rec.actions, currentValue: rec.currentValue, recommendedValue: rec.recommendedValue },
+            status: 'new'
+          })
+      }
+      
+      // Fetch the newly created recommendations
+      const { data: refreshedNew } = await supabase
+        .from('recommendation_states')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('status', 'new')
+        .order('generated_at', { ascending: false })
+
+      return NextResponse.json({ 
+        recommendations: refreshedNew || [],
+        testing: testingRecommendations || [],
+        recentWins: recentWins || []
+      })
     }
 
-    return NextResponse.json({ recommendations })
+    return NextResponse.json({ 
+      recommendations: newRecommendations,
+      testing: testingRecommendations || [],
+      recentWins: recentWins || []
+    })
 
   } catch (error) {
     console.error('Error fetching recommendations:', error)
@@ -122,7 +161,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function generateRecommendations(brandId: string, dateRange: { from: string; to: string }): Promise<OptimizationRecommendation[]> {
+async function generateRecommendations(brandId: string, dateRange: { from: string; to: string }, userId: string): Promise<OptimizationRecommendation[]> {
   try {
     // Get campaign performance data
     const { data: campaignStats } = await supabase
@@ -403,18 +442,82 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { action, campaignId, actionId, brandId } = await request.json()
+    const { action, recommendationId, reason } = await request.json()
 
-    if (action === 'mark_done') {
-      // Mark action as manually completed
-      const result = await markActionAsDone(campaignId, actionId, brandId, userId)
-      return NextResponse.json(result)
+    if (action === 'dismiss') {
+      // Dismiss recommendation
+      const { error } = await supabase
+        .from('recommendation_states')
+        .update({
+          status: 'dismissed',
+          dismissed_at: new Date().toISOString(),
+          dismissed_by: userId,
+          dismiss_reason: reason || 'User dismissed'
+        })
+        .eq('id', recommendationId)
+
+      if (error) throw error
+      return NextResponse.json({ success: true, message: 'Recommendation dismissed' })
     }
 
-    if (action === 'simulate_action') {
-      // Simulate the optimization action
-      const result = await simulateOptimizationAction(campaignId, actionId, brandId)
-      return NextResponse.json(result)
+    if (action === 'apply') {
+      // Mark as applied (user will apply it themselves)
+      const { error } = await supabase
+        .from('recommendation_states')
+        .update({
+          status: 'applied',
+          applied_at: new Date().toISOString(),
+          applied_by: userId,
+          test_started_at: new Date().toISOString()
+        })
+        .eq('id', recommendationId)
+
+      if (error) throw error
+      return NextResponse.json({ success: true, message: 'Recommendation marked as applied. Monitor for 7 days to determine success.' })
+    }
+
+    if (action === 'rollback') {
+      // Roll back a recommendation
+      const { error } = await supabase
+        .from('recommendation_states')
+        .update({
+          status: 'rolled_back',
+          rolled_back_at: new Date().toISOString(),
+          rolled_back_by: userId,
+          rollback_reason: reason || 'User initiated rollback'
+        })
+        .eq('id', recommendationId)
+
+      if (error) throw error
+      return NextResponse.json({ success: true, message: 'Recommendation rolled back' })
+    }
+
+    if (action === 'mark_successful') {
+      // Mark a testing recommendation as successful
+      const { error } = await supabase
+        .from('recommendation_states')
+        .update({
+          status: 'successful',
+          test_completed_at: new Date().toISOString()
+        })
+        .eq('id', recommendationId)
+
+      if (error) throw error
+      return NextResponse.json({ success: true, message: 'Recommendation marked as successful!' })
+    }
+
+    if (action === 'mark_failed') {
+      // Mark a testing recommendation as failed
+      const { error } = await supabase
+        .from('recommendation_states')
+        .update({
+          status: 'failed',
+          test_completed_at: new Date().toISOString()
+        })
+        .eq('id', recommendationId)
+
+      if (error) throw error
+      return NextResponse.json({ success: true, message: 'Recommendation marked as failed' })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
