@@ -298,53 +298,107 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <div className="bg-gradient-to-r from-[#0f0f0f]/30 to-[#1a1a1a]/20 border border-[#333]/50 rounded-xl h-full flex flex-col overflow-hidden">
-      {/* Ultra-Compact Header */}
-      <div className="p-3 border-b border-[#333]/30">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg h-full flex flex-col">
+      {/* Header - matches other widgets style */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-white/10 to-white/5 rounded-lg 
-                          flex items-center justify-center border border-white/20">
-              <BarChart3 className="w-3 h-3 text-white" />
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">Trends</h4>
-              <p className="text-xs text-gray-500">{getMetricLabel()}</p>
+              <h2 className="text-2xl font-bold tracking-tight text-white">Performance Trends</h2>
+              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
             </div>
           </div>
           
-          {/* Mini Metric Selector */}
-          <div className="flex items-center gap-1">
+          {/* Settings Dropdown */}
+          <div className="flex items-center gap-2">
+            {/* Metric Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-[#1a1a1a]/30 border-[#333]/20 text-white hover:bg-[#2a2a2a] rounded-md px-2 py-1 h-6 text-xs">
-                  <Settings2 className="h-2 w-2 mr-1" />
-                  {getMetricLabel()}
+                <Button variant="ghost" size="sm" className="h-8">
+                  <Settings2 className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32 bg-[#0a0a0a] border-[#333] p-1 rounded-lg">
-                {[
-                  { key: 'spend', label: 'Spend' },
-                  { key: 'roas', label: 'ROAS' },
-                  { key: 'impressions', label: 'Impr.' },
-                  { key: 'clicks', label: 'Clicks' },
-                  { key: 'conversions', label: 'Conv.' }
-                ].map(metric => (
-                  <DropdownMenuItem 
-                    key={metric.key}
-                    onClick={() => setSelectedMetric(metric.key as any)}
-                    className={`rounded px-2 py-1 text-xs transition-colors ${
-                      selectedMetric === metric.key 
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-300 hover:bg-[#1a1a1a] hover:text-white'
-                    }`}
-                  >
-                    {metric.label}
-                    {selectedMetric === metric.key && (
-                      <div className="w-1 h-1 rounded-full bg-white ml-auto"></div>
-                    )}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1a] border-[#333]">
+                <DropdownMenuLabel className="text-gray-400">Select Metric</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('spend')}
+                  className={selectedMetric === 'spend' ? 'bg-white/10' : ''}
+                >
+                  Daily Spend
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('roas')}
+                  className={selectedMetric === 'roas' ? 'bg-white/10' : ''}
+                >
+                  ROAS
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('impressions')}
+                  className={selectedMetric === 'impressions' ? 'bg-white/10' : ''}
+                >
+                  Impressions
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('clicks')}
+                  className={selectedMetric === 'clicks' ? 'bg-white/10' : ''}
+                >
+                  Clicks
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedMetric('conversions')}
+                  className={selectedMetric === 'conversions' ? 'bg-white/10' : ''}
+                >
+                  Conversions
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuLabel className="text-gray-400">Platforms</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.meta}
+                  onCheckedChange={() => togglePlatform('meta')}
+                >
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain mr-2"
+                  />
+                  Meta
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.tiktok}
+                  onCheckedChange={() => togglePlatform('tiktok')}
+                  disabled
+                >
+                  <Image 
+                    src="https://i.imgur.com/AXHa9UT.png" 
+                    alt="TikTok" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain grayscale opacity-40 mr-2"
+                  />
+                  TikTok (Not Connected)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={enabledPlatforms.google}
+                  onCheckedChange={() => togglePlatform('google')}
+                  disabled
+                >
+                  <Image 
+                    src="https://i.imgur.com/TavV4UJ.png" 
+                    alt="Google Ads" 
+                    width={14} 
+                    height={14} 
+                    className="object-contain grayscale opacity-40 mr-2"
+                  />
+                  Google Ads (Not Connected)
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -352,41 +406,39 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
       </div>
       
       {/* Content */}
-      <div className="p-0 flex-1 flex flex-col">
+      <CardContent className="p-6">
+        {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (
-          <div className="px-3 py-2 flex-1">
-            {/* Ultra-Compact Chart */}
-            <div className="h-48 bg-gradient-to-br from-[#0f0f0f]/30 to-[#1a1a1a]/30 rounded-lg p-2 border border-[#333]/30">
-              <ResponsiveContainer width="100%" height="100%">
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="metaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6b7280" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#6b7280" stopOpacity={0.05}/>
+                    <stop offset="5%" stopColor="#6b7280" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6b7280" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="tiktokGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FE2C55" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#FE2C55" stopOpacity={0.05}/>
+                    <stop offset="5%" stopColor="#FE2C55" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#FE2C55" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="googleGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4285F4" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#4285F4" stopOpacity={0.05}/>
+                    <stop offset="5%" stopColor="#4285F4" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#4285F4" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" opacity={0.5} />
                 <XAxis 
                   dataKey="date" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#9ca3af', fontSize: 11 }}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
                   tickFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEE')}
                   interval="preserveStartEnd"
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#9ca3af', fontSize: 11 }}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
                   tickFormatter={formatValue}
                   width={60}
                 />
@@ -505,23 +557,91 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                 />
               </AreaChart>
             </ResponsiveContainer>
-            </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center px-4 py-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#1a1a1a] to-[#333] rounded-xl 
-                            flex items-center justify-center border border-[#444]/50 mx-auto mb-4">
-                <BarChart3 className="w-6 h-6 text-gray-500" />
-              </div>
-              <h4 className="text-lg font-bold text-white mb-2">No Data Available</h4>
-              <p className="text-gray-400 text-sm max-w-xs mx-auto">
-                Connect platforms to see trends
-              </p>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center">
+              <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+              <p className="text-gray-400">No performance data available</p>
             </div>
           </div>
         )}
-      </div>
-    </div>
+        
+        {/* Platform Toggle Section */}
+        <div className="mt-6 p-4 bg-[#0a0a0a] rounded-lg border border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-gray-400">Platform Comparison</h4>
+            <span className="text-xs text-gray-500">Click to toggle platforms</span>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            {/* Meta Platform */}
+            <button
+              onClick={() => togglePlatform('meta')}
+              className={`relative p-4 rounded-lg border transition-all duration-200 ${
+                enabledPlatforms.meta 
+                  ? 'bg-gray-800/50 border-gray-600 shadow-lg' 
+                  : 'bg-[#0f0f0f] border-white/10 opacity-60'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta" 
+                  width={24} 
+                  height={24} 
+                  className={`object-contain transition-all ${
+                    !enabledPlatforms.meta ? 'grayscale' : ''
+                  }`}
+                />
+                <span className="text-xs font-medium text-white">Meta</span>
+                <span className={`text-xs ${enabledPlatforms.meta ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Connected
+                </span>
+              </div>
+              {enabledPlatforms.meta && (
+                <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              )}
+            </button>
+
+            {/* TikTok Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-lg border bg-[#0f0f0f] border-white/10 opacity-40 cursor-not-allowed"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/AXHa9UT.png" 
+                  alt="TikTok" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain grayscale"
+                />
+                <span className="text-xs font-medium text-gray-500">TikTok</span>
+                <span className="text-xs text-gray-600">Not Connected</span>
+              </div>
+            </button>
+
+            {/* Google Ads Platform */}
+            <button
+              disabled
+              className="relative p-4 rounded-lg border bg-[#0f0f0f] border-white/10 opacity-40 cursor-not-allowed"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Image 
+                  src="https://i.imgur.com/TavV4UJ.png" 
+                  alt="Google Ads" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain grayscale"
+                />
+                <span className="text-xs font-medium text-gray-500">Google Ads</span>
+                <span className="text-xs text-gray-600">Not Connected</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 } 

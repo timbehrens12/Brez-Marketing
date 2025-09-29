@@ -61,9 +61,10 @@ interface BlendedWidgetsTableProps {
   // isRefreshingData: boolean
 }
 
-// Compact metric card component for modern blended metrics
-function CompactMetricCard({
+// Custom metric card component for blended metrics
+function BlendedMetricCard({
   icon: Icon,
+  iconColor,
   title,
   value,
   change,
@@ -71,9 +72,13 @@ function CompactMetricCard({
   suffix,
   decimals = 0,
   isPercentage = false,
+  customContent,
+  // Remove loading prop
+  // loading,
   platforms
 }: {
   icon: any
+  iconColor: string
   title: string
   value: number
   change: number | null
@@ -81,6 +86,9 @@ function CompactMetricCard({
   suffix?: string
   decimals?: number
   isPercentage?: boolean
+  customContent?: React.ReactNode
+  // Remove loading prop
+  // loading: boolean
   platforms: { name: string; icon: string; value: string | number; active: boolean }[]
 }) {
   const formatValue = (val: number) => {
@@ -97,128 +105,141 @@ function CompactMetricCard({
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-[#0A0A0A] to-[#111] 
-                    border border-[#222] hover:border-[#333] transition-all duration-300 p-4 h-24">
-      {/* Background shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
-                     translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-      
-      <div className="relative z-10 h-full flex flex-col">
-        {/* Header with icon and platforms */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-white/5">
-              <Icon className="w-3.5 h-3.5 text-white/70" />
-            </div>
-            <span className="text-xs font-medium text-gray-400 tracking-wide uppercase">{title}</span>
+    <div className="relative bg-[#0A0A0A] border border-[#222] rounded-lg p-4 hover:border-[#444] transition-all duration-200 group">
+      {/* Icon and Title */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={cn("p-1.5 rounded-md", iconColor)}>
+            <Icon className="w-4 h-4 text-white" />
           </div>
-          
-          {/* Platform indicators */}
-          <div className="flex items-center gap-1">
-            {platforms.map((platform) => (
-              <TooltipProvider key={platform.name}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
+          <h3 className="text-sm font-medium text-gray-300">{title}</h3>
+        </div>
+        
+        {/* Platform icons */}
+        <div className="flex items-center gap-2">
+          {platforms.map((platform) => (
+            <TooltipProvider key={platform.name}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative group cursor-pointer">
+                    <Image 
+                      src={platform.icon} 
+                      alt={platform.name} 
+                      width={32} 
+                      height={32} 
+                      className={cn(
+                        "object-contain transition-all duration-300 rounded-lg",
+                        platform.active 
+                          ? "opacity-100 hover:scale-110 shadow-lg" 
+                          : "grayscale opacity-30 hover:opacity-50"
+                      )}
+                    />
+                    {platform.active && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0A0A0A]" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-4 rounded-xl shadow-2xl max-w-xs"
+                  sideOffset={8}
+                >
+                  <div className="space-y-3">
+                    {/* Platform Header */}
+                    <div className="flex items-center gap-3 pb-2 border-b border-[#333]">
                       <Image 
                         src={platform.icon} 
                         alt={platform.name} 
-                        width={16} 
-                        height={16} 
-                        className={cn(
-                          "object-contain rounded-sm transition-all duration-300",
-                          platform.active 
-                            ? "opacity-100" 
-                            : "grayscale opacity-30"
-                        )}
+                        width={24} 
+                        height={24} 
+                        className="object-contain"
                       />
-                      {platform.active && (
-                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#0A0A0A]" />
+                      <div>
+                        <h4 className="font-semibold text-white">{platform.name}</h4>
+                        <p className="text-xs text-gray-400">
+                          {platform.active ? "Connected & Active" : "Not Connected"}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Platform Value */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-300">{title} Value:</span>
+                        <span className="font-semibold text-white">{platform.value}</span>
+                      </div>
+                      
+                      {platform.active ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-300">Contribution:</span>
+                            <span className="font-semibold text-green-400">100%</span>
+                          </div>
+                          <div className="w-full bg-[#333] rounded-full h-2">
+                            <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full w-full"></div>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Currently the only active platform contributing to this metric.
+                          </p>
+                        </>
+                      ) : (
+                        <div className="text-center py-2">
+                          <p className="text-xs text-gray-400">
+                            Connect {platform.name} to see contribution data
+                          </p>
+                        </div>
                       )}
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side="top" 
-                    className="bg-[#1a1a1a] border-[#333] text-white p-2 rounded-lg text-xs"
-                    sideOffset={4}
-                  >
-                    <span>{platform.name}: {platform.value}</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        </div>
-        
-        {/* Value and change */}
-        <div className="flex items-end justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-white tracking-tight">
-              {formatValue(value)}
-            </span>
-            {change !== null && change !== undefined && (
-              <div className={cn(
-                "flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md",
-                change > 0 
-                  ? "text-green-400 bg-green-500/10" 
-                  : change < 0 
-                    ? "text-red-400 bg-red-500/10" 
-                    : "text-gray-400 bg-gray-500/10"
-              )}>
-                {change > 0 ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : change < 0 ? (
-                  <TrendingDown className="w-3 h-3" />
-                ) : null}
-                <span>{change === 0 ? "0%" : `${change > 0 ? '+' : ''}${change.toFixed(1)}%`}</span>
-              </div>
-            )}
-          </div>
+                    
+                    {/* Future Enhancement Note */}
+                    {!platform.active && (
+                      <div className="mt-3 p-2 bg-[#222] rounded-lg border-l-2 border-blue-500">
+                        <p className="text-xs text-blue-300">
+                          💡 Connect {platform.name} for blended analytics across all platforms
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
         </div>
       </div>
-    </div>
-  )
-}
 
-// Budget usage card component
-function BudgetUsageCard({ budgetData }: { budgetData: any }) {
-  const usagePercentage = budgetData.budgetUsedPercentage || 0
-  
-  return (
-    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-[#0A0A0A] to-[#111] 
-                    border border-[#222] hover:border-[#333] transition-all duration-300 p-4 h-24">
-      {/* Background shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/2 to-transparent 
-                     translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-      
-      <div className="relative z-10 h-full flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-white/5">
-              <CreditCard className="w-3.5 h-3.5 text-white/70" />
-            </div>
-            <span className="text-xs font-medium text-gray-400 tracking-wide uppercase">Budget Usage</span>
-          </div>
-          <span className="text-xs text-gray-500">
-            ${budgetData.totalSpend?.toFixed(0) || 0} / ${budgetData.totalBudget?.toFixed(0) || 0}
+      {/* Value and Change */}
+      <div className="space-y-1">
+        <div className="flex items-baseline gap-2">
+          {/* Remove loading skeleton, always show actual content */}
+          <span className="text-2xl font-semibold text-white">
+            {formatValue(value)}
           </span>
+          {change !== null && change !== undefined && (
+            <div className={cn(
+              "flex items-center gap-0.5 text-xs font-medium",
+              change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400"
+            )}>
+              {change > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : change < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <div className="w-3 h-3" /> /* Empty space for 0% change */
+              )}
+              <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
+            </div>
+          )}
         </div>
         
-        {/* Progress and percentage */}
-        <div className="flex items-end justify-between">
-          <span className="text-xl font-bold text-white tracking-tight">
-            {usagePercentage.toFixed(1)}%
-          </span>
-          <div className="flex-1 mx-3 mb-1">
-            <div className="w-full bg-[#1a1a1a] rounded-full h-1.5">
-              <div 
-                className="bg-gradient-to-r from-gray-500 to-gray-400 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(usagePercentage, 100)}%` }}
-              />
-            </div>
+        {/* Custom content */}
+        {customContent && (
+          <div className="mt-3">
+            {customContent}
           </div>
-        </div>
+        )}
+        
+        {/* Subtle background pattern on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#1a1a1a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
       </div>
     </div>
   )
@@ -361,142 +382,184 @@ export default function BlendedWidgetsTable({
 
   if (layout === 'horizontal') {
     return (
-      <div className="relative bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-2xl p-4">
-        {/* Compact Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
-                        flex items-center justify-center border border-white/20">
-            <Layers className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">Performance Overview</h3>
-            <p className="text-xs text-gray-500">Real-time metrics across platforms</p>
+      <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333] rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Layers className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
+              <p className="text-gray-400 font-medium text-sm">Unified view across all platforms</p>
+            </div>
           </div>
         </div>
         
-        {/* Ultra Compact Metrics Flow */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          
-          {/* Budget Usage - Compact */}
-          <div className="col-span-2 bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-3 h-3 text-white/70" />
-                <span className="text-xs font-medium text-gray-400">Budget</span>
+        {/* Horizontal Content - Responsive layout for budget and metrics */}
+        <div className="p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            
+            {/* Budget Usage Pill - Full width on mobile, fixed width on desktop */}
+            <div className="flex-shrink-0 lg:w-40 w-full">
+              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full min-h-[120px]">
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg flex items-center justify-center mb-3">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-300 mb-2">Budget Usage</h3>
+                  <div className="text-xl lg:text-2xl font-semibold text-white mb-1">
+                    {(budgetData.budgetUsedPercentage).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ${budgetData.totalSpend.toFixed(0)} / ${budgetData.totalBudget.toFixed(0)}
+                  </div>
+                  <div className="w-full bg-[#1a1a1a] rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <span className="text-xs text-gray-600">
-                ${budgetData.totalSpend?.toFixed(0) || 0}/${budgetData.totalBudget?.toFixed(0) || 0}
-              </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-white">{(budgetData.budgetUsedPercentage || 0).toFixed(1)}%</span>
-              <div className="flex-1 mx-2">
-                <div className="w-full bg-[#0a0a0a] rounded-full h-1">
-                  <div 
-                    className="bg-gradient-to-r from-gray-500 to-gray-400 h-1 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(budgetData.budgetUsedPercentage || 0, 100)}%` }}
+
+            {/* Metrics Grid - Responsive columns */}
+            <div className="flex-1">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2 lg:gap-3 h-full">
+                {/* Row 1 - Top 4 metrics */}
+                <div>
+                  <BlendedMetricCard
+                    icon={DollarSign}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="Ad Spend"
+                    value={metaMetrics.adSpend}
+                    change={metaMetrics.adSpendGrowth}
+                    prefix="$"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
+                    ]}
+                  />
+                </div>
+                
+                <div>
+                  <BlendedMetricCard
+                    icon={Eye}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="Impressions"
+                    value={metaMetrics.impressions}
+                    change={metaMetrics.impressionGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={MousePointer}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="Clicks"
+                    value={metaMetrics.clicks}
+                    change={metaMetrics.clickGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={Target}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="Conversions"
+                    value={metaMetrics.conversions}
+                    change={metaMetrics.conversionGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
+                    ]}
+                  />
+                </div>
+
+                {/* Row 2 - Bottom 4 metrics */}
+                <div>
+                  <BlendedMetricCard
+                    icon={Percent}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="CTR"
+                    value={metaMetrics.ctr}
+                    change={metaMetrics.ctrGrowth}
+                    suffix="%"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={DollarSign}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="CPC"
+                    value={metaMetrics.cpc}
+                    change={metaMetrics.cpcGrowth}
+                    prefix="$"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={TrendingUp}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="ROAS"
+                    value={metaMetrics.roas}
+                    change={metaMetrics.roasGrowth}
+                    suffix="x"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={Users}
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+                    title="Frequency"
+                    value={metaMetrics.frequency}
+                    change={null}
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00", active: false }
+                    ]}
                   />
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Spend */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">Spend</span>
-            </div>
-            <div className="text-base font-bold text-white">${metaMetrics.adSpend.toFixed(0)}</div>
-            {metaMetrics.adSpendGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.adSpendGrowth > 0 ? 'text-green-400' : metaMetrics.adSpendGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.adSpendGrowth > 0 ? '+' : ''}{metaMetrics.adSpendGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-          
-          {/* ROAS */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">ROAS</span>
-            </div>
-            <div className="text-base font-bold text-white">{metaMetrics.roas.toFixed(2)}x</div>
-            {metaMetrics.roasGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.roasGrowth > 0 ? 'text-green-400' : metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-
-          {/* Impressions */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Eye className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">Impressions</span>
-            </div>
-            <div className="text-base font-bold text-white">{(metaMetrics.impressions / 1000).toFixed(0)}K</div>
-            {metaMetrics.impressionGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.impressionGrowth > 0 ? 'text-green-400' : metaMetrics.impressionGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.impressionGrowth > 0 ? '+' : ''}{metaMetrics.impressionGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-
-          {/* Clicks */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <MousePointer className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">Clicks</span>
-            </div>
-            <div className="text-base font-bold text-white">{metaMetrics.clicks.toLocaleString()}</div>
-            {metaMetrics.clickGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.clickGrowth > 0 ? 'text-green-400' : metaMetrics.clickGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.clickGrowth > 0 ? '+' : ''}{metaMetrics.clickGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-
-          {/* Conversions */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">Conversions</span>
-            </div>
-            <div className="text-base font-bold text-white">{metaMetrics.conversions}</div>
-            {metaMetrics.conversionGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.conversionGrowth > 0 ? 'text-green-400' : metaMetrics.conversionGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.conversionGrowth > 0 ? '+' : ''}{metaMetrics.conversionGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-
-          {/* CTR */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Percent className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">CTR</span>
-            </div>
-            <div className="text-base font-bold text-white">{metaMetrics.ctr.toFixed(2)}%</div>
-            {metaMetrics.ctrGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.ctrGrowth > 0 ? 'text-green-400' : metaMetrics.ctrGrowth < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.ctrGrowth > 0 ? '+' : ''}{metaMetrics.ctrGrowth.toFixed(1)}%
-              </div>
-            )}
-          </div>
-
-          {/* CPC */}
-          <div className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#222]/40 rounded-xl p-3 border border-[#333]/50">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-3 h-3 text-white/70" />
-              <span className="text-xs font-medium text-gray-400">CPC</span>
-            </div>
-            <div className="text-base font-bold text-white">${metaMetrics.cpc.toFixed(2)}</div>
-            {metaMetrics.cpcGrowth !== null && (
-              <div className={`text-xs ${metaMetrics.cpcGrowth < 0 ? 'text-green-400' : metaMetrics.cpcGrowth > 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {metaMetrics.cpcGrowth > 0 ? '+' : ''}{metaMetrics.cpcGrowth.toFixed(1)}%
-              </div>
-            )}
           </div>
         </div>
       </div>

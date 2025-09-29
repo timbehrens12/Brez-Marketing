@@ -1253,108 +1253,40 @@ export default function MarketingAssistantPage() {
             className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* AI-Powered Profitability Dashboard - Single Unified Experience */}
-          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 animate-in fade-in duration-500">
+          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
+          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
             
-            {/* Main Dashboard Container - Zero Gaps, Maximum Flow */}
-            <div className="bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#222] rounded-3xl shadow-2xl overflow-hidden">
-              
-              {/* AI Marketing Intelligence Header */}
-              <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border-b border-[#333] p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF4A4A]/10 rounded-3xl 
-                                  flex items-center justify-center border border-[#FF2A2A]/30 shadow-xl">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A] to-[#FF4A4A] rounded-xl 
-                                    flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold tracking-tight text-white">AI Marketing Intelligence</h1>
-                      <p className="text-gray-400 font-medium text-lg">Maximize campaign profitability with intelligent optimization</p>
-                    </div>
-                  </div>
-                  
-                  {/* AI Status Indicator */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-[#FF2A2A]/10 border border-[#FF2A2A]/30 rounded-xl">
-                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full animate-pulse"></div>
-                      <span className="text-sm text-white font-medium">AI Active</span>
-                    </div>
-                    <div className="px-3 py-2 bg-[#1a1a1a]/60 border border-[#333] rounded-xl text-xs text-gray-400">
-                      {new Date().toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Unified Content Flow - No Spacing, Pure Integration */}
-              <div className="p-6 space-y-4">
-                
-                {/* AI-Powered Performance Overview */}
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
-                  layout="horizontal"
-                />
-                
-                {/* Intelligent Campaign Optimization Flow */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  
-                  {/* Main Optimization Dashboard */}
-                  <div className="lg:col-span-8 space-y-4">
-                    
-                    {/* AI Campaign Optimizer */}
-                    <div className="bg-gradient-to-r from-[#0f0f0f]/50 to-[#1a1a1a]/30 border border-[#333]/50 rounded-2xl p-4">
-                      
-                      {/* Section Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/10 rounded-xl 
-                                        flex items-center justify-center border border-[#FF2A2A]/30">
-                            <svg className="w-4 h-4 text-[#FF2A2A]" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-white">Campaign Intelligence</h3>
-                            <p className="text-xs text-gray-500">AI-powered optimization and insights</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Auto-optimize:</span>
-                          <div className="w-8 h-4 bg-[#FF2A2A] rounded-full relative">
-                            <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Integrated Campaign + AI Content */}
-                      <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                      
-                    </div>
-                    
-                    {/* Performance Analytics Integration */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                      <PerformanceChart preloadedPerformanceData={preloadedData.performanceData} />
-                    </div>
-                    
-                  </div>
-
-                  {/* AI Recommendations & Actions Sidebar */}
-                  <div className="lg:col-span-4">
-                    <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
-                  </div>
-
-                </div>
-                
-              </div>
-              
+            {/* Top Section - Blended Performance Metrics spans full width */}
+            <div className="w-full">
+              <BlendedWidgetsTable 
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
             </div>
             
+            {/* Main Section - Responsive layout for widgets */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+              
+              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
+              <div className="xl:col-span-2 space-y-4">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                
+                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  <PerformanceChart 
+                    preloadedPerformanceData={preloadedData.performanceData}
+                  />
+                </div>
+              </div>
+
+              {/* AI Optimization Dashboard - Full width on mobile, right column on xl */}
+              <div className="xl:col-span-1">
+                <AIOptimizationDashboard preloadedData={preloadedData.optimizationData} />
+              </div>
+
+            </div>
+
           </div>
         </>
       </div>
