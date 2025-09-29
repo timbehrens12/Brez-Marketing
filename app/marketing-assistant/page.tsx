@@ -704,14 +704,14 @@ export default function MarketingAssistantPage() {
           </div>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
-                <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
+                <div className="p-3 bg-[#222] border border-[#333] rounded-lg min-w-0">
                   <div className="flex items-center gap-2 text-xs lg:text-sm mb-2 min-w-0">
                     <Calendar className="h-3 w-3 lg:h-4 lg:w-4 text-emerald-400 flex-shrink-0" />
-                    <span className="text-gray-400 whitespace-nowrap">Performance Window:</span>
+                    <span className="text-gray-400 whitespace-nowrap">Performance:</span>
                     <span className="text-white font-medium whitespace-nowrap">Last 7 Days</span>
-                    <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400 flex-shrink-0 whitespace-nowrap">Fixed</Badge>
+                    <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400 flex-shrink-0">Fixed</Badge>
         </div>
-                  <p className="text-xs text-gray-500 mb-2">Recommendations update weekly based on current performance</p>
+                  <p className="text-xs text-gray-500 mb-2 leading-relaxed">Recommendations update weekly based on current performance</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -790,21 +790,21 @@ export default function MarketingAssistantPage() {
                       </div>
                     )}
                     {!loading && budgetAllocations.length > 0 && budgetAllocations.map(allocation => (
-                      <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-white font-medium text-sm">{allocation.campaignName}</h4>
-                          <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'}>
-                            {allocation.confidence}% confidence
+                      <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
+                        <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
+                          <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
+                          <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'} className="flex-shrink-0 text-xs">
+                            {allocation.confidence}%
                               </Badge>
                             </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <p className="text-gray-400">Current: ${allocation.currentBudget}/day</p>
-                            <p className="text-gray-400">ROAS: {allocation.currentRoas}x</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
+                          <div className="min-w-0">
+                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day</p>
+                            <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
-                          <div>
-                            <p className="text-green-400">Suggested: ${allocation.suggestedBudget}/day</p>
-                            <p className="text-green-400">Est. ROAS: {allocation.projectedRoas}x</p>
+                          <div className="min-w-0">
+                            <p className="text-green-400 truncate">Suggested: ${allocation.suggestedBudget}/day</p>
+                            <p className="text-green-400 truncate">Est. ROAS: {allocation.projectedRoas}x</p>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2 min-w-0">
@@ -844,27 +844,27 @@ export default function MarketingAssistantPage() {
                       </div>
                     )}
                     {!loading && audienceExpansions.length > 0 && audienceExpansions.map(expansion => (
-                      <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                            {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400" />}
-                            {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400" />}
-                            {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400" />}
-                            {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-orange-400" />}
-                            <h4 className="text-white font-medium text-sm">{expansion.title}</h4>
+                      <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
+                        <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400 flex-shrink-0" />}
+                            {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                            {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400 flex-shrink-0" />}
+                            {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-orange-400 flex-shrink-0" />}
+                            <h4 className="text-white font-medium text-sm truncate min-w-0">{expansion.title}</h4>
                             </div>
-                          <Badge variant="secondary">{expansion.confidence}% match</Badge>
+                          <Badge variant="secondary" className="flex-shrink-0 text-xs">{expansion.confidence}%</Badge>
                         </div>
-                        <p className="text-gray-400 text-xs mb-2">{expansion.description}</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <p className="text-gray-400">Current: {expansion.currentReach.toLocaleString()}</p>
+                        <p className="text-gray-400 text-xs mb-2 leading-relaxed">{expansion.description}</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
+                          <div className="min-w-0">
+                            <p className="text-gray-400 truncate">Current: {expansion.currentReach.toLocaleString()}</p>
                           </div>
-                          <div>
-                            <p className="text-green-400">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
+                          <div className="min-w-0">
+                            <p className="text-green-400 truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
                           </div>
                         </div>
-                        <p className="text-blue-400 text-xs mt-1">Est. CPA: ${expansion.estimatedCpa}</p>
+                        <p className="text-blue-400 text-xs mt-1 truncate">Est. CPA: ${expansion.estimatedCpa}</p>
                         <div className="flex gap-2 mt-2 min-w-0">
                           <Button 
                             size="sm" 
