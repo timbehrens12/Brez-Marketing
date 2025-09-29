@@ -718,7 +718,7 @@ export default function MarketingAssistantPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowHowItWorks(true)}
-                    className="w-full text-xs h-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/20"
+                    className="w-full text-xs h-7 bg-white/10 hover:bg-white/20 text-white border border-white/10"
                   >
                     <Info className="h-3 w-3 mr-1" />
                     How It Works
@@ -1115,7 +1115,7 @@ export default function MarketingAssistantPage() {
                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
                 </div>
                         <div 
-                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
                         >
                           {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -1134,7 +1134,7 @@ export default function MarketingAssistantPage() {
                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
                 </div>
                         <div 
-                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          className={`flex items-center gap-1 cursor-help relative group ${trends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
                         >
                           {trends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -1153,7 +1153,7 @@ export default function MarketingAssistantPage() {
                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
                           </div>
                         <div 
-                          className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
+                          className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
                         >
                           {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -1480,10 +1480,10 @@ export default function MarketingAssistantPage() {
 
             <div className="space-y-6">
               {/* Overview */}
-              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-5 rounded-lg border border-blue-500/20">
+              <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Brain className="w-5 h-5 text-blue-400" />
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h4 className="text-white font-semibold mb-2">AI-Powered Weekly Optimization</h4>
@@ -1498,15 +1498,15 @@ export default function MarketingAssistantPage() {
               {/* The Cycle */}
               <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
                 <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-emerald-400" />
+                  <Clock className="w-5 h-5 text-gray-400" />
                   The 7-Day Cycle
                 </h4>
                 <div className="space-y-4">
                   {/* Week 1 */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-emerald-400 font-bold text-sm">1</span>
+                      <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">1</span>
                       </div>
                       <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                     </div>
@@ -1517,21 +1517,21 @@ export default function MarketingAssistantPage() {
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Spend, impressions, clicks, conversions</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>ROAS (Return on Ad Spend), CPA, CTR</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Trend patterns and anomalies</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-emerald-400">Result:</strong> Generates prioritized recommendations (budget changes, 
+                          <strong className="text-white">Result:</strong> Generates prioritized recommendations (budget changes, 
                           audience expansions, creative optimizations)
                         </p>
                       </div>
@@ -1541,8 +1541,8 @@ export default function MarketingAssistantPage() {
                   {/* Week 2 */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-400 font-bold text-sm">2</span>
+                      <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">2</span>
                       </div>
                       <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                     </div>
@@ -1553,21 +1553,21 @@ export default function MarketingAssistantPage() {
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
-                          <span className="text-purple-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Applied recommendations are marked as "testing"</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-purple-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Changes take effect in your ad campaigns</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-purple-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>System does NOT generate new recommendations yet</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-blue-400">Why wait?</strong> Changes need time to stabilize. Algorithms need to learn. 
+                          <strong className="text-white">Why wait?</strong> Changes need time to stabilize. Algorithms need to learn. 
                           Results in the first few days aren't representative.
                         </p>
                         </div>
@@ -1577,8 +1577,8 @@ export default function MarketingAssistantPage() {
                   {/* Week 3 */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-yellow-400 font-bold text-sm">3</span>
+                      <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">3</span>
           </div>
         </div>
                     <div>
@@ -1588,21 +1588,21 @@ export default function MarketingAssistantPage() {
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
-                          <span className="text-yellow-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Compares <strong>actual results</strong> vs <strong>predicted impact</strong></span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-yellow-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Marks recommendations as "successful" or "needs adjustment"</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-yellow-400 mt-1">•</span>
+                          <span className="text-gray-300 mt-1">•</span>
                           <span>Generates NEW recommendations based on current state</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-yellow-400">Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
+                          <strong className="text-white">Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
                           get higher confidence. If not ✗, the system adjusts its approach.
                         </p>
       </div>
@@ -1614,13 +1614,13 @@ export default function MarketingAssistantPage() {
               {/* Key Benefits */}
               <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
                 <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <Sparkles className="w-5 h-5 text-gray-400" />
                   Key Benefits
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <CheckCircle className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">No Recommendation Fatigue</h5>
                     </div>
                     <p className="text-gray-400 text-xs">
@@ -1629,7 +1629,7 @@ export default function MarketingAssistantPage() {
                   </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className="w-4 h-4 text-blue-400" />
+                      <TrendingUp className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Data-Driven Decisions</h5>
                     </div>
                     <p className="text-gray-400 text-xs">
@@ -1638,7 +1638,7 @@ export default function MarketingAssistantPage() {
                   </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
-                      <Brain className="w-4 h-4 text-purple-400" />
+                      <Brain className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Continuous Learning</h5>
                     </div>
                     <p className="text-gray-400 text-xs">
@@ -1647,7 +1647,7 @@ export default function MarketingAssistantPage() {
                   </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
-                      <Target className="w-4 h-4 text-emerald-400" />
+                      <Target className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Consistent Cadence</h5>
                     </div>
                     <p className="text-gray-400 text-xs">
@@ -1660,7 +1660,7 @@ export default function MarketingAssistantPage() {
               {/* Example Timeline */}
               <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] p-5 rounded-lg border border-[#333]">
                 <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-400" />
+                  <Calendar className="w-5 h-5 text-gray-400" />
                   Example Timeline
                 </h4>
                 <div className="space-y-2 text-sm">
@@ -1682,7 +1682,7 @@ export default function MarketingAssistantPage() {
                   <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
                     <span className="text-gray-500 font-mono text-xs">Oct 7</span>
                     <span className="text-gray-400">→</span>
-                    <span className="text-yellow-400">System checks: ROAS improved 2.1x → 2.8x ✓ Success!</span>
+                    <span className="text-white">System checks: ROAS improved 2.1x → 2.8x ✓ Success!</span>
                   </div>
                   <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
                     <span className="text-gray-500 font-mono text-xs">Oct 7</span>
