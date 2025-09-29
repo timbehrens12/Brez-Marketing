@@ -1327,10 +1327,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </Tabs>
           </div>
         </div>
-      </div>
-
-      {/* Recommendation Dialog */}
-      <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
+      
+        {/* Recommendation Dialog */}
+        <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] text-white overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
