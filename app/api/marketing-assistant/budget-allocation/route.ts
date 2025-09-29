@@ -113,6 +113,30 @@ export async function GET(request: NextRequest) {
       console.log(`🔍 BUDGET DEBUG: 90-day sample:`, campaignStats?.[0] || 'No records')
     }
 
+    // If STILL no data, get ALL available data without date restrictions
+    if (!campaignStats || campaignStats.length === 0) {
+      console.log(`🔍 BUDGET DEBUG: No data in 90 days, fetching ALL historical data...`)
+      const { data: allStats } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .order('date', { ascending: false })
+        .limit(1000) // Get up to 1000 most recent records
+      
+      campaignStats = allStats
+      console.log(`🔍 BUDGET DEBUG: ALL historical data result: ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: ALL data sample:`, campaignStats?.[0] || 'No records')
+    }
+
     console.log(`🔍 BUDGET DEBUG: FINAL RESULT: ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
     
     // Log total records in database for this brand (to see if data exists at all)

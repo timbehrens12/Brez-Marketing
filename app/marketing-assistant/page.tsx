@@ -75,7 +75,7 @@ interface OptimizationCard {
   currentValue: string
   recommendedValue: string
   projectedImpact: {
-    revenue: number
+  revenue: number
   roas: number
     confidence: number
   }
@@ -391,15 +391,15 @@ export default function MarketingAssistantPage() {
 
       // Log the action as manually completed
       const response = await fetch('/api/marketing-assistant/recommendations', {
-        method: 'POST',
+                    method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+                    body: JSON.stringify({
           action: 'mark_done',
           campaignId: card.id,
           actionId,
-          brandId: selectedBrandId,
+                      brandId: selectedBrandId,
           status: 'completed_manually'
         })
       })
@@ -408,8 +408,8 @@ export default function MarketingAssistantPage() {
         // Remove the completed recommendation from the UI
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
         console.log(`Marked recommendation ${cardId} as done`)
-      }
-    } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -435,8 +435,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-      }
-    } catch (error) {
+        }
+      } catch (error) {
       console.error('Error getting explanation:', error)
     }
   }
@@ -661,8 +661,8 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="tiktok">TikTok Only</SelectItem>
                     </SelectContent>
                   </Select>
-      </div>
-
+        </div>
+        
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Campaign Status</label>
                   <Select defaultValue="active">
@@ -675,8 +675,8 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="paused">Paused Only</SelectItem>
                     </SelectContent>
                   </Select>
-        </div>
-        
+          </div>
+          
               </CardContent>
             </Card>
 
@@ -687,12 +687,12 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <TrendingUp className="w-5 h-5 text-gray-400" />
-                  </div>
+          </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Campaign Scaling</h3>
                     <p className="text-gray-400 text-sm">Budget optimization & audience expansion</p>
-                  </div>
-                </div>
+        </div>
+      </div>
               </CardHeader>
               <CardContent className="p-0 flex-1 overflow-hidden">
                 <Tabs value={scalingTab} onValueChange={setScalingTab} className="h-full flex flex-col">
@@ -706,7 +706,7 @@ export default function MarketingAssistantPage() {
                       Audience
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
                     {budgetAllocations.map(allocation => (
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
@@ -714,8 +714,8 @@ export default function MarketingAssistantPage() {
                           <h4 className="text-white font-medium text-sm">{allocation.campaignName}</h4>
                           <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'}>
                             {allocation.confidence}% confidence
-                          </Badge>
-                        </div>
+                              </Badge>
+                            </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <p className="text-gray-400">Current: ${allocation.currentBudget}/day</p>
@@ -743,28 +743,28 @@ export default function MarketingAssistantPage() {
                           >
                             Mark as Done
                           </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                     {budgetAllocations.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No budget optimization opportunities</p>
-                      </div>
+                    </div>
                     )}
                   </TabsContent>
-                  
+
                   <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
                     {audienceExpansions.map(expansion => (
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                             {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400" />}
                             {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400" />}
                             {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400" />}
                             {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-orange-400" />}
                             <h4 className="text-white font-medium text-sm">{expansion.title}</h4>
-                          </div>
+                            </div>
                           <Badge variant="secondary">{expansion.confidence}% match</Badge>
                         </div>
                         <p className="text-gray-400 text-xs mb-2">{expansion.description}</p>
@@ -794,14 +794,14 @@ export default function MarketingAssistantPage() {
                           >
                             Mark as Done
                           </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                     {audienceExpansions.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No audience expansion opportunities</p>
-                      </div>
+                    </div>
                     )}
                   </TabsContent>
                 </Tabs>
@@ -821,11 +821,11 @@ export default function MarketingAssistantPage() {
                      <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10">
                        <DollarSign className="w-5 h-5 text-gray-400" />
-                            </div>
+                          </div>
                       <div>
                         <p className="text-gray-400 text-xs">Total Spend</p>
                         <p className="text-white text-lg font-bold">${kpiMetrics.spend.toLocaleString()}</p>
-                          </div>
+                        </div>
                         </div>
                   </CardContent>
                 </Card>
@@ -874,8 +874,8 @@ export default function MarketingAssistantPage() {
                     </div>
               </CardContent>
             </Card>
-              </div>
-            )}
+                    </div>
+                  )}
 
             {/* Optimization Feed */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
@@ -919,7 +919,7 @@ export default function MarketingAssistantPage() {
                           }`}></div>
                           <span className="text-xs text-gray-400 uppercase tracking-wide">{card.priority}</span>
                         </div>
-                      </div>
+                </div>
 
                       {/* Content */}
                       <div className="p-3">
@@ -941,8 +941,8 @@ export default function MarketingAssistantPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex gap-2">
-                          <Button
+                <div className="flex gap-2">
+                  <Button
                             size="sm" 
                             variant="outline" 
                             className="border-[#333] text-gray-300 text-xs flex-1"
@@ -950,14 +950,14 @@ export default function MarketingAssistantPage() {
                           >
                             <Brain className="w-3 h-3 mr-1" />
                             Explain
-                          </Button>
-                          <Button
+                  </Button>
+                  <Button
                             size="sm" 
                             className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1"
                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                          >
+                  >
                             Mark as Done
-                          </Button>
+                  </Button>
                         </div>
                       </div>
                     </div>
@@ -1209,7 +1209,7 @@ export default function MarketingAssistantPage() {
                  >
                    Close
                     </Button>
-                  </div>
+                </div>
                       </div>
                     </div>
                 </div>
@@ -1224,11 +1224,11 @@ export default function MarketingAssistantPage() {
                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                flex items-center justify-center border border-white/10">
                    <Brain className="w-5 h-5 text-white" />
-                 </div>
+                      </div>
                  <div>
                    <h3 className="text-xl font-bold text-white">AI Analysis</h3>
                    <p className="text-gray-400">In-depth recommendation explanation</p>
-                 </div>
+                    </div>
                </div>
                <Button
                  variant="outline" 
@@ -1237,8 +1237,8 @@ export default function MarketingAssistantPage() {
                  className="border-[#333] text-gray-300"
                >
                  Close
-               </Button>
-             </div>
+                    </Button>
+                  </div>
 
              <div className="space-y-6">
                {/* Why This Matters */}
@@ -1248,7 +1248,7 @@ export default function MarketingAssistantPage() {
                    Why This Recommendation Matters
                  </h4>
                  <p className="text-gray-300 text-sm leading-relaxed">{explanationData.reasoning}</p>
-               </div>
+                      </div>
 
                {/* Data Analysis */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1261,9 +1261,9 @@ export default function MarketingAssistantPage() {
                      <div key={index} className="flex items-start gap-2">
                        <span className="text-blue-400 mt-1">•</span>
                        <p className="text-gray-300 text-sm">{insight}</p>
-                     </div>
-                   ))}
-                 </div>
+                    </div>
+                  ))}
+                </div>
                </div>
 
                {/* Expected Outcomes */}
@@ -1279,10 +1279,10 @@ export default function MarketingAssistantPage() {
                        <p className={`text-lg font-bold ${outcome.positive ? 'text-green-400' : 'text-red-400'}`}>
                          {outcome.value}
                        </p>
-                     </div>
+                        </div>
                    ))}
-                 </div>
-               </div>
+                      </div>
+                    </div>
 
                {/* Implementation Steps */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1295,10 +1295,10 @@ export default function MarketingAssistantPage() {
                      <div key={index} className="flex items-start gap-2">
                        <span className="text-[#FF2A2A] text-sm font-bold mt-1">{index + 1}.</span>
                        <p className="text-gray-300 text-sm">{step}</p>
-                     </div>
+          </div>
                    ))}
-                 </div>
-               </div>
+        </div>
+      </div>
              </div>
 
              {/* Close Button */}
