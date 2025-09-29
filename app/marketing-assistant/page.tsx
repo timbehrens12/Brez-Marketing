@@ -106,8 +106,10 @@ export default function MarketingAssistantPage() {
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [trends, setTrends] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [initialDataLoad, setInitialDataLoad] = useState(true)
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days
+    from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days  
     to: new Date()
   })
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
@@ -123,7 +125,15 @@ export default function MarketingAssistantPage() {
   const loadDashboardData = async () => {
     if (!selectedBrandId) return
     
-    setLoading(true)
+    // Use initialDataLoad for first load, isRefreshingData for subsequent loads
+    if (initialDataLoad) {
+      setLoading(true)
+      setIsRefreshingData(false)
+    } else {
+      setIsRefreshingData(true)
+      setLoading(false)
+    }
+    
     try {
       await Promise.all([
         loadKPIMetrics(),
@@ -135,7 +145,12 @@ export default function MarketingAssistantPage() {
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
-      setLoading(false)
+      if (initialDataLoad) {
+        setInitialDataLoad(false)
+        setLoading(false)
+      } else {
+        setIsRefreshingData(false)
+      }
     }
   }
 
@@ -385,10 +400,32 @@ export default function MarketingAssistantPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B0B0B] p-6">
-        <div className="w-full px-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-[#0B0B0B] relative"
+           style={{
+             backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+               <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                 <defs>
+                   <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                     <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+                   </pattern>
+                 </defs>
+                 <rect width="100%" height="100%" fill="url(#grid)" />
+               </svg>
+             `)}")`,
+             backgroundRepeat: 'repeat',
+             backgroundSize: '40px 40px',
+             backgroundAttachment: 'fixed'
+           }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative mb-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-600 border-t-white mx-auto"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Brain className="w-6 h-6 text-white opacity-60" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">AI Marketing Assistant</h3>
+            <p className="text-gray-400">Analyzing performance data and generating insights...</p>
           </div>
         </div>
       </div>
@@ -396,7 +433,7 @@ export default function MarketingAssistantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B]" 
+    <div className="min-h-screen bg-[#0B0B0B] relative" 
          style={{
            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -412,6 +449,16 @@ export default function MarketingAssistantPage() {
            backgroundSize: '40px 40px',
            backgroundAttachment: 'fixed'
          }}>
+       
+       {/* Loading overlay for data refreshes */}
+       {isRefreshingData && (
+         <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+           <div className="bg-[#111] border border-[#333] rounded-lg p-6 text-center">
+             <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-3"></div>
+             <p className="text-white text-sm">Refreshing data...</p>
+           </div>
+         </div>
+       )}
       
       <div className="w-full px-6 py-4">
         <div className="grid grid-cols-12 gap-4 h-screen">
@@ -554,9 +601,9 @@ export default function MarketingAssistantPage() {
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl 
-                                    flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-blue-400" />
+                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10">
+                       <DollarSign className="w-5 h-5 text-gray-400" />
                       </div>
                       <div>
                         <p className="text-gray-400 text-xs">Total Spend</p>
@@ -569,9 +616,9 @@ export default function MarketingAssistantPage() {
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl 
-                                    flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-green-400" />
+                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10">
+                       <TrendingUp className="w-5 h-5 text-gray-400" />
                       </div>
                       <div>
                         <p className="text-gray-400 text-xs">ROAS</p>
@@ -584,9 +631,9 @@ export default function MarketingAssistantPage() {
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl 
-                                    flex items-center justify-center">
-                        <Eye className="w-5 h-5 text-purple-400" />
+                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10">
+                       <Eye className="w-5 h-5 text-gray-400" />
                       </div>
                       <div>
                         <p className="text-gray-400 text-xs">Impressions</p>
@@ -599,9 +646,9 @@ export default function MarketingAssistantPage() {
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl 
-                                    flex items-center justify-center">
-                        <MousePointer className="w-5 h-5 text-orange-400" />
+                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10">
+                       <MousePointer className="w-5 h-5 text-gray-400" />
                       </div>
                       <div>
                         <p className="text-gray-400 text-xs">CTR</p>
@@ -639,12 +686,8 @@ export default function MarketingAssistantPage() {
                     <div key={card.id} className="p-4 bg-[#1A1A1A] border border-[#333] rounded-lg">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            card.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                            card.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-blue-500/20 text-blue-400'
-                          }`}>
-                            <Target className="w-4 h-4" />
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
+                            <Target className="w-4 h-4 text-gray-400" />
                           </div>
                           <div>
                             <h3 className="text-white font-semibold">{card.title}</h3>
@@ -799,7 +842,7 @@ export default function MarketingAssistantPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
-                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                    <AlertTriangle className="w-5 h-5 text-gray-400" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Alerts</h3>
