@@ -137,6 +137,36 @@ export default function MarketingAssistantPage() {
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
+  const [recommendationsViewed, setRecommendationsViewed] = useState(false)
+  const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
+
+  // Calculate time until next Monday 12am
+  const getNextMondayMidnight = () => {
+    const now = new Date()
+    const nextMonday = new Date(now)
+    nextMonday.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7))
+    nextMonday.setHours(0, 0, 0, 0)
+    return nextMonday
+  }
+
+  const updateCountdown = () => {
+    const now = new Date()
+    const nextMonday = getNextMondayMidnight()
+    const diff = nextMonday.getTime() - now.getTime()
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    
+    setTimeUntilRefresh(`${days}d ${hours}h ${minutes}m`)
+  }
+
+  // Countdown timer
+  useEffect(() => {
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 60000) // Update every minute
+    return () => clearInterval(interval)
+  }, [])
 
   // Data Loading
   useEffect(() => {
@@ -420,7 +450,7 @@ export default function MarketingAssistantPage() {
           action: 'mark_done',
           campaignId: card.id,
           actionId,
-              brandId: selectedBrandId,
+                      brandId: selectedBrandId,
           status: 'completed_manually'
         })
       })
@@ -429,8 +459,8 @@ export default function MarketingAssistantPage() {
         // Remove the completed recommendation from the UI
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
         console.log(`Marked recommendation ${cardId} as done`)
-            }
-          } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -456,8 +486,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-                  }
-                } catch (error) {
+        }
+      } catch (error) {
       console.error('Error getting explanation:', error)
     }
   }
@@ -926,20 +956,37 @@ export default function MarketingAssistantPage() {
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                  flex items-center justify-center border border-white/10">
-                      <Brain className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                  flex items-center justify-center border border-white/10 flex-shrink-0">
+                      <Brain className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                           </div>
-                    <div className="min-w-0">
-                      <h2 className="text-xl lg:text-2xl font-bold text-white truncate">AI Optimization Feed</h2>
-                      <p className="text-gray-400 text-sm hidden md:block">Prioritized recommendations based on performance analysis</p>
+                    <div className="min-w-0 overflow-hidden flex-1">
+                      <h2 className="text-lg lg:text-xl font-bold text-white truncate">AI Optimization Feed</h2>
+                      <p className="text-gray-400 text-xs hidden lg:block truncate">Prioritized recommendations based on performance analysis</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="border-[#333] text-gray-300">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {!recommendationsViewed ? (
+                          <Button
+                        variant="outline" 
+                            size="sm"
+                        onClick={() => setRecommendationsViewed(true)}
+                        className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 whitespace-nowrap"
+                          >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        View Recommendations
                           </Button>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-[#333] rounded-lg">
+                        <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <div className="text-xs">
+                          <div className="text-gray-400 whitespace-nowrap">Next refresh:</div>
+                          <div className="text-white font-medium whitespace-nowrap">{timeUntilRefresh}</div>
+                        </div>
+                    </div>
+                  )}
+                  </div>
                         </div>
               </CardHeader>
               <CardContent className="p-6 flex-1 overflow-y-auto">
@@ -947,14 +994,14 @@ export default function MarketingAssistantPage() {
                   {optimizationCards.map(card => (
                     <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
                       {/* Header with Priority Badge */}
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#252525] to-[#1A1A1A] border-b border-[#333]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
+                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#252525] to-[#1A1A1A] border-b border-[#333] gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
                             <Target className="w-4 h-4 text-gray-400" />
                           </div>
-                          <div>
-                            <h3 className="text-white font-medium text-sm">{card.title}</h3>
-                            <p className="text-gray-400 text-xs">{card.projectedImpact.confidence}% confidence</p>
+                          <div className="min-w-0 overflow-hidden flex-1">
+                            <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
+                            <p className="text-gray-400 text-xs truncate">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
