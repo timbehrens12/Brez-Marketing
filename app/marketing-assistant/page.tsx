@@ -218,7 +218,11 @@ export default function MarketingAssistantPage() {
       const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('[Budget Allocations] Received data:', data)
+        console.log('[Budget Allocations] Setting allocations:', data.allocations || [])
         setBudgetAllocations(data.allocations || [])
+      } else {
+        console.error('[Budget Allocations] Response not OK:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading budget allocations:', error)
@@ -233,7 +237,11 @@ export default function MarketingAssistantPage() {
       const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('[Audience Expansion] Received data:', data)
+        console.log('[Audience Expansion] Setting opportunities:', data.opportunities || [])
         setAudienceExpansions(data.opportunities || [])
+      } else {
+        console.error('[Audience Expansion] Response not OK:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading audience expansions:', error)
@@ -731,7 +739,13 @@ export default function MarketingAssistantPage() {
                   </TabsList>
 
                   <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
-                    {budgetAllocations.map(allocation => (
+                    {loading && (
+                      <div className="text-center py-6 text-gray-400">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
+                        <p className="text-sm">Loading budget data...</p>
+                      </div>
+                    )}
+                    {!loading && budgetAllocations.length > 0 && budgetAllocations.map(allocation => (
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-white font-medium text-sm">{allocation.campaignName}</h4>
@@ -769,16 +783,23 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                       ))}
-                    {budgetAllocations.length === 0 && (
+                    {!loading && budgetAllocations.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No budget optimization opportunities</p>
+                        <p className="text-xs text-gray-500 mt-1">Check console for API response data</p>
                     </div>
                     )}
                   </TabsContent>
 
                   <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
-                    {audienceExpansions.map(expansion => (
+                    {loading && (
+                      <div className="text-center py-6 text-gray-400">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
+                        <p className="text-sm">Loading audience data...</p>
+                      </div>
+                    )}
+                    {!loading && audienceExpansions.length > 0 && audienceExpansions.map(expansion => (
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -820,10 +841,11 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                       ))}
-                    {audienceExpansions.length === 0 && (
+                    {!loading && audienceExpansions.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No audience expansion opportunities</p>
+                        <p className="text-xs text-gray-500 mt-1">Check console for API response data</p>
                     </div>
                     )}
                   </TabsContent>
