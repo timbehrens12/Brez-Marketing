@@ -500,8 +500,7 @@ export default function MarketingAssistantPage() {
       })
 
       if (response.ok) {
-        // Remove the completed recommendation from the UI
-        setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
+        // Keep the item visible - just marked as completed in state
         console.log(`Marked recommendation ${cardId} as done`)
             }
           } catch (error) {
