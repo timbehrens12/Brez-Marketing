@@ -41,7 +41,8 @@ import {
   Info,
   X,
   Clock,
-  TrendingDown
+  TrendingDown,
+  Wand2
 } from 'lucide-react'
 
 interface KPIMetrics {
@@ -710,10 +711,10 @@ export default function MarketingAssistantPage() {
                 <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                      <Calendar className="h-4 w-4 text-[#FF2A2A] flex-shrink-0" />
                       <span className="text-gray-400 text-sm">Performance Window</span>
         </div>
-                    <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400 flex-shrink-0">Fixed</Badge>
+                    <Badge className="text-xs bg-[#FF2A2A] text-black border-[#FF2A2A] flex-shrink-0 font-semibold">Fixed</Badge>
       </div>
                   <div className="text-white font-semibold mb-2">Last 7 Days</div>
                   <p className="text-xs text-gray-500 mb-2">Recommendations update weekly based on current performance</p>
@@ -1016,7 +1017,7 @@ export default function MarketingAssistantPage() {
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
-                        <Sparkles className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
+                        <Wand2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
                         <span className="hidden md:inline truncate">Update Recommendations</span>
                         <span className="md:hidden truncate">Update</span>
                           </Button>
