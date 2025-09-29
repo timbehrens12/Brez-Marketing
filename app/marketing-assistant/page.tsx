@@ -705,11 +705,11 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
-                  <div className="flex items-center gap-2 text-sm mb-2">
-                    <Calendar className="h-4 w-4 text-emerald-400" />
-                    <span className="text-gray-400">Performance Window:</span>
-                    <span className="text-white font-medium">Last 7 Days</span>
-                    <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400">Fixed</Badge>
+                  <div className="flex items-center gap-2 text-xs lg:text-sm mb-2 min-w-0">
+                    <Calendar className="h-3 w-3 lg:h-4 lg:w-4 text-emerald-400 flex-shrink-0" />
+                    <span className="text-gray-400 whitespace-nowrap">Performance Window:</span>
+                    <span className="text-white font-medium whitespace-nowrap">Last 7 Days</span>
+                    <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400 flex-shrink-0 whitespace-nowrap">Fixed</Badge>
         </div>
                   <p className="text-xs text-gray-500 mb-2">Recommendations update weekly based on current performance</p>
                   <Button
