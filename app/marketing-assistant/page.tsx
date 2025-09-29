@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import BrandSelector from '@/components/BrandSelector'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 
@@ -131,10 +130,6 @@ export default function MarketingAssistantPage() {
   const [showSimulation, setShowSimulation] = useState(false)
   const [explanationData, setExplanationData] = useState<any>(null)
   const [showExplanation, setShowExplanation] = useState(false)
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days  
-    to: new Date()
-  })
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
 
@@ -143,7 +138,7 @@ export default function MarketingAssistantPage() {
     if (selectedBrandId) {
       loadDashboardData()
     }
-  }, [selectedBrandId, dateRange])
+  }, [selectedBrandId])
 
   const loadDashboardData = async () => {
     if (!selectedBrandId) return
@@ -182,7 +177,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`)
+      // Backend always uses last 7 days - no date params needed
+      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -197,7 +193,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`)
+      // Backend always uses last 7 days - no date params needed
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -212,7 +209,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
     
     try {
-      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&fromDate=${dateRange.from.toISOString()}&toDate=${dateRange.to.toISOString()}`)
+      // Backend always uses last 7 days - no date params needed
+      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}`)
       if (response.ok) {
         const data = await response.json()
         setBudgetAllocations(data.allocations || [])
@@ -242,9 +240,9 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Get both current metrics and trends for comparison
+      // Get both current metrics and trends for comparison (both use last 7 days)
       const [metricsResponse, trendsResponse] = await Promise.all([
-        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`),
+        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`),
         fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
       ])
       
@@ -399,7 +397,7 @@ export default function MarketingAssistantPage() {
           action: 'mark_done',
           campaignId: card.id,
           actionId,
-                      brandId: selectedBrandId,
+              brandId: selectedBrandId,
           status: 'completed_manually'
         })
       })
@@ -408,8 +406,8 @@ export default function MarketingAssistantPage() {
         // Remove the completed recommendation from the UI
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
         console.log(`Marked recommendation ${cardId} as done`)
-                  }
-                } catch (error) {
+            }
+          } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -420,11 +418,11 @@ export default function MarketingAssistantPage() {
       if (!card) return
 
       const response = await fetch('/api/marketing-assistant/explain', {
-        method: 'POST',
+                    method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+                    body: JSON.stringify({
           type: 'recommendation',
           data: card,
           brandId: selectedBrandId
@@ -435,8 +433,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-        }
-      } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error getting explanation:', error)
     }
   }
@@ -462,8 +460,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-      }
-    } catch (error) {
+        }
+      } catch (error) {
       console.error('Error getting budget explanation:', error)
     }
   }
@@ -561,9 +559,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Calculate days between selected date range for proper comparison
-      const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) || 7
-      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=${daysDiff}&fromDate=${dateRange.from.toISOString().split('T')[0]}&toDate=${dateRange.to.toISOString().split('T')[0]}`)
+      // Backend always uses last 7 days - no date params needed
+      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
       
       if (response.ok) {
         const data = await response.json()
@@ -640,13 +637,15 @@ export default function MarketingAssistantPage() {
           </div>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Date Range</label>
-                  <DateRangePicker 
-                    dateRange={dateRange}
-                    setDateRange={setDateRange}
-                  />
+                <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-emerald-400" />
+                    <span className="text-gray-400">Performance Window:</span>
+                    <span className="text-white font-medium">Last 7 Days</span>
+                    <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400">Fixed</Badge>
         </div>
+                  <p className="text-xs text-gray-500 mt-2">Recommendations update weekly based on current performance</p>
+      </div>
                 
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
