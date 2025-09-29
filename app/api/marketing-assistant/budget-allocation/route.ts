@@ -23,25 +23,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Get campaign performance data for budget allocation analysis
-    // Use a broader date range if the specified range returns no data
-    let { data: campaignStats } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select(`
-        campaign_id,
-        campaign_name,
-        spend,
-        impressions,
-        clicks,
-        conversions,
-        roas,
-        purchase_value
-      `)
-      .eq('brand_id', brandId)
-      .gte('date', fromDate)
-      .lte('date', toDate)
+    console.log(`Budget allocation: Querying for brand ${brandId}, fromDate: ${fromDate}, toDate: ${toDate}`)
 
-    // If no data in specified range, try last 30 days
+    // Get campaign performance data for budget allocation analysis
+    // Use a broader date range if the specified range returns no data or if dates are null
+    let campaignStats = null
+
+    if (fromDate && toDate) {
+      const result = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .gte('date', fromDate)
+        .lte('date', toDate)
+      
+      campaignStats = result.data
+      console.log(`Budget allocation: Found ${campaignStats?.length || 0} records for date range ${fromDate} to ${toDate}`)
+    }
+
+    // If no data in specified range or no dates provided, try last 30 days
     if (!campaignStats || campaignStats.length === 0) {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const { data: fallbackStats } = await supabase
@@ -61,6 +70,28 @@ export async function GET(request: NextRequest) {
       
       campaignStats = fallbackStats
       console.log(`Budget allocation: Fallback to 30 days - found ${campaignStats?.length || 0} records`)
+    }
+
+    // If still no data, try last 90 days
+    if (!campaignStats || campaignStats.length === 0) {
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const { data: fallbackStats } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .gte('date', ninetyDaysAgo)
+      
+      campaignStats = fallbackStats
+      console.log(`Budget allocation: Final fallback to 90 days - found ${campaignStats?.length || 0} records`)
     }
 
     console.log(`Budget allocation: Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)

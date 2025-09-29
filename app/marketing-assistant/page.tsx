@@ -391,24 +391,25 @@ export default function MarketingAssistantPage() {
 
       // Log the action as manually completed
       const response = await fetch('/api/marketing-assistant/recommendations', {
-                    method: 'POST',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-                    body: JSON.stringify({
+        body: JSON.stringify({
           action: 'mark_done',
           campaignId: card.id,
           actionId,
-                      brandId: selectedBrandId,
+          brandId: selectedBrandId,
           status: 'completed_manually'
         })
       })
 
       if (response.ok) {
-        // Remove the completed recommendation
+        // Remove the completed recommendation from the UI
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
+        console.log(`Marked recommendation ${cardId} as done`)
       }
-                } catch (error) {
+    } catch (error) {
       console.error('Error marking as done:', error)
     }
   }

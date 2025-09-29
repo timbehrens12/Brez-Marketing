@@ -21,8 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
+    console.log(`Audience expansion: Querying for brand ${brandId}`)
+
     // Get campaign and audience performance data
-    // Try different date ranges to find data
+    // Try different date ranges to find data - start with 30 days
     let { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select(`
@@ -39,6 +41,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq('brand_id', brandId)
       .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 30 days
+
+    console.log(`Audience expansion: Found ${campaignStats?.length || 0} records in last 30 days`)
 
     // If no data in last 30 days, try last 90 days
     if (!campaignStats || campaignStats.length === 0) {
@@ -62,6 +66,30 @@ export async function GET(request: NextRequest) {
       
       campaignStats = fallbackStats
       console.log(`Audience expansion: Fallback to 90 days - found ${campaignStats?.length || 0} records`)
+    }
+
+    // If still no data, try ALL available data for this brand
+    if (!campaignStats || campaignStats.length === 0) {
+      const { data: allStats } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select(`
+          campaign_id,
+          campaign_name,
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          ctr,
+          cpc,
+          roas,
+          purchase_value
+        `)
+        .eq('brand_id', brandId)
+        .order('date', { ascending: false })
+        .limit(1000) // Reasonable limit
+      
+      campaignStats = allStats
+      console.log(`Audience expansion: Final fallback to all data - found ${campaignStats?.length || 0} records`)
     }
 
     console.log(`Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
