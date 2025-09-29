@@ -156,10 +156,14 @@ export default function MarketingAssistantPage() {
     const nextMonday = getNextMondayMidnight()
     const diff = nextMonday.getTime() - now.getTime()
     
-    // Check if it's Monday after midnight - reset the viewed state
+    // Check if it's Monday after midnight - reset the viewed state, completed items, and acknowledged alerts
     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
       localStorage.removeItem('recommendationsViewed')
+      localStorage.removeItem('completedItems')
+      localStorage.removeItem('acknowledgedAlerts')
       setRecommendationsViewed(false)
+      setCompletedItems(new Set())
+      // Alerts will be refreshed with acknowledged: false on next load
     }
     
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
@@ -169,11 +173,20 @@ export default function MarketingAssistantPage() {
     setTimeUntilRefresh(`${days}d ${hours}h ${minutes}m`)
   }
 
-  // Load viewed state from localStorage
+  // Load viewed state and completed items from localStorage
   useEffect(() => {
     const viewed = localStorage.getItem('recommendationsViewed')
     if (viewed === 'true') {
       setRecommendationsViewed(true)
+    }
+    
+    const completed = localStorage.getItem('completedItems')
+    if (completed) {
+      try {
+        setCompletedItems(new Set(JSON.parse(completed)))
+      } catch (e) {
+        console.error('Error parsing completedItems:', e)
+      }
     }
   }, [])
 
@@ -432,7 +445,14 @@ export default function MarketingAssistantPage() {
           })
         }
 
-        setAlerts(generatedAlerts)
+        // Load acknowledged alerts from localStorage and apply them
+        const acknowledgedIds = JSON.parse(localStorage.getItem('acknowledgedAlerts') || '[]')
+        const alertsWithAcknowledged = generatedAlerts.map(alert => ({
+          ...alert,
+          acknowledged: acknowledgedIds.includes(alert.id)
+        }))
+        
+        setAlerts(alertsWithAcknowledged)
             }
           } catch (error) {
       console.error('Error loading alerts:', error)
@@ -442,18 +462,24 @@ export default function MarketingAssistantPage() {
 
 
   const dismissAlert = (alertId: string) => {
-    setAlerts(prevAlerts => 
-      prevAlerts.map(alert => 
+    setAlerts(prevAlerts => {
+      const updated = prevAlerts.map(alert => 
         alert.id === alertId 
           ? { ...alert, acknowledged: true } 
           : alert
       )
-    )
+      // Save acknowledged alerts to localStorage
+      const acknowledged = updated.filter(a => a.acknowledged).map(a => a.id)
+      localStorage.setItem('acknowledgedAlerts', JSON.stringify(acknowledged))
+      return updated
+    })
   }
 
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
-      setCompletedItems(prev => new Set(prev).add(`opt-${cardId}`))
+      const newCompleted = new Set(completedItems).add(`opt-${cardId}`)
+      setCompletedItems(newCompleted)
+      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
       
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) return
@@ -477,8 +503,8 @@ export default function MarketingAssistantPage() {
         // Remove the completed recommendation from the UI
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
         console.log(`Marked recommendation ${cardId} as done`)
-                  }
-                } catch (error) {
+            }
+          } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -504,8 +530,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-        }
-      } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error getting explanation:', error)
     }
   }
@@ -566,7 +592,9 @@ export default function MarketingAssistantPage() {
 
   const handleMarkBudgetAsDone = async (allocationId: string) => {
     try {
-      setCompletedItems(prev => new Set(prev).add(`budget-${allocationId}`))
+      const newCompleted = new Set(completedItems).add(`budget-${allocationId}`)
+      setCompletedItems(newCompleted)
+      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
     } catch (error) {
       console.error('Error marking budget allocation as done:', error)
     }
@@ -574,7 +602,9 @@ export default function MarketingAssistantPage() {
 
   const handleMarkAudienceAsDone = async (expansionId: string) => {
     try {
-      setCompletedItems(prev => new Set(prev).add(`audience-${expansionId}`))
+      const newCompleted = new Set(completedItems).add(`audience-${expansionId}`)
+      setCompletedItems(newCompleted)
+      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
     } catch (error) {
       console.error('Error marking audience expansion as done:', error)
     }
