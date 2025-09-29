@@ -577,19 +577,6 @@ export default function MarketingAssistantPage() {
                   </Select>
         </div>
         
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Attribution Window</label>
-                  <Select defaultValue="7d_click_1d_view">
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1d_click">1-day click</SelectItem>
-                      <SelectItem value="7d_click_1d_view">7-day click, 1-day view</SelectItem>
-                      <SelectItem value="28d_click_1d_view">28-day click, 1-day view</SelectItem>
-                    </SelectContent>
-                  </Select>
-            </div>
               </CardContent>
             </Card>
 
@@ -620,7 +607,7 @@ export default function MarketingAssistantPage() {
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
                     {budgetAllocations.map(allocation => (
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
@@ -653,7 +640,7 @@ export default function MarketingAssistantPage() {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]">
                     {audienceExpansions.map(expansion => (
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
@@ -783,57 +770,66 @@ export default function MarketingAssistantPage() {
                         </div>
               </CardHeader>
               <CardContent className="p-6 flex-1 overflow-y-auto">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {optimizationCards.map(card => (
-                    <div key={card.id} className="p-4 bg-[#1A1A1A] border border-[#333] rounded-lg">
-                      <div className="flex items-start justify-between mb-3">
+                    <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
+                      {/* Header with Priority Badge */}
+                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#252525] to-[#1A1A1A] border-b border-[#333]">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
                             <Target className="w-4 h-4 text-gray-400" />
-                    </div>
+                          </div>
                           <div>
-                            <h3 className="text-white font-semibold">{card.title}</h3>
-                            <p className="text-gray-400 text-sm">{card.projectedImpact.confidence}% confidence</p>
+                            <h3 className="text-white font-medium text-sm">{card.title}</h3>
+                            <p className="text-gray-400 text-xs">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
-                         <div className="text-right">
-                           <Badge variant={card.priority === 'high' ? 'destructive' : card.priority === 'medium' ? 'default' : 'secondary'}>
-                             {card.priority} priority
-                           </Badge>
-                         </div>
-                </div>
-
-                      <p className="text-gray-300 text-sm mb-3">{card.description}</p>
-                      
-                      <div className="bg-[#0F0F0F] p-3 rounded-lg mb-3">
-                        <p className="text-gray-400 text-xs mb-1">Root Cause Analysis</p>
-                        <p className="text-gray-300 text-sm">{card.rootCause}</p>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            card.priority === 'high' ? 'bg-red-400' :
+                            card.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                          }`}></div>
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">{card.priority}</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm">
-                          <span className="text-gray-400">Current: </span>
-                          <span className="text-white">{card.currentValue}</span>
-                          <span className="text-gray-400 mx-2">→</span>
-                          <span className="text-green-400">{card.recommendedValue}</span>
+                      {/* Content */}
+                      <div className="p-3">
+                        <p className="text-gray-300 text-xs mb-3 leading-relaxed">{card.description}</p>
+                        
+                        {/* Metrics Row */}
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="bg-[#0F0F0F] rounded p-2 text-center">
+                            <p className="text-gray-400 text-xs">Current</p>
+                            <p className="text-white text-sm font-medium">{card.currentValue}</p>
+                          </div>
+                          <div className="flex items-center justify-center">
+                            <ArrowUpRight className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <div className="bg-[#0F0F0F] rounded p-2 text-center">
+                            <p className="text-gray-400 text-xs">Target</p>
+                            <p className="text-green-400 text-sm font-medium">{card.recommendedValue}</p>
+                          </div>
                         </div>
-                <div className="flex gap-2">
-                  <Button
-                             size="sm" 
-                             variant="outline" 
-                             className="border-[#333] text-gray-300"
-                             onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
-                           >
-                             Preview
-                  </Button>
-                  <Button
-                             size="sm" 
-                             className="bg-green-600 hover:bg-green-700"
-                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                  >
-                             Mark as Done
-                  </Button>
-                         </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm" 
+                            variant="outline" 
+                            className="border-[#333] text-gray-300 text-xs flex-1"
+                            onClick={() => handleSimulateAction(card.id, card.actions[0]?.id)}
+                          >
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-xs flex-1"
+                            onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
+                          >
+                            Mark as Done
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -956,14 +952,10 @@ export default function MarketingAssistantPage() {
                         </div>
                       </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-y-auto">
+              <CardContent className="p-4 flex-1 overflow-y-auto max-h-[400px]">
                 <div className="space-y-3">
                   {alerts.map(alert => (
-                    <div key={alert.id} className={`p-3 rounded-lg border ${
-                      alert.type === 'error' ? 'bg-red-500/10 border-red-500/20' :
-                      alert.type === 'warning' ? 'bg-yellow-500/10 border-yellow-500/20' :
-                      'bg-blue-500/10 border-blue-500/20'
-                    }`}>
+                    <div key={alert.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="text-white font-medium text-sm">{alert.title}</h4>
                         {!alert.acknowledged && (
