@@ -51,14 +51,16 @@ async function aggregateMetrics(brandId: string, fromDate: string, toDate: strin
       .lte('date', toDate)
 
     if (metaStats) {
+      console.log(`[Metrics API] Found ${metaStats.length} Meta campaign daily stats for brand ${brandId}`)
       metaStats.forEach(stat => {
-        totalSpend += stat.spend || 0
-        totalImpressions += stat.impressions || 0
-        totalClicks += stat.clicks || 0
-        totalConversions += stat.conversions || 0
-        // Calculate revenue from ROAS * spend
-        totalRevenue += (stat.roas || 0) * (stat.spend || 0)
+        totalSpend += parseFloat(stat.spend) || 0
+        totalImpressions += parseInt(stat.impressions) || 0
+        totalClicks += parseInt(stat.clicks) || 0
+        totalConversions += parseInt(stat.conversions) || 0
+        // Use purchase_value if available, otherwise calculate from ROAS
+        totalRevenue += parseFloat(stat.purchase_value) || (parseFloat(stat.roas) * parseFloat(stat.spend)) || 0
       })
+      console.log(`[Metrics API] Meta totals: spend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, conversions=${totalConversions}, revenue=${totalRevenue}`)
     }
   }
 

@@ -138,7 +138,13 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       .eq('brand_id', brandId)
       .eq('status', 'ACTIVE')
 
-    if (!campaignStats || !campaigns || campaigns.length === 0) {
+    if (!campaignStats || campaignStats.length === 0) {
+      console.log(`[Recommendations] No campaign stats found for brand ${brandId}`)
+      return []
+    }
+
+    if (!campaigns || campaigns.length === 0) {
+      console.log(`[Recommendations] No active campaigns found for brand ${brandId}`)
       return []
     }
 

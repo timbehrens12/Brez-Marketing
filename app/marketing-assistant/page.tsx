@@ -107,6 +107,7 @@ export default function MarketingAssistantPage() {
   const [experimentQueue, setExperimentQueue] = useState<ExperimentQueueItem[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [actionLog, setActionLog] = useState<any[]>([])
+  const [trends, setTrends] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -132,7 +133,8 @@ export default function MarketingAssistantPage() {
         loadOptimizationRecommendations(),
         loadExperimentQueue(),
         loadAlerts(),
-        loadActionLog()
+        loadActionLog(),
+        loadTrends()
       ])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
@@ -172,47 +174,106 @@ export default function MarketingAssistantPage() {
   }
 
   const loadExperimentQueue = async () => {
-    // Load staged and running experiments
-    setExperimentQueue([
-      {
-        id: '1',
-        type: 'staged',
-        campaignName: 'Holiday Campaign 2024',
-        action: 'Increase budget by 25%',
-        projectedImpact: '+$2,400 revenue',
-        risk: 'low'
-      },
-      {
-        id: '2',
-        type: 'running',
-        campaignName: 'Black Friday Special',
-        action: 'Test new audience segment',
-        projectedImpact: '+15% ROAS',
-        risk: 'medium'
+    if (!selectedBrandId) return
+
+    try {
+      // Get staged experiments (pending actions)
+      const response = await fetch(`/api/marketing-assistant/action-log?brandId=${selectedBrandId}&limit=20`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Transform action log data into experiment queue format
+        const experiments = data.actions
+          .filter((action: any) => action.status === 'pending' || action.status === 'applied')
+          .map((action: any) => ({
+            id: action.id,
+            type: action.status === 'pending' ? 'staged' : 'running',
+            campaignName: action.campaignId || 'Unknown Campaign',
+            action: action.description,
+            projectedImpact: action.impact ? `+$${action.impact.revenue?.toLocaleString() || 0}` : '+0',
+            risk: determineRiskLevel(action),
+            scheduledFor: action.status === 'pending' ? new Date() : undefined
+          }))
+
+        setExperimentQueue(experiments)
       }
-    ])
+    } catch (error) {
+      console.error('Error loading experiment queue:', error)
+      setExperimentQueue([])
+    }
+  }
+
+  const determineRiskLevel = (action: any): 'low' | 'medium' | 'high' => {
+    const impactValue = action.impact?.revenue || 0
+    if (impactValue > 5000) return 'high'
+    if (impactValue > 1000) return 'medium'
+    return 'low'
   }
 
   const loadAlerts = async () => {
-    // Load system alerts and warnings
-    setAlerts([
-      {
-        id: '1',
-        type: 'warning',
-        title: 'High frequency detected',
-        description: 'Campaign "Summer Sale" showing 4.2x frequency - consider creative rotation',
-        timestamp: new Date(),
-        acknowledged: false
-      },
-      {
-        id: '2',
-        type: 'error',
-        title: 'Low CTR alert',
-        description: 'Ad set "Lookalike 1%" CTR dropped below 1.5%',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        acknowledged: false
+    if (!selectedBrandId) return
+
+    try {
+      // Get campaign performance data to generate alerts
+      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        const metrics = data.metrics
+        const generatedAlerts: AlertItem[] = []
+
+        // Generate alerts based on real metrics
+        if (metrics.ctr < 1.5 && metrics.impressions > 1000) {
+          generatedAlerts.push({
+            id: 'low-ctr',
+            type: 'warning',
+            title: 'Low CTR Alert',
+            description: `CTR of ${metrics.ctr.toFixed(2)}% is below recommended 1.5% threshold`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (metrics.cpc > 2.0 && metrics.clicks > 100) {
+          generatedAlerts.push({
+            id: 'high-cpc',
+            type: 'error',
+            title: 'High CPC Alert',
+            description: `CPC of $${metrics.cpc.toFixed(2)} is above recommended threshold`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (metrics.roas < 2.0 && metrics.spend > 100) {
+          generatedAlerts.push({
+            id: 'low-roas',
+            type: 'error',
+            title: 'Low ROAS Alert',
+            description: `ROAS of ${metrics.roas.toFixed(2)}x is below 2.0x threshold`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (metrics.spend > 500) {
+          generatedAlerts.push({
+            id: 'high-spend',
+            type: 'info',
+            title: 'High Daily Spend',
+            description: `Current spend of $${metrics.spend.toFixed(0)} is above average`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        setAlerts(generatedAlerts)
       }
-    ])
+    } catch (error) {
+      console.error('Error loading alerts:', error)
+      setAlerts([])
+    }
   }
 
   const loadActionLog = async () => {
@@ -298,6 +359,21 @@ export default function MarketingAssistantPage() {
       }
     } catch (error) {
       console.error('Error reverting action:', error)
+    }
+  }
+
+  const loadTrends = async () => {
+    if (!selectedBrandId) return
+
+    try {
+      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setTrends(data.trends)
+      }
+    } catch (error) {
+      console.error('Error loading trends:', error)
     }
   }
 
@@ -638,38 +714,75 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                    <div>
-                      <p className="text-gray-400 text-sm">Spend</p>
-                      <p className="text-white font-semibold">${kpiMetrics?.spend.toLocaleString() || 0}</p>
+                  {trends && (
+                    <>
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">Spend</p>
+                          <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 ${trends.spend.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                          {trends.spend.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          <span className="text-sm">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">Revenue</p>
+                          <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 ${trends.revenue.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                          {trends.revenue.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          <span className="text-sm">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">ROAS</p>
+                          <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
+                        </div>
+                        <div className={`flex items-center gap-1 ${trends.roas.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+                          {trends.roas.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          <span className="text-sm">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {!trends && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">Spend</p>
+                          <p className="text-white font-semibold">${kpiMetrics?.spend.toLocaleString() || 0}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <span className="text-sm">—</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">Revenue</p>
+                          <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <span className="text-sm">—</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                        <div>
+                          <p className="text-gray-400 text-sm">ROAS</p>
+                          <p className="text-white font-semibold">{kpiMetrics?.roas.toFixed(2) || 0}x</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <span className="text-sm">—</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-green-400">
-                      <ArrowUpRight className="w-4 h-4" />
-                      <span className="text-sm">+12%</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                    <div>
-                      <p className="text-gray-400 text-sm">Revenue</p>
-                      <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-green-400">
-                      <ArrowUpRight className="w-4 h-4" />
-                      <span className="text-sm">+8%</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                    <div>
-                      <p className="text-gray-400 text-sm">ROAS</p>
-                      <p className="text-white font-semibold">{kpiMetrics?.roas.toFixed(2) || 0}x</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-red-400">
-                      <ArrowDownRight className="w-4 h-4" />
-                      <span className="text-sm">-3%</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
