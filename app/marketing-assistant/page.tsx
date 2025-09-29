@@ -981,9 +981,9 @@ export default function MarketingAssistantPage() {
                   >
                             Mark as Done
                   </Button>
-                        </div>
-                      </div>
-                    </div>
+                </div>
+          </div>
+        </div>
                   ))}
                   
                   {optimizationCards.length === 0 && (
@@ -991,12 +991,12 @@ export default function MarketingAssistantPage() {
                       <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-medium mb-2">No optimization opportunities detected</h3>
                       <p className="text-sm">Your campaigns are performing well. Check back later for new recommendations.</p>
-                    </div>
-                  )}
                 </div>
+                  )}
+              </div>
               </CardContent>
             </Card>
-        </div>
+                </div>
 
           {/* Right Rail */}
           <div className="col-span-3 space-y-4 flex flex-col">
@@ -1008,12 +1008,12 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
-                </div>
+              </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Performance Trends</h3>
                     <p className="text-gray-400 text-sm">7-day overview</p>
-              </div>
                 </div>
+              </div>
               </CardHeader>
               <CardContent className="p-4">
                 <div className="space-y-4">
@@ -1023,58 +1023,58 @@ export default function MarketingAssistantPage() {
                         <div>
                           <p className="text-gray-400 text-sm">Spend</p>
                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
-                        </div>
+                </div>
                         <div 
                           className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
                           title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
                         >
-                          {trends.spend.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                          <span className="text-sm">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
+                          {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          <span className="text-sm font-medium">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
                           <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                             <div className="text-gray-400 mb-1">Comparing:</div>
                             <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
                             <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
-                          </div>
-                        </div>
-                      </div>
+              </div>
+                </div>
+              </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
-                        </div>
+                </div>
                         <div 
                           className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
                           title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
                         >
-                          {trends.revenue.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                          <span className="text-sm">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
+                          {trends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          <span className="text-sm font-medium">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
                           <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                             <div className="text-gray-400 mb-1">Comparing:</div>
                             <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
                             <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
-                          </div>
-                        </div>
-                      </div>
-                      
+                </div>
+              </div>
+            </div>
+
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">ROAS</p>
                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-                        </div>
+                          </div>
                         <div 
                           className="flex items-center gap-1 text-[#FF2A2A] cursor-help relative group"
                           title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
                         >
-                          {trends.roas.direction === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                          <span className="text-sm">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
+                          {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          <span className="text-sm font-medium">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
                           <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                             <div className="text-gray-400 mb-1">Comparing:</div>
                             <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
                             <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
-                          </div>
                         </div>
                       </div>
+                        </div>
                     </>
                   )}
                   {!trends && (
@@ -1086,19 +1086,19 @@ export default function MarketingAssistantPage() {
                         </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <span className="text-sm">—</span>
-              </div>
-            </div>
+                      </div>
+                    </div>
 
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
-                          </div>
+                        </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <span className="text-sm">—</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">ROAS</p>
@@ -1267,9 +1267,9 @@ export default function MarketingAssistantPage() {
                           </div>
                       </div>
                     </div>
-                </div>
-       )}
-
+                          </div>
+                        )}
+                        
        {/* AI Explanation Modal */}
        {showExplanation && explanationData && (
          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
