@@ -422,7 +422,11 @@ export async function POST(request: NextRequest) {
 }
 
 async function markActionAsDone(campaignId: string, actionId: string, brandId: string, userId: string) {
-  // Get the recommendation
+  // For dynamically generated recommendations, we'll create a generic action log entry
+  // since these recommendations are generated on-the-fly from campaign data
+  console.log(`Marking action as done: campaignId=${campaignId}, actionId=${actionId}, brandId=${brandId}`)
+  
+  // Try to get the recommendation from database first
   const { data: recommendation } = await supabase
     .from('ai_campaign_recommendations')
     .select('*')
@@ -430,40 +434,59 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
     .eq('brand_id', brandId)
     .single()
 
-  if (!recommendation) {
-    throw new Error('Recommendation not found')
-  }
-
-  const action = recommendation.recommendation.actions.find((a: any) => a.id === actionId)
-  if (!action) {
-    throw new Error('Action not found')
+  let actionDescription = 'Manual optimization completed'
+  
+  if (recommendation) {
+    const action = recommendation.recommendation.actions.find((a: any) => a.id === actionId)
+    if (action) {
+      actionDescription = action.label || action.description || 'Manual optimization completed'
+    }
+  } else {
+    // For dynamic recommendations, create a description based on the actionId
+    if (actionId?.includes('budget')) {
+      actionDescription = 'Budget optimization completed manually'
+    } else if (actionId?.includes('creative')) {
+      actionDescription = 'Creative optimization completed manually'
+    } else if (actionId?.includes('tracking')) {
+      actionDescription = 'Conversion tracking setup completed'
+    }
   }
 
   // Log the action as manually completed
+  const logEntry = {
+    user_id: userId,
+    brand_id: brandId,
+    campaign_id: campaignId,
+    action_type: actionId?.includes('budget') ? 'budget_optimization' : 
+                 actionId?.includes('creative') ? 'creative_optimization' : 
+                 actionId?.includes('tracking') ? 'tracking_setup' : 'manual_optimization',
+    action_details: {
+      id: actionId,
+      description: actionDescription,
+      completed_manually: true
+    },
+    recommendation_id: recommendation?.id || null,
+    status: 'completed_manually',
+    applied_at: new Date().toISOString()
+  }
+
   await supabase
     .from('optimization_action_log')
-    .insert({
-      user_id: userId,
-      brand_id: brandId,
-      campaign_id: campaignId,
-      action_type: action.type,
-      action_details: action,
-      recommendation_id: recommendation.id,
-      status: 'completed_manually',
-      applied_at: new Date().toISOString()
-    })
+    .insert(logEntry)
 
-  // Mark recommendation as completed
-  await supabase
-    .from('ai_campaign_recommendations')
-    .update({ 
-      expires_at: new Date().toISOString() // Expire it immediately
-    })
-    .eq('id', recommendation.id)
+  // Mark recommendation as completed if it exists in database
+  if (recommendation) {
+    await supabase
+      .from('ai_campaign_recommendations')
+      .update({ 
+        expires_at: new Date().toISOString() // Expire it immediately
+      })
+      .eq('id', recommendation.id)
+  }
 
   return {
     success: true,
-    message: `Action "${action.label}" marked as completed`,
+    message: `Action "${actionDescription}" marked as completed`,
     status: 'completed_manually'
   }
 }
