@@ -304,7 +304,7 @@ export default function MarketingAssistantPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] p-6">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="w-full px-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
           </div>
@@ -331,11 +331,11 @@ export default function MarketingAssistantPage() {
            backgroundAttachment: 'fixed'
          }}>
       
-      <div className="max-w-[1400px] mx-auto p-6">
-        <div className="grid grid-cols-12 gap-6 h-screen">
+      <div className="w-full px-6 py-4">
+        <div className="grid grid-cols-12 gap-4 h-screen">
           
           {/* Left Rail - Sticky */}
-          <div className="col-span-3 space-y-6 overflow-y-auto">
+          <div className="col-span-3 space-y-4 overflow-y-auto">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
@@ -464,7 +464,7 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Middle Column - Main Work Area */}
-          <div className="col-span-6 space-y-6 overflow-y-auto">
+          <div className="col-span-6 space-y-4 overflow-y-auto">
             
             {/* KPI Band */}
             {kpiMetrics && (
@@ -620,7 +620,7 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Right Rail - Sticky */}
-          <div className="col-span-3 space-y-6 overflow-y-auto">
+          <div className="col-span-3 space-y-4 overflow-y-auto">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
