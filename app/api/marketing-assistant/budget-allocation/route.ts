@@ -23,7 +23,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    console.log(`Budget allocation: Querying for brand ${brandId}, fromDate: ${fromDate}, toDate: ${toDate}`)
+    console.log(`🔍 BUDGET DEBUG: Querying for brand ${brandId}`)
+    console.log(`🔍 BUDGET DEBUG: fromDate = "${fromDate}", toDate = "${toDate}"`)
+    console.log(`🔍 BUDGET DEBUG: fromDate type = ${typeof fromDate}, toDate type = ${typeof toDate}`)
+    console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
     // Get campaign performance data for budget allocation analysis
     // Use a broader date range if the specified range returns no data or if dates are null
@@ -34,7 +37,8 @@ export async function GET(request: NextRequest) {
       const fromDateFormatted = fromDate.split('T')[0]
       const toDateFormatted = toDate.split('T')[0]
       
-      console.log(`Budget allocation: Formatted dates - from: ${fromDateFormatted}, to: ${toDateFormatted}`)
+      console.log(`🔍 BUDGET DEBUG: Formatted dates - from: ${fromDateFormatted}, to: ${toDateFormatted}`)
+      console.log(`🔍 BUDGET DEBUG: About to query supabase with formatted dates...`)
       
       const result = await supabase
         .from('meta_campaign_daily_stats')
@@ -53,14 +57,17 @@ export async function GET(request: NextRequest) {
         .lte('date', toDateFormatted)
       
       campaignStats = result.data
-      console.log(`Budget allocation: Found ${campaignStats?.length || 0} records for date range ${fromDateFormatted} to ${toDateFormatted}`)
+      console.log(`🔍 BUDGET DEBUG: Initial query result: ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: Sample record:`, campaignStats?.[0] || 'No records')
     } else {
-      console.log(`Budget allocation: No dates provided, skipping initial query`)
+      console.log(`🔍 BUDGET DEBUG: No dates provided, skipping initial query`)
     }
 
     // If no data in specified range or no dates provided, try last 30 days
     if (!campaignStats || campaignStats.length === 0) {
+      console.log(`🔍 BUDGET DEBUG: No data found, trying 30-day fallback...`)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      console.log(`🔍 BUDGET DEBUG: 30-day fallback date: ${thirtyDaysAgo}`)
       const { data: fallbackStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -77,12 +84,15 @@ export async function GET(request: NextRequest) {
         .gte('date', thirtyDaysAgo)
       
       campaignStats = fallbackStats
-      console.log(`Budget allocation: Fallback to 30 days - found ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: 30-day fallback result: ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: 30-day sample:`, campaignStats?.[0] || 'No records')
     }
 
     // If still no data, try last 90 days
     if (!campaignStats || campaignStats.length === 0) {
+      console.log(`🔍 BUDGET DEBUG: Still no data, trying 90-day fallback...`)
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      console.log(`🔍 BUDGET DEBUG: 90-day fallback date: ${ninetyDaysAgo}`)
       const { data: fallbackStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -99,9 +109,21 @@ export async function GET(request: NextRequest) {
         .gte('date', ninetyDaysAgo)
       
       campaignStats = fallbackStats
-      console.log(`Budget allocation: Final fallback to 90 days - found ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: 90-day fallback result: ${campaignStats?.length || 0} records`)
+      console.log(`🔍 BUDGET DEBUG: 90-day sample:`, campaignStats?.[0] || 'No records')
     }
 
+    console.log(`🔍 BUDGET DEBUG: FINAL RESULT: ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
+    
+    // Log total records in database for this brand (to see if data exists at all)
+    const { count } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('*', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+    
+    console.log(`🔍 BUDGET DEBUG: Total records in DB for brand ${brandId}: ${count || 0}`)
+    
+    // Old log for backwards compatibility
     console.log(`Budget allocation: Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
 
     if (!campaignStats || campaignStats.length === 0) {

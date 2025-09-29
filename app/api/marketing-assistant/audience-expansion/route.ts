@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    console.log(`Audience expansion: Querying for brand ${brandId}`)
+    console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
+    console.log(`🎯 AUDIENCE DEBUG: Starting 30-day query...`)
 
     // Get campaign and audience performance data
     // Try different date ranges to find data - start with 30 days
@@ -42,11 +43,14 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 30 days
 
-    console.log(`Audience expansion: Found ${campaignStats?.length || 0} records in last 30 days`)
+    console.log(`🎯 AUDIENCE DEBUG: 30-day result: ${campaignStats?.length || 0} records`)
+    console.log(`🎯 AUDIENCE DEBUG: 30-day sample:`, campaignStats?.[0] || 'No records')
 
     // If no data in last 30 days, try last 90 days
     if (!campaignStats || campaignStats.length === 0) {
+      console.log(`🎯 AUDIENCE DEBUG: No 30-day data, trying 90-day fallback...`)
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      console.log(`🎯 AUDIENCE DEBUG: 90-day date: ${ninetyDaysAgo}`)
       const { data: fallbackStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -65,11 +69,13 @@ export async function GET(request: NextRequest) {
         .gte('date', ninetyDaysAgo)
       
       campaignStats = fallbackStats
-      console.log(`Audience expansion: Fallback to 90 days - found ${campaignStats?.length || 0} records`)
+      console.log(`🎯 AUDIENCE DEBUG: 90-day result: ${campaignStats?.length || 0} records`)
+      console.log(`🎯 AUDIENCE DEBUG: 90-day sample:`, campaignStats?.[0] || 'No records')
     }
 
     // If still no data, try ALL available data for this brand
     if (!campaignStats || campaignStats.length === 0) {
+      console.log(`🎯 AUDIENCE DEBUG: Still no data, trying ALL data for brand...`)
       const { data: allStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -89,9 +95,20 @@ export async function GET(request: NextRequest) {
         .limit(1000) // Reasonable limit
       
       campaignStats = allStats
-      console.log(`Audience expansion: Final fallback to all data - found ${campaignStats?.length || 0} records`)
+      console.log(`🎯 AUDIENCE DEBUG: ALL data result: ${campaignStats?.length || 0} records`)
+      console.log(`🎯 AUDIENCE DEBUG: ALL data sample:`, campaignStats?.[0] || 'No records')
     }
 
+    // Log total records in database for this brand
+    const { count } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('*', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+    
+    console.log(`🎯 AUDIENCE DEBUG: Total records in DB for brand ${brandId}: ${count || 0}`)
+    console.log(`🎯 AUDIENCE DEBUG: FINAL RESULT: ${campaignStats?.length || 0} campaign records`)
+    
+    // Old log for backwards compatibility
     console.log(`Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
 
     const opportunities = []
