@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
       .gte('date', fromDate)
       .lte('date', toDate)
 
+    console.log(`Budget allocation: Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
+
     if (!campaignStats || campaignStats.length === 0) {
       return NextResponse.json({ allocations: [] })
     }
@@ -84,19 +86,23 @@ export async function GET(request: NextRequest) {
       let confidence = 50
       let risk: 'low' | 'medium' | 'high' = 'medium'
       
-      if (currentRoas > 3.0 && efficiency > 10) {
+      if (currentRoas > 2.5 && efficiency > 5) {
         budgetMultiplier = 1.5 // Increase by 50%
         confidence = 85
         risk = 'low'
-      } else if (currentRoas > 2.0 && efficiency > 5) {
+      } else if (currentRoas > 1.8 && efficiency > 2) {
         budgetMultiplier = 1.25 // Increase by 25%
         confidence = 75
         risk = 'low'
-      } else if (currentRoas > 1.5 && efficiency > 2) {
+      } else if (currentRoas > 1.2 && efficiency > 1) {
         budgetMultiplier = 1.1 // Increase by 10%
         confidence = 65
         risk = 'medium'
-      } else if (currentRoas < 1.0 || efficiency < 1) {
+      } else if (currentRoas > 0.8 && avgDailySpend > 5) {
+        budgetMultiplier = 1.05 // Small increase by 5%
+        confidence = 60
+        risk = 'medium'
+      } else if (currentRoas < 0.8 || efficiency < 0.5) {
         budgetMultiplier = 0.8 // Decrease by 20%
         confidence = 70
         risk = 'high'
@@ -116,10 +122,12 @@ export async function GET(request: NextRequest) {
         risk
       }
     }).filter((allocation: any) => 
-      // Only show campaigns with meaningful spend and clear opportunities
-      allocation.currentBudget > 10 && 
-      Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 5
+      // Only show campaigns with any spend and budget differences
+      allocation.currentBudget > 1 && 
+      Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 1
     ).sort((a: any, b: any) => b.confidence - a.confidence) // Sort by confidence
+
+    console.log(`Budget allocation: Returning ${allocations.length} allocation opportunities`)
 
     return NextResponse.json({ allocations })
 

@@ -33,117 +33,118 @@ export async function GET(request: NextRequest) {
         conversions,
         ctr,
         cpc,
-        roas
+        roas,
+        purchase_value
       `)
       .eq('brand_id', brandId)
       .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 30 days
 
-    // Get audience insights if available
-    const { data: audienceInsights } = await supabase
-      .from('meta_audience_insights')
-      .select('*')
-      .eq('brand_id', brandId)
-      .limit(10)
+    console.log(`Found ${campaignStats?.length || 0} campaign records for brand ${brandId}`)
 
     const opportunities = []
 
-    // Generate lookalike audience opportunities
-    if (campaignStats && campaignStats.length > 0) {
-      const topPerformers = campaignStats
-        .filter((campaign: any) => campaign.roas > 2.0 && campaign.conversions > 5)
-        .sort((a: any, b: any) => b.roas - a.roas)
-        .slice(0, 3)
+    if (!campaignStats || campaignStats.length === 0) {
+      return NextResponse.json({ opportunities: [] })
+    }
 
-      topPerformers.forEach((campaign: any, index: number) => {
-        opportunities.push({
-          id: `lookalike-${campaign.campaign_id}`,
-          type: 'lookalike',
-          title: `Lookalike ${index + 1}% - ${campaign.campaign_name}`,
-          description: `Create lookalike audience based on high-converting customers from this campaign (${campaign.roas.toFixed(1)}x ROAS)`,
-          currentReach: Math.round(campaign.impressions / 10), // Estimate current unique reach
-          projectedReach: Math.round(campaign.impressions / 10 * 3), // 3x expansion
-          estimatedCpa: Math.round(campaign.cpc * 1.2), // Slightly higher CPA for expansion
-          confidence: Math.min(90, Math.round(70 + (campaign.roas - 2) * 10))
-        })
+    // Group campaigns by ID and aggregate data
+    const campaignGroups = campaignStats.reduce((acc: any, stat: any) => {
+      const key = stat.campaign_id
+      if (!acc[key]) {
+        acc[key] = {
+          campaign_id: stat.campaign_id,
+          campaign_name: stat.campaign_name,
+          totalSpend: 0,
+          totalImpressions: 0,
+          totalClicks: 0,
+          totalConversions: 0,
+          totalRevenue: 0,
+          days: 0
+        }
+      }
+      
+      acc[key].totalSpend += stat.spend || 0
+      acc[key].totalImpressions += stat.impressions || 0
+      acc[key].totalClicks += stat.clicks || 0
+      acc[key].totalConversions += stat.conversions || 0
+      acc[key].totalRevenue += stat.purchase_value || (stat.roas * stat.spend) || 0
+      acc[key].days++
+      
+      return acc
+    }, {})
+
+    const campaigns = Object.values(campaignGroups).map((campaign: any) => ({
+      ...campaign,
+      avgRoas: campaign.totalSpend > 0 ? campaign.totalRevenue / campaign.totalSpend : 0,
+      avgCpc: campaign.totalClicks > 0 ? campaign.totalSpend / campaign.totalClicks : 0,
+      avgCtr: campaign.totalImpressions > 0 ? (campaign.totalClicks / campaign.totalImpressions) * 100 : 0,
+      avgDailySpend: campaign.totalSpend / campaign.days
+    }))
+
+    // Generate lookalike audience opportunities from top performers
+    const topPerformers = campaigns
+      .filter((campaign: any) => campaign.avgRoas > 1.5 && campaign.totalConversions > 2 && campaign.totalSpend > 50)
+      .sort((a: any, b: any) => b.avgRoas - a.avgRoas)
+      .slice(0, 3)
+
+    console.log(`Found ${topPerformers.length} top performing campaigns`)
+
+    topPerformers.forEach((campaign: any, index: number) => {
+      const estimatedReach = Math.round(campaign.totalImpressions / campaign.days * 7) // Weekly reach estimate
+      
+      opportunities.push({
+        id: `lookalike-${campaign.campaign_id}`,
+        type: 'lookalike',
+        title: `Lookalike ${index + 1}% - ${campaign.campaign_name || 'Campaign'}`,
+        description: `Create lookalike audience based on high-converting customers from this campaign (${campaign.avgRoas.toFixed(1)}x ROAS)`,
+        currentReach: estimatedReach,
+        projectedReach: Math.round(estimatedReach * 2.5), // 2.5x expansion potential
+        estimatedCpa: Math.round(campaign.avgCpc * 1.15), // Slightly higher CPA for expansion
+        confidence: Math.min(95, Math.round(60 + (campaign.avgRoas - 1.5) * 15))
+      })
+    })
+
+    // Generate interest expansion based on campaign performance
+    if (campaigns.length > 0) {
+      const avgCpc = campaigns.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / campaigns.length
+      const avgReach = campaigns.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / campaigns.length
+      
+      opportunities.push({
+        id: 'interest-expansion',
+        type: 'interest',
+        title: 'Interest Expansion',
+        description: 'Target complementary interests based on your current audience performance patterns',
+        currentReach: Math.round(avgReach),
+        projectedReach: Math.round(avgReach * 1.8),
+        estimatedCpa: Math.round(avgCpc * 1.1),
+        confidence: 72
       })
     }
 
-    // Generate geographic expansion opportunities
-    const geoOpportunities = [
-      {
-        id: 'geo-tier2-cities',
+    // Generate geographic expansion based on current performance
+    if (campaigns.some((c: any) => c.avgRoas > 2.0)) {
+      const strongPerformers = campaigns.filter((c: any) => c.avgRoas > 2.0)
+      const avgReach = strongPerformers.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / strongPerformers.length
+      const avgCpc = strongPerformers.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / strongPerformers.length
+
+      opportunities.push({
+        id: 'geo-expansion',
         type: 'geographic',
-        title: 'Tier 2 Cities Expansion',
-        description: 'Expand to secondary markets with 30% lower competition and similar demographics',
-        currentReach: 250000,
-        projectedReach: 450000,
-        estimatedCpa: 18,
-        confidence: 75
-      },
-      {
-        id: 'geo-neighboring-states',
-        type: 'geographic', 
-        title: 'Neighboring States',
-        description: 'Target adjacent geographic regions with similar customer profiles',
-        currentReach: 250000,
-        projectedReach: 380000,
-        estimatedCpa: 22,
-        confidence: 68
-      }
-    ]
+        title: 'Geographic Expansion',
+        description: 'Expand to similar markets based on your high-performing campaign locations',
+        currentReach: Math.round(avgReach),
+        projectedReach: Math.round(avgReach * 1.6),
+        estimatedCpa: Math.round(avgCpc * 1.05),
+        confidence: 78
+      })
+    }
 
-    // Generate interest expansion opportunities
-    const interestOpportunities = [
-      {
-        id: 'interest-competitor',
-        type: 'interest',
-        title: 'Competitor Interest Targeting',
-        description: 'Target audiences interested in competing brands to capture market share',
-        currentReach: 180000,
-        projectedReach: 320000,
-        estimatedCpa: 25,
-        confidence: 72
-      },
-      {
-        id: 'interest-complementary',
-        type: 'interest',
-        title: 'Complementary Interests',
-        description: 'Expand to related interests and lifestyle categories that align with your product',
-        currentReach: 180000,
-        projectedReach: 290000,
-        estimatedCpa: 20,
-        confidence: 65
-      }
-    ]
+    // Sort opportunities by confidence
+    opportunities.sort((a, b) => b.confidence - a.confidence)
 
-    // Generate demographic expansion opportunities
-    const demographicOpportunities = [
-      {
-        id: 'demo-age-expansion',
-        type: 'demographic',
-        title: 'Age Group Expansion',
-        description: 'Test adjacent age groups (35-44) based on current high-performing 25-34 segment',
-        currentReach: 200000,
-        projectedReach: 350000,
-        estimatedCpa: 23,
-        confidence: 70
-      }
-    ]
+    console.log(`Returning ${opportunities.length} audience expansion opportunities`)
 
-    // Combine all opportunities and add some randomization for realistic data
-    const allOpportunities = [
-      ...opportunities,
-      ...geoOpportunities,
-      ...interestOpportunities,
-      ...demographicOpportunities
-    ].map(opp => ({
-      ...opp,
-      // Add some realistic variance
-      estimatedCpa: Math.round(opp.estimatedCpa * (0.8 + Math.random() * 0.4)),
-      confidence: Math.max(55, Math.min(95, opp.confidence + Math.round((Math.random() - 0.5) * 10)))
-    })).sort((a, b) => b.confidence - a.confidence)
-
-    return NextResponse.json({ opportunities: allOpportunities.slice(0, 8) })
+    return NextResponse.json({ opportunities })
 
   } catch (error) {
     console.error('Error fetching audience expansion opportunities:', error)
