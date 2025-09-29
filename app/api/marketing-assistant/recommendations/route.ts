@@ -127,7 +127,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
     // Get campaign performance data
     const { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
-      .select('*')
+      .select('campaign_id, date, spend, impressions, clicks, conversions, roas, purchase_value')
       .eq('brand_id', brandId)
       .gte('date', dateRange.from)
       .lte('date', dateRange.to)
@@ -148,6 +148,20 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       return []
     }
 
+    console.log(`[Recommendations] Processing ${campaignStats.length} campaign stats for ${campaigns.length} campaigns`)
+    
+    // Log sample data to understand what we're working with
+    if (campaignStats.length > 0) {
+      const sample = campaignStats[0]
+      console.log(`[Recommendations] Sample data:`, {
+        campaign_id: sample.campaign_id,
+        spend: sample.spend,
+        roas: sample.roas,
+        purchase_value: sample.purchase_value,
+        conversions: sample.conversions
+      })
+    }
+
     // Analyze performance and generate recommendations
     const recommendations: OptimizationRecommendation[] = []
 
@@ -161,14 +175,18 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
           totalImpressions: 0,
           totalClicks: 0,
           totalConversions: 0,
+          totalRoas: 0,
+          totalRevenue: 0,
           days: 0
         })
       }
       const perf = campaignPerformance.get(campaignId)
-      perf.totalSpend += stat.spend || 0
-      perf.totalImpressions += stat.impressions || 0
-      perf.totalClicks += stat.clicks || 0
-      perf.totalConversions += stat.conversions || 0
+      perf.totalSpend += parseFloat(stat.spend) || 0
+      perf.totalImpressions += parseInt(stat.impressions) || 0
+      perf.totalClicks += parseInt(stat.clicks) || 0
+      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalRoas += parseFloat(stat.roas) || 0
+      perf.totalRevenue += parseFloat(stat.purchase_value) || 0
       perf.days += 1
     })
 
@@ -180,20 +198,39 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       const avgDailySpend = perf.totalSpend / perf.days
       const ctr = perf.totalImpressions > 0 ? (perf.totalClicks / perf.totalImpressions) * 100 : 0
       const cpc = perf.totalClicks > 0 ? perf.totalSpend / perf.totalClicks : 0
-      const roas = perf.totalSpend > 0 ? (perf.totalConversions * 50) / perf.totalSpend : 0 // Assuming $50 AOV
+      
+      // Calculate ROAS properly: use purchase_value if available, otherwise fall back to database ROAS
+      let roas = 0
+      if (perf.totalSpend > 0) {
+        if (perf.totalRevenue > 0) {
+          // Use actual revenue data
+          roas = perf.totalRevenue / perf.totalSpend
+        } else if (perf.totalRoas > 0) {
+          // Fall back to average ROAS from database
+          roas = perf.totalRoas / perf.days
+        }
+      }
+      
+      console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
+
+      // Skip campaigns with unrealistic or missing data
+      if (perf.totalSpend < 1 || roas > 20 || roas <= 0) {
+        console.log(`[Recommendations] Skipping campaign ${campaign.campaign_name} - unrealistic data: spend=$${perf.totalSpend}, ROAS=${roas}x`)
+        continue
+      }
 
       // Budget optimization - if high ROAS, recommend scale
-      if (roas > 3 && avgDailySpend > 0) {
+      if (roas > 2.5 && avgDailySpend > 0) {
         const currentBudget = campaign.daily_budget || avgDailySpend
         const recommendedBudget = Math.round(currentBudget * 1.5)
         const projectedRevenue = (recommendedBudget - currentBudget) * roas
 
         recommendations.push({
           type: 'budget',
-          priority: roas > 5 ? 'high' : 'medium',
+          priority: roas > 4 ? 'high' : 'medium',
           title: 'Scale High-Performing Campaign',
           description: `Campaign "${campaign.campaign_name}" has strong ROAS of ${roas.toFixed(1)}x. Consider increasing budget to capture more profitable traffic.`,
-          rootCause: `Analysis shows this campaign generates ${roas.toFixed(1)}x ROAS with consistent daily spend of $${avgDailySpend.toFixed(0)}. Market opportunity exists for scale.`,
+          rootCause: `Analysis shows this campaign generates ${roas.toFixed(1)}x ROAS with daily spend of $${avgDailySpend.toFixed(0)}. Performance indicates scaling opportunity.`,
           actions: [{
             id: 'increase_budget',
             type: 'budget_increase',
