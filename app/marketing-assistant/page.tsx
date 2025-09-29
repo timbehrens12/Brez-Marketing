@@ -107,7 +107,7 @@ export default function MarketingAssistantPage() {
   const [trends, setTrends] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState({
-    from: new Date(), // Today's data
+    from: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Last 7 days
     to: new Date()
   })
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])

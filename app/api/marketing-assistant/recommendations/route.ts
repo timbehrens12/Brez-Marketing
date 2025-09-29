@@ -154,16 +154,28 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
     }
 
     console.log(`[Recommendations] Processing ${campaignStats.length} campaign stats for ${campaigns.length} campaigns`)
+    console.log(`[Recommendations] Date range: ${dateRange.from} to ${dateRange.to}`)
+    console.log(`[Recommendations] Brand ID: ${brandId}`)
     
     // Log sample data to understand what we're working with
     if (campaignStats.length > 0) {
       const sample = campaignStats[0]
-      console.log(`[Recommendations] Sample data:`, {
+      console.log(`[Recommendations] Sample campaign stat:`, {
         campaign_id: sample.campaign_id,
+        date: sample.date,
         spend: sample.spend,
         roas: sample.roas,
-        purchase_value: sample.purchase_value,
-        conversions: sample.conversions
+        impressions: sample.impressions,
+        clicks: sample.clicks
+      })
+    }
+    
+    if (campaigns.length > 0) {
+      const sampleCampaign = campaigns[0]
+      console.log(`[Recommendations] Sample campaign:`, {
+        campaign_id: sampleCampaign.campaign_id,
+        campaign_name: sampleCampaign.campaign_name,
+        status: sampleCampaign.status
       })
     }
 
@@ -363,7 +375,44 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
         const perf = campaignPerformance.get(campaign.campaign_id)
         if (perf) {
           console.log(`  - ${campaign.campaign_name}: spend=$${perf.totalSpend}, ROAS=${(perf.roasCount > 0 ? perf.totalRoas / perf.roasCount : 0).toFixed(2)}x`)
+        } else {
+          console.log(`  - ${campaign.campaign_name}: NO PERFORMANCE DATA FOUND`)
         }
+      }
+      
+      // If we still have no recommendations but have campaigns, create a test recommendation
+      if (campaigns.length > 0) {
+        console.log(`[Recommendations] Creating fallback recommendations for testing`)
+        const testCampaign = campaigns[0]
+        recommendations.push({
+          type: 'budget',
+          priority: 'medium',
+          title: 'Test Recommendation',
+          description: `Test recommendation for campaign "${testCampaign.campaign_name}". This appears because no data-driven recommendations could be generated.`,
+          rootCause: `No sufficient performance data available for automated analysis. This is a placeholder recommendation for debugging.`,
+          actions: [{
+            id: 'test_action',
+            type: 'test',
+            label: 'Review campaign manually',
+            impact: {
+              revenue: 100,
+              roas: 1.5,
+              confidence: 50
+            },
+            estimatedTimeToStabilize: '1-2 days'
+          }],
+          currentValue: 'Unknown',
+          recommendedValue: 'Manual review needed',
+          projectedImpact: {
+            revenue: 100,
+            roas: 1.5,
+            confidence: 50
+          },
+          campaignId: testCampaign.campaign_id,
+          campaignName: testCampaign.campaign_name,
+          platform: 'meta'
+        })
+        console.log(`[Recommendations] Added 1 fallback test recommendation`)
       }
     }
 
