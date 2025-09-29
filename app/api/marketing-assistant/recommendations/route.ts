@@ -186,8 +186,8 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       
       console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
 
-      // Budget optimization - if high ROAS, recommend scale
-      if (roas > 2.5 && avgDailySpend > 10 && perf.totalRevenue > 0) {
+      // Budget optimization - if campaign has decent spend and engagement, recommend scale
+      if ((roas > 1.5 || (perf.totalClicks > 5 && ctr > 1.0)) && avgDailySpend > 5) {
         const currentBudget = campaign.daily_budget || avgDailySpend
         const recommendedBudget = Math.round(currentBudget * 1.5)
         const projectedRevenue = (recommendedBudget - currentBudget) * roas
@@ -223,7 +223,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       }
 
       // CTR optimization - if low CTR, recommend creative refresh
-      if (ctr < 1.5 && perf.totalImpressions > 1000) {
+      if (ctr < 1.5 && perf.totalImpressions > 50) {
         recommendations.push({
           type: 'creative',
           priority: ctr < 1 ? 'high' : 'medium',
@@ -247,6 +247,38 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
             revenue: perf.totalSpend * 0.3,
             roas: roas * 1.4,
             confidence: 75
+          },
+          campaignId: campaign.campaign_id,
+          campaignName: campaign.campaign_name,
+          platform: 'meta'
+        })
+      }
+
+      // No revenue tracking - if campaign has spend and clicks but no tracked revenue
+      if (perf.totalSpend > 1 && perf.totalClicks > 0 && perf.totalRevenue === 0) {
+        recommendations.push({
+          type: 'audience',
+          priority: 'medium',
+          title: 'Set Up Conversion Tracking',
+          description: `Campaign "${campaign.campaign_name}" has spend and clicks but no tracked revenue. Verify conversion tracking is properly configured.`,
+          rootCause: `Campaign generated ${perf.totalClicks} clicks and spent $${perf.totalSpend.toFixed(2)} but no revenue is being tracked. This suggests conversion tracking issues or attribution problems.`,
+          actions: [{
+            id: 'check_tracking',
+            type: 'tracking_optimization',
+            label: 'Verify conversion tracking and attribution settings',
+            impact: {
+              revenue: perf.totalSpend * 2, // Conservative estimate
+              roas: 2.0,
+              confidence: 60
+            },
+            estimatedTimeToStabilize: '2-3 days'
+          }],
+          currentValue: 'No tracked revenue',
+          recommendedValue: 'Proper conversion tracking',
+          projectedImpact: {
+            revenue: perf.totalSpend * 2,
+            roas: 2.0,
+            confidence: 60
           },
           campaignId: campaign.campaign_id,
           campaignName: campaign.campaign_name,

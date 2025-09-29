@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import BrandSelector from '@/components/BrandSelector'
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 
 // Icons
 import { 
@@ -399,36 +400,14 @@ export default function MarketingAssistantPage() {
   }
 
   if (loading) {
+    const loadingConfig = getPageLoadingConfig('/marketing-assistant')
     return (
-      <div className="min-h-screen bg-[#0B0B0B] relative"
-           style={{
-             backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
-               <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                 <defs>
-                   <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                     <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
-                   </pattern>
-                 </defs>
-                 <rect width="100%" height="100%" fill="url(#grid)" />
-               </svg>
-             `)}")`,
-             backgroundRepeat: 'repeat',
-             backgroundSize: '40px 40px',
-             backgroundAttachment: 'fixed'
-           }}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative mb-6">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-600 border-t-white mx-auto"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white opacity-60" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">AI Marketing Assistant</h3>
-            <p className="text-gray-400">Analyzing performance data and generating insights...</p>
-          </div>
-        </div>
-      </div>
+      <UnifiedLoading 
+        variant="page"
+        size="lg"
+        message={loadingConfig.message}
+        subMessage={loadingConfig.subMessage}
+      />
     )
   }
 
