@@ -639,8 +639,8 @@ export default function MarketingAssistantPage() {
           </div>
        )}
       
-      <div className="w-full px-4 py-4 min-h-screen overflow-x-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[calc(100vh-2rem)]">
+      <div className="w-full px-2 sm:px-4 py-4 min-h-screen overflow-x-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 min-h-[calc(100vh-2rem)] max-w-[1920px] mx-auto">
           
           {/* Left Rail */}
           <div className="col-span-1 lg:col-span-3 space-y-4 flex flex-col min-w-0">
@@ -653,9 +653,9 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <Filter className="w-5 h-5 text-white" />
             </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Scope & Filters</h3>
-                    <p className="text-gray-400 text-sm">Configure analysis parameters</p>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Scope & Filters</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Configure analysis parameters</p>
             </div>
           </div>
               </CardHeader>
@@ -719,9 +719,9 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <TrendingUp className="w-5 h-5 text-gray-400" />
           </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Campaign Scaling</h3>
-                    <p className="text-gray-400 text-sm">Budget optimization & audience expansion</p>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Campaign Scaling</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Budget optimization & audience expansion</p>
         </div>
       </div>
               </CardHeader>
@@ -859,62 +859,62 @@ export default function MarketingAssistantPage() {
             
             {/* KPI Band */}
             {kpiMetrics && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10">
-                       <DollarSign className="w-5 h-5 text-gray-400" />
+                  <CardContent className="p-3 lg:p-4">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10 flex-shrink-0">
+                       <DollarSign className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                           </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">Total Spend</p>
-                        <p className="text-white text-lg font-bold">${kpiMetrics.spend.toLocaleString()}</p>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-gray-400 text-xs truncate">Total Spend</p>
+                        <p className="text-white text-base lg:text-lg font-bold truncate">${kpiMetrics.spend.toLocaleString()}</p>
                         </div>
                         </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10">
-                       <TrendingUp className="w-5 h-5 text-gray-400" />
+                  <CardContent className="p-3 lg:p-4">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10 flex-shrink-0">
+                       <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                     </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">ROAS</p>
-                        <p className="text-white text-lg font-bold">{kpiMetrics.roas.toFixed(2)}x</p>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-gray-400 text-xs truncate">ROAS</p>
+                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.roas.toFixed(2)}x</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10">
-                       <Eye className="w-5 h-5 text-gray-400" />
+                  <CardContent className="p-3 lg:p-4">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10 flex-shrink-0">
+                       <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                             </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">Impressions</p>
-                        <p className="text-white text-lg font-bold">{kpiMetrics.impressions.toLocaleString()}</p>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-gray-400 text-xs truncate">Impressions</p>
+                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.impressions.toLocaleString()}</p>
                           </div>
                         </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10">
-                       <MousePointer className="w-5 h-5 text-gray-400" />
+                  <CardContent className="p-3 lg:p-4">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                   flex items-center justify-center border border-white/10 flex-shrink-0">
+                       <MousePointer className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                     </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">CTR</p>
-                        <p className="text-white text-lg font-bold">{kpiMetrics.ctr.toFixed(2)}%</p>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-gray-400 text-xs truncate">CTR</p>
+                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.ctr.toFixed(2)}%</p>
                       </div>
                     </div>
               </CardContent>
@@ -931,9 +931,9 @@ export default function MarketingAssistantPage() {
                                   flex items-center justify-center border border-white/10">
                       <Brain className="w-6 h-6 text-white" />
                           </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">AI Optimization Feed</h2>
-                      <p className="text-gray-400">Prioritized recommendations based on performance analysis</p>
+                    <div className="min-w-0">
+                      <h2 className="text-xl lg:text-2xl font-bold text-white truncate">AI Optimization Feed</h2>
+                      <p className="text-gray-400 text-sm hidden md:block">Prioritized recommendations based on performance analysis</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="border-[#333] text-gray-300">
@@ -1031,9 +1031,9 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
               </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Performance Trends</h3>
-                    <p className="text-gray-400 text-sm">7-day overview</p>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">7-day overview</p>
                 </div>
               </div>
               </CardHeader>
@@ -1144,9 +1144,9 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <AlertTriangle className="w-5 h-5 text-gray-400" />
                         </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Alerts</h3>
-                    <p className="text-gray-400 text-sm">{alerts.filter(a => !a.acknowledged).length} unread</p>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Alerts</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">{alerts.filter(a => !a.acknowledged).length} unread</p>
                         </div>
                       </div>
               </CardHeader>
