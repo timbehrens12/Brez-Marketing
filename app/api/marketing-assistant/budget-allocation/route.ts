@@ -30,6 +30,12 @@ export async function GET(request: NextRequest) {
     let campaignStats = null
 
     if (fromDate && toDate) {
+      // Convert ISO strings to date format for database query
+      const fromDateFormatted = fromDate.split('T')[0]
+      const toDateFormatted = toDate.split('T')[0]
+      
+      console.log(`Budget allocation: Formatted dates - from: ${fromDateFormatted}, to: ${toDateFormatted}`)
+      
       const result = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -43,11 +49,13 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .gte('date', fromDate)
-        .lte('date', toDate)
+        .gte('date', fromDateFormatted)
+        .lte('date', toDateFormatted)
       
       campaignStats = result.data
-      console.log(`Budget allocation: Found ${campaignStats?.length || 0} records for date range ${fromDate} to ${toDate}`)
+      console.log(`Budget allocation: Found ${campaignStats?.length || 0} records for date range ${fromDateFormatted} to ${toDateFormatted}`)
+    } else {
+      console.log(`Budget allocation: No dates provided, skipping initial query`)
     }
 
     // If no data in specified range or no dates provided, try last 30 days

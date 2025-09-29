@@ -42,10 +42,13 @@ async function explainRecommendation(card: any) {
   // Generate explanation based on recommendation type and data
   let reasoning, insights, outcomes, steps
   
-  if (card.title?.includes('Budget') || card.title?.includes('Scaling')) {
-    reasoning = "This budget optimization targets campaigns showing strong efficiency signals. By scaling successful campaigns intelligently, you can capture more market opportunity while maintaining profitability."
+  console.log('Explaining recommendation:', { type: card.type, title: card.title, description: card.description })
+  
+  if (card.type === 'budget' || card.title?.includes('Budget') || card.title?.includes('Scaling')) {
+    const campaignName = card.title?.split(' - ')[1] || 'your campaign'
+    reasoning = `This budget optimization specifically targets ${campaignName}, which is showing strong efficiency signals. ${card.description || 'By scaling successful campaigns intelligently, you can capture more market opportunity while maintaining profitability.'}`
     insights = [
-      `Current performance shows ${card.projectedImpact?.confidence || 75}% confidence for scaling success`,
+      card.rootCause || `Current performance shows ${card.projectedImpact?.confidence || 75}% confidence for scaling success`,
       "Budget increases on high-performing campaigns typically maintain 85-95% of original efficiency",
       "This scaling approach follows proven performance marketing best practices",
       "Risk is minimized through gradual implementation and close monitoring"
@@ -63,10 +66,11 @@ async function explainRecommendation(card: any) {
       "If performance maintains, continue scaling in 25% increments",
       "Set up automated rules to pause if ROAS drops below acceptable threshold"
     ]
-  } else if (card.title?.includes('Creative') || card.title?.includes('Performance')) {
-    reasoning = "Creative performance optimization is critical for maintaining campaign effectiveness. Fresh creatives prevent audience fatigue and can dramatically improve engagement rates and conversion performance."
+  } else if (card.type === 'creative' || card.title?.includes('Creative') || card.title?.includes('Performance')) {
+    const campaignName = card.title?.split(' - ')[1] || 'your campaign'
+    reasoning = `Creative performance optimization for ${campaignName} is critical for maintaining campaign effectiveness. ${card.description || 'Fresh creatives prevent audience fatigue and can dramatically improve engagement rates and conversion performance.'}`
     insights = [
-      "Creative fatigue typically sets in after 3-7 days of consistent exposure",
+      card.rootCause || "Creative fatigue typically sets in after 3-7 days of consistent exposure",
       "New creative variants can improve CTR by 15-30% compared to fatigued ads",
       "A/B testing different messaging approaches identifies winning combinations",
       "Video content typically outperforms static images by 20-40% in most verticals"
@@ -84,7 +88,28 @@ async function explainRecommendation(card: any) {
       "Pause underperforming creatives and scale the winners",
       "Repeat this process weekly to maintain fresh creative rotation"
     ]
-  } else if (card.title?.includes('Tracking') || card.title?.includes('Conversion')) {
+  } else if (card.type === 'frequency' || card.title?.includes('Frequency') || card.title?.includes('Audience')) {
+    reasoning = "Audience frequency optimization prevents ad fatigue and improves campaign efficiency. Over-serving the same users leads to declining performance and wasted budget."
+    insights = [
+      "Optimal frequency is typically 2-4 impressions per user per week",
+      "Higher frequencies can lead to 40-60% increases in cost per action",
+      "Frequency capping helps maintain fresh audience reach and engagement",
+      "Well-managed frequency typically improves ROAS by 20-35%"
+    ]
+    outcomes = [
+      { label: "CPA Reduction", value: "-20-30%", positive: true },
+      { label: "Audience Refresh", value: "Weekly", positive: true },
+      { label: "Budget Efficiency", value: "+25%", positive: true },
+      { label: "Implementation", value: "1 day", positive: true }
+    ]
+    steps = [
+      "Navigate to your campaign's ad set settings in Meta Ads Manager",
+      "Find the 'Optimization & Delivery' section",
+      "Set frequency cap to 3 impressions per 7 days",
+      "Monitor performance for 5-7 days to see efficiency improvements",
+      "Adjust frequency cap based on campaign performance and objectives"
+    ]
+  } else if (card.type === 'audience' || card.title?.includes('Tracking') || card.title?.includes('Conversion')) {
     reasoning = "Proper conversion tracking is fundamental to campaign optimization. Without accurate tracking, you're essentially flying blind and missing critical optimization opportunities."
     insights = [
       "Campaigns without proper tracking typically underperform by 30-50%",

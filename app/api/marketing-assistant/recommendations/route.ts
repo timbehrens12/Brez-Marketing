@@ -213,6 +213,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
         const aggressiveIncrease = Math.round(currentBudget * 2.0)
         
         recommendations.push({
+          id: `budget_${campaign.campaign_id}_${Date.now()}`,
           type: 'budget',
           priority,
           title: `Smart Budget Scaling - ${campaign.campaign_name}`,
@@ -277,6 +278,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
         const costSavings = (cpc * perf.totalClicks * 0.3) // 30% CPC reduction from better CTR
         
         recommendations.push({
+          id: `creative_${campaign.campaign_id}_${Date.now()}`,
           type: 'creative',
           priority: urgency,
           title: `Creative Performance ${severity === 'critical' ? 'Emergency' : 'Optimization'} - ${campaign.campaign_name}`,
@@ -322,6 +324,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       // No revenue tracking - if campaign has spend and clicks but no tracked revenue
       if (perf.totalSpend > 1 && perf.totalClicks > 0 && perf.totalRevenue === 0) {
         recommendations.push({
+          id: `tracking_${campaign.campaign_id}_${Date.now()}`,
           type: 'audience',
           priority: 'medium',
           title: 'Set Up Conversion Tracking',
@@ -354,6 +357,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       // Frequency cap optimization - if high spend with low performance
       if (perf.totalSpend > 50 && roas < 1.5 && roas > 0) {
         recommendations.push({
+          id: `frequency_${campaign.campaign_id}_${Date.now()}`,
           type: 'frequency',
           priority: 'medium',
           title: 'Optimize Audience Frequency',
