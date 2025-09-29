@@ -3244,7 +3244,7 @@ export default function LeadGeneratorPage() {
                   </div>
                   <div className="w-full bg-[#333] rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${selectedScoreBreakdown.scoreData.total}%` }}
                     ></div>
                   </div>
