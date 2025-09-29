@@ -137,6 +137,7 @@ export default function MarketingAssistantPage() {
   const [showExplanation, setShowExplanation] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
+  const [campaignStatus, setCampaignStatus] = useState('active')
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
   const [recommendationsViewed, setRecommendationsViewed] = useState(false)
   const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
@@ -197,12 +198,12 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Data Loading
+  // Data Loading - reload when brand or filters change
   useEffect(() => {
     if (selectedBrandId) {
       loadDashboardData()
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, selectedPlatforms, campaignStatus])
 
   const loadDashboardData = async () => {
     if (!selectedBrandId) return
@@ -273,8 +274,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
     
     try {
-      // Backend always uses last 7 days - no date params needed
-      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}`)
+      // Backend always uses last 7 days - pass platform and status filters
+      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       if (response.ok) {
         const data = await response.json()
         console.log('[Budget Allocations] Received data:', data)
@@ -293,7 +294,7 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
     
     try {
-      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}`)
+      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       if (response.ok) {
         const data = await response.json()
         console.log('[Audience Expansion] Received data:', data)
@@ -775,7 +776,7 @@ export default function MarketingAssistantPage() {
         
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Campaign Status</label>
-                  <Select defaultValue="active">
+                  <Select value={campaignStatus} onValueChange={setCampaignStatus}>
                     <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -827,7 +828,12 @@ export default function MarketingAssistantPage() {
                     {!loading && budgetAllocations.length > 0 && budgetAllocations.map(allocation => (
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
-                          <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                              Meta
+                              </Badge>
+                            <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
+                            </div>
                           <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'} className="flex-shrink-0 text-xs">
                             {allocation.confidence}%
                               </Badge>
@@ -892,6 +898,9 @@ export default function MarketingAssistantPage() {
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                              Meta
+                            </Badge>
                             {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                             {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400 flex-shrink-0" />}
                             {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400 flex-shrink-0" />}
@@ -1074,7 +1083,12 @@ export default function MarketingAssistantPage() {
                             <Target className="w-4 h-4 text-gray-400" />
                           </div>
                           <div className="min-w-0 overflow-hidden flex-1">
-                            <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                Meta
+                              </Badge>
+                              <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
+                            </div>
                             <p className="text-gray-400 text-xs truncate">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
