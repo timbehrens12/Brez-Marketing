@@ -124,13 +124,18 @@ export async function GET(request: NextRequest) {
 
 async function generateRecommendations(brandId: string, dateRange: { from: string; to: string }): Promise<OptimizationRecommendation[]> {
   try {
-    // Get campaign performance data
-    const { data: campaignStats } = await supabase
+    // Get campaign performance data (note: purchase_value doesn't exist in this table)
+    const { data: campaignStats, error: statsError } = await supabase
       .from('meta_campaign_daily_stats')
-      .select('campaign_id, date, spend, impressions, clicks, conversions, roas, purchase_value')
+      .select('campaign_id, date, spend, impressions, clicks, conversions, roas, ctr, cpc')
       .eq('brand_id', brandId)
       .gte('date', dateRange.from)
       .lte('date', dateRange.to)
+
+    if (statsError) {
+      console.error('[Recommendations] Error fetching campaign stats:', statsError)
+      return []
+    }
 
     const { data: campaigns } = await supabase
       .from('meta_campaigns')
@@ -176,7 +181,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
           totalClicks: 0,
           totalConversions: 0,
           totalRoas: 0,
-          totalRevenue: 0,
+          roasCount: 0, // Count days with ROAS > 0 for averaging
           days: 0
         })
       }
@@ -185,8 +190,13 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       perf.totalImpressions += parseInt(stat.impressions) || 0
       perf.totalClicks += parseInt(stat.clicks) || 0
       perf.totalConversions += parseInt(stat.conversions) || 0
-      perf.totalRoas += parseFloat(stat.roas) || 0
-      perf.totalRevenue += parseFloat(stat.purchase_value) || 0
+      
+      // Track ROAS properly - only add if it's a valid value
+      const dailyRoas = parseFloat(stat.roas) || 0
+      if (dailyRoas > 0) {
+        perf.totalRoas += dailyRoas
+        perf.roasCount += 1
+      }
       perf.days += 1
     })
 
@@ -199,25 +209,18 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       const ctr = perf.totalImpressions > 0 ? (perf.totalClicks / perf.totalImpressions) * 100 : 0
       const cpc = perf.totalClicks > 0 ? perf.totalSpend / perf.totalClicks : 0
       
-      // Calculate ROAS properly: use purchase_value if available, otherwise fall back to database ROAS
-      let roas = 0
-      if (perf.totalSpend > 0) {
-        if (perf.totalRevenue > 0) {
-          // Use actual revenue data
-          roas = perf.totalRevenue / perf.totalSpend
-        } else if (perf.totalRoas > 0) {
-          // Fall back to average ROAS from database
-          roas = perf.totalRoas / perf.days
-        }
-      }
+      // Calculate average ROAS from database values
+      const roas = perf.roasCount > 0 ? perf.totalRoas / perf.roasCount : 0
       
-      console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
+      console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend.toFixed(2)}, ROAS=${roas.toFixed(2)}x (${perf.roasCount} days with data)`)
 
-      // Skip campaigns with unrealistic or missing data
-      if (perf.totalSpend < 1 || roas > 20 || roas <= 0) {
-        console.log(`[Recommendations] Skipping campaign ${campaign.campaign_name} - unrealistic data: spend=$${perf.totalSpend}, ROAS=${roas}x`)
+      // Skip campaigns with insufficient data (be more lenient)
+      if (perf.totalSpend < 0.01) {
+        console.log(`[Recommendations] Skipping campaign ${campaign.campaign_name} - insufficient spend: $${perf.totalSpend}`)
         continue
       }
+      
+      // Generate recommendations even if ROAS is missing (could suggest optimization for poor performers)
 
       // Budget optimization - if high ROAS, recommend scale
       if (roas > 2.5 && avgDailySpend > 0) {
@@ -317,6 +320,50 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
           campaignName: campaign.campaign_name,
           platform: 'meta'
         })
+      }
+
+      // Basic optimization recommendations for campaigns with spend but no clear ROAS data
+      if (perf.totalSpend > 10 && roas === 0) {
+        recommendations.push({
+          type: 'bid',
+          priority: 'medium',
+          title: 'Review Campaign Setup',
+          description: `Campaign "${campaign.campaign_name}" has spend but missing conversion tracking. Review setup to improve measurement.`,
+          rootCause: `Campaign has $${perf.totalSpend.toFixed(0)} in spend but no ROAS data, suggesting tracking issues or optimization opportunities.`,
+          actions: [{
+            id: 'review_tracking',
+            type: 'campaign_review',
+            label: 'Review conversion tracking and optimization settings',
+            impact: {
+              revenue: perf.totalSpend * 0.5,
+              roas: 2.0,
+              confidence: 60
+            },
+            estimatedTimeToStabilize: '3-7 days'
+          }],
+          currentValue: 'No conversion tracking',
+          recommendedValue: 'Properly configured tracking',
+          projectedImpact: {
+            revenue: perf.totalSpend * 0.5,
+            roas: 2.0,
+            confidence: 60
+          },
+          campaignId: campaign.campaign_id,
+          campaignName: campaign.campaign_name,
+          platform: 'meta'
+        })
+      }
+    }
+
+    console.log(`[Recommendations] Generated ${recommendations.length} recommendations for brand ${brandId}`)
+    
+    if (recommendations.length === 0) {
+      console.log(`[Recommendations] No recommendations generated. Campaign analysis:`)
+      for (const campaign of campaigns) {
+        const perf = campaignPerformance.get(campaign.campaign_id)
+        if (perf) {
+          console.log(`  - ${campaign.campaign_name}: spend=$${perf.totalSpend}, ROAS=${(perf.roasCount > 0 ? perf.totalRoas / perf.roasCount : 0).toFixed(2)}x`)
+        }
       }
     }
 
