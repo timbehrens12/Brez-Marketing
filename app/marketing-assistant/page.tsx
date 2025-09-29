@@ -37,7 +37,11 @@ import {
   Users,
   Globe,
   Brain,
-  Sparkles
+  Sparkles,
+  Info,
+  X,
+  Clock,
+  TrendingDown
 } from 'lucide-react'
 
 interface KPIMetrics {
@@ -130,6 +134,7 @@ export default function MarketingAssistantPage() {
   const [showSimulation, setShowSimulation] = useState(false)
   const [explanationData, setExplanationData] = useState<any>(null)
   const [showExplanation, setShowExplanation] = useState(false)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
 
@@ -381,6 +386,16 @@ export default function MarketingAssistantPage() {
     }
   }
 
+
+  const dismissAlert = (alertId: string) => {
+    setAlerts(prevAlerts => 
+      prevAlerts.map(alert => 
+        alert.id === alertId 
+          ? { ...alert, acknowledged: true } 
+          : alert
+      )
+    )
+  }
 
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
@@ -638,13 +653,22 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm mb-2">
                     <Calendar className="h-4 w-4 text-emerald-400" />
                     <span className="text-gray-400">Performance Window:</span>
                     <span className="text-white font-medium">Last 7 Days</span>
                     <Badge variant="outline" className="ml-auto text-xs border-emerald-500/30 text-emerald-400">Fixed</Badge>
         </div>
-                  <p className="text-xs text-gray-500 mt-2">Recommendations update weekly based on current performance</p>
+                  <p className="text-xs text-gray-500 mb-2">Recommendations update weekly based on current performance</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHowItWorks(true)}
+                    className="w-full text-xs h-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/20"
+                  >
+                    <Info className="h-3 w-3 mr-1" />
+                    How It Works
+                  </Button>
       </div>
                 
                 <div>
@@ -1082,23 +1106,31 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4 flex-1 overflow-y-auto max-h-[400px]">
                 <div className="space-y-3">
-                  {alerts.map(alert => (
-                    <div key={alert.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                  {alerts.filter(a => !a.acknowledged).map(alert => (
+                    <div key={alert.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="text-white font-medium text-sm">{alert.title}</h4>
-                        {!alert.acknowledged && (
+                        <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
                             alert.type === 'error' ? 'bg-red-400' :
                             alert.type === 'warning' ? 'bg-yellow-400' :
                             'bg-blue-400'
                           }`} />
-                        )}
-                      </div>
+                          <h4 className="text-white font-medium text-sm">{alert.title}</h4>
+                            </div>
+                            <Button
+                          variant="ghost"
+                              size="sm"
+                          onClick={() => dismissAlert(alert.id)}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10"
+                        >
+                          <X className="h-3 w-3 text-gray-400" />
+                            </Button>
+                          </div>
                       <p className="text-gray-400 text-xs mb-2">{alert.description}</p>
                       <p className="text-gray-500 text-xs">{alert.timestamp.toLocaleTimeString()}</p>
                     </div>
                   ))}
-                  {alerts.length === 0 && (
+                  {alerts.filter(a => !a.acknowledged).length === 0 && (
                     <div className="text-center py-6 text-gray-400">
                       <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">All systems running smoothly</p>
@@ -1122,7 +1154,7 @@ export default function MarketingAssistantPage() {
                  <p className="text-gray-400">{simulationData.card.title}</p>
                             </div>
                             <Button
-                 variant="outline" 
+                              variant="outline"
                               size="sm"
                  onClick={() => setShowSimulation(false)}
                  className="border-[#333] text-gray-300"
@@ -1136,7 +1168,7 @@ export default function MarketingAssistantPage() {
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
                  <h4 className="text-white font-semibold mb-2">Proposed Action</h4>
                  <p className="text-gray-300 text-sm">{simulationData.action?.label}</p>
-                          </div>
+                            </div>
 
                {/* Projected Impact */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1145,11 +1177,11 @@ export default function MarketingAssistantPage() {
                    <div>
                      <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
                      <p className="text-green-400 text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
-                        </div>
+                      </div>
                    <div>
                      <p className="text-gray-400 text-xs">Projected ROAS</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.roas?.toFixed(2) || 0}x</p>
-                      </div>
+                    </div>
                    <div>
                      <p className="text-gray-400 text-xs">Confidence Level</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
@@ -1207,8 +1239,8 @@ export default function MarketingAssistantPage() {
                    onClick={() => setShowSimulation(false)}
                  >
                    Close
-                    </Button>
-                </div>
+                            </Button>
+                          </div>
                       </div>
                     </div>
                 </div>
@@ -1223,12 +1255,12 @@ export default function MarketingAssistantPage() {
                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                flex items-center justify-center border border-white/10">
                    <Brain className="w-5 h-5 text-white" />
-                      </div>
+                        </div>
                  <div>
                    <h3 className="text-xl font-bold text-white">AI Analysis</h3>
                    <p className="text-gray-400">In-depth recommendation explanation</p>
+                      </div>
                     </div>
-               </div>
                <Button
                  variant="outline" 
                  size="sm"
@@ -1261,8 +1293,8 @@ export default function MarketingAssistantPage() {
                        <span className="text-blue-400 mt-1">•</span>
                        <p className="text-gray-300 text-sm">{insight}</p>
                     </div>
-                  ))}
-                </div>
+              ))}
+            </div>
                </div>
 
                {/* Expected Outcomes */}
@@ -1280,8 +1312,8 @@ export default function MarketingAssistantPage() {
                        </p>
                         </div>
                    ))}
-                      </div>
-                    </div>
+          </div>
+        </div>
 
                {/* Implementation Steps */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1294,11 +1326,11 @@ export default function MarketingAssistantPage() {
                      <div key={index} className="flex items-start gap-2">
                        <span className="text-[#FF2A2A] text-sm font-bold mt-1">{index + 1}.</span>
                        <p className="text-gray-300 text-sm">{step}</p>
-          </div>
-                   ))}
-        </div>
-      </div>
-             </div>
+                    </div>
+                  ))}
+                </div>
+                  </div>
+                  </div>
 
              {/* Close Button */}
              <div className="flex justify-end pt-6">
@@ -1308,10 +1340,258 @@ export default function MarketingAssistantPage() {
                >
                  Got It
                </Button>
-             </div>
+                </div>
            </div>
          </div>
        )}
+
+      {/* How It Works Modal */}
+      {showHowItWorks && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#111] border border-[#333] rounded-lg p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">How the Marketing Assistant Works</h3>
+                <p className="text-gray-400">Understanding the 7-day recommendation cycle</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHowItWorks(false)}
+                className="border-[#333] text-gray-300 hover:bg-white/5"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Overview */}
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-5 rounded-lg border border-blue-500/20">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold mb-2">AI-Powered Weekly Optimization</h4>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      The Marketing Assistant analyzes your campaigns every 7 days, generating intelligent recommendations based on actual performance data. 
+                      It then tracks the effectiveness of those recommendations and learns from the results.
+                    </p>
+                      </div>
+                    </div>
+                  </div>
+
+              {/* The Cycle */}
+              <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-emerald-400" />
+                  The 7-Day Cycle
+                </h4>
+                <div className="space-y-4">
+                  {/* Week 1 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-emerald-400 font-bold text-sm">1</span>
+                      </div>
+                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
+                    </div>
+                    <div className="pb-6">
+                      <h5 className="text-white font-medium mb-1">Week 1: Analysis & Recommendations</h5>
+                      <p className="text-gray-400 text-sm mb-2">
+                        The system analyzes the <strong className="text-white">last 7 days</strong> of campaign performance data:
+                      </p>
+                      <ul className="space-y-1 text-sm text-gray-400 ml-4">
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">•</span>
+                          <span>Spend, impressions, clicks, conversions</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">•</span>
+                          <span>ROAS (Return on Ad Spend), CPA, CTR</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">•</span>
+                          <span>Trend patterns and anomalies</span>
+                        </li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                        <p className="text-xs text-gray-300">
+                          <strong className="text-emerald-400">Result:</strong> Generates prioritized recommendations (budget changes, 
+                          audience expansions, creative optimizations)
+                        </p>
+                      </div>
+                    </div>
+                </div>
+
+                  {/* Week 2 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-400 font-bold text-sm">2</span>
+                      </div>
+                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
+                    </div>
+                    <div className="pb-6">
+                      <h5 className="text-white font-medium mb-1">Week 2: Testing Period</h5>
+                      <p className="text-gray-400 text-sm mb-2">
+                        You review and apply recommended changes. The system enters a <strong className="text-white">testing period</strong>:
+                      </p>
+                      <ul className="space-y-1 text-sm text-gray-400 ml-4">
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-400 mt-1">•</span>
+                          <span>Applied recommendations are marked as "testing"</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-400 mt-1">•</span>
+                          <span>Changes take effect in your ad campaigns</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-400 mt-1">•</span>
+                          <span>System does NOT generate new recommendations yet</span>
+                        </li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                        <p className="text-xs text-gray-300">
+                          <strong className="text-blue-400">Why wait?</strong> Changes need time to stabilize. Algorithms need to learn. 
+                          Results in the first few days aren't representative.
+                        </p>
+                        </div>
+                      </div>
+                    </div>
+
+                  {/* Week 3 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-yellow-400 font-bold text-sm">3</span>
+          </div>
+        </div>
+                    <div>
+                      <h5 className="text-white font-medium mb-1">Week 3: Performance Review</h5>
+                      <p className="text-gray-400 text-sm mb-2">
+                        7 days later, the system re-analyzes performance with <strong className="text-white">fresh data</strong>:
+                      </p>
+                      <ul className="space-y-1 text-sm text-gray-400 ml-4">
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-400 mt-1">•</span>
+                          <span>Compares <strong>actual results</strong> vs <strong>predicted impact</strong></span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-400 mt-1">•</span>
+                          <span>Marks recommendations as "successful" or "needs adjustment"</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-400 mt-1">•</span>
+                          <span>Generates NEW recommendations based on current state</span>
+                        </li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                        <p className="text-xs text-gray-300">
+                          <strong className="text-yellow-400">Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
+                          get higher confidence. If not ✗, the system adjusts its approach.
+                        </p>
+      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Benefits */}
+              <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  Key Benefits
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <h5 className="text-white font-medium text-sm">No Recommendation Fatigue</h5>
+                    </div>
+                    <p className="text-gray-400 text-xs">
+                      You won't see the same suggestion over and over. Once generated, it stays until resolved.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-blue-400" />
+                      <h5 className="text-white font-medium text-sm">Data-Driven Decisions</h5>
+                    </div>
+                    <p className="text-gray-400 text-xs">
+                      All recommendations based on real performance data, not guesses or hunches.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Brain className="w-4 h-4 text-purple-400" />
+                      <h5 className="text-white font-medium text-sm">Continuous Learning</h5>
+                    </div>
+                    <p className="text-gray-400 text-xs">
+                      System learns from what worked and what didn't, improving recommendations over time.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="w-4 h-4 text-emerald-400" />
+                      <h5 className="text-white font-medium text-sm">Consistent Cadence</h5>
+                    </div>
+                    <p className="text-gray-400 text-xs">
+                      Weekly rhythm keeps you on track without overwhelming you with constant changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Example Timeline */}
+              <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] p-5 rounded-lg border border-[#333]">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                  Example Timeline
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
+                    <span className="text-gray-500 font-mono text-xs">Sept 29</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-300">System analyzes Sept 22-28 data, generates recommendations</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
+                    <span className="text-gray-500 font-mono text-xs">Sept 30</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-300">You review and apply: "Increase Budget by 20% for Campaign A"</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
+                    <span className="text-gray-500 font-mono text-xs">Oct 1-6</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-emerald-400">Testing period - letting campaign stabilize</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
+                    <span className="text-gray-500 font-mono text-xs">Oct 7</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-yellow-400">System checks: ROAS improved 2.1x → 2.8x ✓ Success!</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 bg-[#0f0f0f] rounded">
+                    <span className="text-gray-500 font-mono text-xs">Oct 7</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-300">Generates NEW recommendations based on Oct 1-6 performance</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-6 border-t border-[#333] mt-6">
+              <Button
+                className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                onClick={() => setShowHowItWorks(false)}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Got It!
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
