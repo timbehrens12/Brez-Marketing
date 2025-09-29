@@ -49,6 +49,10 @@ export async function GET(request: NextRequest) {
       .gte('date', sevenDaysAgo)
       .lte('date', today)
     
+    if (result.error) {
+      console.error(`🔍 BUDGET DEBUG: Query error:`, result.error)
+    }
+    
     campaignStats = result.data
     console.log(`🔍 BUDGET DEBUG: 7-day query result: ${campaignStats?.length || 0} records`)
     console.log(`🔍 BUDGET DEBUG: Sample record:`, campaignStats?.[0] || 'No records')

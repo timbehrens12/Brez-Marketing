@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Get campaign and audience performance data
     // Always use last 7 days
-    let { data: campaignStats } = await supabase
+    const result = await supabase
       .from('meta_campaign_daily_stats')
       .select(`
         campaign_id,
@@ -48,6 +48,11 @@ export async function GET(request: NextRequest) {
       .gte('date', sevenDaysAgo)
       .lte('date', today)
 
+    if (result.error) {
+      console.error(`🎯 AUDIENCE DEBUG: Query error:`, result.error)
+    }
+
+    let campaignStats = result.data
     console.log(`🎯 AUDIENCE DEBUG: 7-day result: ${campaignStats?.length || 0} records`)
     console.log(`🎯 AUDIENCE DEBUG: Sample record:`, campaignStats?.[0] || 'No records')
 
