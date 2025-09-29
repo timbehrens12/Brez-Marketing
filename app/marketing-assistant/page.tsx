@@ -793,22 +793,22 @@ export default function MarketingAssistantPage() {
                             <p className="text-green-400">Est. ROAS: {allocation.projectedRoas}x</p>
                           </div>
                         </div>
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-2 min-w-0">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            className="text-xs"
+                            className="text-xs flex-1 min-w-0"
                             onClick={() => handleExplainBudgetAllocation(allocation.id)}
                           >
-                            <Brain className="w-3 h-3 mr-1" />
-                            Explain
+                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Explain</span>
                           </Button>
                           <Button 
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs"
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
                             onClick={() => handleMarkBudgetAsDone(allocation.id)}
                           >
-                            Mark as Done
+                            <span className="truncate">Mark as Done</span>
                           </Button>
                           </div>
                         </div>
@@ -851,22 +851,22 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                         <p className="text-blue-400 text-xs mt-1">Est. CPA: ${expansion.estimatedCpa}</p>
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-2 min-w-0">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            className="text-xs"
+                            className="text-xs flex-1 min-w-0"
                             onClick={() => handleExplainAudienceExpansion(expansion.id)}
                           >
-                            <Brain className="w-3 h-3 mr-1" />
-                            Explain
+                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Explain</span>
                           </Button>
                           <Button 
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs"
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
                             onClick={() => handleMarkAudienceAsDone(expansion.id)}
                           >
-                            Mark as Done
+                            <span className="truncate">Mark as Done</span>
                           </Button>
                           </div>
                         </div>
@@ -972,16 +972,18 @@ export default function MarketingAssistantPage() {
                         variant="outline" 
                             size="sm"
                         onClick={() => setRecommendationsViewed(true)}
-                        className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 whitespace-nowrap"
+                        className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 whitespace-nowrap text-xs lg:text-sm"
                           >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        View Recommendations
+                        <Sparkles className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
+                        <span className="hidden sm:inline">Update Recommendations</span>
+                        <span className="sm:hidden">Update</span>
                           </Button>
                     ) : (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-[#333] rounded-lg">
-                        <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-1.5 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 bg-[#1a1a1a] border border-[#333] rounded-lg">
+                        <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0" />
                         <div className="text-xs">
-                          <div className="text-gray-400 whitespace-nowrap">Next refresh:</div>
+                          <div className="text-gray-400 whitespace-nowrap hidden lg:block">Next refresh:</div>
+                          <div className="text-gray-400 whitespace-nowrap lg:hidden">Next:</div>
                           <div className="text-white font-medium whitespace-nowrap">{timeUntilRefresh}</div>
                         </div>
                     </div>
@@ -1033,22 +1035,22 @@ export default function MarketingAssistantPage() {
                         </div>
 
                         {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0">
                   <Button
                             size="sm" 
                             variant="outline" 
-                            className="border-[#333] text-gray-300 text-xs flex-1"
+                            className="border-[#333] text-gray-300 text-xs flex-1 min-w-0"
                             onClick={() => handleExplainRecommendation(card.id)}
                           >
-                            <Brain className="w-3 h-3 mr-1" />
-                            Explain
+                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Explain</span>
                   </Button>
                   <Button
                             size="sm" 
-                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1"
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black text-xs flex-1 min-w-0"
                             onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                   >
-                            Mark as Done
+                            <span className="truncate">Mark as Done</span>
                   </Button>
                 </div>
           </div>
