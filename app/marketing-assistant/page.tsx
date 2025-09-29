@@ -154,12 +154,26 @@ export default function MarketingAssistantPage() {
     const nextMonday = getNextMondayMidnight()
     const diff = nextMonday.getTime() - now.getTime()
     
+    // Check if it's Monday after midnight - reset the viewed state
+    if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
+      localStorage.removeItem('recommendationsViewed')
+      setRecommendationsViewed(false)
+    }
+    
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     
     setTimeUntilRefresh(`${days}d ${hours}h ${minutes}m`)
   }
+
+  // Load viewed state from localStorage
+  useEffect(() => {
+    const viewed = localStorage.getItem('recommendationsViewed')
+    if (viewed === 'true') {
+      setRecommendationsViewed(true)
+    }
+  }, [])
 
   // Countdown timer
   useEffect(() => {
@@ -966,25 +980,28 @@ export default function MarketingAssistantPage() {
                       <p className="text-gray-400 text-xs hidden lg:block truncate">Prioritized recommendations based on performance analysis</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
                     {!recommendationsViewed ? (
                           <Button
                         variant="outline" 
                             size="sm"
-                        onClick={() => setRecommendationsViewed(true)}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 whitespace-nowrap text-xs lg:text-sm"
-                          >
+                        onClick={() => {
+                          setRecommendationsViewed(true)
+                          localStorage.setItem('recommendationsViewed', 'true')
+                        }}
+                        className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
+                      >
                         <Sparkles className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
-                        <span className="hidden sm:inline">Update Recommendations</span>
-                        <span className="sm:hidden">Update</span>
+                        <span className="hidden md:inline truncate">Update Recommendations</span>
+                        <span className="md:hidden truncate">Update</span>
                           </Button>
                     ) : (
-                      <div className="flex items-center gap-1.5 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 bg-[#1a1a1a] border border-[#333] rounded-lg">
+                      <div className="flex items-center gap-1.5 lg:gap-2 px-2 py-1.5 bg-[#1a1a1a] border border-[#333] rounded-lg min-w-0">
                         <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0" />
-                        <div className="text-xs">
-                          <div className="text-gray-400 whitespace-nowrap hidden lg:block">Next refresh:</div>
-                          <div className="text-gray-400 whitespace-nowrap lg:hidden">Next:</div>
-                          <div className="text-white font-medium whitespace-nowrap">{timeUntilRefresh}</div>
+                        <div className="text-xs min-w-0">
+                          <div className="text-gray-400 whitespace-nowrap hidden lg:block truncate">Next refresh:</div>
+                          <div className="text-gray-400 whitespace-nowrap lg:hidden truncate">Next:</div>
+                          <div className="text-white font-medium whitespace-nowrap truncate">{timeUntilRefresh}</div>
                         </div>
                     </div>
                   )}
@@ -1016,7 +1033,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
                       {/* Content */}
-                      <div className="p-3">
+                      <div className="p-3 min-w-0">
                         <p className="text-gray-300 text-xs mb-3 leading-relaxed">{card.description}</p>
                         
                         {/* Metrics Row */}
