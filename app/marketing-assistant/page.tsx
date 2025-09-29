@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import BrandSelector from '@/components/BrandSelector'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
@@ -33,6 +34,9 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
+  PieChart,
+  Users,
+  Globe,
   Brain,
   Sparkles
 } from 'lucide-react'
@@ -77,14 +81,26 @@ interface OptimizationCard {
   }
 }
 
-interface ExperimentQueueItem {
+interface BudgetAllocation {
   id: string
-  type: 'staged' | 'running' | 'completed'
   campaignName: string
-  action: string
-  projectedImpact: string
+  currentBudget: number
+  suggestedBudget: number
+  currentRoas: number
+  projectedRoas: number
+  confidence: number
   risk: 'low' | 'medium' | 'high'
-  scheduledFor?: Date
+}
+
+interface AudienceExpansion {
+  id: string
+  type: 'lookalike' | 'interest' | 'geographic' | 'demographic'
+  title: string
+  description: string
+  currentReach: number
+  projectedReach: number
+  estimatedCpa: number
+  confidence: number
 }
 
 interface AlertItem {
@@ -103,9 +119,11 @@ export default function MarketingAssistantPage() {
   // State
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
-  const [experimentQueue, setExperimentQueue] = useState<ExperimentQueueItem[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [trends, setTrends] = useState<any>(null)
+  const [budgetAllocations, setBudgetAllocations] = useState<any[]>([])
+  const [audienceExpansions, setAudienceExpansions] = useState<any[]>([])
+  const [scalingTab, setScalingTab] = useState('budget')
   const [loading, setLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
@@ -138,13 +156,14 @@ export default function MarketingAssistantPage() {
     }
     
     try {
-      await Promise.all([
-        loadKPIMetrics(),
-        loadOptimizationRecommendations(),
-        loadExperimentQueue(),
-        loadAlerts(),
-        loadTrends()
-      ])
+    await Promise.all([
+      loadKPIMetrics(),
+      loadOptimizationRecommendations(),
+      loadBudgetAllocations(),
+      loadAudienceExpansions(),
+      loadAlerts(),
+      loadTrends()
+    ])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
@@ -187,42 +206,34 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadExperimentQueue = async () => {
+  const loadBudgetAllocations = async () => {
     if (!selectedBrandId) return
-
+    
     try {
-      // Get staged experiments (pending actions)
-      const response = await fetch(`/api/marketing-assistant/action-log?brandId=${selectedBrandId}&limit=20`)
-      
+      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&fromDate=${dateRange.from.toISOString()}&toDate=${dateRange.to.toISOString()}`)
       if (response.ok) {
         const data = await response.json()
-        
-        // Transform action log data into experiment queue format
-        const experiments = data.actions
-          .filter((action: any) => action.status === 'pending' || action.status === 'applied')
-          .map((action: any) => ({
-            id: action.id,
-            type: action.status === 'pending' ? 'staged' : 'running',
-            campaignName: action.campaignId || 'Unknown Campaign',
-            action: action.description,
-            projectedImpact: action.impact ? `+$${action.impact.revenue?.toLocaleString() || 0}` : '+0',
-            risk: determineRiskLevel(action),
-            scheduledFor: action.status === 'pending' ? new Date() : undefined
-          }))
-
-        setExperimentQueue(experiments)
+        setBudgetAllocations(data.allocations || [])
       }
     } catch (error) {
-      console.error('Error loading experiment queue:', error)
-      setExperimentQueue([])
+      console.error('Error loading budget allocations:', error)
+      setBudgetAllocations([])
     }
   }
 
-  const determineRiskLevel = (action: any): 'low' | 'medium' | 'high' => {
-    const impactValue = action.impact?.revenue || 0
-    if (impactValue > 5000) return 'high'
-    if (impactValue > 1000) return 'medium'
-    return 'low'
+  const loadAudienceExpansions = async () => {
+    if (!selectedBrandId) return
+    
+    try {
+      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAudienceExpansions(data.opportunities || [])
+      }
+    } catch (error) {
+      console.error('Error loading audience expansions:', error)
+      setAudienceExpansions([])
+    }
   }
 
   const loadAlerts = async () => {
@@ -392,19 +403,9 @@ export default function MarketingAssistantPage() {
       })
 
       if (response.ok) {
-        // Move to experiment queue as completed
-        setExperimentQueue(prev => [...prev, {
-          id: `exp_${Date.now()}`,
-          type: 'completed',
-          campaignName: card.title,
-          action: card.actions.find(a => a.id === actionId)?.label || 'Unknown action',
-          projectedImpact: 'Manual completion',
-          risk: 'low'
-        }])
-
         // Remove the completed recommendation
         setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
-                  }
+      }
                 } catch (error) {
       console.error('Error marking as done:', error)
     }
@@ -454,10 +455,6 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const handleBatchApply = async (selectedCards: string[]) => {
-    // Apply multiple actions at once
-    console.log('Applying batch actions:', selectedCards)
-  }
 
 
   const loadTrends = async () => {
@@ -596,60 +593,103 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-            {/* Experiment Queue */}
+            {/* Campaign Scaling Tools */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                  flex items-center justify-center border border-white/10">
-                      <Zap className="w-5 h-5 text-white" />
-          </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Experiment Queue</h3>
-                      <p className="text-gray-400 text-sm">{experimentQueue.length} staged actions</p>
-        </div>
-      </div>
-                  {experimentQueue.filter(exp => exp.type === 'staged').length > 0 && (
-                    <Button 
-                      onClick={() => handleBatchApply(experimentQueue.filter(exp => exp.type === 'staged').map(exp => exp.id))}
-                      className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-white text-xs px-3 py-1"
-                    >
-                      Run All
-                    </Button>
-                  )}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <TrendingUp className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Campaign Scaling</h3>
+                    <p className="text-gray-400 text-sm">Budget optimization & audience expansion</p>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-y-auto">
-                <div className="space-y-3">
-                  {experimentQueue.map(exp => (
-                    <div key={exp.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant={exp.type === 'staged' ? 'secondary' : exp.type === 'running' ? 'default' : 'outline'}>
-                          {exp.type}
-                        </Badge>
-                        <Badge variant={exp.risk === 'low' ? 'secondary' : exp.risk === 'medium' ? 'default' : 'destructive'}>
-                          {exp.risk} risk
-                        </Badge>
+              <CardContent className="p-0 flex-1 overflow-hidden">
+                <Tabs value={scalingTab} onValueChange={setScalingTab} className="h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-2 bg-[#1A1A1A] border-b border-[#333] rounded-none">
+                    <TabsTrigger value="budget" className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-[#333]">
+                      <PieChart className="w-4 h-4 mr-2" />
+                      Budget
+                    </TabsTrigger>
+                    <TabsTrigger value="audience" className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-[#333]">
+                      <Users className="w-4 h-4 mr-2" />
+                      Audience
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {budgetAllocations.map(allocation => (
+                      <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-white font-medium text-sm">{allocation.campaignName}</h4>
+                          <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'}>
+                            {allocation.confidence}% confidence
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-gray-400">Current: ${allocation.currentBudget}/day</p>
+                            <p className="text-gray-400">ROAS: {allocation.currentRoas}x</p>
+                          </div>
+                          <div>
+                            <p className="text-green-400">Suggested: ${allocation.suggestedBudget}/day</p>
+                            <p className="text-green-400">Est. ROAS: {allocation.projectedRoas}x</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" className="text-xs">Simulate</Button>
+                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Mark as Done</Button>
+                        </div>
                       </div>
-                      <h4 className="text-white font-medium text-sm">{exp.campaignName}</h4>
-                      <p className="text-gray-400 text-xs mt-1">{exp.action}</p>
-                      <p className="text-green-400 text-xs mt-1">{exp.projectedImpact}</p>
-                      {exp.type === 'staged' && (
+                    ))}
+                    {budgetAllocations.length === 0 && (
+                      <div className="text-center py-6 text-gray-400">
+                        <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No budget optimization opportunities</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {audienceExpansions.map(expansion => (
+                      <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400" />}
+                            {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400" />}
+                            {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400" />}
+                            {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-orange-400" />}
+                            <h4 className="text-white font-medium text-sm">{expansion.title}</h4>
+                          </div>
+                          <Badge variant="secondary">{expansion.confidence}% match</Badge>
+                        </div>
+                        <p className="text-gray-400 text-xs mb-2">{expansion.description}</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-gray-400">Current: {expansion.currentReach.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-green-400">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
+                          </div>
+                        </div>
+                        <p className="text-blue-400 text-xs mt-1">Est. CPA: ${expansion.estimatedCpa}</p>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" variant="outline" className="text-xs">Preview</Button>
-                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Apply</Button>
+                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Mark as Done</Button>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                  {experimentQueue.length === 0 && (
-                    <div className="text-center py-6 text-gray-400">
-                      <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No staged experiments</p>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    ))}
+                    {audienceExpansions.length === 0 && (
+                      <div className="text-center py-6 text-gray-400">
+                        <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No audience expansion opportunities</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
                 </div>
