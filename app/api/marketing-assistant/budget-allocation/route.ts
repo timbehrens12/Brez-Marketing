@@ -16,56 +16,46 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    const fromDate = searchParams.get('fromDate')
-    const toDate = searchParams.get('toDate')
+    
+    // IGNORE frontend date params - always use last 7 days for current performance
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
     console.log(`🔍 BUDGET DEBUG: Querying for brand ${brandId}`)
-    console.log(`🔍 BUDGET DEBUG: fromDate = "${fromDate}", toDate = "${toDate}"`)
-    console.log(`🔍 BUDGET DEBUG: fromDate type = ${typeof fromDate}, toDate type = ${typeof toDate}`)
+    console.log(`🔍 BUDGET DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
     console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
     // Get campaign performance data for budget allocation analysis
-    // Use a broader date range if the specified range returns no data or if dates are null
+    // Always use last 7 days
     let campaignStats = null
 
-    if (fromDate && toDate) {
-      // Convert ISO strings to date format for database query
-      const fromDateFormatted = fromDate.split('T')[0]
-      const toDateFormatted = toDate.split('T')[0]
-      
-      console.log(`🔍 BUDGET DEBUG: Formatted dates - from: ${fromDateFormatted}, to: ${toDateFormatted}`)
-      console.log(`🔍 BUDGET DEBUG: About to query supabase with formatted dates...`)
-      
-      const result = await supabase
-        .from('meta_campaign_daily_stats')
-        .select(`
-          campaign_id,
-          campaign_name,
-          spend,
-          impressions,
-          clicks,
-          conversions,
-          roas,
-          purchase_value
-        `)
-        .eq('brand_id', brandId)
-        .gte('date', fromDateFormatted)
-        .lte('date', toDateFormatted)
-      
-      campaignStats = result.data
-      console.log(`🔍 BUDGET DEBUG: Initial query result: ${campaignStats?.length || 0} records`)
-      console.log(`🔍 BUDGET DEBUG: Sample record:`, campaignStats?.[0] || 'No records')
-    } else {
-      console.log(`🔍 BUDGET DEBUG: No dates provided, skipping initial query`)
-    }
+    const result = await supabase
+      .from('meta_campaign_daily_stats')
+      .select(`
+        campaign_id,
+        campaign_name,
+        spend,
+        impressions,
+        clicks,
+        conversions,
+        roas,
+        purchase_value
+      `)
+      .eq('brand_id', brandId)
+      .gte('date', sevenDaysAgo)
+      .lte('date', today)
+    
+    campaignStats = result.data
+    console.log(`🔍 BUDGET DEBUG: 7-day query result: ${campaignStats?.length || 0} records`)
+    console.log(`🔍 BUDGET DEBUG: Sample record:`, campaignStats?.[0] || 'No records')
 
-    // If no data in specified range or no dates provided, try last 30 days
+    // If no data in last 7 days, try last 30 days
     if (!campaignStats || campaignStats.length === 0) {
-      console.log(`🔍 BUDGET DEBUG: No data found, trying 30-day fallback...`)
+      console.log(`🔍 BUDGET DEBUG: No 7-day data, trying 30-day fallback...`)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       console.log(`🔍 BUDGET DEBUG: 30-day fallback date: ${thirtyDaysAgo}`)
       const { data: fallbackStats } = await supabase
@@ -88,34 +78,9 @@ export async function GET(request: NextRequest) {
       console.log(`🔍 BUDGET DEBUG: 30-day sample:`, campaignStats?.[0] || 'No records')
     }
 
-    // If still no data, try last 90 days
+    // If still no data in 30 days, try ALL historical data
     if (!campaignStats || campaignStats.length === 0) {
-      console.log(`🔍 BUDGET DEBUG: Still no data, trying 90-day fallback...`)
-      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      console.log(`🔍 BUDGET DEBUG: 90-day fallback date: ${ninetyDaysAgo}`)
-      const { data: fallbackStats } = await supabase
-        .from('meta_campaign_daily_stats')
-        .select(`
-          campaign_id,
-          campaign_name,
-          spend,
-          impressions,
-          clicks,
-          conversions,
-          roas,
-          purchase_value
-        `)
-        .eq('brand_id', brandId)
-        .gte('date', ninetyDaysAgo)
-      
-      campaignStats = fallbackStats
-      console.log(`🔍 BUDGET DEBUG: 90-day fallback result: ${campaignStats?.length || 0} records`)
-      console.log(`🔍 BUDGET DEBUG: 90-day sample:`, campaignStats?.[0] || 'No records')
-    }
-
-    // If STILL no data, get ALL available data without date restrictions
-    if (!campaignStats || campaignStats.length === 0) {
-      console.log(`🔍 BUDGET DEBUG: No data in 90 days, fetching ALL historical data...`)
+      console.log(`🔍 BUDGET DEBUG: No 30-day data, fetching ALL historical data...`)
       const { data: allStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`

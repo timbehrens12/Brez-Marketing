@@ -21,11 +21,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
+    // IGNORE frontend date params - always use last 7 days for current performance
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
+
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
-    console.log(`🎯 AUDIENCE DEBUG: Starting 30-day query...`)
+    console.log(`🎯 AUDIENCE DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
 
     // Get campaign and audience performance data
-    // Try different date ranges to find data - start with 30 days
+    // Always use last 7 days
     let { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select(`
@@ -41,16 +45,17 @@ export async function GET(request: NextRequest) {
         purchase_value
       `)
       .eq('brand_id', brandId)
-      .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 30 days
+      .gte('date', sevenDaysAgo)
+      .lte('date', today)
 
-    console.log(`🎯 AUDIENCE DEBUG: 30-day result: ${campaignStats?.length || 0} records`)
-    console.log(`🎯 AUDIENCE DEBUG: 30-day sample:`, campaignStats?.[0] || 'No records')
+    console.log(`🎯 AUDIENCE DEBUG: 7-day result: ${campaignStats?.length || 0} records`)
+    console.log(`🎯 AUDIENCE DEBUG: Sample record:`, campaignStats?.[0] || 'No records')
 
-    // If no data in last 30 days, try last 90 days
+    // If no data in last 7 days, try last 30 days
     if (!campaignStats || campaignStats.length === 0) {
-      console.log(`🎯 AUDIENCE DEBUG: No 30-day data, trying 90-day fallback...`)
-      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      console.log(`🎯 AUDIENCE DEBUG: 90-day date: ${ninetyDaysAgo}`)
+      console.log(`🎯 AUDIENCE DEBUG: No 7-day data, trying 30-day fallback...`)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      console.log(`🎯 AUDIENCE DEBUG: 30-day date: ${thirtyDaysAgo}`)
       const { data: fallbackStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
@@ -66,16 +71,16 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .gte('date', ninetyDaysAgo)
+        .gte('date', thirtyDaysAgo)
       
       campaignStats = fallbackStats
-      console.log(`🎯 AUDIENCE DEBUG: 90-day result: ${campaignStats?.length || 0} records`)
-      console.log(`🎯 AUDIENCE DEBUG: 90-day sample:`, campaignStats?.[0] || 'No records')
+      console.log(`🎯 AUDIENCE DEBUG: 30-day result: ${campaignStats?.length || 0} records`)
+      console.log(`🎯 AUDIENCE DEBUG: 30-day sample:`, campaignStats?.[0] || 'No records')
     }
 
-    // If still no data, try ALL available data for this brand
+    // If still no data in 30 days, try ALL available data for this brand
     if (!campaignStats || campaignStats.length === 0) {
-      console.log(`🎯 AUDIENCE DEBUG: Still no data, trying ALL data for brand...`)
+      console.log(`🎯 AUDIENCE DEBUG: No 30-day data, fetching ALL historical data...`)
       const { data: allStats } = await supabase
         .from('meta_campaign_daily_stats')
         .select(`
