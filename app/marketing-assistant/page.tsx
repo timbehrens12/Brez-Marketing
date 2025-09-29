@@ -343,44 +343,129 @@ export default function UnifiedAIOrchestratorPage() {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
       
-      if (campaignsResponse.ok) {
-        const campaignsData = await campaignsResponse.json()
-        if (campaignsData.campaigns && Array.isArray(campaignsData.campaigns)) {
-          const campaignsWithPlatform = campaignsData.campaigns.map((campaign: Campaign) => ({
-            ...campaign,
-            platform: 'meta',
-            selected: false
-          }))
-          setCampaigns(campaignsWithPlatform)
-        }
-      }
+      // Campaign response will be processed in creative loading phase
 
       // Phase 4: Load trend data
       setLoadingPhase('Loading performance trends...')
       setLoadingProgress(70)
 
-      // Generate sample trend data (replace with real API call)
-      const sampleTrendData: TrendData[] = [
-        { day: 'Mon', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-01' },
-        { day: 'Tue', spend: newMetrics.adSpend * 0.15, revenue: newMetrics.adSpend * newMetrics.roas * 0.15, roas: newMetrics.roas, date: '2024-01-02' },
-        { day: 'Wed', spend: newMetrics.adSpend * 0.16, revenue: newMetrics.adSpend * newMetrics.roas * 0.16, roas: newMetrics.roas, date: '2024-01-03' },
-        { day: 'Thu', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-04' },
-        { day: 'Fri', spend: newMetrics.adSpend * 0.18, revenue: newMetrics.adSpend * newMetrics.roas * 0.18, roas: newMetrics.roas, date: '2024-01-05' },
-        { day: 'Sat', spend: newMetrics.adSpend * 0.13, revenue: newMetrics.adSpend * newMetrics.roas * 0.13, roas: newMetrics.roas, date: '2024-01-06' },
-        { day: 'Sun', spend: newMetrics.adSpend * 0.10, revenue: newMetrics.adSpend * newMetrics.roas * 0.10, roas: newMetrics.roas, date: '2024-01-07' }
-      ]
-      setTrendData(sampleTrendData)
+      // Use real daily data from metrics
+      const realTrendData: TrendData[] = newMetrics.dailyData && newMetrics.dailyData.length > 0 
+        ? newMetrics.dailyData.slice(-7).map((dayData: any, index: number) => ({
+            day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(dayData.date || Date.now()).getDay()],
+            spend: dayData.adSpend || 0,
+            revenue: (dayData.adSpend || 0) * (dayData.roas || newMetrics.roas),
+            roas: dayData.roas || newMetrics.roas,
+            date: dayData.date || new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000).toISOString()
+          }))
+        : [
+            { day: 'Mon', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-01' },
+            { day: 'Tue', spend: newMetrics.adSpend * 0.15, revenue: newMetrics.adSpend * newMetrics.roas * 0.15, roas: newMetrics.roas, date: '2024-01-02' },
+            { day: 'Wed', spend: newMetrics.adSpend * 0.16, revenue: newMetrics.adSpend * newMetrics.roas * 0.16, roas: newMetrics.roas, date: '2024-01-03' },
+            { day: 'Thu', spend: newMetrics.adSpend * 0.14, revenue: newMetrics.adSpend * newMetrics.roas * 0.14, roas: newMetrics.roas, date: '2024-01-04' },
+            { day: 'Fri', spend: newMetrics.adSpend * 0.18, revenue: newMetrics.adSpend * newMetrics.roas * 0.18, roas: newMetrics.roas, date: '2024-01-05' },
+            { day: 'Sat', spend: newMetrics.adSpend * 0.13, revenue: newMetrics.adSpend * newMetrics.roas * 0.13, roas: newMetrics.roas, date: '2024-01-06' },
+            { day: 'Sun', spend: newMetrics.adSpend * 0.10, revenue: newMetrics.adSpend * newMetrics.roas * 0.10, roas: newMetrics.roas, date: '2024-01-07' }
+          ]
+      setTrendData(realTrendData)
 
-      // Phase 5: Initialize sample data for new components
-      setLoadingPhase('Initializing AI systems...')
+      // Phase 5: Load real creative performance data
+      setLoadingPhase('Loading creative performance...')
       setLoadingProgress(85)
 
-      // Sample creative performance data
-      setCreativePerformance([
-        { creative_id: '1', creative_name: 'Video Ad A', ctr: 3.2, roas: 4.5, impressions: 15000, spend: 245 },
-        { creative_id: '2', creative_name: 'Carousel B', ctr: 2.8, roas: 3.8, impressions: 12000, spend: 180 },
-        { creative_id: '3', creative_name: 'Static Image C', ctr: 2.1, roas: 2.9, impressions: 8000, spend: 120 },
-      ])
+      // Load real creative data from campaigns
+      let allCreatives: CreativePerformance[] = []
+      try {
+        const campaignsData = await campaignsResponse.json()
+        let campaignsWithPlatform: Campaign[] = []
+        if (campaignsData.campaigns && Array.isArray(campaignsData.campaigns)) {
+          campaignsWithPlatform = campaignsData.campaigns.map((campaign: Campaign) => ({
+            ...campaign,
+            platform: 'meta',
+            selected: false
+          }))
+          setCampaigns(campaignsWithPlatform)
+          
+          // Load saved recommendations for campaigns
+          try {
+            const campaignIds = campaignsWithPlatform.map(c => c.campaign_id)
+            const params = new URLSearchParams({
+              brandId: selectedBrandId,
+              campaignIds: campaignIds.join(',')
+            })
+
+            const response = await fetch(`/api/ai/campaign-recommendations?${params}`)
+            
+            if (response.ok) {
+              const data = await response.json()
+              
+              if (data.success && data.recommendations) {
+                // Update campaigns with their saved recommendations
+                const campaignsWithRecommendations = campaignsWithPlatform.map(campaign => {
+                  const recommendation = data.recommendations[campaign.campaign_id]
+                  return recommendation ? { ...campaign, recommendation } : campaign
+                })
+                
+                setCampaigns(campaignsWithRecommendations)
+                campaignsWithPlatform = campaignsWithRecommendations
+              }
+            }
+          } catch (error) {
+            console.error('Error loading recommendations:', error)
+          }
+        }
+        
+        for (const campaign of campaignsWithPlatform.slice(0, 3)) { // Top 3 campaigns for performance
+          const adsetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}&t=${Date.now()}`)
+          if (adsetsResponse.ok) {
+            const adsetsData = await adsetsResponse.json()
+            if (adsetsData.success && adsetsData.adsets) {
+              for (const adset of adsetsData.adsets.slice(0, 2)) { // Top 2 adsets per campaign
+                try {
+                  const adsResponse = await fetch('/api/meta/ads/direct-fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      brandId: selectedBrandId,
+                      adsetId: adset.adset_id,
+                      forceRefresh: false,
+                      dateRange: {
+                        from: dateToLocalDateString(dateRange.from),
+                        to: dateToLocalDateString(dateRange.to)
+                      }
+                    })
+                  })
+                  const adsData = await adsResponse.json()
+                  if (adsData.success && adsData.ads) {
+                    allCreatives.push(...adsData.ads.slice(0, 1).map((ad: any) => ({
+                      creative_id: ad.ad_id || `${adset.adset_id}-ad`,
+                      creative_name: ad.ad_name || `${campaign.campaign_name} Creative`,
+                      ctr: ad.ctr || campaign.ctr || 0,
+                      roas: campaign.roas || 0,
+                      impressions: ad.impressions || 0,
+                      spend: ad.spent || 0
+                    })))
+                  }
+                } catch (error) {
+                  // Fallback to sample data if ad fetch fails
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading creative data:', error)
+      }
+
+      // If no real data, use sample data
+      if (allCreatives.length === 0) {
+        allCreatives = [
+          { creative_id: '1', creative_name: 'Video Ad A', ctr: 3.2, roas: newMetrics.roas * 1.2, impressions: 15000, spend: 245 },
+          { creative_id: '2', creative_name: 'Carousel B', ctr: 2.8, roas: newMetrics.roas * 0.9, impressions: 12000, spend: 180 },
+          { creative_id: '3', creative_name: 'Static Image C', ctr: 2.1, roas: newMetrics.roas * 0.7, impressions: 8000, spend: 120 },
+        ]
+      }
+      setCreativePerformance(allCreatives)
 
       // Sample action log
       setActionLog([
@@ -630,22 +715,22 @@ export default function UnifiedAIOrchestratorPage() {
         className="px-4 sm:px-6" 
       />
 
-      {/* Main 3-column layout - responsive stacking */}
-      <div className="relative z-10 min-h-[calc(100vh-120px)] flex flex-col lg:flex-row lg:h-[calc(100vh-120px)]">
+      {/* Main 3-column layout - fixed height, compact spacing */}
+      <div className="relative z-10 h-[calc(100vh-80px)] flex">
         
-        {/* Left Column (3/12) - Sticky on desktop, stacked on mobile */}
-        <div className="w-full lg:w-1/4 flex-shrink-0 lg:sticky lg:top-0 lg:h-full overflow-y-auto border-b lg:border-b-0 lg:border-r border-[#2A2F36] bg-[#0B0D10]">
-          <div className="p-4 space-y-4">
+        {/* Left Column (3/12) - Sticky, compact */}
+        <div className="w-1/4 flex-shrink-0 sticky top-0 h-full overflow-y-auto border-r border-[#2A2F36] bg-[#0B0D10]">
+          <div className="p-3 space-y-3">
             
             {/* Scope & Filters Card */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <Filter className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
                   Scope & Filters
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pb-3">
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-[#9AA4B2]" />
@@ -668,15 +753,15 @@ export default function UnifiedAIOrchestratorPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="campaigns" className="space-y-2 mt-4">
-                    <div className="max-h-64 overflow-y-auto space-y-2">
+                  <TabsContent value="campaigns" className="space-y-1 mt-3">
+                    <div className="max-h-48 overflow-y-auto space-y-1">
                       {campaigns.filter(campaign => 
                         searchQuery === '' || 
                         campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())
                       ).slice(0, 10).map((campaign) => (
                         <div
                           key={campaign.campaign_id}
-                          className="flex items-center space-x-3 p-2 hover:bg-[#0F1216] rounded cursor-pointer"
+                          className="flex items-center space-x-2 p-2 hover:bg-[#0F1216] rounded cursor-pointer"
                           onClick={() => toggleCampaignSelection(campaign.campaign_id)}
                         >
                           <input
@@ -735,21 +820,21 @@ export default function UnifiedAIOrchestratorPage() {
 
             {/* Experiments Queue Card */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
                   Experiments Queue
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pb-3">
                 {/* Queued actions */}
                 <div className="space-y-2">
                   {queuedActions.length === 0 ? (
-                    <p className="text-[#9AA4B2] text-sm text-center py-4">
+                    <p className="text-[#9AA4B2] text-xs text-center py-2">
                       No actions queued
                     </p>
                   ) : (
-                    <div className="max-h-32 overflow-y-auto space-y-2">
+                    <div className="max-h-24 overflow-y-auto space-y-1">
                       {queuedActions.map((action) => (
                         <div
                           key={action.id}
@@ -800,15 +885,15 @@ export default function UnifiedAIOrchestratorPage() {
           </div>
         </div>
 
-        {/* Middle Column (6/12) - Scrollable, responsive */}
-        <div className="flex-1 overflow-y-auto lg:h-full">
-          <div className="p-4 space-y-4">
+        {/* Middle Column (6/12) - Scrollable, compact */}
+        <div className="flex-1 overflow-y-auto h-full">
+          <div className="p-3 space-y-3">
             
-            {/* KPI Strip - responsive grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+            {/* KPI Strip - compact */}
+            <div className="grid grid-cols-6 gap-2">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">Spend</div>
-                <div className="text-lg font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.adSpend)}</div>
+                <div className="text-sm font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.adSpend)}</div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
                   metaMetrics.adSpendGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
                 }`}>
@@ -816,9 +901,9 @@ export default function UnifiedAIOrchestratorPage() {
                   {Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">Impressions</div>
-                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.impressions)}</div>
+                <div className="text-sm font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.impressions)}</div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
                   metaMetrics.impressionGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
                 }`}>
@@ -826,9 +911,9 @@ export default function UnifiedAIOrchestratorPage() {
                   {Math.abs(metaMetrics.impressionGrowth).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">Clicks</div>
-                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.clicks)}</div>
+                <div className="text-sm font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.clicks)}</div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
                   metaMetrics.clickGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
                 }`}>
@@ -836,9 +921,9 @@ export default function UnifiedAIOrchestratorPage() {
                   {Math.abs(metaMetrics.clickGrowth).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">Conversions</div>
-                <div className="text-lg font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.conversions)}</div>
+                <div className="text-sm font-bold text-[#D1D5DB]">{formatNumber(metaMetrics.conversions)}</div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
                   metaMetrics.conversionGrowth > 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
                 }`}>
@@ -846,9 +931,9 @@ export default function UnifiedAIOrchestratorPage() {
                   {Math.abs(metaMetrics.conversionGrowth).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">CPC</div>
-                <div className="text-lg font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.cpc)}</div>
+                <div className="text-sm font-bold text-[#D1D5DB]">{formatCurrency(metaMetrics.cpc)}</div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
                   metaMetrics.cpcGrowth < 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
                 }`}>
@@ -856,9 +941,9 @@ export default function UnifiedAIOrchestratorPage() {
                   {Math.abs(metaMetrics.cpcGrowth).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-3 text-center">
+              <div className="bg-[#14171C] border border-[#2A2F36] rounded-lg p-2 text-center">
                 <div className="text-xs text-[#9AA4B2] mb-1">ROAS</div>
-                <div className={`text-lg font-bold ${getROASColor(metaMetrics.roas)}`}>
+                <div className={`text-sm font-bold ${getROASColor(metaMetrics.roas)}`}>
                   {metaMetrics.roas.toFixed(2)}x
                 </div>
                 <div className={`text-xs flex items-center justify-center gap-1 ${
@@ -871,74 +956,76 @@ export default function UnifiedAIOrchestratorPage() {
             </div>
 
             {/* Campaigns List with Inline AI */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold text-[#D1D5DB] flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Campaign Performance
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-[#D1D5DB] flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Campaigns with AI Suggestions
               </h2>
               
-              {campaigns.slice(0, 8).map((campaign) => (
+              {campaigns.slice(0, 6).map((campaign) => (
                 <Card key={campaign.campaign_id} className="bg-[#14171C] border-[#2A2F36]">
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     {/* Campaign Header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
                         <Image 
                           src="https://i.imgur.com/6hyyRrs.png" 
                           alt="Meta" 
-                          width={24} 
-                          height={24} 
+                          width={16} 
+                          height={16} 
                           className="object-contain rounded"
                         />
                         <div>
-                          <h3 className="text-white font-semibold">{campaign.campaign_name}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={`text-xs px-2 py-0 ${getStatusColor(campaign.status)}`}>
+                          <h3 className="text-white font-medium text-sm">{campaign.campaign_name}</h3>
+                          <div className="flex items-center gap-2">
+                            <Badge className={`text-xs px-1 py-0 ${getStatusColor(campaign.status)}`}>
                               {campaign.status}
                             </Badge>
-                            <span className="text-xs text-[#9AA4B2]">{campaign.objective}</span>
+                            <span className={`text-xs font-medium ${getROASColor(campaign.roas)}`}>
+                              {campaign.roas.toFixed(1)}x
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-medium text-[#D1D5DB]">
-                          {formatCurrency(campaign.spent)} / {formatCurrency(campaign.budget)}
+                        <div className="text-xs font-medium text-[#D1D5DB]">
+                          {formatCurrency(campaign.spent)}
                         </div>
                         <div className="text-xs text-[#9AA4B2]">
-                          CTR: {formatPercentage(campaign.ctr)} • CPC: {formatCurrency(campaign.cpc)}
+                          CTR: {formatPercentage(campaign.ctr)}
                         </div>
                       </div>
                     </div>
 
-                    {/* Two panels beneath - responsive stacking */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Two panels beneath - compact */}
+                    <div className="grid grid-cols-2 gap-3">
                       {/* Left: Predicted Impact Chart */}
-                      <div className="bg-[#0F1216] rounded-lg p-3 border border-[#2A2F36]">
-                        <h4 className="text-sm font-medium text-[#D1D5DB] mb-2">Predicted Impact (7d)</h4>
-                        <div className="h-16 flex items-end justify-between gap-1">
+                      <div className="bg-[#0F1216] rounded-lg p-2 border border-[#2A2F36]">
+                        <h4 className="text-xs font-medium text-[#D1D5DB] mb-1">Predicted Impact (7d)</h4>
+                        <div className="h-12 flex items-end justify-between gap-0.5">
                           {[0.8, 1.2, 0.9, 1.5, 1.1, 1.8, 1.6].map((value, index) => (
                             <div
                               key={index}
                               className="bg-gradient-to-t from-[#EF4444] to-[#DC2626] rounded-sm flex-1"
-                              style={{ height: `${value * 40}px` }}
+                              style={{ height: `${value * 30}px` }}
                             />
                           ))}
                         </div>
-                        <div className="text-xs text-[#9AA4B2] mt-2">
-                          Est. +{formatCurrency(campaign.spent * 0.3)} revenue
+                        <div className="text-xs text-[#9AA4B2] mt-1">
+                          Est. +{formatCurrency(campaign.spent * 0.3)}
                         </div>
                       </div>
 
                       {/* Right: AI Suggestions */}
-                      <div className="bg-[#0F1216] rounded-lg p-3 border border-[#2A2F36]">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-[#D1D5DB]">AI Suggestions</h4>
-                          <Brain className="w-4 h-4 text-[#EF4444]" />
+                      <div className="bg-[#0F1216] rounded-lg p-2 border border-[#2A2F36]">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-xs font-medium text-[#D1D5DB]">AI Suggestions</h4>
+                          <Brain className="w-3 h-3 text-[#EF4444]" />
                         </div>
                         
                         {campaign.recommendation ? (
-                          <div className="space-y-2">
-                            <div className="text-sm text-[#D1D5DB] font-medium">
+                          <div className="space-y-1">
+                            <div className="text-xs text-[#D1D5DB] font-medium">
                               {campaign.recommendation.action}
                             </div>
                             <Button
@@ -950,28 +1037,74 @@ export default function UnifiedAIOrchestratorPage() {
                                 impact: 'high',
                                 campaignId: campaign.campaign_id
                               })}
-                              className="w-full bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs"
+                              className="w-full bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs py-1 h-6"
                             >
                               Apply
                             </Button>
                           </div>
                         ) : (
-                          <div className="space-y-2">
-                            <div className="text-sm text-[#9AA4B2]">
+                          <div className="space-y-1">
+                            <div className="text-xs text-[#9AA4B2]">
                               No issues detected
                             </div>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="w-full border-[#2A2F36] text-[#9AA4B2] hover:text-white text-xs"
+                              className="w-full border-[#2A2F36] text-[#9AA4B2] hover:text-white text-xs py-1 h-6"
+                              onClick={async () => {
+                                // Generate AI recommendation using existing system
+                                try {
+                                  const response = await fetch('/api/ai/campaign-recommendations', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      brandId: selectedBrandId,
+                                      campaignId: campaign.campaign_id,
+                                      forceRefresh: false,
+                                      userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                      campaignData: {
+                                        campaign_name: campaign.campaign_name,
+                                        campaign_id: campaign.campaign_id,
+                                        status: campaign.status,
+                                        objective: campaign.objective,
+                                        budget: campaign.budget,
+                                        spent: campaign.spent,
+                                        roas: campaign.roas,
+                                        impressions: campaign.impressions,
+                                        clicks: campaign.clicks,
+                                        conversions: campaign.conversions,
+                                        ctr: campaign.ctr,
+                                        cpc: campaign.cpc
+                                      }
+                                    })
+                                  })
+                                  
+                                  if (response.ok) {
+                                    const data = await response.json()
+                                    if (data.recommendation) {
+                                      // Update campaign with recommendation
+                                      setCampaigns(prev => prev.map(c => 
+                                        c.campaign_id === campaign.campaign_id 
+                                          ? { ...c, recommendation: data.recommendation }
+                                          : c
+                                      ))
+                                      toast.success('AI recommendation generated!')
+                                    }
+                                  }
+                                } catch (error) {
+                                  toast.error('Failed to generate recommendation')
+                                }
+                              }}
                             >
                               Generate
                             </Button>
                           </div>
                         )}
                         
-                        <div className="text-xs text-[#9AA4B2] mt-2">
-                          Issue: {campaign.roas < 2 ? 'Low ROAS performance' : 'Performance within range'}
+                        <div className="text-xs text-[#9AA4B2] mt-1">
+                          {campaign.roas < 2 ? 'Low ROAS' : campaign.ctr < 1.5 ? 'Low CTR' : 'Performing well'}
                         </div>
                       </div>
                     </div>
@@ -982,20 +1115,20 @@ export default function UnifiedAIOrchestratorPage() {
           </div>
         </div>
 
-        {/* Right Column (3/12) - Sticky on desktop, stacked on mobile */}
-        <div className="w-full lg:w-1/4 flex-shrink-0 lg:sticky lg:top-0 lg:h-full overflow-y-auto border-t lg:border-t-0 lg:border-l border-[#2A2F36] bg-[#0B0D10]">
-          <div className="p-4 space-y-4">
+        {/* Right Column (3/12) - Sticky, compact */}
+        <div className="w-1/4 flex-shrink-0 sticky top-0 h-full overflow-y-auto border-l border-[#2A2F36] bg-[#0B0D10]">
+          <div className="p-3 space-y-3">
             
             {/* Performance Trends */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
                   Performance Trends
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-32 flex items-end justify-between gap-1 mb-3">
+              <CardContent className="pb-3">
+                <div className="h-20 flex items-end justify-between gap-1 mb-2">
                   {trendData.map((day, index) => (
                     <div key={index} className="flex-1 flex flex-col items-center gap-1">
                       <div
@@ -1025,27 +1158,27 @@ export default function UnifiedAIOrchestratorPage() {
 
             {/* Creative Performance */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <Palette className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
                   Creative Performance
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {creativePerformance.slice(0, 3).map((creative) => (
+              <CardContent className="space-y-2 pb-3">
+                {creativePerformance.slice(0, 4).map((creative) => (
                   <div key={creative.creative_id} className="flex items-center justify-between p-2 bg-[#0F1216] rounded border border-[#2A2F36]">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#D1D5DB] truncate">
+                      <p className="text-xs font-medium text-[#D1D5DB] truncate">
                         {creative.creative_name}
                       </p>
-                      <div className="flex items-center gap-3 text-xs text-[#9AA4B2]">
+                      <div className="flex items-center gap-2 text-xs text-[#9AA4B2]">
                         <span>CTR: {creative.ctr.toFixed(1)}%</span>
                         <span className={getROASColor(creative.roas)}>
                           {creative.roas.toFixed(1)}x
                         </span>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-[#9AA4B2] hover:text-white">
+                    <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-[#9AA4B2] hover:text-white">
                       <Settings className="h-3 w-3" />
                     </Button>
                   </div>
@@ -1055,22 +1188,22 @@ export default function UnifiedAIOrchestratorPage() {
 
             {/* Action Log */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
                   Action Log
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="max-h-40 overflow-y-auto space-y-2">
+              <CardContent className="space-y-1 pb-3">
+                <div className="max-h-32 overflow-y-auto space-y-1">
                   {actionLog.slice(0, 8).map((entry) => (
-                    <div key={entry.id} className="flex items-start gap-2 p-2 bg-[#0F1216] rounded border border-[#2A2F36]">
-                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                    <div key={entry.id} className="flex items-start gap-2 p-1.5 bg-[#0F1216] rounded border border-[#2A2F36]">
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
                         entry.status === 'completed' ? 'bg-[#22C55E]' : 
                         entry.status === 'pending' ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'
                       }`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#D1D5DB]">{entry.title}</p>
+                        <p className="text-xs font-medium text-[#D1D5DB]">{entry.title}</p>
                         <p className="text-xs text-[#9AA4B2] truncate">{entry.description}</p>
                         <p className="text-xs text-[#9AA4B2]">
                           {new Date(entry.timestamp).toLocaleTimeString()}
@@ -1084,15 +1217,15 @@ export default function UnifiedAIOrchestratorPage() {
 
             {/* Alerts */}
             <Card className="bg-[#14171C] border-[#2A2F36]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg font-semibold flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
                   Alerts
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-1 pb-3">
                 {alerts.length === 0 ? (
-                  <p className="text-[#9AA4B2] text-sm text-center py-4">
+                  <p className="text-[#9AA4B2] text-xs text-center py-2">
                     No active alerts
                   </p>
                 ) : (
@@ -1103,13 +1236,13 @@ export default function UnifiedAIOrchestratorPage() {
                       'bg-[#22C55E]/10 border-[#22C55E]/30'
                     }`}>
                       <div className="flex items-start gap-2">
-                        <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        <AlertTriangle className={`w-3 h-3 mt-0.5 flex-shrink-0 ${
                           alert.type === 'critical' ? 'text-[#EF4444]' :
                           alert.type === 'warning' ? 'text-[#F59E0B]' :
                           'text-[#22C55E]'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#D1D5DB]">{alert.title}</p>
+                          <p className="text-xs font-medium text-[#D1D5DB]">{alert.title}</p>
                           <p className="text-xs text-[#9AA4B2]">{alert.description}</p>
                         </div>
                       </div>
