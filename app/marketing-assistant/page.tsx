@@ -1,679 +1,782 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { useBrandContext } from '@/lib/context/BrandContext'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useBrandContext } from '@/lib/context/BrandContext'
+
+// Components
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import { GridOverlay } from '@/components/GridOverlay'
-import { toast } from 'react-hot-toast'
+import BrandSelector from '@/components/BrandSelector'
+
+// Icons
 import { 
-  Brain, 
-  Filter, 
-  Settings, 
+  BarChart3, 
   TrendingUp, 
-  AlertTriangle, 
-  Activity,
-  Target,
-  BarChart3,
+  Target, 
+  Zap, 
+  DollarSign, 
+  Eye, 
+  MousePointer, 
+  ShoppingCart,
   Clock,
+  AlertTriangle,
   CheckCircle,
   Play,
   Pause,
-  MoreHorizontal,
-  Eye,
-  MousePointer,
-  DollarSign,
-  Loader2,
+  Settings,
   RefreshCw,
-  Zap
+  Filter,
+  Calendar,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+  Brain,
+  Sparkles
 } from 'lucide-react'
-import PlatformCampaignWidget from '@/components/campaign-management/PlatformCampaignWidget'
-import AIMarketingConsultant from '@/components/campaign-management/AIMarketingConsultant'
-import { format, subDays, startOfDay, endOfDay } from 'date-fns'
-import { cn } from '@/lib/utils'
-import { getSupabaseClient } from '@/lib/supabase/client'
 
-interface MarketingAssistantPageProps {}
+interface KPIMetrics {
+  spend: number
+  impressions: number
+  clicks: number
+  conversions: number
+  cpa: number
+  cpc: number
+  roas: number
+  revenue: number
+  ctr: number
+  costPerConversion: number
+}
 
-export default function MarketingAssistantPage({}: MarketingAssistantPageProps) {
-  const { selectedBrandId, brands } = useBrandContext()
+interface OptimizationCard {
+  id: string
+  type: 'budget' | 'audience' | 'creative' | 'bid' | 'frequency'
+  priority: 'high' | 'medium' | 'low'
+  title: string
+  description: string
+  rootCause: string
+  actions: Array<{
+    id: string
+    type: string
+    label: string
+    impact: {
+      revenue: number
+      roas: number
+      confidence: number
+    }
+    estimatedTimeToStabilize: string
+  }>
+  currentValue: string
+  recommendedValue: string
+  projectedImpact: {
+    revenue: number
+    roas: number
+    confidence: number
+  }
+}
+
+interface ExperimentQueueItem {
+  id: string
+  type: 'staged' | 'running' | 'completed'
+  campaignName: string
+  action: string
+  projectedImpact: string
+  risk: 'low' | 'medium' | 'high'
+  scheduledFor?: Date
+}
+
+interface AlertItem {
+  id: string
+  type: 'warning' | 'error' | 'info'
+  title: string
+  description: string
+  timestamp: Date
+  acknowledged: boolean
+}
+
+export default function MarketingAssistantPage() {
   const { userId } = useAuth()
+  const { selectedBrandId } = useBrandContext()
   
-  // State management
-  const [dateRange, setDateRange] = useState({
-    from: startOfDay(subDays(new Date(), 7)),
-    to: endOfDay(new Date())
-  })
-  const [selectedCampaignStatus, setSelectedCampaignStatus] = useState('all')
-  const [selectedPlatform, setSelectedPlatform] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  
-  // Real data states
-  const [kpiData, setKpiData] = useState({
-    totalSpend: 0,
-    spendGrowth: 0,
-    totalConversions: 0,
-    conversionsGrowth: 0,
-    averageROAS: 0,
-    roasGrowth: 0,
-    activeCampaigns: 0,
-    campaignsGrowth: 0
-  })
-  const [isLoadingKPIs, setIsLoadingKPIs] = useState(true)
-  const [experimentsQueue, setExperimentsQueue] = useState<any[]>([])
-  const [isLoadingExperiments, setIsLoadingExperiments] = useState(true)
-  const [performanceTrends, setPerformanceTrends] = useState<any[]>([])
-  const [isLoadingTrends, setIsLoadingTrends] = useState(true)
+  // State
+  const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
+  const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
+  const [experimentQueue, setExperimentQueue] = useState<ExperimentQueueItem[]>([])
+  const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [actionLog, setActionLog] = useState<any[]>([])
-  const [isLoadingActionLog, setIsLoadingActionLog] = useState(true)
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [isLoadingAlerts, setIsLoadingAlerts] = useState(true)
-  const [campaigns, setCampaigns] = useState<any[]>([])
-  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [dateRange, setDateRange] = useState({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  })
+  const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
+  const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
 
-  // Fetch real KPI data from API
-  const fetchKPIData = useCallback(async () => {
-    if (!selectedBrandId) return
-    
-    setIsLoadingKPIs(true)
-    try {
-      const params = new URLSearchParams({
-        brandId: selectedBrandId,
-        from: format(dateRange.from, 'yyyy-MM-dd'),
-        to: format(dateRange.to, 'yyyy-MM-dd'),
-        t: Date.now().toString()
-      })
-      
-      const response = await fetch(`/api/metrics?${params.toString()}`)
-      if (response.ok) {
-        const data = await response.json()
-        setKpiData({
-          totalSpend: data.adSpend || 0,
-          spendGrowth: data.adSpendGrowth || 0,
-          totalConversions: data.conversions || 0,
-          conversionsGrowth: data.conversionGrowth || 0,
-          averageROAS: data.roas || 0,
-          roasGrowth: data.roasGrowth || 0,
-          activeCampaigns: data.activeCampaigns || 0,
-          campaignsGrowth: 0
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching KPI data:', error)
-      toast.error('Failed to load performance metrics')
-    } finally {
-      setIsLoadingKPIs(false)
-    }
-  }, [selectedBrandId, dateRange])
-
-  // Fetch campaigns data
-  const fetchCampaignsData = useCallback(async () => {
-    if (!selectedBrandId) return
-    
-    setIsLoadingCampaigns(true)
-    try {
-      const supabase = getSupabaseClient()
-      const { data: campaignsData, error } = await supabase
-        .from('meta_campaigns')
-        .select('*')
-        .eq('brand_id', selectedBrandId)
-        .order('spent', { ascending: false })
-        .limit(20)
-
-      if (error) throw error
-      setCampaigns(campaignsData || [])
-    } catch (error) {
-      console.error('Error fetching campaigns:', error)
-      toast.error('Failed to load campaigns')
-    } finally {
-      setIsLoadingCampaigns(false)
-    }
-  }, [selectedBrandId])
-
-  // Generate AI-powered experiments queue
-  const fetchExperimentsQueue = useCallback(async () => {
-    if (!selectedBrandId) return
-    
-    setIsLoadingExperiments(true)
-    try {
-      const response = await fetch('/api/ai/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brandId: selectedBrandId,
-          type: 'optimization_queue',
-          dateRange: {
-            from: format(dateRange.from, 'yyyy-MM-dd'),
-            to: format(dateRange.to, 'yyyy-MM-dd')
-          }
-        })
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setExperimentsQueue(data.recommendations || [])
-      }
-    } catch (error) {
-      console.error('Error fetching experiments:', error)
-      // Fall back to some default recommendations
-      setExperimentsQueue([
-        {
-          id: '1',
-          type: 'budget_optimization',
-          campaignName: 'Top performing campaign',
-          status: 'pending',
-          estimatedImpact: 'Analyze performance',
-          priority: 'medium'
-        }
-      ])
-    } finally {
-      setIsLoadingExperiments(false)
-    }
-  }, [selectedBrandId, dateRange])
-
-  // Load all data when component mounts or dependencies change
+  // Data Loading
   useEffect(() => {
     if (selectedBrandId) {
-      fetchKPIData()
-      fetchCampaignsData()
-      fetchExperimentsQueue()
-      setIsLoadingTrends(false)
-      setIsLoadingActionLog(false)
-      setIsLoadingAlerts(false)
+      loadDashboardData()
     }
-  }, [selectedBrandId, dateRange, fetchKPIData, fetchCampaignsData, fetchExperimentsQueue])
+  }, [selectedBrandId, dateRange])
+
+  const loadDashboardData = async () => {
+    if (!selectedBrandId) return
+    
+    setLoading(true)
+    try {
+      await Promise.all([
+        loadKPIMetrics(),
+        loadOptimizationRecommendations(),
+        loadExperimentQueue(),
+        loadAlerts(),
+        loadActionLog()
+      ])
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadKPIMetrics = async () => {
+    if (!selectedBrandId) return
+
+    try {
+      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setKpiMetrics(data.metrics)
+      }
+    } catch (error) {
+      console.error('Error loading KPI metrics:', error)
+    }
+  }
+
+  const loadOptimizationRecommendations = async () => {
+    if (!selectedBrandId) return
+
+    try {
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setOptimizationCards(data.recommendations)
+      }
+    } catch (error) {
+      console.error('Error loading optimization recommendations:', error)
+    }
+  }
+
+  const loadExperimentQueue = async () => {
+    // Load staged and running experiments
+    setExperimentQueue([
+      {
+        id: '1',
+        type: 'staged',
+        campaignName: 'Holiday Campaign 2024',
+        action: 'Increase budget by 25%',
+        projectedImpact: '+$2,400 revenue',
+        risk: 'low'
+      },
+      {
+        id: '2',
+        type: 'running',
+        campaignName: 'Black Friday Special',
+        action: 'Test new audience segment',
+        projectedImpact: '+15% ROAS',
+        risk: 'medium'
+      }
+    ])
+  }
+
+  const loadAlerts = async () => {
+    // Load system alerts and warnings
+    setAlerts([
+      {
+        id: '1',
+        type: 'warning',
+        title: 'High frequency detected',
+        description: 'Campaign "Summer Sale" showing 4.2x frequency - consider creative rotation',
+        timestamp: new Date(),
+        acknowledged: false
+      },
+      {
+        id: '2',
+        type: 'error',
+        title: 'Low CTR alert',
+        description: 'Ad set "Lookalike 1%" CTR dropped below 1.5%',
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        acknowledged: false
+      }
+    ])
+  }
+
+  const loadActionLog = async () => {
+    if (!selectedBrandId) return
+
+    try {
+      const response = await fetch(`/api/marketing-assistant/action-log?brandId=${selectedBrandId}&limit=20`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setActionLog(data.actions)
+      }
+    } catch (error) {
+      console.error('Error loading action log:', error)
+    }
+  }
+
+  const handleApplyAction = async (cardId: string, actionId: string) => {
+    try {
+      const card = optimizationCards.find(c => c.id === cardId)
+      if (!card) return
+
+      const response = await fetch('/api/marketing-assistant/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'apply_action',
+          campaignId: card.actions[0]?.id || card.id,
+          actionId,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Add to experiment queue as running
+        setExperimentQueue(prev => [...prev, {
+          id: `exp_${Date.now()}`,
+          type: 'running',
+          campaignName: card.title,
+          action: card.actions.find(a => a.id === actionId)?.label || 'Unknown action',
+          projectedImpact: `+$${card.projectedImpact.revenue.toLocaleString()}`,
+          risk: 'low'
+        }])
+
+        // Remove the applied recommendation
+        setOptimizationCards(prev => prev.filter(c => c.id !== cardId))
+        
+        // Reload data
+        loadDashboardData()
+      }
+    } catch (error) {
+      console.error('Error applying action:', error)
+    }
+  }
+
+  const handleBatchApply = async (selectedCards: string[]) => {
+    // Apply multiple actions at once
+    console.log('Applying batch actions:', selectedCards)
+  }
+
+  const handleRevertAction = async (actionId: string) => {
+    try {
+      const response = await fetch('/api/marketing-assistant/action-log', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'revert',
+          actionId,
+          brandId: selectedBrandId
+        })
+      })
+
+      if (response.ok) {
+        // Reload action log and dashboard data
+        loadActionLog()
+        loadDashboardData()
+      }
+    } catch (error) {
+      console.error('Error reverting action:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] p-6">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-200">
-      <GridOverlay />
+    <div className="min-h-screen bg-[#0B0B0B]" 
+         style={{
+           backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+             <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+               <defs>
+                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                   <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+                 </pattern>
+               </defs>
+               <rect width="100%" height="100%" fill="url(#grid)" />
+             </svg>
+           `)}")`,
+           backgroundRepeat: 'repeat',
+           backgroundSize: '40px 40px',
+           backgroundAttachment: 'fixed'
+         }}>
       
-      {/* Main Content Grid */}
-      <div className="relative z-10">
-        <div className="grid grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6 max-w-[1600px] mx-auto">
+      <div className="max-w-[1400px] mx-auto p-6">
+        <div className="grid grid-cols-12 gap-6 h-screen">
           
-          {/* Left Column - Sticky (3 cols) */}
-          <div className="col-span-12 lg:col-span-3 order-1 lg:order-1">
-            <div className="sticky top-6 space-y-4 lg:space-y-6">
-              
-              {/* Scope & Filters Panel */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <Filter className="w-5 h-5 text-[#FF2A2A]" />
-                    Scope & Filters
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block text-gray-400">
-                      Date Range
-                    </label>
-                    <DateRangePicker 
-                      dateRange={dateRange} 
-                      setDateRange={setDateRange}
-                    />
+          {/* Left Rail - Sticky */}
+          <div className="col-span-3 space-y-6 overflow-y-auto">
+            
+            {/* Scope & Filters */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <Filter className="w-5 h-5 text-white" />
                   </div>
-                  
                   <div>
-                    <label className="text-sm font-medium mb-2 block text-gray-400">
-                      Platform
-                    </label>
-                    <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                      <SelectTrigger className="bg-[#111] border-[#333] text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#111] border-[#333]">
-                        <SelectItem value="all">All Platforms</SelectItem>
-                        <SelectItem value="meta">Meta</SelectItem>
-                        <SelectItem value="google">Google</SelectItem>
-                        <SelectItem value="tiktok">TikTok</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <h3 className="text-lg font-bold text-white">Scope & Filters</h3>
+                    <p className="text-gray-400 text-sm">Configure analysis parameters</p>
                   </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">Date Range</label>
+                  <DateRangePicker 
+                    dateRange={dateRange}
+                    setDateRange={setDateRange}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
+                  <Select value={selectedPlatforms.join(',')} onValueChange={(value) => setSelectedPlatforms(value.split(','))}>
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
+                      <SelectValue placeholder="Select platforms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="meta,google,tiktok">All Platforms</SelectItem>
+                      <SelectItem value="meta">Meta Only</SelectItem>
+                      <SelectItem value="google">Google Only</SelectItem>
+                      <SelectItem value="tiktok">TikTok Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block text-gray-400">
-                      Campaign Status
-                    </label>
-                    <Select value={selectedCampaignStatus} onValueChange={setSelectedCampaignStatus}>
-                      <SelectTrigger className="bg-[#111] border-[#333] text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#111] border-[#333]">
-                        <SelectItem value="all">All Campaigns</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="paused">Paused</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">Campaign Status</label>
+                  <Select defaultValue="active">
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="all">All Campaigns</SelectItem>
+                      <SelectItem value="paused">Paused Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block text-gray-400">
-                      Search Campaigns
-                    </label>
-                    <Input 
-                      placeholder="Search campaigns..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-[#111] border-[#333] text-white placeholder:text-gray-500"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">Attribution Window</label>
+                  <Select defaultValue="7d_click_1d_view">
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1d_click">1-day click</SelectItem>
+                      <SelectItem value="7d_click_1d_view">7-day click, 1-day view</SelectItem>
+                      <SelectItem value="28d_click_1d_view">28-day click, 1-day view</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Experiments Queue Panel */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <Brain className="w-5 h-5 text-[#FF2A2A]" />
-                    AI Experiments Queue
-                    {isLoadingExperiments && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingExperiments ? (
-                    <div className="space-y-3">
-                      {[1,2].map(i => (
-                        <div key={i} className="p-3 rounded-lg bg-[#111] border border-[#333] animate-pulse">
-                          <div className="h-4 bg-gray-800 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-800 rounded w-3/4"></div>
-                        </div>
-                      ))}
+            {/* Experiment Queue */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                  flex items-center justify-center border border-white/10">
+                      <Zap className="w-5 h-5 text-white" />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {experimentsQueue.length === 0 ? (
-                        <div className="text-center text-gray-400 py-4">
-                          <Brain className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                          <p className="text-sm">AI analyzing campaigns...</p>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="mt-2 border-[#333] text-gray-400 hover:text-white"
-                            onClick={fetchExperimentsQueue}
-                          >
-                            Generate Recommendations
-                          </Button>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Experiment Queue</h3>
+                      <p className="text-gray-400 text-sm">{experimentQueue.length} staged actions</p>
+                    </div>
+                  </div>
+                  {experimentQueue.filter(exp => exp.type === 'staged').length > 0 && (
+                    <Button 
+                      onClick={() => handleBatchApply(experimentQueue.filter(exp => exp.type === 'staged').map(exp => exp.id))}
+                      className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-white text-xs px-3 py-1"
+                    >
+                      Run All
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  {experimentQueue.map(exp => (
+                    <div key={exp.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={exp.type === 'staged' ? 'secondary' : exp.type === 'running' ? 'default' : 'outline'}>
+                          {exp.type}
+                        </Badge>
+                        <Badge variant={exp.risk === 'low' ? 'secondary' : exp.risk === 'medium' ? 'default' : 'destructive'}>
+                          {exp.risk} risk
+                        </Badge>
+                      </div>
+                      <h4 className="text-white font-medium text-sm">{exp.campaignName}</h4>
+                      <p className="text-gray-400 text-xs mt-1">{exp.action}</p>
+                      <p className="text-green-400 text-xs mt-1">{exp.projectedImpact}</p>
+                      {exp.type === 'staged' && (
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" className="text-xs">Preview</Button>
+                          <Button size="sm" className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-xs">Apply</Button>
                         </div>
-                      ) : (
-                        experimentsQueue.map((experiment) => (
-                          <div 
-                            key={experiment.id}
-                            className="p-3 rounded-lg bg-[#111] border border-[#333]"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge 
-                                variant={experiment.priority === 'high' ? 'destructive' : 'secondary'}
-                                className={cn(
-                                  experiment.priority === 'high' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'
-                                )}
-                              >
-                                {experiment.priority}
-                              </Badge>
-                              <Badge 
-                                variant="outline"
-                                className="border-[#333] text-gray-400"
-                              >
-                                {experiment.status}
-                              </Badge>
-                            </div>
-                            <div className="text-sm font-medium mb-1 text-white">
-                              {experiment.campaignName}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {experiment.estimatedImpact}
-                            </div>
-                            <Button 
-                              size="sm" 
-                              className="w-full mt-2 bg-[#FF2A2A] hover:bg-[#DC2626] text-white"
-                            >
-                              Apply Optimization
-                            </Button>
-                          </div>
-                        ))
                       )}
                     </div>
+                  ))}
+                  {experimentQueue.length === 0 && (
+                    <div className="text-center py-6 text-gray-400">
+                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No staged experiments</p>
+                    </div>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Middle Column - Scrollable (6 cols) */}
-          <div className="col-span-12 lg:col-span-6 order-2 lg:order-2">
-            <div className="space-y-4 lg:space-y-6">
-              
-              {/* KPI Strip */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total Spend Card */}
-                <Card className="bg-[#111] border-[#333] shadow-md">
+          {/* Middle Column - Main Work Area */}
+          <div className="col-span-6 space-y-6 overflow-y-auto">
+            
+            {/* KPI Band */}
+            {kpiMetrics && (
+              <div className="grid grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
                   <CardContent className="p-4">
-                    {isLoadingKPIs ? (
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-8 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl 
+                                    flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-blue-400" />
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-400">Total Spend</p>
-                          <p className="text-2xl font-bold text-white">
-                            ${kpiData.totalSpend.toLocaleString()}
-                          </p>
-                          <p className={cn(
-                            "text-sm font-medium",
-                            kpiData.spendGrowth > 0 ? "text-green-500" : "text-red-500"
-                          )}>
-                            {kpiData.spendGrowth > 0 ? '+' : ''}{kpiData.spendGrowth.toFixed(1)}%
-                          </p>
-                        </div>
-                        <DollarSign className="w-8 h-8 text-[#FF2A2A]" />
+                      <div>
+                        <p className="text-gray-400 text-xs">Total Spend</p>
+                        <p className="text-white text-lg font-bold">${kpiMetrics.spend.toLocaleString()}</p>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Conversions Card */}
-                <Card className="bg-[#111] border-[#333] shadow-md">
-                  <CardContent className="p-4">
-                    {isLoadingKPIs ? (
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-8 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-800 rounded w-1/2"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-400">Conversions</p>
-                          <p className="text-2xl font-bold text-white">
-                            {kpiData.totalConversions.toLocaleString()}
-                          </p>
-                          <p className={cn(
-                            "text-sm font-medium",
-                            kpiData.conversionsGrowth > 0 ? "text-green-500" : "text-red-500"
-                          )}>
-                            {kpiData.conversionsGrowth > 0 ? '+' : ''}{kpiData.conversionsGrowth.toFixed(1)}%
-                          </p>
-                        </div>
-                        <Target className="w-8 h-8 text-[#FF2A2A]" />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Avg ROAS Card */}
-                <Card className="bg-[#111] border-[#333] shadow-md">
-                  <CardContent className="p-4">
-                    {isLoadingKPIs ? (
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-8 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-800 rounded w-1/2"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-400">Avg ROAS</p>
-                          <p className="text-2xl font-bold text-white">
-                            {kpiData.averageROAS.toFixed(1)}x
-                          </p>
-                          <p className={cn(
-                            "text-sm font-medium",
-                            kpiData.roasGrowth > 0 ? "text-green-500" : "text-red-500"
-                          )}>
-                            {kpiData.roasGrowth > 0 ? '+' : ''}{kpiData.roasGrowth.toFixed(1)}%
-                          </p>
-                        </div>
-                        <TrendingUp className="w-8 h-8 text-[#FF2A2A]" />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Active Campaigns Card */}
-                <Card className="bg-[#111] border-[#333] shadow-md">
-                  <CardContent className="p-4">
-                    {isLoadingCampaigns ? (
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-8 bg-gray-800 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-800 rounded w-1/2"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-400">Active Campaigns</p>
-                          <p className="text-2xl font-bold text-white">
-                            {campaigns.filter(c => c.status === 'ACTIVE').length}
-                          </p>
-                          <p className="text-sm font-medium text-gray-400">
-                            {campaigns.length} total
-                          </p>
-                        </div>
-                        <Activity className="w-8 h-8 text-[#FF2A2A]" />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Campaign Management with AI */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                {/* Campaign List */}
-                <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg text-white">
-                      <BarChart3 className="w-5 h-5 text-[#FF2A2A]" />
-                      Campaign Management
-                      {isLoadingCampaigns && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {/* Use existing PlatformCampaignWidget with proper theme injection */}
-                    <div className="[&_.bg-white]:!bg-[#111] [&_.bg-gray-50]:!bg-[#0a0a0a] [&_.border-gray-200]:!border-[#333] [&_.text-gray-900]:!text-white [&_.text-gray-600]:!text-gray-400 [&_.bg-gray-100]:!bg-[#0a0a0a] [&_.text-gray-700]:!text-gray-300 [&_.text-gray-800]:!text-white [&_.border-gray-300]:!border-[#333] overflow-hidden">
-                      <PlatformCampaignWidget preloadedCampaigns={campaigns} />
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* AI Marketing Consultant */}
-                <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg text-white">
-                      <Brain className="w-5 h-5 text-[#FF2A2A]" />
-                      AI Marketing Consultant
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="h-[400px] overflow-hidden">
-                      <AIMarketingConsultant />
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl 
+                                    flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-xs">ROAS</p>
+                        <p className="text-white text-lg font-bold">{kpiMetrics.roas.toFixed(2)}x</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl 
+                                    flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-xs">Impressions</p>
+                        <p className="text-white text-lg font-bold">{kpiMetrics.impressions.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl 
+                                    flex items-center justify-center">
+                        <MousePointer className="w-5 h-5 text-orange-400" />
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-xs">CTR</p>
+                        <p className="text-white text-lg font-bold">{kpiMetrics.ctr.toFixed(2)}%</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Right Column - Sticky (3 cols) */}
-          <div className="col-span-12 lg:col-span-3 order-3 lg:order-3">
-            <div className="sticky top-6 space-y-4 lg:space-y-6">
-              
-              {/* Performance Trends */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <TrendingUp className="w-5 h-5 text-[#FF2A2A]" />
-                    Performance Trends
-                    {isLoadingKPIs && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingKPIs ? (
-                    <div className="space-y-4">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="animate-pulse flex items-center gap-2">
-                            <div className="w-2 h-2 bg-gray-800 rounded-full"></div>
-                            <div className="h-4 bg-gray-800 rounded w-16"></div>
-                          </div>
-                          <div className="animate-pulse">
-                            <div className="h-4 bg-gray-800 rounded w-12"></div>
-                          </div>
-                        </div>
-                      ))}
+            {/* Optimization Feed */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                  flex items-center justify-center border border-white/10">
+                      <Brain className="w-6 h-6 text-white" />
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            kpiData.averageROAS >= 3 ? "bg-green-500" : kpiData.averageROAS >= 2 ? "bg-yellow-500" : "bg-red-500"
-                          )} />
-                          <span className="text-sm font-medium text-white">ROAS</span>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">AI Optimization Feed</h2>
+                      <p className="text-gray-400">Prioritized recommendations based on performance analysis</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="border-[#333] text-gray-300">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {optimizationCards.map(card => (
+                    <div key={card.id} className="p-4 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            card.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                            card.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            <Target className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold">{card.title}</h3>
+                            <Badge variant={card.priority === 'high' ? 'destructive' : card.priority === 'medium' ? 'default' : 'secondary'}>
+                              {card.priority} priority
+                            </Badge>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-white">
-                            {kpiData.averageROAS.toFixed(1)}x
-                          </div>
-                          <div className={cn(
-                            "text-xs",
-                            kpiData.roasGrowth > 0 ? "text-green-500" : "text-red-500"
-                          )}>
-                            {kpiData.roasGrowth > 0 ? '+' : ''}{kpiData.roasGrowth.toFixed(1)}%
-                          </div>
+                          <p className="text-green-400 font-semibold">+${card.projectedImpact.revenue.toLocaleString()}</p>
+                          <p className="text-gray-400 text-sm">{card.projectedImpact.confidence}% confidence</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          <span className="text-sm font-medium text-white">CTR</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-white">2.4%</div>
-                          <div className="text-xs text-green-500">+0.3%</div>
-                        </div>
+                      <p className="text-gray-300 text-sm mb-3">{card.description}</p>
+                      
+                      <div className="bg-[#0F0F0F] p-3 rounded-lg mb-3">
+                        <p className="text-gray-400 text-xs mb-1">Root Cause Analysis</p>
+                        <p className="text-gray-300 text-sm">{card.rootCause}</p>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-purple-500" />
-                          <span className="text-sm font-medium text-white">CVR</span>
+                        <div className="text-sm">
+                          <span className="text-gray-400">Current: </span>
+                          <span className="text-white">{card.currentValue}</span>
+                          <span className="text-gray-400 mx-2">→</span>
+                          <span className="text-green-400">{card.recommendedValue}</span>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-white">1.2%</div>
-                          <div className="text-xs text-red-500">-0.1%</div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="border-[#333] text-gray-300">
+                            Simulate
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80"
+                            onClick={() => handleApplyAction(card.id, card.actions[0]?.id)}
+                          >
+                            Apply
+                          </Button>
                         </div>
                       </div>
+                    </div>
+                  ))}
+                  
+                  {optimizationCards.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No optimization opportunities detected</h3>
+                      <p className="text-sm">Your campaigns are performing well. Check back later for new recommendations.</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              {/* Quick Actions */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <Zap className="w-5 h-5 text-[#FF2A2A]" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full bg-[#FF2A2A] hover:bg-[#DC2626] text-white"
-                    onClick={() => window.open('/ai-marketing-consultant', '_blank')}
-                  >
-                    <Brain className="w-4 h-4 mr-2" />
-                    Ask AI Consultant
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-[#333] text-gray-400 hover:text-white"
-                    onClick={fetchKPIData}
-                    disabled={isLoadingKPIs}
-                  >
-                    <RefreshCw className={cn("w-4 h-4 mr-2", isLoadingKPIs && "animate-spin")} />
-                    Refresh Data
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-[#333] text-gray-400 hover:text-white"
-                    onClick={() => window.open('/ad-creative-studio', '_blank')}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Creative Studio
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <Clock className="w-5 h-5 text-[#FF2A2A]" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {campaigns.slice(0, 3).map((campaign, index) => (
-                      <div key={campaign.campaign_id || index} className="p-2 rounded bg-[#111] border border-[#333]">
-                        <div className="text-sm font-medium mb-1 text-white truncate">
-                          {campaign.campaign_name || 'Campaign'}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          Status: {campaign.status || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          Spent: ${campaign.spent?.toLocaleString() || '0'}
-                        </div>
-                      </div>
-                    ))}
-                    {campaigns.length === 0 && !isLoadingCampaigns && (
-                      <div className="text-center text-gray-400 py-4">
-                        <Activity className="w-6 h-6 mx-auto mb-2" />
-                        <p className="text-sm">No recent activity</p>
-                      </div>
-                    )}
+          {/* Right Rail - Sticky */}
+          <div className="col-span-3 space-y-6 overflow-y-auto">
+            
+            {/* Trends */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* System Status */}
-              <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-white">
-                    <AlertTriangle className="w-5 h-5 text-[#FF2A2A]" />
-                    System Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Meta API</span>
-                      <Badge className="bg-green-600 text-white">Connected</Badge>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Performance Trends</h3>
+                    <p className="text-gray-400 text-sm">7-day overview</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                    <div>
+                      <p className="text-gray-400 text-sm">Spend</p>
+                      <p className="text-white font-semibold">${kpiMetrics?.spend.toLocaleString() || 0}</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Data Sync</span>
-                      <Badge className="bg-blue-600 text-white">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">AI Services</span>
-                      <Badge className="bg-green-600 text-white">Online</Badge>
+                    <div className="flex items-center gap-1 text-green-400">
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span className="text-sm">+12%</span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                    <div>
+                      <p className="text-gray-400 text-sm">Revenue</p>
+                      <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-green-400">
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span className="text-sm">+8%</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                    <div>
+                      <p className="text-gray-400 text-sm">ROAS</p>
+                      <p className="text-white font-semibold">{kpiMetrics?.roas.toFixed(2) || 0}x</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-red-400">
+                      <ArrowDownRight className="w-4 h-4" />
+                      <span className="text-sm">-3%</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Alerts */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Alerts</h3>
+                    <p className="text-gray-400 text-sm">{alerts.filter(a => !a.acknowledged).length} unread</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  {alerts.map(alert => (
+                    <div key={alert.id} className={`p-3 rounded-lg border ${
+                      alert.type === 'error' ? 'bg-red-500/10 border-red-500/20' :
+                      alert.type === 'warning' ? 'bg-yellow-500/10 border-yellow-500/20' :
+                      'bg-blue-500/10 border-blue-500/20'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="text-white font-medium text-sm">{alert.title}</h4>
+                        {!alert.acknowledged && (
+                          <div className={`w-2 h-2 rounded-full ${
+                            alert.type === 'error' ? 'bg-red-400' :
+                            alert.type === 'warning' ? 'bg-yellow-400' :
+                            'bg-blue-400'
+                          }`} />
+                        )}
+                      </div>
+                      <p className="text-gray-400 text-xs mb-2">{alert.description}</p>
+                      <p className="text-gray-500 text-xs">{alert.timestamp.toLocaleTimeString()}</p>
+                    </div>
+                  ))}
+                  {alerts.length === 0 && (
+                    <div className="text-center py-6 text-gray-400">
+                      <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">All systems running smoothly</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Log */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <Activity className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Action Log</h3>
+                    <p className="text-gray-400 text-sm">{actionLog.length} recent changes</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {actionLog.map((action: any) => (
+                    <div key={action.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={
+                          action.status === 'applied' ? 'default' : 
+                          action.status === 'reverted' ? 'destructive' : 
+                          'secondary'
+                        }>
+                          {action.status}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {new Date(action.appliedAt || action.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-white text-sm mb-2">{action.description}</p>
+                      {action.impact && (
+                        <p className="text-green-400 text-xs">
+                          Impact: +${action.impact.revenue?.toLocaleString() || 0} revenue
+                        </p>
+                      )}
+                      {action.canRevert && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="mt-2 text-xs border-[#333] text-gray-300"
+                          onClick={() => handleRevertAction(action.id)}
+                        >
+                          Revert
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {actionLog.length === 0 && (
+                    <div className="text-center py-6 text-gray-400">
+                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No recent actions</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
