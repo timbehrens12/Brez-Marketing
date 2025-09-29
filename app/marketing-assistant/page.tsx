@@ -523,10 +523,10 @@ export default function MarketingAssistantPage() {
        )}
       
       <div className="w-full px-6 py-4">
-        <div className="grid grid-cols-12 gap-4 h-screen">
+        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)]">
           
-          {/* Left Rail - Sticky */}
-          <div className="col-span-3 space-y-4 overflow-y-auto">
+          {/* Left Rail */}
+          <div className="col-span-3 space-y-4 overflow-y-auto pr-2 h-full">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
@@ -655,7 +655,7 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Middle Column - Main Work Area */}
-          <div className="col-span-6 space-y-4 overflow-y-auto">
+          <div className="col-span-6 space-y-4 overflow-y-auto px-2 h-full">
             
             {/* KPI Band */}
             {kpiMetrics && (
@@ -810,8 +810,8 @@ export default function MarketingAssistantPage() {
             </Card>
           </div>
 
-          {/* Right Rail - Sticky */}
-          <div className="col-span-3 space-y-4 overflow-y-auto">
+          {/* Right Rail */}
+          <div className="col-span-3 space-y-4 overflow-y-auto pl-2 h-full">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
