@@ -22,7 +22,6 @@ import {
   Eye, 
   MousePointer, 
   ShoppingCart,
-  Clock,
   AlertTriangle,
   CheckCircle,
   Play,
@@ -33,7 +32,6 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
-  Activity,
   Brain,
   Sparkles
 } from 'lucide-react'
@@ -106,11 +104,10 @@ export default function MarketingAssistantPage() {
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
   const [experimentQueue, setExperimentQueue] = useState<ExperimentQueueItem[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
-  const [actionLog, setActionLog] = useState<any[]>([])
   const [trends, setTrends] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    from: new Date(), // Today's data
     to: new Date()
   })
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
@@ -133,7 +130,6 @@ export default function MarketingAssistantPage() {
         loadOptimizationRecommendations(),
         loadExperimentQueue(),
         loadAlerts(),
-        loadActionLog(),
         loadTrends()
       ])
     } catch (error) {
@@ -215,54 +211,94 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Get campaign performance data to generate alerts
-      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`)
+      // Get both current metrics and trends for comparison
+      const [metricsResponse, trendsResponse] = await Promise.all([
+        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}&platforms=${selectedPlatforms.join(',')}`),
+        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
+      ])
       
-      if (response.ok) {
-        const data = await response.json()
-        const metrics = data.metrics
+      if (metricsResponse.ok && trendsResponse.ok) {
+        const metricsData = await metricsResponse.json()
+        const trendsData = await trendsResponse.json()
+        const metrics = metricsData.metrics
+        const trends = trendsData.trends
         const generatedAlerts: AlertItem[] = []
 
-        // Generate alerts based on real metrics
-        if (metrics.ctr < 1.5 && metrics.impressions > 1000) {
+        // Trend-based alerts with real performance analysis
+        if (trends?.spend && trends.spend.change > 50 && trends.spend.current > 200) {
+          generatedAlerts.push({
+            id: 'spend-surge',
+            type: 'warning',
+            title: 'Ad Spend Surging',
+            description: `Spend increased ${trends.spend.change}% to $${trends.spend.current.toLocaleString()} - monitor ROAS closely`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (trends?.cac && trends.cac.change > 30 && trends.cac.current > 25) {
+          generatedAlerts.push({
+            id: 'cac-rising',
+            type: 'error',
+            title: 'CAC Rising Fast',
+            description: `Customer acquisition cost up ${trends.cac.change}% to $${trends.cac.current.toFixed(2)} - check targeting efficiency`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (trends?.roas && trends.roas.change < -20 && trends.roas.current < 2.5) {
+          generatedAlerts.push({
+            id: 'roas-dropping',
+            type: 'error',
+            title: 'ROAS Declining',
+            description: `ROAS dropped ${Math.abs(trends.roas.change)}% to ${trends.roas.current.toFixed(2)}x - immediate optimization needed`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        if (trends?.revenue && trends.revenue.change < -15 && trends.revenue.current > 1000) {
+          generatedAlerts.push({
+            id: 'revenue-drop',
+            type: 'warning',
+            title: 'Revenue Decreasing',
+            description: `Revenue down ${Math.abs(trends.revenue.change)}% to $${trends.revenue.current.toLocaleString()} - investigate campaign performance`,
+            timestamp: new Date(),
+            acknowledged: false
+          })
+        }
+
+        // Static threshold alerts
+        if (metrics.ctr < 1.0 && metrics.impressions > 1000) {
           generatedAlerts.push({
             id: 'low-ctr',
             type: 'warning',
-            title: 'Low CTR Alert',
-            description: `CTR of ${metrics.ctr.toFixed(2)}% is below recommended 1.5% threshold`,
+            title: 'Poor Ad Engagement',
+            description: `CTR of ${metrics.ctr.toFixed(2)}% suggests ad fatigue - consider creative refresh`,
             timestamp: new Date(),
             acknowledged: false
           })
         }
 
-        if (metrics.cpc > 2.0 && metrics.clicks > 100) {
+        if (metrics.cpc > 3.0 && metrics.clicks > 50) {
           generatedAlerts.push({
             id: 'high-cpc',
             type: 'error',
-            title: 'High CPC Alert',
-            description: `CPC of $${metrics.cpc.toFixed(2)} is above recommended threshold`,
+            title: 'High Cost Per Click',
+            description: `CPC of $${metrics.cpc.toFixed(2)} is inefficient - optimize targeting or pause underperforming ads`,
             timestamp: new Date(),
             acknowledged: false
           })
         }
 
-        if (metrics.roas < 2.0 && metrics.spend > 100) {
+        // Opportunity alerts
+        if (trends?.revenue && trends.revenue.change > 25 && metrics.roas > 3.0) {
           generatedAlerts.push({
-            id: 'low-roas',
-            type: 'error',
-            title: 'Low ROAS Alert',
-            description: `ROAS of ${metrics.roas.toFixed(2)}x is below 2.0x threshold`,
-            timestamp: new Date(),
-            acknowledged: false
-          })
-        }
-
-        if (metrics.spend > 500) {
-          generatedAlerts.push({
-            id: 'high-spend',
+            id: 'scale-opportunity',
             type: 'info',
-            title: 'High Daily Spend',
-            description: `Current spend of $${metrics.spend.toFixed(0)} is above average`,
+            title: 'Scaling Opportunity',
+            description: `Revenue up ${trends.revenue.change}% with ${metrics.roas.toFixed(2)}x ROAS - consider increasing budgets`,
             timestamp: new Date(),
             acknowledged: false
           })
@@ -276,20 +312,6 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadActionLog = async () => {
-    if (!selectedBrandId) return
-
-    try {
-      const response = await fetch(`/api/marketing-assistant/action-log?brandId=${selectedBrandId}&limit=20`)
-      
-      if (response.ok) {
-        const data = await response.json()
-        setActionLog(data.actions)
-      }
-    } catch (error) {
-      console.error('Error loading action log:', error)
-    }
-  }
 
   const handleApplyAction = async (cardId: string, actionId: string) => {
     try {
@@ -338,42 +360,26 @@ export default function MarketingAssistantPage() {
     console.log('Applying batch actions:', selectedCards)
   }
 
-  const handleRevertAction = async (actionId: string) => {
-    try {
-      const response = await fetch('/api/marketing-assistant/action-log', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'revert',
-          actionId,
-          brandId: selectedBrandId
-        })
-      })
-
-      if (response.ok) {
-        // Reload action log and dashboard data
-        loadActionLog()
-        loadDashboardData()
-      }
-    } catch (error) {
-      console.error('Error reverting action:', error)
-    }
-  }
 
   const loadTrends = async () => {
     if (!selectedBrandId) return
 
     try {
-      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
+      // Calculate days between selected date range for proper comparison
+      const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) || 7
+      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=${daysDiff}&fromDate=${dateRange.from.toISOString().split('T')[0]}&toDate=${dateRange.to.toISOString().split('T')[0]}`)
       
       if (response.ok) {
         const data = await response.json()
+        console.log('[Dashboard] Trends data received:', data)
         setTrends(data.trends)
+      } else {
+        console.error('Failed to load trends')
+        setTrends(null)
       }
     } catch (error) {
       console.error('Error loading trends:', error)
+      setTrends(null)
     }
   }
 
@@ -530,7 +536,7 @@ export default function MarketingAssistantPage() {
                   ))}
                   {experimentQueue.length === 0 && (
                     <div className="text-center py-6 text-gray-400">
-                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No staged experiments</p>
                     </div>
                   )}
@@ -833,63 +839,6 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-            {/* Action Log */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Action Log</h3>
-                    <p className="text-gray-400 text-sm">{actionLog.length} recent changes</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {actionLog.map((action: any) => (
-                    <div key={action.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant={
-                          action.status === 'applied' ? 'default' : 
-                          action.status === 'reverted' ? 'destructive' : 
-                          'secondary'
-                        }>
-                          {action.status}
-                        </Badge>
-                        <span className="text-xs text-gray-400">
-                          {new Date(action.appliedAt || action.createdAt).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <p className="text-white text-sm mb-2">{action.description}</p>
-                      {action.impact && (
-                        <p className="text-green-400 text-xs">
-                          Impact: +${action.impact.revenue?.toLocaleString() || 0} revenue
-                        </p>
-                      )}
-                      {action.canRevert && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="mt-2 text-xs border-[#333] text-gray-300"
-                          onClick={() => handleRevertAction(action.id)}
-                        >
-                          Revert
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  {actionLog.length === 0 && (
-                    <div className="text-center py-6 text-gray-400">
-                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No recent actions</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

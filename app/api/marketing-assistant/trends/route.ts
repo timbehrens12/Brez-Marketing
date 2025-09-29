@@ -17,14 +17,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
     const days = parseInt(searchParams.get('days') || '7')
+    const fromDate = searchParams.get('fromDate')
+    const toDate = searchParams.get('toDate')
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Calculate date range
-    const endDate = new Date()
-    const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000)
+    // Calculate date range - use provided dates or default to last N days
+    let endDate, startDate
+    if (fromDate && toDate) {
+      startDate = new Date(fromDate)
+      endDate = new Date(toDate)
+    } else {
+      endDate = new Date()
+      startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000)
+    }
     
     // Get historical data for comparison
     const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
