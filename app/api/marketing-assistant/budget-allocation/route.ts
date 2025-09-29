@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       .from('meta_campaign_daily_stats')
       .select(`
         campaign_id,
-        campaign_name,
+        date,
         spend,
         impressions,
         clicks,
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         .from('meta_campaign_daily_stats')
         .select(`
           campaign_id,
-          campaign_name,
+          date,
           spend,
           impressions,
           clicks,
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         .from('meta_campaign_daily_stats')
         .select(`
           campaign_id,
-          campaign_name,
+          date,
           spend,
           impressions,
           clicks,
@@ -129,7 +129,6 @@ export async function GET(request: NextRequest) {
       if (!acc[key]) {
         acc[key] = {
           campaign_id: stat.campaign_id,
-          campaign_name: stat.campaign_name,
           totalSpend: 0,
           totalImpressions: 0,
           totalClicks: 0,
@@ -200,7 +199,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: campaign.campaign_id,
-        campaignName: campaign.campaign_name || `Campaign ${campaign.campaign_id}`,
+        campaignName: `Campaign ${campaign.campaign_id.slice(0, 8)}`,
         currentBudget: Math.round(avgDailySpend),
         suggestedBudget,
         currentRoas: Number(currentRoas.toFixed(2)),

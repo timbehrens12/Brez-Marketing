@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       .from('meta_campaign_daily_stats')
       .select(`
         campaign_id,
-        campaign_name,
+        date,
         spend,
         impressions,
         clicks,
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         .from('meta_campaign_daily_stats')
         .select(`
           campaign_id,
-          campaign_name,
+          date,
           spend,
           impressions,
           clicks,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
         .from('meta_campaign_daily_stats')
         .select(`
           campaign_id,
-          campaign_name,
+          date,
           spend,
           impressions,
           clicks,
@@ -133,7 +133,6 @@ export async function GET(request: NextRequest) {
       if (!acc[key]) {
         acc[key] = {
           campaign_id: stat.campaign_id,
-          campaign_name: stat.campaign_name,
           totalSpend: 0,
           totalImpressions: 0,
           totalClicks: 0,
@@ -202,7 +201,7 @@ export async function GET(request: NextRequest) {
       opportunities.push({
         id: `lookalike-${campaign.campaign_id}`,
         type: 'lookalike',
-        title: `Lookalike ${index + 1}% - ${campaign.campaign_name || 'Campaign'}`,
+        title: `Lookalike ${index + 1}% - Campaign ${campaign.campaign_id.slice(0, 8)}`,
         description,
         currentReach: estimatedReach,
         projectedReach: Math.round(estimatedReach * 2.5), // 2.5x expansion potential
