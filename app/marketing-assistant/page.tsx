@@ -233,7 +233,7 @@ export default function MarketingAssistantPage() {
         localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
       }
       setRecommendationsViewed(false)
-      setCompletedItems(new Set())
+      // Don't clear completed items on countdown - only clear on "Update Recommendations" click
       // Alerts will be refreshed with acknowledged: false on next load
     }
     
@@ -257,16 +257,10 @@ export default function MarketingAssistantPage() {
     const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
     if (completed) {
       try {
-        const loadedItems = new Set(JSON.parse(completed))
-        console.log('📋 Loaded completed items:', [...loadedItems])
-        setCompletedItems(loadedItems)
+        setCompletedItems(new Set(JSON.parse(completed)))
       } catch (e) {
         console.error('Error parsing completedItems:', e)
-        setCompletedItems(new Set())
       }
-    } else {
-      console.log('📋 No completed items found for brand:', selectedBrandId)
-      setCompletedItems(new Set())
     }
   }, [selectedBrandId])
 
@@ -689,11 +683,9 @@ export default function MarketingAssistantPage() {
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
       const newCompleted = new Set(completedItems).add(`opt-${cardId}`)
-      console.log('✅ Marking as done:', `opt-${cardId}`, 'Total completed:', [...newCompleted])
       setCompletedItems(newCompleted)
       if (selectedBrandId) {
         localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
-        console.log('💾 Saved to localStorage:', `completedItems_${selectedBrandId}`)
       }
       
       const card = optimizationCards.find(c => c.id === cardId)
