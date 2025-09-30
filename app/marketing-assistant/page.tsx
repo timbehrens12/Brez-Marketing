@@ -165,8 +165,8 @@ export default function MarketingAssistantPage() {
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
   const [dateRangeText, setDateRangeText] = useState<string>('')
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
-  const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean | null>(null)
-  const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(true)
+  const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean | null>(null) // null = not checked, true/false = checked
+  const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(false)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
@@ -191,9 +191,8 @@ export default function MarketingAssistantPage() {
       }
 
       console.log('🔍 Checking platforms for brand:', selectedBrandId)
-      // CRITICAL: Reset to null (unknown) and set checking = true
-      setHasAdPlatforms(null)
       setIsCheckingPlatforms(true)
+      setHasAdPlatforms(null) // Reset to null (unchecked) while checking
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -335,11 +334,10 @@ export default function MarketingAssistantPage() {
       // No brand selected - clear loading
       setIsLoadingPage(false)
       setLoading(false)
-      setIsCheckingPlatforms(false)
       return
     }
     
-    // If platform check not complete yet (null or still checking), just wait
+    // If platform check hasn't completed yet (null or still checking), do nothing - just wait
     if (hasAdPlatforms === null || isCheckingPlatforms) {
       console.log('⏳ Waiting for platform check to complete...')
       return
@@ -975,8 +973,8 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  // Only show loading if we're checking platforms or we have platforms and are loading data
-  if (isLoadingPage || loading || isCheckingPlatforms) {
+  // Show loading if: checking platforms, platform check not complete yet, or loading data
+  if (isLoadingPage || loading || isCheckingPlatforms || hasAdPlatforms === null) {
     return (
       <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
@@ -1040,7 +1038,7 @@ export default function MarketingAssistantPage() {
     )
   }
 
-  // Show message if brand has no advertising platforms connected
+  // Show message if brand has no advertising platforms connected (only after check is complete)
   if (!isCheckingPlatforms && hasAdPlatforms === false) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
