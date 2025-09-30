@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,14 +24,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Always use last 7 days for current performance
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const today = new Date().toISOString().split('T')[0]
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
+    const sevenDaysAgo = startDate
+    const today = endDate
 
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
     console.log(`🎯 AUDIENCE DEBUG: Platforms filter:`, platforms)
     console.log(`🎯 AUDIENCE DEBUG: Status filter:`, status)
-    console.log(`🎯 AUDIENCE DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
+    console.log(`🎯 AUDIENCE DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
 
     // First, get campaign metadata to filter by platform and status
     let campaignMetadata: any = {}

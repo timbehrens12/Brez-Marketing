@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -25,15 +26,12 @@ export async function GET(req: NextRequest) {
     console.log('[ACTION KPIs] Calculating for brand:', brandId)
     console.log('[ACTION KPIs] Platforms:', platforms)
 
-    // Calculate dates (last 7 days)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(endDate.getDate() - 7)
-    
-    const startDateStr = startDate.toISOString().split('T')[0]
-    const endDateStr = endDate.toISOString().split('T')[0]
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
+    const startDateStr = startDate
+    const endDateStr = endDate
 
-    console.log('[ACTION KPIs] Date range:', startDateStr, 'to', endDateStr)
+    console.log('[ACTION KPIs] Monday-to-Monday range:', startDateStr, 'to', endDateStr)
 
     // Initialize response object
     const actionKPIs = {

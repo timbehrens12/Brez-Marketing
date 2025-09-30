@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,11 +17,16 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    // Always use last 7 days for current performance
-    const fromDate = searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const toDate = searchParams.get('to') || new Date().toISOString().split('T')[0]
+    
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
+    const fromDate = searchParams.get('from') || startDate
+    const toDate = searchParams.get('to') || endDate
+    
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
+    
+    console.log(`[Metrics API] Using Monday-to-Monday range: ${fromDate} to ${toDate}`)
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,18 +66,22 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Calculate date range - use provided dates or default to last N days
+    // Calculate date range - use Monday-to-Monday weekly window
     let endDate, startDate
     if (fromDate && toDate) {
       startDate = new Date(fromDate)
       endDate = new Date(toDate)
     } else {
-      endDate = new Date()
-      startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000)
+      // Use Monday-to-Monday window
+      const { startDate: mondayStart, endDate: mondayEnd } = getMondayToMondayRange()
+      startDate = new Date(mondayStart)
+      endDate = new Date(mondayEnd)
+      console.log(`[Trends API] Using Monday-to-Monday range: ${mondayStart} to ${mondayEnd}`)
     }
     
-    // Get historical data for comparison
-    const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
+    // Get historical data for comparison (previous week)
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))
+    const previousStartDate = new Date(startDate.getTime() - daysDiff * 24 * 60 * 60 * 1000)
 
     // Current period data - filter by allowed campaigns (only query if we have Meta campaigns)
     let currentPeriod: any[] = []

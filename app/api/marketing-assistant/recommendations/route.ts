@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -99,10 +100,15 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
+    
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
     const dateRange = {
-      from: searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      to: searchParams.get('to') || new Date().toISOString().split('T')[0]
+      from: searchParams.get('from') || startDate,
+      to: searchParams.get('to') || endDate
     }
+    
+    console.log(`[Recommendations API] Using Monday-to-Monday range: ${dateRange.from} to ${dateRange.to}`)
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })

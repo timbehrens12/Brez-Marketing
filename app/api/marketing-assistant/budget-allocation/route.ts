@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,9 +20,10 @@ export async function GET(request: NextRequest) {
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
     
-    // Always use last 7 days for current performance
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const today = new Date().toISOString().split('T')[0]
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
+    const sevenDaysAgo = startDate
+    const today = endDate
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 BUDGET DEBUG: Querying for brand ${brandId}`)
     console.log(`🔍 BUDGET DEBUG: Platforms filter:`, platforms)
     console.log(`🔍 BUDGET DEBUG: Status filter:`, status)
-    console.log(`🔍 BUDGET DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
+    console.log(`🔍 BUDGET DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
     console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
     // First, get campaign metadata to filter by platform and status
