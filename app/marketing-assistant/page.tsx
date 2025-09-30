@@ -1264,10 +1264,10 @@ export default function MarketingAssistantPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
-                            card.priority === 'high' ? 'bg-red-400' :
-                            card.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                            card.priority === 'high' ? 'bg-[#FF2A2A]' :
+                            card.priority === 'medium' ? 'bg-[#FF2A2A]' : 'bg-[#FF2A2A]'
                           }`}></div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">{card.priority}</span>
+                          <span className="text-xs text-[#FF2A2A] uppercase tracking-wide font-medium">{card.priority}</span>
                         </div>
                 </div>
 
@@ -1565,9 +1565,9 @@ export default function MarketingAssistantPage() {
                       <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
-                            alert.type === 'error' ? 'bg-red-400' :
-                            alert.type === 'warning' ? 'bg-yellow-400' :
-                            'bg-blue-400'
+                            alert.type === 'error' ? 'bg-[#FF2A2A]' :
+                            alert.type === 'warning' ? 'bg-[#FF2A2A]' :
+                            'bg-[#FF2A2A]'
                           }`} />
                           <h4 className={`text-white font-medium text-sm ${alert.acknowledged ? 'line-through' : ''}`}>{alert.title}</h4>
                           {alert.platform && (
