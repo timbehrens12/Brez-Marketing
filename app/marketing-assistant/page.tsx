@@ -192,7 +192,7 @@ export default function MarketingAssistantPage() {
 
       console.log('🔍 Checking platforms for brand:', selectedBrandId)
       setIsCheckingPlatforms(true)
-      // Don't reset hasAdPlatforms here - let it keep previous value until check completes
+      setHasAdPlatforms(false) // Reset to false while checking
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -337,18 +337,15 @@ export default function MarketingAssistantPage() {
       return
     }
     
-    // Only act when platform check is complete
+    // If still checking platforms, do nothing - just wait
     if (isCheckingPlatforms) {
-      console.log('⏳ Platform check in progress, waiting...')
       return
     }
     
-    // Platform check complete - act on result
+    // Platform check is complete - now we can make decisions
     if (hasAdPlatforms) {
-      // Has platforms - load data
+      // Has platforms - load data (loadDashboardData sets loading states itself)
       console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
-      setIsLoadingPage(true)
-      setLoading(true)
       loadDashboardData()
     } else {
       // No platforms - stop loading and show warning
@@ -394,6 +391,10 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
     
     console.log('🔄 loadDashboardData called, forceRefresh:', forceRefresh)
+    
+    // Set loading states
+    setLoading(true)
+    setIsLoadingPage(true)
     
       // If force refresh, clear ALL state first
       if (forceRefresh) {
