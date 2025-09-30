@@ -858,7 +858,7 @@ export default function MarketingAssistantPage() {
        )}
       
        <div className="w-full px-2 sm:px-4 lg:px-6 py-4 overflow-x-hidden">
-         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 h-[calc(100vh-2rem)] max-w-[1920px] mx-auto">
+         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 h-[calc(100vh-8rem)] max-w-[1920px] mx-auto">
            
             {/* Left Rail */}
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
