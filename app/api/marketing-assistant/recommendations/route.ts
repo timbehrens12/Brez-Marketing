@@ -13,6 +13,7 @@ const supabase = createClient(
 )
 
 interface OptimizationRecommendation {
+  id: string
   type: 'budget' | 'audience' | 'creative' | 'bid' | 'frequency'
   priority: 'high' | 'medium' | 'low'
   title: string
@@ -39,6 +40,52 @@ interface OptimizationRecommendation {
   campaignId: string
   campaignName: string
   platform: string
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const brandId = searchParams.get('brandId')
+    const secret = searchParams.get('secret')
+
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    }
+
+    // Secret check for reset (can be any string, this is just a simple mechanism)
+    if (secret !== 'reset-ai-recs') {
+      return NextResponse.json({ error: 'Invalid secret' }, { status: 403 })
+    }
+
+    console.log('[Recommendations] Deleting all recommendations for brand:', brandId)
+
+    // Delete all recommendations for this brand
+    const { error } = await supabase
+      .from('ai_campaign_recommendations')
+      .delete()
+      .eq('brand_id', brandId)
+
+    if (error) {
+      console.error('[Recommendations] Error deleting recommendations:', error)
+      return NextResponse.json({ error: 'Failed to delete recommendations' }, { status: 500 })
+    }
+
+    console.log('[Recommendations] Successfully reset recommendations for brand:', brandId)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'All recommendations reset. Refresh the page to generate new ones.' 
+    })
+
+  } catch (error) {
+    console.error('Error resetting recommendations:', error)
+    return NextResponse.json({ error: 'Failed to reset recommendations' }, { status: 500 })
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -230,8 +277,8 @@ async function generateRecommendations(
       
       console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
 
-      // Smart Budget Optimization with Multiple Scaling Options
-      if ((roas > 1.5 || (perf.totalClicks > 5 && ctr > 1.0)) && avgDailySpend > 5) {
+      // Smart Budget Optimization with Multiple Scaling Options (relaxed thresholds)
+      if ((roas > 0.8 || (perf.totalClicks > 3 && ctr > 0.5)) && avgDailySpend > 1) {
         const currentBudget = campaign.daily_budget || avgDailySpend
         const efficiency = ctr * (roas || 1) // Combined efficiency metric
         
@@ -311,8 +358,8 @@ async function generateRecommendations(
         })
       }
 
-      // Advanced Creative Performance Analysis
-      if (ctr < 1.8 && perf.totalImpressions > 50) {
+      // Advanced Creative Performance Analysis (relaxed threshold)
+      if (ctr < 2.5 && perf.totalImpressions > 20) {
         const severity = ctr < 0.8 ? 'critical' : ctr < 1.2 ? 'high' : 'medium'
         const urgency = severity === 'critical' ? 'high' : 'medium'
         
@@ -398,8 +445,8 @@ async function generateRecommendations(
         })
       }
 
-      // Frequency cap optimization - if high spend with low performance
-      if (perf.totalSpend > 50 && roas < 1.5 && roas > 0) {
+      // Frequency cap optimization - if spend with suboptimal performance (relaxed)
+      if (perf.totalSpend > 5 && roas < 2.0 && roas > 0) {
         recommendations.push({
           id: `frequency_${campaign.campaign_id}_${Date.now()}`,
           type: 'frequency',

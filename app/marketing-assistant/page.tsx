@@ -17,10 +17,10 @@ import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-lo
 
 // Icons
 import { 
-  BarChart3, 
+  BarChart3,
   TrendingUp,
-  Target, 
-  Zap, 
+  Target,
+  Zap,
   DollarSign,
   Eye,
   MousePointer,
@@ -44,7 +44,10 @@ import {
   X,
   Clock,
   TrendingDown,
-  Wand2
+  Wand2,
+  Activity,
+  Award,
+  Gauge
 } from 'lucide-react'
 
 interface KPIMetrics {
@@ -58,6 +61,18 @@ interface KPIMetrics {
   revenue: number
   ctr: number
   costPerConversion: number
+}
+
+interface ActionKPIs {
+  activeCampaigns: number
+  totalCampaigns: number
+  budgetUtilization: number // percentage of daily budget spent
+  topPerformer: {
+    name: string
+  roas: number
+    spend: number
+  } | null
+  needsAttention: number // count of underperforming campaigns
 }
 
 interface OptimizationCard {
@@ -127,6 +142,7 @@ export default function MarketingAssistantPage() {
   // State
   const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
+  const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [trends, setTrends] = useState<any>(null)
@@ -215,6 +231,46 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedBrandId, selectedPlatforms])
 
+  // Secret keyboard shortcut to reset AI recommendations
+  useEffect(() => {
+    const handleKeyPress = async (e: KeyboardEvent) => {
+      // Ctrl+Shift+R to reset recommendations
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault()
+        if (!selectedBrandId) {
+          alert('No brand selected')
+      return
+    }
+
+        const confirm = window.confirm('Reset all AI recommendations for this brand? This will generate fresh recommendations on next load.')
+        if (!confirm) return
+
+        try {
+          const response = await fetch(
+            `/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`,
+            { method: 'DELETE' }
+          )
+
+          if (response.ok) {
+            const data = await response.json()
+            alert(data.message || 'Recommendations reset successfully!')
+            // Reload recommendations
+            await loadOptimizationRecommendations()
+          } else {
+            const error = await response.json()
+            alert(`Failed to reset: ${error.error}`)
+          }
+        } catch (error) {
+          console.error('Error resetting recommendations:', error)
+          alert('Failed to reset recommendations')
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedBrandId])
+
   const loadDashboardData = async () => {
     if (!selectedBrandId) return
     
@@ -230,6 +286,7 @@ export default function MarketingAssistantPage() {
     try {
     await Promise.all([
       loadKPIMetrics(),
+      loadActionKPIs(),
       loadOptimizationRecommendations(),
       loadBudgetAllocations(),
       loadAudienceExpansions(),
@@ -262,6 +319,21 @@ export default function MarketingAssistantPage() {
       }
     } catch (error) {
       console.error('Error loading KPI metrics:', error)
+    }
+  }
+
+  const loadActionKPIs = async () => {
+    if (!selectedBrandId) return
+
+    try {
+      const response = await fetch(`/api/marketing-assistant/action-kpis?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setActionKPIs(data.actionKPIs)
+      }
+    } catch (error) {
+      console.error('Error loading Action KPIs:', error)
     }
   }
 
@@ -478,8 +550,8 @@ export default function MarketingAssistantPage() {
         }))
         
         setAlerts(alertsWithAcknowledged)
-            }
-          } catch (error) {
+        }
+      } catch (error) {
       console.error('Error loading alerts:', error)
       setAlerts([])
     }
@@ -527,8 +599,8 @@ export default function MarketingAssistantPage() {
       if (response.ok) {
         // Keep the item visible - just marked as completed in state
         console.log(`Marked recommendation ${cardId} as done`)
-            }
-          } catch (error) {
+                  }
+    } catch (error) {
       console.error('Error marking as done:', error)
     }
   }
@@ -554,8 +626,8 @@ export default function MarketingAssistantPage() {
         const explanation = await response.json()
         setExplanationData(explanation)
         setShowExplanation(true)
-                  }
-                } catch (error) {
+        }
+      } catch (error) {
       console.error('Error getting explanation:', error)
     }
   }
@@ -639,8 +711,8 @@ export default function MarketingAssistantPage() {
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) {
         console.error('Card not found:', cardId)
-        return
-      }
+      return
+    }
 
       console.log('Simulating action:', { cardId, actionId, card })
 
@@ -1024,186 +1096,108 @@ export default function MarketingAssistantPage() {
             {/* Middle Column - Main Work Area */}
            <div className="col-span-1 xl:col-span-6 space-y-4 flex flex-col min-w-0">
             
-            {/* KPI Band */}
-            {kpiMetrics && (
+            {/* Action-Oriented KPI Band */}
+            {actionKPIs && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
+                {/* Active Campaigns */}
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
                   <CardContent className="p-3 lg:p-4">
-                    <div className="flex items-start gap-2 min-w-0">
-                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10 flex-shrink-0">
-                       <DollarSign className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
-                          </div>
-                      <div className="min-w-0 overflow-hidden flex-1 space-y-1">
-                        <p className="text-gray-400 text-xs truncate">Total Spend</p>
-                        <p className="text-white text-base lg:text-lg font-bold truncate">${kpiMetrics.spend.toLocaleString()}</p>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {selectedPlatforms.includes('meta') && (
-                            <div className="relative group/platform">
-                              <Image src="/meta-icon.png" alt="Meta" width={20} height={20} className="rounded opacity-60 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Meta: ${kpiMetrics.spend.toLocaleString()}</div>
-                                <div className="text-gray-400">100% of total</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('google') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Google: $0</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('tiktok') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">TikTok: $0</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-9 h-9 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-lg flex items-center justify-center border border-green-500/30 flex-shrink-0">
+                          <Activity className="w-4 h-4 text-green-400" />
                         </div>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Active Now</p>
+                          <p className="text-white text-xl font-bold truncate">{actionKPIs.activeCampaigns}</p>
                         </div>
-                        </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
-                  <CardContent className="p-3 lg:p-4">
-                    <div className="flex items-start gap-2 min-w-0">
-                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10 flex-shrink-0">
-                       <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
-                    </div>
-                      <div className="min-w-0 overflow-hidden flex-1 space-y-1">
-                        <p className="text-gray-400 text-xs truncate">ROAS</p>
-                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.roas.toFixed(2)}x</p>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {selectedPlatforms.includes('meta') && (
-                            <div className="relative group/platform">
-                              <Image src="/meta-icon.png" alt="Meta" width={20} height={20} className="rounded opacity-60 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Meta: {kpiMetrics.roas.toFixed(2)}x</div>
-                                <div className="text-gray-400">100% of total</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('google') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Google: 0.00x</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('tiktok') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">TikTok: 0.00x</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-gray-500 text-xs truncate">of {actionKPIs.totalCampaigns}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
+                {/* Budget Utilization */}
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
                   <CardContent className="p-3 lg:p-4">
-                    <div className="flex items-start gap-2 min-w-0">
-                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10 flex-shrink-0">
-                       <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
-                            </div>
-                      <div className="min-w-0 overflow-hidden flex-1 space-y-1">
-                        <p className="text-gray-400 text-xs truncate">Impressions</p>
-                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.impressions.toLocaleString()}</p>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {selectedPlatforms.includes('meta') && (
-                            <div className="relative group/platform">
-                              <Image src="/meta-icon.png" alt="Meta" width={20} height={20} className="rounded opacity-60 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Meta: {kpiMetrics.impressions.toLocaleString()}</div>
-                                <div className="text-gray-400">100% of total</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('google') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Google: 0</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('tiktok') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">TikTok: 0</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className={`w-9 h-9 bg-gradient-to-br rounded-lg flex items-center justify-center border flex-shrink-0 ${
+                          actionKPIs.budgetUtilization >= 90 ? 'from-red-500/20 to-red-500/10 border-red-500/30' :
+                          actionKPIs.budgetUtilization >= 70 ? 'from-yellow-500/20 to-yellow-500/10 border-yellow-500/30' :
+                          'from-blue-500/20 to-blue-500/10 border-blue-500/30'
+                        }`}>
+                          <Gauge className={`w-4 h-4 ${
+                            actionKPIs.budgetUtilization >= 90 ? 'text-red-400' :
+                            actionKPIs.budgetUtilization >= 70 ? 'text-yellow-400' :
+                            'text-blue-400'
+                          }`} />
                         </div>
-                          </div>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Budget Use</p>
+                          <p className="text-white text-xl font-bold truncate">{actionKPIs.budgetUtilization}%</p>
                         </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-gray-500 text-xs truncate">daily avg</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
+                {/* Top Performer */}
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
                   <CardContent className="p-3 lg:p-4">
-                    <div className="flex items-start gap-2 min-w-0">
-                     <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                   flex items-center justify-center border border-white/10 flex-shrink-0">
-                       <MousePointer className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
-                    </div>
-                      <div className="min-w-0 overflow-hidden flex-1 space-y-1">
-                        <p className="text-gray-400 text-xs truncate">CTR</p>
-                        <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.ctr.toFixed(2)}%</p>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {selectedPlatforms.includes('meta') && (
-                            <div className="relative group/platform">
-                              <Image src="/meta-icon.png" alt="Meta" width={20} height={20} className="rounded opacity-60 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Meta: {kpiMetrics.ctr.toFixed(2)}%</div>
-                                <div className="text-gray-400">100% of total</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('google') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">Google: 0.00%</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
-                          {selectedPlatforms.includes('tiktok') && (
-                            <div className="relative group/platform">
-                              <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={20} height={20} className="rounded opacity-30 cursor-help" />
-                              <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                <div className="text-white font-medium">TikTok: 0.00%</div>
-                                <div className="text-gray-400">No data</div>
-                              </div>
-                            </div>
-                          )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-9 h-9 bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/30 flex-shrink-0">
+                          <Award className="w-4 h-4 text-purple-400" />
+                        </div>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Top ROAS</p>
+                          <p className="text-white text-xl font-bold truncate">
+                            {actionKPIs.topPerformer ? `${actionKPIs.topPerformer.roas.toFixed(1)}x` : 'N/A'}
+                          </p>
                         </div>
                       </div>
+                      <div className="text-right flex-shrink-0 max-w-[80px]">
+                        {actionKPIs.topPerformer && (
+                          <p className="text-gray-500 text-[10px] truncate" title={actionKPIs.topPerformer.name}>
+                            {actionKPIs.topPerformer.name.length > 12 
+                              ? actionKPIs.topPerformer.name.substring(0, 12) + '...' 
+                              : actionKPIs.topPerformer.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Needs Attention */}
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
+                  <CardContent className="p-3 lg:p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className={`w-9 h-9 bg-gradient-to-br rounded-lg flex items-center justify-center border flex-shrink-0 ${
+                          actionKPIs.needsAttention > 0 ? 'from-orange-500/20 to-orange-500/10 border-orange-500/30' : 'from-gray-500/20 to-gray-500/10 border-gray-500/30'
+                        }`}>
+                          <AlertTriangle className={`w-4 h-4 ${actionKPIs.needsAttention > 0 ? 'text-orange-400' : 'text-gray-400'}`} />
+                          </div>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">At Risk</p>
+                          <p className="text-white text-xl font-bold truncate">{actionKPIs.needsAttention}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-gray-500 text-xs truncate">campaigns</p>
+                      </div>
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Optimization Feed */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
