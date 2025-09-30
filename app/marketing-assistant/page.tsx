@@ -334,16 +334,16 @@ export default function MarketingAssistantPage() {
       })
       
       console.log('🎯 Action KPIs response status:', response.status)
-      
-      if (response.ok) {
-        const data = await response.json()
+            
+            if (response.ok) {
+              const data = await response.json()
         console.log('🎯 Action KPIs data received:', data)
         setActionKPIs(data.actionKPIs)
       } else {
         const errorText = await response.text()
         console.error('🎯 Action KPIs error response:', errorText)
-      }
-    } catch (error) {
+            }
+          } catch (error) {
       console.error('Error loading Action KPIs:', error)
     }
   }
@@ -365,8 +365,8 @@ export default function MarketingAssistantPage() {
         setOptimizationCards(data.recommendations)
       } else {
         console.error('🤖 AI recommendations error:', response.status)
-      }
-    } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error loading optimization recommendations:', error)
     }
   }
@@ -403,8 +403,8 @@ export default function MarketingAssistantPage() {
         setAudienceExpansions(data.opportunities || [])
       } else {
         console.error('[Audience Expansion] Response not OK:', response.status, response.statusText)
-            }
-          } catch (error) {
+        }
+      } catch (error) {
       console.error('Error loading audience expansions:', error)
       setAudienceExpansions([])
     }
@@ -570,7 +570,7 @@ export default function MarketingAssistantPage() {
         
         console.log('🚨 Generated alerts:', alertsWithAcknowledged.length, 'total,', alertsWithAcknowledged.filter(a => !a.acknowledged).length, 'unread')
         setAlerts(alertsWithAcknowledged)
-        } else {
+      } else {
           console.log('🚨 No data - skipping alert generation')
         }
       } catch (error) {
@@ -953,8 +953,8 @@ export default function MarketingAssistantPage() {
                         <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
                         {isRefreshingData ? 'Refreshing...' : 'Dev Refresh'}
                       </Button>
-       </div>
-        
+      </div>
+
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
                   <Select value={selectedPlatforms.join(',')} onValueChange={(value) => setSelectedPlatforms(value.split(','))}>

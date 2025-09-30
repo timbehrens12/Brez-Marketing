@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
         statusFilter = 'PAUSED'
       }
       
-      let metaCampaignsQuery = supabase
-        .from('meta_campaigns')
-        .select('campaign_id, campaign_name, status, budget, budget_type')
-        .eq('brand_id', brandId)
+        let metaCampaignsQuery = supabase
+          .from('meta_campaigns')
+          .select('campaign_id, campaign_name, status, budget, budget_type')
+          .eq('brand_id', brandId)
       
       // Apply status filter - be flexible with status matching
       if (status === 'active') {
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
       console.log(`🔍 BUDGET DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
       if (metaCampaigns && metaCampaigns.length > 0) {
         console.log(`🔍 BUDGET DEBUG: Sample campaign:`, {
-          name: metaCampaigns[0].campaign_name,
-          status: metaCampaigns[0].status,
-          budget: metaCampaigns[0].budget,
-          budget_type: metaCampaigns[0].budget_type,
-          id: metaCampaigns[0].campaign_id?.slice(0, 8)
-        })
+            name: metaCampaigns[0].campaign_name,
+            status: metaCampaigns[0].status,
+            budget: metaCampaigns[0].budget,
+            budget_type: metaCampaigns[0].budget_type,
+            id: metaCampaigns[0].campaign_id?.slice(0, 8)
+          })
       }
       
       if (metaError) {
@@ -273,14 +273,10 @@ export async function GET(request: NextRequest) {
       
       const metadata = campaignMetadata[campaign.campaign_id] || {}
       
-      // Use actual budget from campaign settings, not historical spend
-      let actualBudget = avgDailySpend // fallback to historical if no budget set
+      // Use actual set budget if available (for daily budgets), otherwise use historical avg
+      let actualBudget = avgDailySpend
       if (metadata.budget && metadata.budget_type === 'daily') {
         actualBudget = metadata.budget
-      } else if (metadata.budget && metadata.budget_type === 'lifetime') {
-        // For lifetime budgets, estimate daily by dividing by campaign duration
-        // This is approximate - we'd need campaign start/end dates for accuracy
-        actualBudget = metadata.budget / 30 // rough 30-day estimate
       }
       
       return {
@@ -288,7 +284,7 @@ export async function GET(request: NextRequest) {
         campaignName: metadata.name || `Campaign ${campaign.campaign_id.slice(0, 8)}`,
         platform: metadata.platform || 'meta',
         status: metadata.status || 'UNKNOWN',
-        currentBudget: Math.round(actualBudget * 100) / 100, // Use actual budget, not spend
+        currentBudget: Math.round(actualBudget * 100) / 100,
         suggestedBudget,
         currentRoas: Number(currentRoas.toFixed(2)),
         projectedRoas: Number(projectedRoas.toFixed(2)),
