@@ -192,7 +192,7 @@ export default function MarketingAssistantPage() {
 
       console.log('🔍 Checking platforms for brand:', selectedBrandId)
       setIsCheckingPlatforms(true)
-      setHasAdPlatforms(false) // Reset to false while checking
+      // Don't reset hasAdPlatforms here - let it keep previous value until check completes
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -334,22 +334,28 @@ export default function MarketingAssistantPage() {
       setIsLoadingPage(false)
       setLoading(false)
       setIsCheckingPlatforms(false)
-    } else if (!isCheckingPlatforms) {
-      // Platform check complete
-      if (hasAdPlatforms) {
-        // Has platforms - load data
-        console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
-        setIsLoadingPage(true)
-        setLoading(true)
-        loadDashboardData()
-      } else {
-        // No platforms - stop loading and show warning
-        console.log('⚠️ Brand has no platforms, showing warning')
-        setIsLoadingPage(false)
-        setLoading(false)
-      }
+      return
     }
-    // If isCheckingPlatforms is true, loading screen will show (handled below)
+    
+    // Only act when platform check is complete
+    if (isCheckingPlatforms) {
+      console.log('⏳ Platform check in progress, waiting...')
+      return
+    }
+    
+    // Platform check complete - act on result
+    if (hasAdPlatforms) {
+      // Has platforms - load data
+      console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
+      setIsLoadingPage(true)
+      setLoading(true)
+      loadDashboardData()
+    } else {
+      // No platforms - stop loading and show warning
+      console.log('⚠️ Brand has no platforms, showing warning')
+      setIsLoadingPage(false)
+      setLoading(false)
+    }
   }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms])
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
