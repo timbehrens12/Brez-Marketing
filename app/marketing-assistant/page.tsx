@@ -188,19 +188,20 @@ export default function MarketingAssistantPage() {
 
   // Check if brand has advertising platforms connected (by checking for campaigns)
   useEffect(() => {
-    const checkPlatformConnections = async () => {
-      if (!selectedBrandId) {
-        setIsCheckingPlatforms(false)
-        setHasAdPlatforms(null)
-        return
-      }
-
-      console.log('🔍 Checking platforms for brand:', selectedBrandId)
-      // IMMEDIATELY reset states when brand changes - this prevents stale data
+    if (!selectedBrandId) {
+      setIsCheckingPlatforms(false)
       setHasAdPlatforms(null)
-      setIsCheckingPlatforms(true)
-      checkingBrandRef.current = selectedBrandId // Mark which brand we're checking
+      checkingBrandRef.current = null
+      return
+    }
 
+    // CRITICAL: Reset states SYNCHRONOUSLY before any async operations
+    console.log('🔍 Checking platforms for brand:', selectedBrandId)
+    setHasAdPlatforms(null)
+    setIsCheckingPlatforms(true)
+    checkingBrandRef.current = selectedBrandId
+
+    const checkPlatformConnections = async () => {
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
         const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=meta`, {
@@ -354,9 +355,11 @@ export default function MarketingAssistantPage() {
     
     // CRITICAL: Verify the platform check result is for the CURRENT brand
     if (checkingBrandRef.current !== selectedBrandId) {
-      console.log('⚠️ Platform check result is stale, waiting for new check...')
+      console.log(`⚠️ Platform check result is stale! checkingBrandRef=${checkingBrandRef.current}, selectedBrandId=${selectedBrandId}`)
       return
     }
+    
+    console.log(`✅ Platform check verified for brand: ${selectedBrandId}, hasAdPlatforms: ${hasAdPlatforms}`)
     
     // Platform check is complete for THIS brand - now we can make decisions
     if (hasAdPlatforms === true) {
