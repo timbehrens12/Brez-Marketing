@@ -223,17 +223,14 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Data Loading - load on initial mount when brand changes
-  // All widgets use the same 7-day data snapshot until "Update Recommendations" is clicked
+  // Data Loading - ONLY reload when brand changes on initial load
+  // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
   useEffect(() => {
-    if (selectedBrandId) {
-      console.log('🔄 Initial data load for brand:', selectedBrandId)
+    if (selectedBrandId && initialDataLoad) {
+      console.log('🔄 Initial brand load, loading data for brand:', selectedBrandId)
       loadDashboardData()
     }
   }, [selectedBrandId])
-  
-  // Platform filter changes should NOT reload data - data is fixed for the week
-  // Users must click "Update Recommendations" (available weekly) to refresh all data
 
   // Secret keyboard shortcut to reset AI recommendations
   useEffect(() => {
@@ -1109,7 +1106,7 @@ export default function MarketingAssistantPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Activity className="w-3.5 h-3.5 text-gray-400" />
+                          <Activity className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Active Now</p>
@@ -1129,7 +1126,7 @@ export default function MarketingAssistantPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Gauge className="w-3.5 h-3.5 text-gray-400" />
+                          <Gauge className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Budget Use</p>
@@ -1149,7 +1146,7 @@ export default function MarketingAssistantPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Award className="w-3.5 h-3.5 text-gray-400" />
+                          <Award className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Top ROAS</p>
@@ -1177,7 +1174,7 @@ export default function MarketingAssistantPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <AlertTriangle className="w-3.5 h-3.5 text-gray-400" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">At Risk</p>
@@ -1212,13 +1209,13 @@ export default function MarketingAssistantPage() {
                           <Button
                         variant="outline" 
                             size="sm"
-                        onClick={async () => {
+                        onClick={() => {
                           setRecommendationsViewed(true)
                           if (selectedBrandId) {
                             localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
                           }
-                          // Reload ALL dashboard data (all widgets use same 7-day snapshot)
-                          await loadDashboardData()
+                          // Reload ALL widgets with fresh 7-day data
+                          loadDashboardData()
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
