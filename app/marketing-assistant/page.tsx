@@ -1039,7 +1039,7 @@ export default function MarketingAssistantPage() {
                             </div>
                         <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
                           <div className="min-w-0">
-                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day</p>
+                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day {console.log('🎨 RENDERING BUDGET:', allocation.currentBudget)}</p>
                             <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
                           <div className="min-w-0">
