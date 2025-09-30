@@ -136,12 +136,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get AI campaign recommendations from database - filter by platforms and status
+    // Only use cached recommendations if they were created THIS WEEK (after last Monday)
+    const currentMonday = new Date(endDate)
+    currentMonday.setHours(0, 0, 0, 0)
+    
     let recommendationsQuery = supabase
       .from('ai_campaign_recommendations')
       .select('*')
       .eq('brand_id', brandId)
+      .gt('created_at', currentMonday.toISOString()) // Only get recommendations from this week
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
+    
+    console.log(`[Recommendations API] Checking for cached recommendations created after ${currentMonday.toISOString()}`)
     
     if (allowedCampaignIds.length > 0) {
       recommendationsQuery = recommendationsQuery.in('campaign_id', allowedCampaignIds)
@@ -176,6 +183,13 @@ export async function GET(request: NextRequest) {
     const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
     
     // Store recommendations in database
+    // Set expiration to next Monday (when new recommendations should be generated)
+    const nextMonday = new Date(endDate)
+    nextMonday.setDate(nextMonday.getDate() + 7)
+    nextMonday.setHours(0, 0, 0, 0)
+    
+    console.log(`[Recommendations API] Storing ${recommendations.length} new recommendations, expiring at ${nextMonday.toISOString()}`)
+    
     for (const rec of recommendations) {
       await supabase
         .from('ai_campaign_recommendations')
@@ -195,7 +209,7 @@ export async function GET(request: NextRequest) {
             recommendedValue: rec.recommendedValue,
             projectedImpact: rec.projectedImpact
           },
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+          expires_at: nextMonday.toISOString() // Expire next Monday
         })
     }
 

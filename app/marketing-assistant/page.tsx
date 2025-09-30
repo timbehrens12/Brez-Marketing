@@ -162,7 +162,26 @@ export default function MarketingAssistantPage() {
   const [recommendationsViewed, setRecommendationsViewed] = useState(false)
   const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
+  const [dateRangeText, setDateRangeText] = useState<string>('')
 
+  // Calculate Monday-to-Monday date range
+  const getMondayToMondayDates = () => {
+    const now = new Date()
+    const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate this week's Monday (or today if it's Monday)
+    const thisMonday = new Date(now)
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+    thisMonday.setDate(now.getDate() - daysFromMonday)
+    thisMonday.setHours(0, 0, 0, 0)
+    
+    // Calculate last Monday (7 days before this Monday)
+    const lastMonday = new Date(thisMonday)
+    lastMonday.setDate(thisMonday.getDate() - 7)
+    
+    return { lastMonday, thisMonday }
+  }
+  
   // Calculate time until next Monday 12am
   const getNextMondayMidnight = () => {
     const now = new Date()
@@ -176,6 +195,15 @@ export default function MarketingAssistantPage() {
     const now = new Date()
     const nextMonday = getNextMondayMidnight()
     const diff = nextMonday.getTime() - now.getTime()
+    
+    // Update date range text
+    const { lastMonday, thisMonday } = getMondayToMondayDates()
+    const formatDate = (date: Date) => {
+      const month = date.toLocaleDateString('en-US', { month: 'short' })
+      const day = date.getDate()
+      return `${month} ${day}`
+    }
+    setDateRangeText(`${formatDate(lastMonday)} - ${formatDate(thisMonday)}`)
     
     // Check if it's Monday after midnight - reset the viewed state, completed items, and acknowledged alerts
     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
@@ -925,8 +953,8 @@ export default function MarketingAssistantPage() {
         </div>
                     <Badge className="text-xs bg-[#FF2A2A] text-black border-[#FF2A2A] flex-shrink-0 font-semibold">Fixed</Badge>
       </div>
-                  <div className="text-white font-semibold mb-2">Last 7 Days</div>
-                  <p className="text-xs text-gray-500 mb-2">Recommendations update weekly based on current performance</p>
+                  <div className="text-white font-semibold mb-2">{dateRangeText || 'Loading...'}</div>
+                  <p className="text-xs text-gray-500 mb-2">Analysis window updates every Monday at 12 AM</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1975,34 +2003,34 @@ export default function MarketingAssistantPage() {
                       <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                 </div>
                     <div className="pb-6">
-                      <h5 className="text-white font-medium mb-1">Week 1: Analysis & Recommendations</h5>
+                      <h5 className="text-white font-medium mb-1">Monday: Fresh Analysis & New Recommendations</h5>
                       <p className="text-gray-400 text-sm mb-2">
-                        The system analyzes the <strong className="text-white">last 7 days</strong> of campaign performance data:
+                        Every Monday at 12 AM, the system analyzes a <strong className="text-white">Monday-to-Monday weekly window</strong> (last Monday to this Monday):
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Spend, impressions, clicks, conversions</span>
+                          <span>Full week of spend, impressions, clicks, conversions</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>ROAS (Return on Ad Spend), CPA, CTR</span>
+                          <span>ROAS performance, CPA trends, CTR changes</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Trend patterns and anomalies</span>
+                          <span>Validates if last week's recommendations worked</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-white">Result:</strong> Generates prioritized recommendations (budget changes, 
-                          audience expansions, creative optimizations)
+                          <strong className="text-white">Result:</strong> Generates new prioritized recommendations based on the full week's data. 
+                          Old recommendations expire and are replaced with fresh insights.
                         </p>
                   </div>
                   </div>
                 </div>
 
-                  {/* Week 2 */}
+                  {/* Tuesday-Sunday */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
@@ -2011,34 +2039,38 @@ export default function MarketingAssistantPage() {
                       <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                     </div>
                     <div className="pb-6">
-                      <h5 className="text-white font-medium mb-1">Week 2: Testing Period</h5>
+                      <h5 className="text-white font-medium mb-1">Tuesday-Sunday: Review & Apply Changes</h5>
                       <p className="text-gray-400 text-sm mb-2">
-                        You review and apply recommended changes. The system enters a <strong className="text-white">testing period</strong>:
+                        You review the recommendations and apply changes throughout the week:
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Applied recommendations are marked as "testing"</span>
+                          <span>Review AI suggestions for budget, audience, and creative</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Changes take effect in your ad campaigns</span>
+                          <span>Apply changes to your campaigns as you see fit</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>System does NOT generate new recommendations yet</span>
+                          <span>Monitor performance with real-time alerts</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gray-300 mt-1">•</span>
+                          <span>Same recommendations stay locked until next Monday</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-white">Why wait?</strong> Changes need time to stabilize. Algorithms need to learn. 
-                          Results in the first few days aren't representative.
+                          <strong className="text-white">Why weekly?</strong> Changes need time to stabilize. Algorithms need to learn. 
+                          Testing changes mid-week would contaminate the data and give false signals.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Week 3 */}
+                  {/* Next Monday */}
                   <div className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
@@ -2046,28 +2078,33 @@ export default function MarketingAssistantPage() {
           </div>
         </div>
                     <div>
-                      <h5 className="text-white font-medium mb-1">Week 3: Performance Review</h5>
+                      <h5 className="text-white font-medium mb-1">Next Monday: Validation & New Cycle</h5>
                       <p className="text-gray-400 text-sm mb-2">
-                        7 days later, the system re-analyzes performance with <strong className="text-white">fresh data</strong>:
+                        When Monday rolls around again, the system analyzes the <strong className="text-white">new Monday-to-Monday window</strong>:
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Compares <strong>actual results</strong> vs <strong>predicted impact</strong></span>
+                          <span><strong>Validates last week's recommendations:</strong> Did they work?</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Marks recommendations as "successful" or "needs adjustment"</span>
+                          <span>Compares <strong>actual ROAS/spend/conversions</strong> to predictions</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-gray-300 mt-1">•</span>
-                          <span>Generates NEW recommendations based on current state</span>
+                          <span><strong>Expires old recommendations</strong> and generates fresh ones</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gray-300 mt-1">•</span>
+                          <span>Adapts strategy based on what worked vs. what didn't</span>
                         </li>
                       </ul>
                       <div className="mt-3 p-3 bg-[#0f0f0f] rounded border border-[#444]">
                         <p className="text-xs text-gray-300">
-                          <strong className="text-white">Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
-                          get higher confidence. If not ✗, the system adjusts its approach.
+                          <strong className="text-white">Continuous Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
+                          get higher confidence next week. If not ✗, the system adjusts its approach. The cycle repeats every Monday with 
+                          fresh insights based on the most recent full week of data.
                         </p>
                       </div>
                     </div>
