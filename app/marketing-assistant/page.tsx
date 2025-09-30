@@ -960,7 +960,7 @@ export default function MarketingAssistantPage() {
                             </div>
                             <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
                           </div>
-                          <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'} className="flex-shrink-0 text-xs">
+                          <Badge className="flex-shrink-0 text-xs bg-[#FF2A2A] text-black border-[#FF2A2A]">
                             {allocation.confidence}%
                               </Badge>
                             </div>
@@ -1039,7 +1039,7 @@ export default function MarketingAssistantPage() {
                             {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                             <h4 className="text-white font-medium text-sm truncate min-w-0">{expansion.title}</h4>
                             </div>
-                          <Badge variant="secondary" className="flex-shrink-0 text-xs">{expansion.confidence}%</Badge>
+                          <Badge className="flex-shrink-0 text-xs bg-[#FF2A2A] text-black border-[#FF2A2A]">{expansion.confidence}%</Badge>
                         </div>
                         <p className="text-gray-400 text-xs mb-2 leading-relaxed">{expansion.description}</p>
                         <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
@@ -1259,7 +1259,7 @@ export default function MarketingAssistantPage() {
                               </div>
                               <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
                             </div>
-                            <p className="text-gray-400 text-xs truncate">{card.projectedImpact.confidence}% confidence</p>
+                            <p className="text-[#FF2A2A] text-xs truncate font-medium">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1655,7 +1655,7 @@ export default function MarketingAssistantPage() {
                         </div>
                    <div>
                      <p className="text-gray-400 text-xs">Confidence Level</p>
-                     <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
+                     <p className="text-[#FF2A2A] text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
                     </div>
                    <div>
                      <p className="text-gray-400 text-xs">Time to Stabilize</p>
@@ -1778,7 +1778,7 @@ export default function MarketingAssistantPage() {
                    {explanationData.outcomes?.map((outcome: any, index: number) => (
                      <div key={index} className="text-center">
                        <p className="text-gray-400 text-xs">{outcome.label}</p>
-                       <p className={`text-lg font-bold ${outcome.positive ? 'text-[#FF2A2A]' : 'text-red-400'}`}>
+                       <p className={`text-lg font-bold ${outcome.positive ? 'text-[#FF2A2A]' : 'text-[#FF2A2A]'}`}>
                          {outcome.value}
                        </p>
                         </div>
