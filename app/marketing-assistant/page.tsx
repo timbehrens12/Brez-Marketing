@@ -1191,7 +1191,7 @@ export default function MarketingAssistantPage() {
             )}
 
             {/* Optimization Feed */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1236,7 +1236,7 @@ export default function MarketingAssistantPage() {
                   </div>
                         </div>
               </CardHeader>
-              <CardContent className="p-6 flex-1 overflow-y-auto">
+              <CardContent className="p-6 max-h-[600px] overflow-y-auto">
                 <div className="space-y-3">
                   {optimizationCards.map(card => (
                     <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
