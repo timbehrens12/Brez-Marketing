@@ -773,8 +773,8 @@ export default function MarketingAssistantPage() {
                     <Info className="h-3 w-3 mr-1" />
                     How It Works
                   </Button>
-      </div>
-                
+        </div>
+        
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
                   <Select value={selectedPlatforms.join(',')} onValueChange={(value) => setSelectedPlatforms(value.split(','))}>
@@ -788,8 +788,8 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="tiktok">TikTok Only</SelectItem>
                     </SelectContent>
                   </Select>
-        </div>
-        
+          </div>
+          
           
               </CardContent>
             </Card>
@@ -1217,8 +1217,15 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                  <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
+                  <div className="min-w-0 overflow-hidden flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
+                        {selectedPlatforms.includes('google') && <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-60" />}
+                        {selectedPlatforms.includes('tiktok') && <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-60" />}
+              </div>
+                </div>
                     <p className="text-gray-400 text-xs lg:text-sm truncate">7-day overview</p>
               </div>
                 </div>
@@ -1262,7 +1269,7 @@ export default function MarketingAssistantPage() {
                             <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
                             <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
                 </div>
-              </div>
+                </div>
                 </div>
 
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
