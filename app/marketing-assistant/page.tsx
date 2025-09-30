@@ -338,6 +338,7 @@ export default function MarketingAssistantPage() {
       if (response.ok) {
         const data = await response.json()
         console.log('🎯 Action KPIs data received:', data)
+        console.log('🎯 Action KPIs values:', JSON.stringify(data.actionKPIs, null, 2))
         setActionKPIs(data.actionKPIs)
       } else {
         const errorText = await response.text()
@@ -1123,8 +1124,14 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
             {/* Action-Oriented KPI Band */}
-            {actionKPIs && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
+              {!actionKPIs && (
+                <div className="col-span-4 text-center text-gray-400 text-sm py-4">
+                  Loading KPIs...
+                </div>
+              )}
+              {actionKPIs && (
+                <>
                 {/* Active Campaigns */}
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
                   <CardContent className="p-2 lg:p-3">
@@ -1212,8 +1219,9 @@ export default function MarketingAssistantPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )}
+                </>
+              )}
+            </div>
 
             {/* Optimization Feed */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[807px] max-h-[807px]">
