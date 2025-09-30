@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import BrandSelector from '@/components/BrandSelector'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 
@@ -225,7 +226,9 @@ export default function MarketingAssistantPage() {
       if (selectedBrandId) {
         localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
       }
-      localStorage.removeItem('completedItems')
+      if (selectedBrandId) {
+        localStorage.removeItem(`completedItems_${selectedBrandId}`)
+      }
       if (selectedBrandId) {
         localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
       }
@@ -251,7 +254,7 @@ export default function MarketingAssistantPage() {
       setRecommendationsViewed(false)
     }
     
-    const completed = localStorage.getItem('completedItems')
+    const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
     if (completed) {
       try {
         setCompletedItems(new Set(JSON.parse(completed)))
@@ -681,7 +684,9 @@ export default function MarketingAssistantPage() {
     try {
       const newCompleted = new Set(completedItems).add(`opt-${cardId}`)
       setCompletedItems(newCompleted)
-      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
+      if (selectedBrandId) {
+        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
+      }
       
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) return
@@ -795,7 +800,9 @@ export default function MarketingAssistantPage() {
     try {
       const newCompleted = new Set(completedItems).add(`budget-${allocationId}`)
       setCompletedItems(newCompleted)
-      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
+      if (selectedBrandId) {
+        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
+      }
     } catch (error) {
       console.error('Error marking budget allocation as done:', error)
     }
@@ -805,7 +812,9 @@ export default function MarketingAssistantPage() {
     try {
       const newCompleted = new Set(completedItems).add(`audience-${expansionId}`)
       setCompletedItems(newCompleted)
-      localStorage.setItem('completedItems', JSON.stringify([...newCompleted]))
+      if (selectedBrandId) {
+        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
+      }
     } catch (error) {
       console.error('Error marking audience expansion as done:', error)
     }
@@ -1107,9 +1116,18 @@ export default function MarketingAssistantPage() {
                             </div>
                             <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
                           </div>
-                          <Badge className="flex-shrink-0 text-xs bg-[#FF2A2A] text-black border-[#FF2A2A]">
-                            {allocation.confidence}%
-                              </Badge>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge className="flex-shrink-0 text-xs bg-gray-500 text-white border-gray-500">
+                                  {allocation.confidence}%
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Confidence Score</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                             </div>
                         <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
                           <div className="min-w-0">
