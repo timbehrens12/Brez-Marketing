@@ -166,17 +166,14 @@ export default function MarketingAssistantPage() {
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
 
   // Filter data based on selected platforms (client-side filtering for display only)
-  const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
-  const filteredOptimizations = optimizationCards.filter(card => 
-    selectedPlatforms.includes('meta') // All recommendations are from meta_campaigns for now
-  )
-  const filteredBudgetAllocations = budgetAllocations.filter(allocation =>
-    selectedPlatforms.includes('meta') // Budget data is from meta_campaigns
-  )
-  const filteredAudienceExpansions = audienceExpansions.filter(expansion =>
-    selectedPlatforms.includes('meta') // Audience data is from meta_campaigns
-  )
-  // Note: Performance trends filter by platform in their rendering logic already
+  // Since all current data is from Meta campaigns, we hide everything when Meta is not selected
+  const showMetaData = selectedPlatforms.includes('meta')
+  
+  const filteredAlerts = showMetaData ? alerts : []
+  const filteredOptimizations = showMetaData ? optimizationCards : []
+  const filteredBudgetAllocations = showMetaData ? budgetAllocations : []
+  const filteredAudienceExpansions = showMetaData ? audienceExpansions : []
+  const filteredTrends = showMetaData ? trends : null
 
   // Calculate Monday-to-Monday date range
   const getMondayToMondayDates = () => {
@@ -1366,7 +1363,7 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  {trends && (
+                  {filteredTrends && (
                     <>
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                        <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1378,7 +1375,7 @@ export default function MarketingAssistantPage() {
                                  <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
                                </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
+                                 <div className="text-white font-medium">Meta: ${filteredTrends.spend.current.toLocaleString()}</div>
                                  <div className="text-gray-400">100% of total</div>
                                </div>
                              </div>
@@ -1408,19 +1405,19 @@ export default function MarketingAssistantPage() {
                          </div>
                          <div className="min-w-0">
                            <p className="text-gray-400 text-sm mb-0.5">Spend</p>
-                           <p className="text-white font-semibold text-base">${trends.spend.current.toLocaleString()}</p>
-                         </div>
+                          <p className="text-white font-semibold text-base">${filteredTrends.spend.current.toLocaleString()}</p>
+                        </div>
                        </div>
                        <div 
-                         className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                         title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
+                         className={`flex items-center gap-1 cursor-help relative group ${filteredTrends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: $${filteredTrends.spend.previous.toLocaleString()} → Current: $${filteredTrends.spend.current.toLocaleString()}`}
                        >
-                         {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                         <span className="text-sm font-medium">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
+                         {filteredTrends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{filteredTrends.spend.change > 0 ? '+' : ''}{filteredTrends.spend.change}%</span>
                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                            <div className="text-gray-400 mb-1">Comparing:</div>
-                           <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
-                           <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
+                           <div>Previous: <span className="text-white font-medium">${filteredTrends.spend.previous.toLocaleString()}</span></div>
+                           <div>Current: <span className="text-white font-medium">${filteredTrends.spend.current.toLocaleString()}</span></div>
                 </div>
           </div>
         </div>
@@ -1435,7 +1432,7 @@ export default function MarketingAssistantPage() {
                                  <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
                                </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">Meta: ${trends.revenue.current.toLocaleString()}</div>
+                                 <div className="text-white font-medium">Meta: ${filteredTrends.revenue.current.toLocaleString()}</div>
                                  <div className="text-gray-400">100% of total</div>
                                </div>
                              </div>
@@ -1465,19 +1462,19 @@ export default function MarketingAssistantPage() {
                          </div>
                          <div className="min-w-0">
                            <p className="text-gray-400 text-sm mb-0.5">Revenue</p>
-                           <p className="text-white font-semibold text-base">${trends.revenue.current.toLocaleString()}</p>
+                           <p className="text-white font-semibold text-base">${filteredTrends.revenue.current.toLocaleString()}</p>
                          </div>
                        </div>
                        <div 
-                         className={`flex items-center gap-1 cursor-help relative group ${trends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                         title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
+                         className={`flex items-center gap-1 cursor-help relative group ${filteredTrends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: $${filteredTrends.revenue.previous.toLocaleString()} → Current: $${filteredTrends.revenue.current.toLocaleString()}`}
                        >
-                         {trends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                         <span className="text-sm font-medium">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
+                         {filteredTrends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{filteredTrends.revenue.change > 0 ? '+' : ''}{filteredTrends.revenue.change}%</span>
                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                            <div className="text-gray-400 mb-1">Comparing:</div>
-                           <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
-                           <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
+                           <div>Previous: <span className="text-white font-medium">${filteredTrends.revenue.previous.toLocaleString()}</span></div>
+                           <div>Current: <span className="text-white font-medium">${filteredTrends.revenue.current.toLocaleString()}</span></div>
                 </div>
           </div>
         </div>
@@ -1492,7 +1489,7 @@ export default function MarketingAssistantPage() {
                                  <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
                 </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
+                                 <div className="text-white font-medium">Meta: {filteredTrends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
               </div>
                 </div>
@@ -1522,25 +1519,25 @@ export default function MarketingAssistantPage() {
               </div>
                          <div className="min-w-0">
                            <p className="text-gray-400 text-sm mb-0.5">ROAS</p>
-                           <p className="text-white font-semibold text-base">{trends.roas.current.toFixed(2)}x</p>
+                           <p className="text-white font-semibold text-base">{filteredTrends.roas.current.toFixed(2)}x</p>
                 </div>
                 </div>
                        <div 
-                         className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                         title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
+                         className={`flex items-center gap-1 cursor-help relative group ${filteredTrends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: ${filteredTrends.roas.previous.toFixed(2)}x → Current: ${filteredTrends.roas.current.toFixed(2)}x`}
                        >
-                         {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                         <span className="text-sm font-medium">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
+                         {filteredTrends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{filteredTrends.roas.change > 0 ? '+' : ''}{filteredTrends.roas.change}%</span>
                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
                            <div className="text-gray-400 mb-1">Comparing:</div>
-                           <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
-                           <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
+                           <div>Previous: <span className="text-white font-medium">{filteredTrends.roas.previous.toFixed(2)}x</span></div>
+                           <div>Current: <span className="text-white font-medium">{filteredTrends.roas.current.toFixed(2)}x</span></div>
               </div>
                 </div>
                 </div>
                     </>
                   )}
-                  {!trends && (
+                  {!filteredTrends && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
