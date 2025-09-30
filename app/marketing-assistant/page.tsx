@@ -453,9 +453,9 @@ export default function MarketingAssistantPage() {
     try {
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
-      
-      if (response.ok) {
-        const data = await response.json()
+            
+            if (response.ok) {
+              const data = await response.json()
         setKpiMetrics(data.metrics)
       }
     } catch (error) {
@@ -506,8 +506,8 @@ export default function MarketingAssistantPage() {
         setOptimizationCards(data.recommendations)
       } else {
         console.error('🤖 AI recommendations error:', response.status)
-            }
-          } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error loading optimization recommendations:', error)
     }
   }
@@ -535,8 +535,8 @@ export default function MarketingAssistantPage() {
         setBudgetAllocations(data.allocations || [])
       } else {
         console.error('[Budget Allocations] Response not OK:', response.status, response.statusText)
-                  }
-                } catch (error) {
+        }
+      } catch (error) {
       console.error('Error loading budget allocations:', error)
       setBudgetAllocations([])
     }
@@ -1064,10 +1064,17 @@ export default function MarketingAssistantPage() {
           <CardContent className="text-center space-y-3">
             <Button
               onClick={() => window.location.href = '/settings'}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white"
             >
               <Settings className="w-4 h-4 mr-2" />
               Go to Settings
+            </Button>
+            <Button
+              onClick={() => window.location.href = '/lead-generator'}
+              className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+            >
+              <Target className="w-4 h-4 mr-2" />
+              No Brands Yet? Find Clients to Manage
             </Button>
             <p className="text-xs text-gray-500">
               Connect Meta, Google, or TikTok to unlock AI-powered campaign optimization
