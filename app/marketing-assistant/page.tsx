@@ -1448,40 +1448,47 @@ export default function MarketingAssistantPage() {
                   {trends && (
                     <>
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                       <div className="flex items-center gap-2 min-w-0 flex-1">
+                       <div className="flex items-center gap-3 min-w-0 flex-1">
+                         {/* Platform icons on the left */}
+                         <div className="flex gap-1.5 flex-shrink-0">
+                           {selectedPlatforms.includes('meta') && (
+                             <div className="relative group/platform">
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors">
+                                 <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
+                               </div>
+                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
+                                 <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('google') && (
+                             <div className="relative group/platform">
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={18} height={18} className="rounded" />
+                               </div>
+                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
+                                 <div className="text-white font-medium">Google: $0</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('tiktok') && (
+                             <div className="relative group/platform">
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={18} height={18} className="rounded" />
+                               </div>
+                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
+                                 <div className="text-white font-medium">TikTok: $0</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                         </div>
                          <div className="min-w-0">
                            <p className="text-gray-400 text-sm mb-0.5">Spend</p>
                            <p className="text-white font-semibold text-base">${trends.spend.current.toLocaleString()}</p>
                          </div>
-                         <div className="flex gap-1 ml-2">
-                           {selectedPlatforms.includes('meta') && (
-                             <div className="relative group/platform">
-                               <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded opacity-60 cursor-help" />
-                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
-                                 <div className="text-gray-400">100% of total</div>
-                </div>
-              </div>
-                           )}
-                           {selectedPlatforms.includes('google') && (
-                             <div className="relative group/platform">
-                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={16} height={16} className="rounded opacity-30 cursor-help" />
-                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">Google: $0</div>
-                                 <div className="text-gray-400">No data</div>
-                </div>
-              </div>
-                           )}
-                           {selectedPlatforms.includes('tiktok') && (
-                             <div className="relative group/platform">
-                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={16} height={16} className="rounded opacity-30 cursor-help" />
-                               <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
-                                 <div className="text-white font-medium">TikTok: $0</div>
-                                 <div className="text-gray-400">No data</div>
-                </div>
-              </div>
-                           )}
-                </div>
                        </div>
                        <div 
                          className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
@@ -1498,15 +1505,14 @@ export default function MarketingAssistantPage() {
         </div>
 
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                         <div className="min-w-0">
-                           <p className="text-gray-400 text-sm mb-0.5">Revenue</p>
-                           <p className="text-white font-semibold text-base">${trends.revenue.current.toLocaleString()}</p>
-                         </div>
-                         <div className="flex gap-1 ml-2">
+                       <div className="flex items-center gap-3 min-w-0 flex-1">
+                         {/* Platform icons on the left */}
+                         <div className="flex gap-1.5 flex-shrink-0">
                            {selectedPlatforms.includes('meta') && (
                              <div className="relative group/platform">
-                               <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded opacity-60 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors">
+                                 <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Meta: ${trends.revenue.current.toLocaleString()}</div>
                                  <div className="text-gray-400">100% of total</div>
@@ -1515,7 +1521,9 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={16} height={16} className="rounded opacity-30 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Google: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1524,13 +1532,19 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={16} height={16} className="rounded opacity-30 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">TikTok: $0</div>
                                  <div className="text-gray-400">No data</div>
                                </div>
                              </div>
                            )}
+                         </div>
+                         <div className="min-w-0">
+                           <p className="text-gray-400 text-sm mb-0.5">Revenue</p>
+                           <p className="text-white font-semibold text-base">${trends.revenue.current.toLocaleString()}</p>
                          </div>
                        </div>
                        <div 
@@ -1548,41 +1562,48 @@ export default function MarketingAssistantPage() {
                </div>
 
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                         <div className="min-w-0">
-                           <p className="text-gray-400 text-sm mb-0.5">ROAS</p>
-                           <p className="text-white font-semibold text-base">{trends.roas.current.toFixed(2)}x</p>
-                </div>
-                         <div className="flex gap-1 ml-2">
+                       <div className="flex items-center gap-3 min-w-0 flex-1">
+                         {/* Platform icons on the left */}
+                         <div className="flex gap-1.5 flex-shrink-0">
                            {selectedPlatforms.includes('meta') && (
                              <div className="relative group/platform">
-                               <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded opacity-60 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors">
+                                 <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
-              </div>
-                </div>
+                               </div>
+                             </div>
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={16} height={16} className="rounded opacity-30 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Google: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-              </div>
-                </div>
+                               </div>
+                             </div>
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={16} height={16} className="rounded opacity-30 cursor-help" />
+                               <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
+                                 <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={18} height={18} className="rounded" />
+                               </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">TikTok: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-              </div>
-                </div>
+                               </div>
+                             </div>
                            )}
-              </div>
-                </div>
+                         </div>
+                         <div className="min-w-0">
+                           <p className="text-gray-400 text-sm mb-0.5">ROAS</p>
+                           <p className="text-white font-semibold text-base">{trends.roas.current.toFixed(2)}x</p>
+                         </div>
+                       </div>
                        <div 
                          className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                          title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
