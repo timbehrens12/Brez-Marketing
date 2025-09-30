@@ -1217,15 +1217,8 @@ export default function MarketingAssistantPage() {
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                  <div className="min-w-0 overflow-hidden flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
-                      <div className="flex gap-0.5 flex-shrink-0">
-                        {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
-                        {selectedPlatforms.includes('google') && <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-60" />}
-                        {selectedPlatforms.includes('tiktok') && <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-60" />}
-              </div>
-                </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
                     <p className="text-gray-400 text-xs lg:text-sm truncate">7-day overview</p>
               </div>
                 </div>
@@ -1234,62 +1227,155 @@ export default function MarketingAssistantPage() {
                 <div className="space-y-4">
                   {trends && (
                     <>
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">Spend</p>
-                          <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
+                     <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                       <div className="flex items-center gap-2">
+                         <div>
+                           <p className="text-gray-400 text-sm">Spend</p>
+                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
               </div>
-                        <div 
-                          className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                          title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
-                        >
-                          {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          <span className="text-sm font-medium">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
-                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
-                            <div className="text-gray-400 mb-1">Comparing:</div>
-                            <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
-                            <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
+                         <div className="flex gap-0.5 flex-shrink-0">
+                           {selectedPlatforms.includes('meta') && (
+                             <div className="relative group/platform">
+                               <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
                 </div>
               </div>
+                           )}
+                           {selectedPlatforms.includes('google') && (
+                             <div className="relative group/platform">
+                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Google: $0</div>
+                                 <div className="text-gray-400">No data</div>
                 </div>
-                      
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">Revenue</p>
-                          <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
               </div>
-                        <div 
-                          className={`flex items-center gap-1 cursor-help relative group ${trends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                          title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
-                        >
-                          {trends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          <span className="text-sm font-medium">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
-                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
-                            <div className="text-gray-400 mb-1">Comparing:</div>
-                            <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
-                            <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
+                           )}
+                           {selectedPlatforms.includes('tiktok') && (
+                             <div className="relative group/platform">
+                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">TikTok: $0</div>
+                                 <div className="text-gray-400">No data</div>
                 </div>
+              </div>
+                           )}
                 </div>
+                       </div>
+                       <div 
+                         className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
+                       >
+                         {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
+                         <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                           <div className="text-gray-400 mb-1">Comparing:</div>
+                           <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
+                           <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
                 </div>
+              </div>
+            </div>
 
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">ROAS</p>
-                          <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-                </div>
-                        <div 
-                          className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
-                          title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
-                        >
-                          {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          <span className="text-sm font-medium">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
-                            <div className="text-gray-400 mb-1">Comparing:</div>
-                            <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
-                            <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
-                        </div>
-                      </div>
-                        </div>
+                     <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                       <div className="flex items-center gap-2">
+                         <div>
+                           <p className="text-gray-400 text-sm">Revenue</p>
+                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
+                         </div>
+                         <div className="flex gap-0.5 flex-shrink-0">
+                           {selectedPlatforms.includes('meta') && (
+                             <div className="relative group/platform">
+                               <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Meta: ${trends.revenue.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('google') && (
+                             <div className="relative group/platform">
+                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Google: $0</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('tiktok') && (
+                             <div className="relative group/platform">
+                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">TikTok: $0</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                       <div 
+                         className={`flex items-center gap-1 cursor-help relative group ${trends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
+                       >
+                         {trends.revenue.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{trends.revenue.change > 0 ? '+' : ''}{trends.revenue.change}%</span>
+                         <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                           <div className="text-gray-400 mb-1">Comparing:</div>
+                           <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
+                           <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
+               </div>
+             </div>
+               </div>
+
+                     <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
+                       <div className="flex items-center gap-2">
+                         <div>
+                           <p className="text-gray-400 text-sm">ROAS</p>
+                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
+                         </div>
+                         <div className="flex gap-0.5 flex-shrink-0">
+                           {selectedPlatforms.includes('meta') && (
+                             <div className="relative group/platform">
+                               <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
+                                 <div className="text-gray-400">100% of total</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('google') && (
+                             <div className="relative group/platform">
+                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">Google: 0.00x</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                           {selectedPlatforms.includes('tiktok') && (
+                             <div className="relative group/platform">
+                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
+                                 <div className="text-white font-medium">TikTok: 0.00x</div>
+                                 <div className="text-gray-400">No data</div>
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                       <div 
+                         className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
+                         title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
+                       >
+                         {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                         <span className="text-sm font-medium">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
+                         <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-xs text-gray-300 whitespace-nowrap z-10 shadow-lg">
+                           <div className="text-gray-400 mb-1">Comparing:</div>
+                           <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
+                           <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
+                       </div>
+                     </div>
+                       </div>
                     </>
                   )}
                   {!trends && (
