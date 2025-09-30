@@ -214,6 +214,9 @@ export async function GET(request: NextRequest) {
             projectedImpact: rec.projectedImpact
           },
           expires_at: nextMonday.toISOString() // Expire next Monday
+        }, {
+          onConflict: 'data_hash', // Use data_hash for conflict resolution instead of (brand_id, campaign_id)
+          ignoreDuplicates: false
         })
         .select()
       
