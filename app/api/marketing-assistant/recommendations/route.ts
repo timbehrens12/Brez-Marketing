@@ -213,6 +213,36 @@ export async function GET(request: NextRequest) {
         })
     }
 
+    // Re-query to get the actual database IDs for the stored recommendations
+    const { data: storedRecommendations } = await supabase
+      .from('ai_campaign_recommendations')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gt('created_at', currentMonday.toISOString())
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+
+    if (storedRecommendations && storedRecommendations.length > 0) {
+      const recommendationsWithDbIds = storedRecommendations.map(rec => ({
+        id: rec.id, // Use database UUID instead of Date.now() timestamp
+        type: rec.recommendation.type || 'budget',
+        priority: rec.recommendation.priority || 'medium',
+        title: rec.recommendation.title || 'Optimization Opportunity',
+        description: rec.recommendation.description || '',
+        rootCause: rec.recommendation.rootCause || 'Performance analysis detected an opportunity',
+        actions: rec.recommendation.actions || [],
+        currentValue: rec.recommendation.currentValue || '',
+        recommendedValue: rec.recommendation.recommendedValue || '',
+        projectedImpact: rec.recommendation.projectedImpact || { revenue: 0, roas: 0, confidence: 0 },
+        campaignId: rec.campaign_id,
+        campaignName: rec.campaign_name,
+        platform: rec.platform
+      }))
+
+      console.log(`[Recommendations API] Returning ${recommendationsWithDbIds.length} recommendations with database IDs`)
+      return NextResponse.json({ recommendations: recommendationsWithDbIds })
+    }
+
     return NextResponse.json({ recommendations })
 
   } catch (error) {
