@@ -328,7 +328,10 @@ export default function MarketingAssistantPage() {
 
     try {
       console.log('🎯 Loading Action KPIs for brand:', selectedBrandId, 'platforms:', selectedPlatforms)
-      const response = await fetch(`/api/marketing-assistant/action-kpis?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      const timestamp = Date.now()
+      const response = await fetch(`/api/marketing-assistant/action-kpis?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+        cache: 'no-store'
+      })
       
       console.log('🎯 Action KPIs response status:', response.status)
       
@@ -900,14 +903,17 @@ export default function MarketingAssistantPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
+                    onClick={async () => {
                       console.log('🔄 DEV REFRESH: Reloading all widgets...')
-                      loadDashboardData()
+                      setIsRefreshingData(true)
+                      await loadDashboardData()
+                      console.log('✅ DEV REFRESH: Complete')
                     }}
                     className="w-full text-xs h-7 bg-[#FF2A2A]/10 hover:bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30"
+                    disabled={isRefreshingData}
                   >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Dev Refresh
+                    <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    {isRefreshingData ? 'Refreshing...' : 'Dev Refresh'}
                   </Button>
        </div>
         
