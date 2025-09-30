@@ -255,12 +255,18 @@ export default function MarketingAssistantPage() {
     }
     
     const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
+    console.log('📋 Loading completed items from localStorage:', completed)
     if (completed) {
       try {
-        setCompletedItems(new Set(JSON.parse(completed)))
+        const completedArray = JSON.parse(completed)
+        console.log('📋 Parsed completed items:', completedArray)
+        setCompletedItems(new Set(completedArray))
       } catch (e) {
         console.error('Error parsing completedItems:', e)
       }
+    } else {
+      console.log('📋 No completed items found in localStorage')
+      setCompletedItems(new Set())
     }
   }, [selectedBrandId])
 
@@ -682,10 +688,16 @@ export default function MarketingAssistantPage() {
 
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
-      const newCompleted = new Set(completedItems).add(`opt-${cardId}`)
+      const itemId = `opt-${cardId}`
+      const newCompleted = new Set(completedItems).add(itemId)
+      console.log('✅ Marking as done:', itemId)
+      console.log('✅ New completed items:', [...newCompleted])
       setCompletedItems(newCompleted)
       if (selectedBrandId) {
-        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
+        const storageKey = `completedItems_${selectedBrandId}`
+        const storageValue = JSON.stringify([...newCompleted])
+        localStorage.setItem(storageKey, storageValue)
+        console.log('✅ Saved to localStorage:', storageKey, '=', storageValue)
       }
       
       const card = optimizationCards.find(c => c.id === cardId)
