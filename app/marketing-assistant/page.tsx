@@ -163,7 +163,9 @@ export default function MarketingAssistantPage() {
     
     // Check if it's Monday after midnight - reset the viewed state, completed items, and acknowledged alerts
     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
-      localStorage.removeItem('recommendationsViewed')
+      if (selectedBrandId) {
+        localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+      }
       localStorage.removeItem('completedItems')
       localStorage.removeItem('acknowledgedAlerts')
       setRecommendationsViewed(false)
@@ -180,9 +182,12 @@ export default function MarketingAssistantPage() {
 
   // Load viewed state and completed items from localStorage
   useEffect(() => {
-    const viewed = localStorage.getItem('recommendationsViewed')
+    if (!selectedBrandId) return
+    const viewed = localStorage.getItem(`recommendationsViewed_${selectedBrandId}`)
     if (viewed === 'true') {
       setRecommendationsViewed(true)
+    } else {
+      setRecommendationsViewed(false)
     }
     
     const completed = localStorage.getItem('completedItems')
@@ -193,7 +198,7 @@ export default function MarketingAssistantPage() {
         console.error('Error parsing completedItems:', e)
       }
     }
-  }, [])
+  }, [selectedBrandId])
 
   // Countdown timer
   useEffect(() => {
@@ -1221,7 +1226,9 @@ export default function MarketingAssistantPage() {
                             size="sm"
                         onClick={() => {
                           setRecommendationsViewed(true)
-                          localStorage.setItem('recommendationsViewed', 'true')
+                          if (selectedBrandId) {
+                            localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                          }
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
