@@ -194,8 +194,9 @@ export default function MarketingAssistantPage() {
       }
 
       console.log('🔍 Checking platforms for brand:', selectedBrandId)
+      // IMMEDIATELY reset states when brand changes - this prevents stale data
+      setHasAdPlatforms(null)
       setIsCheckingPlatforms(true)
-      setHasAdPlatforms(null) // Reset to null (unchecked) while checking
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -983,6 +984,23 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  // Check if no brand is selected FIRST before loading checks
+  if (!selectedBrandId) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
+        <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] max-w-md w-full">
+          <CardHeader className="text-center pb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
+              <Brain className="w-8 h-8 text-gray-400" />
+        </div>
+            <h2 className="text-2xl font-bold text-white mb-2">No Brand Selected</h2>
+            <p className="text-gray-400">Please select a brand from the sidebar to access the Marketing Assistant</p>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
+
   // Show loading if: checking platforms, platform check not complete yet, or loading data
   if (isLoadingPage || loading || isCheckingPlatforms || hasAdPlatforms === null) {
     return (
@@ -1028,23 +1046,6 @@ export default function MarketingAssistantPage() {
             </div>
             </div>
           </div>
-    )
-  }
-
-  // Show message if no brand is selected
-  if (!selectedBrandId) {
-    return (
-      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
-        <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] max-w-md w-full">
-          <CardHeader className="text-center pb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-              <Brain className="w-8 h-8 text-gray-400" />
-        </div>
-            <h2 className="text-2xl font-bold text-white mb-2">No Brand Selected</h2>
-            <p className="text-gray-400">Please select a brand from the sidebar to access the Marketing Assistant</p>
-          </CardHeader>
-        </Card>
-      </div>
     )
   }
 
