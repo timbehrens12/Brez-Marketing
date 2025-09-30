@@ -1586,7 +1586,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Campaign Optimization</span>
-                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-[#ef4444]' : 'text-gray-400'}`}>
+                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-[#FF2A2A]' : 'text-gray-400'}`}>
                   {optimizationsUsed}/{optimizationsTotal} used this week
                 </span>
               </div>
@@ -1621,7 +1621,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
-                        <div className={`text-[10px] ${optimizationAvailable ? 'text-[#ef4444]' : 'text-gray-400'}`}>
+                        <div className={`text-[10px] ${optimizationAvailable ? 'text-[#FF2A2A]' : 'text-gray-400'}`}>
                           Status: {optimizationAvailable ? 'Ready for Review' : 'Used'}
                         </div>
                         {availability?.lastOptimizationDate && (

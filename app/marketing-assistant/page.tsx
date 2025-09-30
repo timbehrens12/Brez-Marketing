@@ -970,8 +970,8 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[#ef4444] truncate">Suggested: ${allocation.suggestedBudget}/day</p>
-                            <p className="text-[#ef4444] truncate">Est. ROAS: {allocation.projectedRoas}x</p>
+                            <p className="text-[#FF2A2A] truncate">Suggested: ${allocation.suggestedBudget}/day</p>
+                            <p className="text-[#FF2A2A] truncate">Est. ROAS: {allocation.projectedRoas}x</p>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2 min-w-0">
@@ -1047,7 +1047,7 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">Current: {expansion.currentReach.toLocaleString()}</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[#ef4444] truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
+                            <p className="text-[#FF2A2A] truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
                           </div>
                         </div>
                         <p className="text-blue-400 text-xs mt-1 truncate">Est. CPA: ${expansion.estimatedCpa}</p>
@@ -1286,7 +1286,7 @@ export default function MarketingAssistantPage() {
                           </div>
                           <div className="bg-[#0F0F0F] rounded p-2 text-center">
                             <p className="text-gray-400 text-xs">Target</p>
-                            <p className="text-[#ef4444] text-sm font-medium">{card.recommendedValue}</p>
+                            <p className="text-[#FF2A2A] text-sm font-medium">{card.recommendedValue}</p>
                           </div>
                         </div>
 
@@ -1647,7 +1647,7 @@ export default function MarketingAssistantPage() {
                  <div className="grid grid-cols-2 gap-4">
                    <div>
                      <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
-                     <p className="text-[#ef4444] text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
+                     <p className="text-[#FF2A2A] text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
                         </div>
                    <div>
                      <p className="text-gray-400 text-xs">Projected ROAS</p>
@@ -1684,7 +1684,7 @@ export default function MarketingAssistantPage() {
                      <ul className="text-gray-300 text-sm space-y-1">
                        {simulationData.simulation?.safeguards?.map((safeguard: string, index: number) => (
                          <li key={index} className="flex items-start gap-2">
-                           <span className="text-[#ef4444] mt-1">✓</span>
+                           <span className="text-[#FF2A2A] mt-1">✓</span>
                            {safeguard}
                          </li>
                        ))}
@@ -1778,7 +1778,7 @@ export default function MarketingAssistantPage() {
                    {explanationData.outcomes?.map((outcome: any, index: number) => (
                      <div key={index} className="text-center">
                        <p className="text-gray-400 text-xs">{outcome.label}</p>
-                       <p className={`text-lg font-bold ${outcome.positive ? 'text-[#ef4444]' : 'text-red-400'}`}>
+                       <p className={`text-lg font-bold ${outcome.positive ? 'text-[#FF2A2A]' : 'text-red-400'}`}>
                          {outcome.value}
                        </p>
                         </div>
