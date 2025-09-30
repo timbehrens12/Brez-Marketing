@@ -327,11 +327,18 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
+      console.log('🎯 Loading Action KPIs for brand:', selectedBrandId, 'platforms:', selectedPlatforms)
       const response = await fetch(`/api/marketing-assistant/action-kpis?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      
+      console.log('🎯 Action KPIs response status:', response.status)
       
       if (response.ok) {
         const data = await response.json()
+        console.log('🎯 Action KPIs data received:', data)
         setActionKPIs(data.actionKPIs)
+      } else {
+        const errorText = await response.text()
+        console.error('🎯 Action KPIs error response:', errorText)
       }
     } catch (error) {
       console.error('Error loading Action KPIs:', error)
@@ -890,7 +897,19 @@ export default function MarketingAssistantPage() {
                     <Info className="h-3 w-3 mr-1" />
                     How It Works
                   </Button>
-        </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      console.log('🔄 DEV REFRESH: Reloading all widgets...')
+                      loadDashboardData()
+                    }}
+                    className="w-full text-xs h-7 bg-[#FF2A2A]/10 hover:bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Dev Refresh
+                  </Button>
+       </div>
         
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
@@ -912,7 +931,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Campaign Scaling Tools */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -938,7 +957,7 @@ export default function MarketingAssistantPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[390px]">
+                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[535px]">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1013,7 +1032,7 @@ export default function MarketingAssistantPage() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[390px]">
+                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[535px]">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1545,7 +1564,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Alerts */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-1">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -1558,7 +1577,7 @@ export default function MarketingAssistantPage() {
                         </div>
                       </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-y-auto max-h-[400px]">
+              <CardContent className="p-4 flex-1 overflow-y-auto max-h-[638px]">
                 <div className="space-y-3">
                   {alerts.map(alert => (
                     <div key={alert.id} className={`p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors ${alert.acknowledged ? 'opacity-50' : ''}`}>
