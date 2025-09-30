@@ -1245,7 +1245,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1254,7 +1254,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1274,8 +1274,8 @@ export default function MarketingAssistantPage() {
                            <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
                            <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                        <div className="flex items-center gap-2">
@@ -1295,7 +1295,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1304,7 +1304,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1332,7 +1332,7 @@ export default function MarketingAssistantPage() {
                          <div>
                            <p className="text-gray-400 text-sm">ROAS</p>
                            <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-                         </div>
+                </div>
                          <div className="flex gap-0.5 flex-shrink-0">
                            {selectedPlatforms.includes('meta') && (
                              <div className="relative group/platform">
@@ -1340,29 +1340,29 @@ export default function MarketingAssistantPage() {
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
-                               </div>
-                             </div>
+              </div>
+                </div>
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <Image src="/google-icon.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-                               </div>
-                             </div>
+              </div>
+                </div>
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <Image src="/tiktok-icon.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-                               </div>
-                             </div>
+              </div>
+                </div>
                            )}
-                         </div>
-                       </div>
+              </div>
+                </div>
                        <div 
                          className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                          title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
@@ -1373,9 +1373,9 @@ export default function MarketingAssistantPage() {
                            <div className="text-gray-400 mb-1">Comparing:</div>
                            <div>Previous: <span className="text-white font-medium">{trends.roas.previous.toFixed(2)}x</span></div>
                            <div>Current: <span className="text-white font-medium">{trends.roas.current.toFixed(2)}x</span></div>
-                       </div>
-                     </div>
-                       </div>
+              </div>
+                </div>
+                </div>
                     </>
                   )}
                   {!trends && (
