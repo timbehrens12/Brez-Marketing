@@ -442,6 +442,7 @@ export default function MarketingAssistantPage() {
       if (response.ok) {
         const data = await response.json()
         console.log('🤖 AI recommendations received:', data.recommendations?.length, 'recommendations')
+        console.log('🤖 Sample recommendation IDs:', data.recommendations?.slice(0, 3).map((r: any) => r.id))
         setOptimizationCards(data.recommendations)
       } else {
         console.error('🤖 AI recommendations error:', response.status)

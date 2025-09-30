@@ -240,6 +240,7 @@ export async function GET(request: NextRequest) {
       }))
 
       console.log(`[Recommendations API] Returning ${recommendationsWithDbIds.length} recommendations with database IDs`)
+      console.log(`[Recommendations API] Sample IDs:`, recommendationsWithDbIds.slice(0, 3).map(r => r.id))
       return NextResponse.json({ recommendations: recommendationsWithDbIds })
     }
 
