@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@clerk/nextjs'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -167,6 +167,9 @@ export default function MarketingAssistantPage() {
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
   const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean | null>(null) // null = not checked, true/false = checked
   const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(false)
+  
+  // Track which brand we've loaded data for to prevent duplicate loads
+  const loadedBrandRef = useRef<string | null>(null)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
@@ -334,6 +337,7 @@ export default function MarketingAssistantPage() {
       // No brand selected - clear loading
       setIsLoadingPage(false)
       setLoading(false)
+      loadedBrandRef.current = null
       return
     }
     
@@ -345,14 +349,20 @@ export default function MarketingAssistantPage() {
     
     // Platform check is complete - now we can make decisions
     if (hasAdPlatforms === true) {
-      // Has platforms - load data (loadDashboardData sets loading states itself)
-      console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
-      loadDashboardData()
+      // Only load data if we haven't already loaded for this brand
+      if (loadedBrandRef.current !== selectedBrandId) {
+        console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
+        loadedBrandRef.current = selectedBrandId
+        loadDashboardData()
+      } else {
+        console.log('✅ Data already loaded for this brand, skipping')
+      }
     } else if (hasAdPlatforms === false) {
       // No platforms - stop loading and show warning
       console.log('⚠️ Brand has no platforms, showing warning')
       setIsLoadingPage(false)
       setLoading(false)
+      loadedBrandRef.current = null
     }
   }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms])
 
