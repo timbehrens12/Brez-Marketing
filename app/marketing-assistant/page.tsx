@@ -283,10 +283,10 @@ export default function MarketingAssistantPage() {
       console.log('🔄 Platform filter changed, reloading data for:', selectedPlatforms)
       // Reload metrics, trends, alerts, budget, audience - but NOT recommendations (those stay cached)
       loadKPIMetrics()
-      loadPerformanceTrends()
+      loadTrends()
       loadAlerts()
-      loadBudgetAllocation()
-      loadAudienceExpansion()
+      loadBudgetAllocations()
+      loadAudienceExpansions()
     }
   }, [selectedPlatforms])
 
