@@ -715,10 +715,10 @@ export default function MarketingAssistantPage() {
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings?.logoUrl && (
+              {agencySettings?.agency_logo_url && (
                 <img 
-                  src={agencySettings.logoUrl} 
-                  alt={`${agencySettings.name || 'Agency'} Logo`} 
+                  src={agencySettings.agency_logo_url} 
+                  alt={`${agencySettings?.agency_name || 'Agency'} Logo`} 
                   className="w-12 h-12 object-contain rounded" 
                 />
               )}
