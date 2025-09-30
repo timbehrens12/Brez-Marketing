@@ -153,10 +153,10 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
     id: 'campaign-optimization',
     name: 'Campaign Optimization',
-    description: 'AI-powered campaign optimization recommendations',
+    description: 'Weekly AI recommendations and performance tracking',
     icon: Target,
     category: 'analytics',
-    href: '/ai-marketing-consultant',
+    href: '/marketing-assistant',
     features: ['Performance Analysis', 'Scaling Recommendations', 'Budget Optimization'],
     dependencyType: 'brand',
     requiresPlatforms: ['meta']
@@ -1582,8 +1582,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Campaign Optimization</span>
-                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-green-400' : 'text-red-400'}`}>
-                  {optimizationsUsed}/{optimizationsTotal} used this week
+                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-green-400' : 'text-gray-400'}`}>
+                  {optimizationsUsed}/{optimizationsTotal} viewed this week
                 </span>
               </div>
             </div>
@@ -1617,12 +1617,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
-                        <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-red-400'}`}>
-                          Optimization: {optimizationAvailable ? 'Available' : `${availability.optimizedCampaignsCount || 0}/${availability.totalCampaignsCount || 0} Used`}
+                        <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-gray-400'}`}>
+                          Status: {optimizationAvailable ? 'Ready for Review' : 'Viewed'}
                         </div>
                         {availability?.lastOptimizationDate && (
                           <div className="text-[10px] text-gray-400">
-                            Last: {availability.lastOptimizationDate}
+                            Last viewed: {availability.lastOptimizationDate}
                           </div>
                         )}
                       </div>
