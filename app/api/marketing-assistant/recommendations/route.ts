@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
     console.log(`[Recommendations API] Storing ${recommendations.length} new recommendations, expiring at ${nextMonday.toISOString()}`)
     
     for (const rec of recommendations) {
-      await supabase
+      const { data, error } = await supabase
         .from('ai_campaign_recommendations')
         .upsert({
           brand_id: brandId,
@@ -211,16 +211,28 @@ export async function GET(request: NextRequest) {
           },
           expires_at: nextMonday.toISOString() // Expire next Monday
         })
+        .select()
+      
+      if (error) {
+        console.error(`[Recommendations API] Error upserting recommendation:`, error)
+      } else {
+        console.log(`[Recommendations API] Upserted recommendation with ID:`, data?.[0]?.id)
+      }
     }
 
     // Re-query to get the actual database IDs for the stored recommendations
-    const { data: storedRecommendations } = await supabase
+    const { data: storedRecommendations, error: queryError } = await supabase
       .from('ai_campaign_recommendations')
       .select('*')
       .eq('brand_id', brandId)
       .gt('created_at', currentMonday.toISOString())
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
+
+    console.log(`[Recommendations API] Re-query returned ${storedRecommendations?.length || 0} recommendations`)
+    if (queryError) {
+      console.error(`[Recommendations API] Error re-querying recommendations:`, queryError)
+    }
 
     if (storedRecommendations && storedRecommendations.length > 0) {
       const recommendationsWithDbIds = storedRecommendations.map(rec => ({
