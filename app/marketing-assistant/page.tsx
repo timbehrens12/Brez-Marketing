@@ -243,8 +243,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Backend always uses last 7 days - no date params needed
-      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      // Backend always uses last 7 days - pass platform and status filters
+      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -259,8 +259,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Backend always uses last 7 days - no date params needed
-      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}`)
+      // Backend always uses last 7 days - pass platform and status filters
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -314,10 +314,10 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Get both current metrics and trends for comparison (both use last 7 days)
+      // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
       const [metricsResponse, trendsResponse] = await Promise.all([
-        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`),
-        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
+        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`),
+        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       ])
       
       if (metricsResponse.ok && trendsResponse.ok) {
@@ -661,8 +661,8 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      // Backend always uses last 7 days - no date params needed
-      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7`)
+      // Backend always uses last 7 days - pass platform and status filters
+      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
       
       if (response.ok) {
         const data = await response.json()

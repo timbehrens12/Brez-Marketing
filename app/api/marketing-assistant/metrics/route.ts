@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const fromDate = searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     const toDate = searchParams.get('to') || new Date().toISOString().split('T')[0]
-    const platforms = searchParams.get('platforms')?.split(',') || ['meta']
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
+    const status = searchParams.get('status') || 'active'
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    const metrics = await aggregateMetrics(brandId, fromDate, toDate, platforms)
+    const metrics = await aggregateMetrics(brandId, fromDate, toDate, platforms, status)
     
     return NextResponse.json({ metrics })
 
@@ -34,19 +35,41 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function aggregateMetrics(brandId: string, fromDate: string, toDate: string, platforms: string[]) {
+async function aggregateMetrics(brandId: string, fromDate: string, toDate: string, platforms: string[], status: string) {
   let totalSpend = 0
   let totalImpressions = 0
   let totalClicks = 0
   let totalConversions = 0
   let totalRevenue = 0
 
-  // Fetch Meta data if included
+  // Get filtered campaign IDs based on status
+  let allowedCampaignIds: string[] = []
+  
   if (platforms.includes('meta')) {
+    let metaCampaignsQuery = supabase
+      .from('meta_campaigns')
+      .select('campaign_id')
+      .eq('brand_id', brandId)
+    
+    if (status === 'active') {
+      metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
+    } else if (status === 'paused') {
+      metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
+    }
+    
+    const { data: metaCampaigns } = await metaCampaignsQuery
+    if (metaCampaigns) {
+      allowedCampaignIds = metaCampaigns.map(c => c.campaign_id)
+    }
+  }
+
+  // Fetch Meta data if included
+  if (platforms.includes('meta') && allowedCampaignIds.length > 0) {
     const { data: metaStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select('*')
       .eq('brand_id', brandId)
+      .in('campaign_id', allowedCampaignIds)
       .gte('date', fromDate)
       .lte('date', toDate)
 
