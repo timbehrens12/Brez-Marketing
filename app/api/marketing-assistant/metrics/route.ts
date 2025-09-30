@@ -66,7 +66,10 @@ async function aggregateMetrics(brandId: string, fromDate: string, toDate: strin
 
   // Fetch Meta data if included
   if (platforms.includes('meta') && allowedCampaignIds.length > 0) {
-    const { data: metaStats } = await supabase
+    console.log(`[Metrics API] Querying meta_campaign_daily_stats for brand ${brandId} from ${fromDate} to ${toDate}`)
+    console.log(`[Metrics API] Allowed campaign IDs:`, allowedCampaignIds)
+    
+    const { data: metaStats, error: metaStatsError } = await supabase
       .from('meta_campaign_daily_stats')
       .select('*')
       .eq('brand_id', brandId)
@@ -74,8 +77,15 @@ async function aggregateMetrics(brandId: string, fromDate: string, toDate: strin
       .gte('date', fromDate)
       .lte('date', toDate)
 
+    if (metaStatsError) {
+      console.error(`[Metrics API] Error querying stats:`, metaStatsError)
+    }
+
     if (metaStats) {
-      console.log(`[Metrics API] Found ${metaStats.length} Meta campaign daily stats for brand ${brandId}`)
+      console.log(`[Metrics API] Found ${metaStats.length} Meta campaign daily stats records`)
+      if (metaStats.length > 0) {
+        console.log(`[Metrics API] Sample record:`, metaStats[0])
+      }
       metaStats.forEach(stat => {
         totalSpend += parseFloat(stat.spend) || 0
         totalImpressions += parseInt(stat.impressions) || 0
@@ -85,7 +95,11 @@ async function aggregateMetrics(brandId: string, fromDate: string, toDate: strin
         totalRevenue += parseFloat(stat.purchase_value) || (parseFloat(stat.roas) * parseFloat(stat.spend)) || 0
       })
       console.log(`[Metrics API] Meta totals: spend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, conversions=${totalConversions}, revenue=${totalRevenue}`)
+    } else {
+      console.log(`[Metrics API] No metaStats data returned`)
     }
+  } else {
+    console.log(`[Metrics API] Skipping Meta query - platforms.includes('meta'): ${platforms.includes('meta')}, allowedCampaignIds.length: ${allowedCampaignIds.length}`)
   }
 
   // Fetch Google Ads data if included (placeholder - would need actual table)
