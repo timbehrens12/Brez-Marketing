@@ -249,13 +249,16 @@ async function generateRecommendations(
       .eq('brand_id', brandId)
       .in('campaign_id', allowedCampaignIds)
 
+    console.log(`[Recommendations] 🔍 Analyzing data from ${dateRange.from} to ${dateRange.to}`)
+    console.log(`[Recommendations] 📊 Found ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
+
     if (!campaignStats || campaignStats.length === 0) {
-      console.log(`[Recommendations] No campaign stats found for brand ${brandId}`)
+      console.log(`[Recommendations] ❌ No campaign stats found for brand ${brandId}`)
       return []
     }
 
     if (!campaigns || campaigns.length === 0) {
-      console.log(`[Recommendations] No active campaigns found for brand ${brandId}`)
+      console.log(`[Recommendations] ❌ No active campaigns found for brand ${brandId}`)
       return []
     }
 
@@ -295,11 +298,19 @@ async function generateRecommendations(
       const cpc = perf.totalClicks > 0 ? perf.totalSpend / perf.totalClicks : 0
       const roas = perf.totalSpend > 0 ? perf.totalRevenue / perf.totalSpend : 0 // Use actual revenue data
       
-      console.log(`[Recommendations] Campaign ${campaign.campaign_name}: spend=$${perf.totalSpend}, revenue=$${perf.totalRevenue}, ROAS=${roas.toFixed(2)}x`)
+      console.log(`[Recommendations] 📈 Campaign "${campaign.campaign_name}":`)
+      console.log(`  - Total Spend: $${perf.totalSpend.toFixed(2)} over ${perf.days} days (avg $${avgDailySpend.toFixed(2)}/day)`)
+      console.log(`  - Set Budget: $${campaign.budget || 'N/A'} (${campaign.budget_type || 'N/A'})`)
+      console.log(`  - Revenue: $${perf.totalRevenue.toFixed(2)} | ROAS: ${roas.toFixed(2)}x`)
+      console.log(`  - CTR: ${ctr.toFixed(2)}% | Clicks: ${perf.totalClicks} | Conversions: ${perf.totalConversions}`)
 
       // Smart Budget Optimization with Multiple Scaling Options (relaxed thresholds)
       if ((roas > 0.8 || (perf.totalClicks > 3 && ctr > 0.5)) && avgDailySpend > 1) {
-        const currentBudget = campaign.daily_budget || avgDailySpend
+        // Use actual set budget if available (for daily budgets), otherwise use historical avg
+        let currentBudget = avgDailySpend
+        if (campaign.budget && campaign.budget_type === 'daily') {
+          currentBudget = campaign.budget
+        }
         const efficiency = ctr * (roas || 1) // Combined efficiency metric
         
         // Smart scaling based on performance strength
@@ -323,13 +334,15 @@ async function generateRecommendations(
         const conservativeIncrease = Math.round(currentBudget * 1.2)
         const aggressiveIncrease = Math.round(currentBudget * 2.0)
         
+        console.log(`  ✅ Generating BUDGET recommendation (current: $${currentBudget}, suggested: $${recommendedBudget})`)
+        
         recommendations.push({
           id: `budget_${campaign.campaign_id}_${Date.now()}`,
           type: 'budget',
           priority,
           title: `Smart Budget Scaling - ${campaign.campaign_name}`,
           description: `Campaign shows strong signals (${ctr.toFixed(2)}% CTR, ${roas.toFixed(1)}x ROAS). Scale intelligently to maximize opportunity while managing risk.`,
-          rootCause: `Efficiency Score: ${efficiency.toFixed(1)} (CTR × ROAS). Campaign is performing ${efficiency > 3 ? 'exceptionally' : efficiency > 2 ? 'well' : 'adequately'} vs benchmarks. Current daily spend of $${avgDailySpend.toFixed(0)} leaves headroom for profitable scaling.`,
+          rootCause: `Efficiency Score: ${efficiency.toFixed(1)} (CTR × ROAS). Campaign is performing ${efficiency > 3 ? 'exceptionally' : efficiency > 2 ? 'well' : 'adequately'} vs benchmarks. Current daily budget of $${currentBudget.toFixed(0)} leaves headroom for profitable scaling.`,
           actions: [
             {
               id: 'conservative_scale',
@@ -499,6 +512,9 @@ async function generateRecommendations(
       }
     }
 
+    console.log(`[Recommendations] ✅ Generated ${recommendations.length} total recommendations`)
+    console.log(`[Recommendations] 📋 Breakdown: ${recommendations.map(r => `${r.type}(${r.priority})`).join(', ')}`)
+    
     return recommendations.slice(0, 10) // Limit to top 10 recommendations
 
   } catch (error) {
