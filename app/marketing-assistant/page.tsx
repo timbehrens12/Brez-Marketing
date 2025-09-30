@@ -362,41 +362,9 @@ export default function MarketingAssistantPage() {
         if (selectedBrandId) {
           localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
           setRecommendationsViewed(false)
-          alert('Update Recommendations button unlocked!')
+          console.log('Update Recommendations button unlocked!')
         }
         return
-      }
-      
-      // Ctrl+Shift+R to reset recommendations
-      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        e.preventDefault()
-        if (!selectedBrandId) {
-          alert('No brand selected')
-      return
-    }
-
-        const confirm = window.confirm('Reset all AI recommendations for this brand? This will generate fresh recommendations on next load.')
-        if (!confirm) return
-
-        try {
-          const response = await fetch(
-            `/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`,
-            { method: 'DELETE' }
-          )
-
-          if (response.ok) {
-            const data = await response.json()
-            alert(data.message || 'Recommendations reset successfully!')
-            // Reload recommendations
-            await loadOptimizationRecommendations()
-          } else {
-            const error = await response.json()
-            alert(`Failed to reset: ${error.error}`)
-          }
-        } catch (error) {
-          console.error('Error resetting recommendations:', error)
-          alert('Failed to reset recommendations')
-        }
       }
     }
 
@@ -511,8 +479,8 @@ export default function MarketingAssistantPage() {
         setOptimizationCards(data.recommendations)
       } else {
         console.error('🤖 AI recommendations error:', response.status)
-                  }
-                } catch (error) {
+            }
+          } catch (error) {
       console.error('Error loading optimization recommendations:', error)
     }
   }
@@ -540,8 +508,8 @@ export default function MarketingAssistantPage() {
         setBudgetAllocations(data.allocations || [])
       } else {
         console.error('[Budget Allocations] Response not OK:', response.status, response.statusText)
-        }
-      } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error loading budget allocations:', error)
       setBudgetAllocations([])
     }
