@@ -1035,7 +1035,6 @@ export default function MarketingAssistantPage() {
                     className="w-full text-xs h-7 bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] font-medium"
                     disabled={isRefreshingData || recommendationsViewed}
                   >
-                    <Wand2 className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
                     {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next update: ${timeUntilRefresh}` : 'Update Recommendations'}
                   </Button>
       </div>
