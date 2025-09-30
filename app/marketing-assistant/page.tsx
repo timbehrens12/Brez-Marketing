@@ -202,8 +202,13 @@ export default function MarketingAssistantPage() {
 
         if (response.ok) {
           const data = await response.json()
-          // If we got metrics back, the brand has ad platforms connected
-          setHasAdPlatforms(true)
+          // Check if there's actual data (spend > 0 or impressions > 0)
+          const hasData = data.metrics && (
+            data.metrics.spend > 0 || 
+            data.metrics.impressions > 0 || 
+            data.metrics.clicks > 0
+          )
+          setHasAdPlatforms(hasData)
         } else {
           // No metrics = no campaigns = no ad platforms
           setHasAdPlatforms(false)
