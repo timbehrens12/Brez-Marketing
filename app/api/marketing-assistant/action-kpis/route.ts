@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       // 1. Get all campaigns for this brand
       const { data: allCampaigns, error: campaignsError } = await supabase
         .from('meta_campaigns')
-        .select('campaign_id, name, status, daily_budget')
+        .select('campaign_id, campaign_name, status, daily_budget')
         .eq('brand_id', brandId)
 
       if (campaignsError) {
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
                 spend: 0,
                 revenue: 0,
                 conversions: 0,
-                name: campaign?.name || stat.campaign_id
+                name: campaign?.campaign_name || stat.campaign_id
               }
             }
 
