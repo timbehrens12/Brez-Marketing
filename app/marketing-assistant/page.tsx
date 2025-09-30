@@ -861,7 +861,7 @@ export default function MarketingAssistantPage() {
          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto">
            
             {/* Left Rail */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
@@ -931,7 +931,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Campaign Scaling Tools */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-0">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[420px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -1114,7 +1114,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Column - Main Work Area */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]">
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
             {/* Action-Oriented KPI Band */}
             {actionKPIs && (
@@ -1210,7 +1210,7 @@ export default function MarketingAssistantPage() {
             )}
 
             {/* Optimization Feed */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-0">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[680px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1355,7 +1355,7 @@ export default function MarketingAssistantPage() {
         </div>
 
             {/* Right Rail */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]>">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
@@ -1564,7 +1564,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Alerts */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-0">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[420px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
