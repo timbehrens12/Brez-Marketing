@@ -181,7 +181,7 @@ export default function MarketingAssistantPage() {
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
-  // Check if brand has advertising platforms connected
+  // Check if brand has advertising platforms connected (by checking for campaigns)
   useEffect(() => {
     const checkPlatformConnections = async () => {
       if (!selectedBrandId) {
@@ -193,7 +193,8 @@ export default function MarketingAssistantPage() {
       setIsCheckingPlatforms(true)
 
       try {
-        const response = await fetch(`/api/platform-connections?brandId=${selectedBrandId}`, {
+        // Check if brand has any Meta campaigns (primary ad platform)
+        const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=meta`, {
           headers: {
             'Content-Type': 'application/json'
           }
@@ -201,16 +202,15 @@ export default function MarketingAssistantPage() {
 
         if (response.ok) {
           const data = await response.json()
-          const adPlatforms = data.connections?.filter((conn: any) => 
-            conn.status === 'active' && 
-            ['meta', 'google', 'tiktok'].includes(conn.platform_type?.toLowerCase())
-          )
-          setHasAdPlatforms(adPlatforms && adPlatforms.length > 0)
+          // If we got metrics back, the brand has ad platforms connected
+          setHasAdPlatforms(true)
         } else {
+          // No metrics = no campaigns = no ad platforms
           setHasAdPlatforms(false)
         }
       } catch (error) {
         console.error('Error checking platform connections:', error)
+        // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
       } finally {
         setIsCheckingPlatforms(false)
