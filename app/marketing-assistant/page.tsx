@@ -1236,7 +1236,7 @@ export default function MarketingAssistantPage() {
                   </div>
                         </div>
               </CardHeader>
-              <CardContent className="p-6 max-h-[700px] overflow-y-auto">
+              <CardContent className="p-6 max-h-[710px] overflow-y-auto">
                 <div className="space-y-3">
                   {optimizationCards.map(card => (
                     <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
