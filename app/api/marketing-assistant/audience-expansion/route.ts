@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // TESTING: Using Sept 16-23 instead of last 7 days
-    const sevenDaysAgo = '2024-09-16'
-    const today = '2024-09-23'
+    // Always use last 7 days for current performance
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
 
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
     console.log(`🎯 AUDIENCE DEBUG: Platforms filter:`, platforms)
