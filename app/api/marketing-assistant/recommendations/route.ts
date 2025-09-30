@@ -191,6 +191,9 @@ export async function GET(request: NextRequest) {
     console.log(`[Recommendations API] Storing ${recommendations.length} new recommendations, expiring at ${nextMonday.toISOString()}`)
     
     for (const rec of recommendations) {
+      // Create a hash of the recommendation data for deduplication
+      const dataHash = `${rec.campaignId}_${rec.type}_${rec.priority}`
+      
       const { data, error } = await supabase
         .from('ai_campaign_recommendations')
         .upsert({
@@ -198,6 +201,7 @@ export async function GET(request: NextRequest) {
           campaign_id: rec.campaignId,
           campaign_name: rec.campaignName,
           platform: rec.platform,
+          data_hash: dataHash,
           recommendation: {
             type: rec.type,
             priority: rec.priority,
