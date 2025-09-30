@@ -938,7 +938,7 @@ export default function MarketingAssistantPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px]">
+                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[390px]">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1013,7 +1013,7 @@ export default function MarketingAssistantPage() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px]">
+                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[390px]">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
