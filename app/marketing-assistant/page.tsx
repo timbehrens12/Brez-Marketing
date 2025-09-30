@@ -272,8 +272,22 @@ export default function MarketingAssistantPage() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [selectedBrandId])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (forceRefresh = false) => {
     if (!selectedBrandId) return
+    
+    console.log('🔄 loadDashboardData called, forceRefresh:', forceRefresh)
+    
+    // If force refresh, clear ALL state first
+    if (forceRefresh) {
+      console.log('🧹 FORCE REFRESH - Clearing all React state')
+      setRecommendations([])
+      setAlerts([])
+      setBudgetAllocations([])
+      setAudienceOpportunities([])
+      setKpiMetrics(null)
+      setActionKPIs(null)
+      setTrends(null)
+    }
     
     // Use initialDataLoad for first load, isRefreshingData for subsequent loads
     if (initialDataLoad) {
@@ -294,8 +308,9 @@ export default function MarketingAssistantPage() {
       loadAlerts(),
       loadTrends()
     ])
+    console.log('✅ All data loaded successfully')
     } catch (error) {
-      console.error('Error loading dashboard data:', error)
+      console.error('❌ Error loading dashboard data:', error)
     } finally {
       if (initialDataLoad) {
         setInitialDataLoad(false)
@@ -1284,22 +1299,30 @@ export default function MarketingAssistantPage() {
                         variant="outline" 
                             size="sm"
                         onClick={async () => {
+                          console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
+                          
                           // Clear ALL localStorage for this brand
                           if (selectedBrandId) {
+                            console.log('🧹 Clearing localStorage')
                             localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
                             localStorage.removeItem(`completedItems_${selectedBrandId}`)
                             localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
                           }
                           
                           // Delete AI recommendations from database
+                          console.log('🗑️ Deleting AI recommendations from database')
                           await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
                             method: 'DELETE'
                           })
                           
-                          // Reload ALL widgets with fresh data
-                          loadDashboardData()
+                          // Clear local state
                           setRecommendationsViewed(false)
                           setCompletedItems(new Set())
+                          
+                          // Reload ALL widgets with FORCE REFRESH
+                          console.log('🔄 Calling loadDashboardData with forceRefresh=true')
+                          await loadDashboardData(true)
+                          console.log('✅ UPDATE COMPLETE')
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
