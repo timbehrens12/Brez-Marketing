@@ -331,11 +331,13 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedBrandId])
 
-  // Data Loading - ONLY reload when brand changes on initial load
+  // Data Loading - Reload when brand changes
   // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
   useEffect(() => {
-    if (selectedBrandId && initialDataLoad) {
-      console.log('🔄 Initial brand load, loading data for brand:', selectedBrandId)
+    if (selectedBrandId) {
+      console.log('🔄 Brand changed, loading data for brand:', selectedBrandId)
+      setIsLoadingPage(true)
+      setLoading(true)
       loadDashboardData()
     }
   }, [selectedBrandId])
@@ -1005,16 +1007,13 @@ export default function MarketingAssistantPage() {
     return (
       <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
         <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] max-w-md w-full">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center pb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
               <Brain className="w-8 h-8 text-gray-400" />
         </div>
             <h2 className="text-2xl font-bold text-white mb-2">No Brand Selected</h2>
-            <p className="text-gray-400">Please select a brand to access the Marketing Assistant</p>
+            <p className="text-gray-400">Please select a brand from the sidebar to access the Marketing Assistant</p>
           </CardHeader>
-          <CardContent className="text-center">
-            <BrandSelector />
-          </CardContent>
         </Card>
       </div>
     )
