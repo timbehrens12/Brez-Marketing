@@ -165,6 +165,8 @@ export default function MarketingAssistantPage() {
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
   const [dateRangeText, setDateRangeText] = useState<string>('')
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
+  const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean>(false)
+  const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(true)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
@@ -178,6 +180,45 @@ export default function MarketingAssistantPage() {
     selectedPlatforms.includes('meta') // Audience data is from meta_campaigns
   )
   // Note: Performance trends filter by platform in their rendering logic already
+
+  // Check if brand has advertising platforms connected
+  useEffect(() => {
+    const checkPlatformConnections = async () => {
+      if (!selectedBrandId) {
+        setIsCheckingPlatforms(false)
+        setHasAdPlatforms(false)
+        return
+      }
+
+      setIsCheckingPlatforms(true)
+
+      try {
+        const response = await fetch(`/api/platform-connections?brandId=${selectedBrandId}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const adPlatforms = data.connections?.filter((conn: any) => 
+            conn.status === 'active' && 
+            ['meta', 'google', 'tiktok'].includes(conn.platform_type?.toLowerCase())
+          )
+          setHasAdPlatforms(adPlatforms && adPlatforms.length > 0)
+        } else {
+          setHasAdPlatforms(false)
+        }
+      } catch (error) {
+        console.error('Error checking platform connections:', error)
+        setHasAdPlatforms(false)
+      } finally {
+        setIsCheckingPlatforms(false)
+      }
+    }
+
+    checkPlatformConnections()
+  }, [selectedBrandId])
 
   // Calculate Monday-to-Monday date range
   const getMondayToMondayDates = () => {
@@ -972,8 +1013,59 @@ export default function MarketingAssistantPage() {
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
             Analyzing your campaigns and generating recommendations...
+            </div>
+            </div>
           </div>
+    )
+  }
+
+  // Show message if no brand is selected
+  if (!selectedBrandId) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
+        <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
+              <Brain className="w-8 h-8 text-gray-400" />
         </div>
+            <h2 className="text-2xl font-bold text-white mb-2">No Brand Selected</h2>
+            <p className="text-gray-400">Please select a brand to access the Marketing Assistant</p>
+          </CardHeader>
+          <CardContent className="text-center">
+            <BrandSelector />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show message if brand has no advertising platforms connected
+  if (!isCheckingPlatforms && !hasAdPlatforms) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
+        <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF2A2A]/5 rounded-xl flex items-center justify-center mx-auto mb-4 border border-[#FF2A2A]/30">
+              <AlertTriangle className="w-8 h-8 text-[#FF2A2A]" />
+        </div>
+            <h2 className="text-2xl font-bold text-white mb-2">No Advertising Platforms Connected</h2>
+            <p className="text-gray-400 mb-4">
+              The Marketing Assistant requires at least one advertising platform (Meta, Google, or TikTok) to be connected to this brand.
+            </p>
+          </CardHeader>
+          <CardContent className="text-center space-y-3">
+            <Button
+              onClick={() => window.location.href = '/settings'}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Go to Settings
+            </Button>
+            <p className="text-xs text-gray-500">
+              Connect Meta, Google, or TikTok to unlock AI-powered campaign optimization
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
