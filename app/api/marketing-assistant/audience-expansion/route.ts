@@ -16,6 +16,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const platformsParam = searchParams.get('platforms') || 'meta,google,tiktok'
+    const statusParam = searchParams.get('status') || 'active'
+    
+    // Parse platforms
+    const platforms = platformsParam.split(',').map(p => p.trim())
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -26,7 +31,33 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0]
 
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
+    console.log(`🎯 AUDIENCE DEBUG: Platforms filter: ${platforms.join(', ')}`)
+    console.log(`🎯 AUDIENCE DEBUG: Status filter: ${statusParam}`)
     console.log(`🎯 AUDIENCE DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
+
+    // First, get active/paused campaigns based on filter
+    let campaignStatusQuery = supabase
+      .from('meta_campaigns')
+      .select('campaign_id, campaign_name, status')
+      .eq('brand_id', brandId)
+    
+    // Apply status filter
+    if (statusParam === 'active') {
+      campaignStatusQuery = campaignStatusQuery.eq('status', 'ACTIVE')
+    } else if (statusParam === 'paused') {
+      campaignStatusQuery = campaignStatusQuery.eq('status', 'PAUSED')
+    }
+    // 'all' means no filter
+    
+    const { data: campaigns } = await campaignStatusQuery
+    console.log(`🎯 AUDIENCE DEBUG: Found ${campaigns?.length || 0} campaigns with status filter: ${statusParam}`)
+    
+    if (!campaigns || campaigns.length === 0) {
+      console.log(`🎯 AUDIENCE DEBUG: No campaigns match the status filter`)
+      return NextResponse.json({ opportunities: [] })
+    }
+    
+    const campaignIds = campaigns.map(c => c.campaign_id)
 
     // Get campaign and audience performance data
     // Always use last 7 days
@@ -45,6 +76,7 @@ export async function GET(request: NextRequest) {
         purchase_value
       `)
       .eq('brand_id', brandId)
+      .in('campaign_id', campaignIds)
       .gte('date', sevenDaysAgo)
       .lte('date', today)
 
@@ -76,6 +108,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
+        .in('campaign_id', campaignIds)
         .gte('date', thirtyDaysAgo)
       
       campaignStats = fallbackStats
@@ -101,6 +134,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
+        .in('campaign_id', campaignIds)
         .order('date', { ascending: false })
         .limit(1000) // Reasonable limit
       
