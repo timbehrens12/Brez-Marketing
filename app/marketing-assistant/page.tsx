@@ -911,21 +911,48 @@ export default function MarketingAssistantPage() {
                     <Info className="h-3 w-3 mr-1" />
                     How It Works
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      console.log('🔄 DEV REFRESH: Reloading all widgets...')
-                      setIsRefreshingData(true)
-                      await loadDashboardData()
-                      console.log('✅ DEV REFRESH: Complete')
-                    }}
-                    className="w-full text-xs h-7 bg-[#FF2A2A]/10 hover:bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30"
-                    disabled={isRefreshingData}
-                  >
-                    <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                    {isRefreshingData ? 'Refreshing...' : 'Dev Refresh'}
-                  </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          console.log('🔄 DEV REFRESH: Starting hard refresh...')
+                          setIsRefreshingData(true)
+                          
+                          // Step 1: Reset AI recommendations
+                          try {
+                            console.log('🔄 DEV REFRESH: Resetting AI recommendations...')
+                            const resetResponse = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                              method: 'DELETE',
+                            })
+                            if (resetResponse.ok) {
+                              console.log('✅ DEV REFRESH: AI recommendations reset')
+                            } else {
+                              console.error('❌ DEV REFRESH: Failed to reset recommendations')
+                            }
+                          } catch (error) {
+                            console.error('❌ DEV REFRESH: Error resetting recommendations:', error)
+                          }
+                          
+                          // Step 2: Clear localStorage caches
+                          if (selectedBrandId) {
+                            console.log('🔄 DEV REFRESH: Clearing localStorage caches...')
+                            localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                            localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                            localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
+                            setRecommendationsViewed(false)
+                          }
+                          
+                          // Step 3: Reload all widgets with fresh data
+                          console.log('🔄 DEV REFRESH: Reloading all widgets...')
+                          await loadDashboardData()
+                          console.log('✅ DEV REFRESH: Complete - all data refreshed!')
+                        }}
+                        className="w-full text-xs h-7 bg-[#FF2A2A]/10 hover:bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30"
+                        disabled={isRefreshingData}
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                        {isRefreshingData ? 'Refreshing...' : 'Dev Refresh'}
+                      </Button>
        </div>
         
                 <div>
