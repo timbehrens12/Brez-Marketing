@@ -367,8 +367,8 @@ export default function MarketingAssistantPage() {
     try {
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
-      if (response.ok) {
-        const data = await response.json()
+            if (response.ok) {
+              const data = await response.json()
         console.log('[Budget Allocations] Received data:', data)
         console.log('[Budget Allocations] Setting allocations:', data.allocations || [])
         setBudgetAllocations(data.allocations || [])
@@ -393,8 +393,8 @@ export default function MarketingAssistantPage() {
         setAudienceExpansions(data.opportunities || [])
       } else {
         console.error('[Audience Expansion] Response not OK:', response.status, response.statusText)
-      }
-    } catch (error) {
+            }
+          } catch (error) {
       console.error('Error loading audience expansions:', error)
       setAudienceExpansions([])
     }
@@ -931,8 +931,8 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Campaign Scaling Tools */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] h-[820px] flex flex-col">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
@@ -944,7 +944,7 @@ export default function MarketingAssistantPage() {
         </div>
       </div>
               </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-hidden">
+              <CardContent className="p-0 flex-1 overflow-hidden min-h-0">
                 <Tabs value={scalingTab} onValueChange={setScalingTab} className="h-full flex flex-col">
                   <TabsList className="grid w-full grid-cols-2 bg-[#1A1A1A] border-b border-[#333] rounded-none">
                     <TabsTrigger value="budget" className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-[#333]">
@@ -957,7 +957,7 @@ export default function MarketingAssistantPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[535px]">
+                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1032,7 +1032,7 @@ export default function MarketingAssistantPage() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[535px]">
+                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3">
                     {loading && (
                       <div className="text-center py-6 text-gray-400">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1210,7 +1210,7 @@ export default function MarketingAssistantPage() {
             )}
 
             {/* Optimization Feed */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] h-[820px] flex flex-col">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1255,7 +1255,7 @@ export default function MarketingAssistantPage() {
                   </div>
                         </div>
               </CardHeader>
-              <CardContent className="p-6 max-h-[710px] overflow-y-auto">
+              <CardContent className="p-6 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
                   {optimizationCards.map(card => (
                     <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
@@ -1564,8 +1564,8 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Alerts */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] h-[820px] flex flex-col">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
@@ -1577,7 +1577,7 @@ export default function MarketingAssistantPage() {
                         </div>
                       </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-y-auto max-h-[638px]">
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
                   {alerts.map(alert => (
                     <div key={alert.id} className={`p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors ${alert.acknowledged ? 'opacity-50' : ''}`}>
