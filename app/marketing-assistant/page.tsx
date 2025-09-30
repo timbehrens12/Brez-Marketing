@@ -1278,7 +1278,8 @@ export default function MarketingAssistantPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-                    {true ? ( {/* ALWAYS SHOW BUTTON FOR TESTING - was: !recommendationsViewed */}
+                    {/* ALWAYS SHOW BUTTON FOR TESTING - was: !recommendationsViewed */}
+                    {true ? (
                           <Button
                         variant="outline" 
                             size="sm"
