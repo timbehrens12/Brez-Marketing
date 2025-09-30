@@ -302,16 +302,22 @@ export async function GET(request: NextRequest) {
       projectedRoas: a.projectedRoas
     })))
     
+    // Show ALL campaigns with spend, even if no budget change is recommended
     const filteredAllocations = allocations.filter((allocation: any) => {
-      const passes = allocation.currentBudget > 0.10 && 
-        Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 0.05
+      const passes = allocation.currentBudget > 0.10
       
       if (!passes) {
-        console.log(`🔍 BUDGET DEBUG: Filtered out campaign ${allocation.id.slice(0, 8)}: currentBudget=${allocation.currentBudget}, difference=${Math.abs(allocation.suggestedBudget - allocation.currentBudget)}`)
+        console.log(`🔍 BUDGET DEBUG: Filtered out campaign ${allocation.id.slice(0, 8)}: currentBudget too low (${allocation.currentBudget})`)
       }
       
       return passes
-    }).sort((a: any, b: any) => b.confidence - a.confidence) // Sort by confidence
+    }).sort((a: any, b: any) => {
+      // Sort by biggest budget change first, then by confidence
+      const diffA = Math.abs(a.suggestedBudget - a.currentBudget)
+      const diffB = Math.abs(b.suggestedBudget - b.currentBudget)
+      if (diffB !== diffA) return diffB - diffA
+      return b.confidence - a.confidence
+    })
 
     console.log(`🔍 BUDGET DEBUG: After filtering: ${filteredAllocations.length} allocations`)
     console.log(`Budget allocation: Returning ${filteredAllocations.length} allocation opportunities`)
