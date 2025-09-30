@@ -139,7 +139,6 @@ export default function MarketingAssistantPage() {
   const [showExplanation, setShowExplanation] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [selectedPlatforms, setSelectedPlatforms] = useState(['meta', 'google', 'tiktok'])
-  const [campaignStatus, setCampaignStatus] = useState('active')
   const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable')
   const [recommendationsViewed, setRecommendationsViewed] = useState(false)
   const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
@@ -205,7 +204,7 @@ export default function MarketingAssistantPage() {
     if (selectedBrandId) {
       loadDashboardData()
     }
-  }, [selectedBrandId, selectedPlatforms, campaignStatus])
+  }, [selectedBrandId, selectedPlatforms])
 
   const loadDashboardData = async () => {
     if (!selectedBrandId) return
