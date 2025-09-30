@@ -163,6 +163,7 @@ export default function MarketingAssistantPage() {
   const [timeUntilRefresh, setTimeUntilRefresh] = useState('')
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
   const [dateRangeText, setDateRangeText] = useState<string>('')
+  const [nextUpdateText, setNextUpdateText] = useState<string>('')
 
   // Calculate Monday-to-Monday date range
   const getMondayToMondayDates = () => {
@@ -196,7 +197,7 @@ export default function MarketingAssistantPage() {
     const nextMonday = getNextMondayMidnight()
     const diff = nextMonday.getTime() - now.getTime()
     
-    // Update date range text
+    // Update date range text and next update text
     const { lastMonday, thisMonday } = getMondayToMondayDates()
     const formatDate = (date: Date) => {
       const month = date.toLocaleDateString('en-US', { month: 'short' })
@@ -204,6 +205,7 @@ export default function MarketingAssistantPage() {
       return `${month} ${day}`
     }
     setDateRangeText(`${formatDate(lastMonday)} - ${formatDate(thisMonday)}`)
+    setNextUpdateText(`Next Update: ${formatDate(nextMonday)}`)
     
     // Check if it's Monday after midnight - reset the viewed state, completed items, and acknowledged alerts
     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
@@ -211,7 +213,9 @@ export default function MarketingAssistantPage() {
         localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
       }
       localStorage.removeItem('completedItems')
-      localStorage.removeItem('acknowledgedAlerts')
+      if (selectedBrandId) {
+        localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
+      }
       setRecommendationsViewed(false)
       setCompletedItems(new Set())
       // Alerts will be refreshed with acknowledged: false on next load
@@ -615,7 +619,7 @@ export default function MarketingAssistantPage() {
         }
 
         // Load acknowledged alerts from localStorage and apply them
-        const acknowledgedIds = JSON.parse(localStorage.getItem('acknowledgedAlerts') || '[]')
+        const acknowledgedIds = JSON.parse(localStorage.getItem(`acknowledgedAlerts_${selectedBrandId}`) || '[]')
         const alertsWithAcknowledged = generatedAlerts.map(alert => ({
           ...alert,
           acknowledged: acknowledgedIds.includes(alert.id)
@@ -642,7 +646,9 @@ export default function MarketingAssistantPage() {
       )
       // Save acknowledged alerts to localStorage
       const acknowledged = updated.filter(a => a.acknowledged).map(a => a.id)
-      localStorage.setItem('acknowledgedAlerts', JSON.stringify(acknowledged))
+      if (selectedBrandId) {
+        localStorage.setItem(`acknowledgedAlerts_${selectedBrandId}`, JSON.stringify(acknowledged))
+      }
       return updated
     })
   }
@@ -954,7 +960,7 @@ export default function MarketingAssistantPage() {
                     <Badge className="text-xs bg-[#FF2A2A] text-black border-[#FF2A2A] flex-shrink-0 font-semibold">Fixed</Badge>
       </div>
                   <div className="text-white font-semibold mb-2">{dateRangeText || 'Loading...'}</div>
-                  <p className="text-xs text-gray-500 mb-2">Analysis window updates every Monday at 12 AM</p>
+                  <p className="text-xs text-gray-500 mb-2">{nextUpdateText || 'Loading...'}</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1324,39 +1330,40 @@ export default function MarketingAssistantPage() {
                     {/* ALWAYS SHOW BUTTON FOR TESTING - was: !recommendationsViewed */}
                     {true ? (
                           <Button
-                        variant="outline" 
-                            size="sm"
-                        onClick={async () => {
-                          console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
-                          
-                          // Clear ALL localStorage for this brand
-                          if (selectedBrandId) {
-                            console.log('🧹 Clearing localStorage')
-                            localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
-                            localStorage.removeItem(`completedItems_${selectedBrandId}`)
-                            localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
-                          }
-                          
-                          // Delete AI recommendations from database
-                          console.log('🗑️ Deleting AI recommendations from database')
-                          await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
-                            method: 'DELETE'
-                          })
-                          
-                          // Clear local state
-                          setRecommendationsViewed(false)
-                          setCompletedItems(new Set())
-                          
-                          // Reload ALL widgets with FORCE REFRESH
-                          console.log('🔄 Calling loadDashboardData with forceRefresh=true')
-                          await loadDashboardData(true)
-                          console.log('✅ UPDATE COMPLETE')
-                        }}
-                        className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
-                      >
-                        <Wand2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
-                        <span className="hidden md:inline truncate">Update Recommendations</span>
-                        <span className="md:hidden truncate">Update</span>
+              variant="outline"
+                  size="sm"
+              onClick={async () => {
+                console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
+
+                // Clear ALL localStorage for this brand
+                if (selectedBrandId) {
+                  console.log('🧹 Clearing localStorage')
+                  localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                  localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                  localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
+                }
+
+                // Delete AI recommendations from database
+                console.log('🗑️ Deleting AI recommendations from database')
+                await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                  method: 'DELETE'
+                })
+
+                // Clear local state including alerts
+                setRecommendationsViewed(false)
+                setCompletedItems(new Set())
+                setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
+
+                // Reload ALL widgets with FORCE REFRESH
+                console.log('🔄 Calling loadDashboardData with forceRefresh=true')
+                await loadDashboardData(true)
+                console.log('✅ UPDATE COMPLETE')
+              }}
+              className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
+            >
+              <Wand2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
+              <span className="hidden md:inline truncate">{timeUntilRefresh ? `Update (${timeUntilRefresh})` : 'Update Recommendations'}</span>
+              <span className="md:hidden truncate">Update</span>
                           </Button>
                     ) : (
                       <div className="flex items-center gap-1.5 lg:gap-2 px-2 py-1.5 bg-[#1a1a1a] border border-[#333] rounded-lg min-w-0">
