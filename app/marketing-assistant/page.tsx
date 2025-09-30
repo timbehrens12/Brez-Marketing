@@ -858,10 +858,10 @@ export default function MarketingAssistantPage() {
        )}
       
        <div className="w-full px-2 sm:px-4 lg:px-6 py-4 overflow-x-hidden">
-         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto max-h-[calc(100vh-10rem)]">
+         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto">
            
             {/* Left Rail */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]">
             
             {/* Scope & Filters */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
@@ -1114,7 +1114,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Column - Main Work Area */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full">
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]">
             
             {/* Action-Oriented KPI Band */}
             {actionKPIs && (
@@ -1355,7 +1355,7 @@ export default function MarketingAssistantPage() {
         </div>
 
             {/* Right Rail */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 max-h-[calc(100vh-8rem)]>">
             
             {/* Trends */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
