@@ -299,9 +299,20 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedPlatforms])
 
-  // Secret keyboard shortcut to reset AI recommendations
+  // Secret keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = async (e: KeyboardEvent) => {
+      // Ctrl+Shift+U to unlock Update Recommendations button
+      if (e.ctrlKey && e.shiftKey && e.key === 'U') {
+        e.preventDefault()
+        if (selectedBrandId) {
+          localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+          setRecommendationsViewed(false)
+          alert('Update Recommendations button unlocked!')
+        }
+        return
+      }
+      
       // Ctrl+Shift+R to reset recommendations
       if (e.ctrlKey && e.shiftKey && e.key === 'R') {
         e.preventDefault()
