@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       // 1. Get all campaigns for this brand
       const { data: allCampaigns, error: campaignsError } = await supabase
         .from('meta_campaigns')
-        .select('campaign_id, campaign_name, status, daily_budget')
+        .select('campaign_id, campaign_name, status, budget, budget_type')
         .eq('brand_id', brandId)
 
       if (campaignsError) {
@@ -79,8 +79,8 @@ export async function GET(req: NextRequest) {
 
           // Calculate budget utilization (average daily spend vs daily budget)
           const totalDailyBudget = allCampaigns
-            .filter(c => c.status === 'ACTIVE' && c.daily_budget)
-            .reduce((sum, c) => sum + parseFloat(c.daily_budget || '0'), 0)
+            .filter(c => c.status === 'ACTIVE' && c.budget && c.budget_type === 'daily')
+            .reduce((sum, c) => sum + parseFloat(c.budget || '0'), 0)
 
           const totalSpend = performanceData.reduce((sum, p) => sum + (p.spend || 0), 0)
           const avgDailySpend = totalSpend / 7 // 7 days
