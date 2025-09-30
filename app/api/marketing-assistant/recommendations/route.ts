@@ -99,9 +99,10 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
+    // TESTING: Using Sept 16-23 instead of last 7 days
     const dateRange = {
-      from: searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      to: searchParams.get('to') || new Date().toISOString().split('T')[0]
+      from: searchParams.get('from') || '2024-09-16',
+      to: searchParams.get('to') || '2024-09-23'
     }
 
     if (!brandId) {

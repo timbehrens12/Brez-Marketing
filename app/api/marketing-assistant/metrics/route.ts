@@ -16,8 +16,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    const fromDate = searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const toDate = searchParams.get('to') || new Date().toISOString().split('T')[0]
+    // TESTING: Using Sept 16-23 instead of last 7 days
+    const fromDate = searchParams.get('from') || '2024-09-16'
+    const toDate = searchParams.get('to') || '2024-09-23'
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
 

@@ -71,8 +71,9 @@ export async function GET(request: NextRequest) {
       startDate = new Date(fromDate)
       endDate = new Date(toDate)
     } else {
-      endDate = new Date()
-      startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000)
+      // TESTING: Using Sept 16-23 instead of last 7 days
+      endDate = new Date('2024-09-23')
+      startDate = new Date('2024-09-16')
     }
     
     // Get historical data for comparison

@@ -25,13 +25,9 @@ export async function GET(req: NextRequest) {
     console.log('[ACTION KPIs] Calculating for brand:', brandId)
     console.log('[ACTION KPIs] Platforms:', platforms)
 
-    // Calculate dates (last 7 days)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(endDate.getDate() - 7)
-    
-    const startDateStr = startDate.toISOString().split('T')[0]
-    const endDateStr = endDate.toISOString().split('T')[0]
+    // TESTING: Using Sept 16-23 instead of last 7 days
+    const startDateStr = '2024-09-16'
+    const endDateStr = '2024-09-23'
 
     console.log('[ACTION KPIs] Date range:', startDateStr, 'to', endDateStr)
 
