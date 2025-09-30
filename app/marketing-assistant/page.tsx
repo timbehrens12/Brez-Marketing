@@ -202,6 +202,8 @@ export default function MarketingAssistantPage() {
     checkingBrandRef.current = selectedBrandId
 
     const checkPlatformConnections = async () => {
+      const brandIdWhenStarted = selectedBrandId // Capture the brand ID at start
+      
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
         const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=meta`, {
@@ -209,6 +211,12 @@ export default function MarketingAssistantPage() {
             'Content-Type': 'application/json'
           }
         })
+
+        // CRITICAL: Ignore result if brand changed while we were fetching
+        if (brandIdWhenStarted !== checkingBrandRef.current) {
+          console.log(`⚠️ Ignoring stale platform check result for ${brandIdWhenStarted}, current brand is ${checkingBrandRef.current}`)
+          return
+        }
 
         if (response.ok) {
           const data = await response.json()
@@ -228,6 +236,12 @@ export default function MarketingAssistantPage() {
           setIsCheckingPlatforms(false)
         }
       } catch (error) {
+        // CRITICAL: Ignore error if brand changed while we were fetching
+        if (brandIdWhenStarted !== checkingBrandRef.current) {
+          console.log(`⚠️ Ignoring stale platform check error for ${brandIdWhenStarted}`)
+          return
+        }
+        
         console.error('Error checking platform connections:', error)
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
