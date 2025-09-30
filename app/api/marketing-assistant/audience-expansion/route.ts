@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
       return acc
     }, {})
 
-    const campaigns = Object.values(campaignGroups).map((campaign: any) => ({
+    const campaignPerformance = Object.values(campaignGroups).map((campaign: any) => ({
       ...campaign,
       avgRoas: campaign.totalSpend > 0 ? campaign.totalRevenue / campaign.totalSpend : 0,
       avgCpc: campaign.totalClicks > 0 ? campaign.totalSpend / campaign.totalClicks : 0,
@@ -196,14 +196,14 @@ export async function GET(request: NextRequest) {
 
     // Generate lookalike audience opportunities from top performers
     // Lower thresholds if no high performers exist
-    let topPerformers = campaigns
+    let topPerformers = campaignPerformance
       .filter((campaign: any) => campaign.avgRoas > 1.5 && campaign.totalConversions > 2 && campaign.totalSpend > 50)
       .sort((a: any, b: any) => b.avgRoas - a.avgRoas)
       .slice(0, 3)
 
     // If no high performers, use campaigns with any conversions and reasonable spend
     if (topPerformers.length === 0) {
-      topPerformers = campaigns
+      topPerformers = campaignPerformance
         .filter((campaign: any) => campaign.totalConversions > 0 && campaign.totalSpend > 10)
         .sort((a: any, b: any) => b.totalConversions - a.totalConversions)
         .slice(0, 2)
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
 
     // If still no performers, use any campaigns with spend and clicks
     if (topPerformers.length === 0) {
-      topPerformers = campaigns
+      topPerformers = campaignPerformance
         .filter((campaign: any) => campaign.totalSpend > 5 && campaign.totalClicks > 5)
         .sort((a: any, b: any) => b.avgCtr - a.avgCtr)
         .slice(0, 1)
@@ -245,9 +245,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Generate interest expansion based on campaign performance
-    if (campaigns.length > 0) {
-      const avgCpc = campaigns.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / campaigns.length
-      const avgReach = campaigns.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / campaigns.length
+    if (campaignPerformance.length > 0) {
+      const avgCpc = campaignPerformance.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / campaignPerformance.length
+      const avgReach = campaignPerformance.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / campaignPerformance.length
       
       opportunities.push({
         id: 'interest-expansion',
@@ -262,8 +262,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate geographic expansion based on current performance
-    if (campaigns.some((c: any) => c.avgRoas > 2.0)) {
-      const strongPerformers = campaigns.filter((c: any) => c.avgRoas > 2.0)
+    if (campaignPerformance.some((c: any) => c.avgRoas > 2.0)) {
+      const strongPerformers = campaignPerformance.filter((c: any) => c.avgRoas > 2.0)
       const avgReach = strongPerformers.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / strongPerformers.length
       const avgCpc = strongPerformers.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / strongPerformers.length
 
