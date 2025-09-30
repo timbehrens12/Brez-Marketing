@@ -1306,7 +1306,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
             {/* Optimization Feed - Expanded without top KPIs */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[880px] max-h-[880px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[890px] max-h-[890px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
