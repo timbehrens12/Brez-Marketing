@@ -170,6 +170,8 @@ export default function MarketingAssistantPage() {
   
   // Track which brand we've loaded data for to prevent duplicate loads
   const loadedBrandRef = useRef<string | null>(null)
+  // Track the current brand being checked to prevent race conditions
+  const checkingBrandRef = useRef<string | null>(null)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
@@ -197,6 +199,7 @@ export default function MarketingAssistantPage() {
       // IMMEDIATELY reset states when brand changes - this prevents stale data
       setHasAdPlatforms(null)
       setIsCheckingPlatforms(true)
+      checkingBrandRef.current = selectedBrandId // Mark which brand we're checking
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -339,16 +342,23 @@ export default function MarketingAssistantPage() {
       setIsLoadingPage(false)
       setLoading(false)
       loadedBrandRef.current = null
+      checkingBrandRef.current = null
       return
     }
     
-    // If platform check hasn't completed yet (null or still checking), do nothing - just wait
+    // If platform check hasn't completed yet for THIS brand, wait
     if (hasAdPlatforms === null || isCheckingPlatforms) {
       console.log('⏳ Waiting for platform check to complete...')
       return
     }
     
-    // Platform check is complete - now we can make decisions
+    // CRITICAL: Verify the platform check result is for the CURRENT brand
+    if (checkingBrandRef.current !== selectedBrandId) {
+      console.log('⚠️ Platform check result is stale, waiting for new check...')
+      return
+    }
+    
+    // Platform check is complete for THIS brand - now we can make decisions
     if (hasAdPlatforms === true) {
       // Only load data if we haven't already loaded for this brand
       if (loadedBrandRef.current !== selectedBrandId) {
