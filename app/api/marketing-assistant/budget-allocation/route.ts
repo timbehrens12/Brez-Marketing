@@ -16,11 +16,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    const platformsParam = searchParams.get('platforms') || 'meta,google,tiktok'
-    const statusParam = searchParams.get('status') || 'active'
-    
-    // Parse platforms
-    const platforms = platformsParam.split(',').map(p => p.trim())
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
+    const status = searchParams.get('status') || 'active'
     
     // IGNORE frontend date params - always use last 7 days for current performance
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -31,39 +28,66 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`🔍 BUDGET DEBUG: Querying for brand ${brandId}`)
-    console.log(`🔍 BUDGET DEBUG: Platforms filter: ${platforms.join(', ')}`)
-    console.log(`🔍 BUDGET DEBUG: Status filter: ${statusParam}`)
+    console.log(`🔍 BUDGET DEBUG: Platforms filter:`, platforms)
+    console.log(`🔍 BUDGET DEBUG: Status filter:`, status)
     console.log(`🔍 BUDGET DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
     console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
-    // Get campaign performance data for budget allocation analysis
-    // Join with meta_campaigns to get status and campaign name
-    // Always use last 7 days
-    let campaignStats = null
-
-    // First, get active/paused campaigns based on filter
-    let campaignStatusQuery = supabase
-      .from('meta_campaigns')
-      .select('campaign_id, campaign_name, status')
-      .eq('brand_id', brandId)
-    
-    // Apply status filter
-    if (statusParam === 'active') {
-      campaignStatusQuery = campaignStatusQuery.eq('status', 'ACTIVE')
-    } else if (statusParam === 'paused') {
-      campaignStatusQuery = campaignStatusQuery.eq('status', 'PAUSED')
+    // First, get campaign metadata to filter by platform and status
+    // For now, we only support Meta campaigns
+    let campaignMetadata: any = {}
+    if (platforms.includes('meta')) {
+      console.log(`🔍 BUDGET DEBUG: Fetching Meta campaign metadata...`)
+      let statusFilter = status
+      
+      // Map UI status to Meta API statuses
+      if (status === 'active') {
+        statusFilter = 'ACTIVE'
+      } else if (status === 'paused') {
+        statusFilter = 'PAUSED'
+      }
+      
+      let metaCampaignsQuery = supabase
+        .from('meta_campaigns')
+        .select('campaign_id, campaign_name, status')
+        .eq('brand_id', brandId)
+      
+      // Apply status filter
+      if (status === 'active') {
+        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'ACTIVE')
+      } else if (status === 'paused') {
+        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'PAUSED')
+      }
+      // 'all' status - no filter
+      
+      const { data: metaCampaigns, error: metaError } = await metaCampaignsQuery
+      
+      if (metaError) {
+        console.error(`🔍 BUDGET DEBUG: Error fetching Meta campaigns:`, metaError)
+      } else {
+        console.log(`🔍 BUDGET DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
+        metaCampaigns?.forEach((c: any) => {
+          campaignMetadata[c.campaign_id] = {
+            name: c.campaign_name,
+            status: c.status,
+            platform: 'meta'
+          }
+        })
+      }
     }
-    // 'all' means no filter
     
-    const { data: campaigns } = await campaignStatusQuery
-    console.log(`🔍 BUDGET DEBUG: Found ${campaigns?.length || 0} campaigns with status filter: ${statusParam}`)
+    // Get allowed campaign IDs based on filters
+    const allowedCampaignIds = Object.keys(campaignMetadata)
+    console.log(`🔍 BUDGET DEBUG: Allowed campaign IDs after filtering:`, allowedCampaignIds.length)
     
-    if (!campaigns || campaigns.length === 0) {
-      console.log(`🔍 BUDGET DEBUG: No campaigns match the status filter`)
+    if (allowedCampaignIds.length === 0) {
+      console.log(`🔍 BUDGET DEBUG: No campaigns match filters, returning empty`)
       return NextResponse.json({ allocations: [] })
     }
-    
-    const campaignIds = campaigns.map(c => c.campaign_id)
+
+    // Get campaign performance data for budget allocation analysis
+    // Always use last 7 days
+    let campaignStats = null
 
     const result = await supabase
       .from('meta_campaign_daily_stats')
@@ -78,7 +102,7 @@ export async function GET(request: NextRequest) {
         purchase_value
       `)
       .eq('brand_id', brandId)
-      .in('campaign_id', campaignIds)
+      .in('campaign_id', allowedCampaignIds)
       .gte('date', sevenDaysAgo)
       .lte('date', today)
     
@@ -108,7 +132,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .in('campaign_id', campaignIds)
+        .in('campaign_id', allowedCampaignIds)
         .gte('date', thirtyDaysAgo)
       
       campaignStats = fallbackStats
@@ -132,7 +156,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .in('campaign_id', campaignIds)
+        .in('campaign_id', allowedCampaignIds)
         .order('date', { ascending: false })
         .limit(1000) // Get up to 1000 most recent records
       
@@ -180,12 +204,6 @@ export async function GET(request: NextRequest) {
       acc[key].totalRevenue += stat.purchase_value || (stat.roas * stat.spend) || 0
       acc[key].days++
       
-      return acc
-    }, {})
-
-    // Create a lookup map for campaign names
-    const campaignNameMap = campaigns.reduce((acc: any, c: any) => {
-      acc[c.campaign_id] = c.campaign_name
       return acc
     }, {})
 
@@ -238,9 +256,13 @@ export async function GET(request: NextRequest) {
       const suggestedBudget = Math.round(avgDailySpend * budgetMultiplier)
       const projectedRoas = currentRoas * (budgetMultiplier <= 1 ? 1.1 : 0.95) // Slight diminishing returns for increases
       
+      const metadata = campaignMetadata[campaign.campaign_id] || {}
+      
       return {
         id: campaign.campaign_id,
-        campaignName: campaignNameMap[campaign.campaign_id] || `Campaign ${campaign.campaign_id.slice(0, 8)}`,
+        campaignName: metadata.name || `Campaign ${campaign.campaign_id.slice(0, 8)}`,
+        platform: metadata.platform || 'meta',
+        status: metadata.status || 'UNKNOWN',
         currentBudget: Math.round(avgDailySpend),
         suggestedBudget,
         currentRoas: Number(currentRoas.toFixed(2)),

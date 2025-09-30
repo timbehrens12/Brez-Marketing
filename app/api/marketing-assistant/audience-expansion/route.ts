@@ -16,11 +16,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-    const platformsParam = searchParams.get('platforms') || 'meta,google,tiktok'
-    const statusParam = searchParams.get('status') || 'active'
-    
-    // Parse platforms
-    const platforms = platformsParam.split(',').map(p => p.trim())
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
+    const status = searchParams.get('status') || 'active'
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -31,33 +28,49 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0]
 
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
-    console.log(`🎯 AUDIENCE DEBUG: Platforms filter: ${platforms.join(', ')}`)
-    console.log(`🎯 AUDIENCE DEBUG: Status filter: ${statusParam}`)
+    console.log(`🎯 AUDIENCE DEBUG: Platforms filter:`, platforms)
+    console.log(`🎯 AUDIENCE DEBUG: Status filter:`, status)
     console.log(`🎯 AUDIENCE DEBUG: Using fixed 7-day window: ${sevenDaysAgo} to ${today}`)
 
-    // First, get active/paused campaigns based on filter
-    let campaignStatusQuery = supabase
-      .from('meta_campaigns')
-      .select('campaign_id, campaign_name, status')
-      .eq('brand_id', brandId)
-    
-    // Apply status filter
-    if (statusParam === 'active') {
-      campaignStatusQuery = campaignStatusQuery.eq('status', 'ACTIVE')
-    } else if (statusParam === 'paused') {
-      campaignStatusQuery = campaignStatusQuery.eq('status', 'PAUSED')
+    // First, get campaign metadata to filter by platform and status
+    let campaignMetadata: any = {}
+    if (platforms.includes('meta')) {
+      console.log(`🎯 AUDIENCE DEBUG: Fetching Meta campaign metadata...`)
+      let metaCampaignsQuery = supabase
+        .from('meta_campaigns')
+        .select('campaign_id, campaign_name, status')
+        .eq('brand_id', brandId)
+      
+      // Apply status filter
+      if (status === 'active') {
+        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'ACTIVE')
+      } else if (status === 'paused') {
+        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'PAUSED')
+      }
+      
+      const { data: metaCampaigns, error: metaError } = await metaCampaignsQuery
+      
+      if (metaError) {
+        console.error(`🎯 AUDIENCE DEBUG: Error fetching Meta campaigns:`, metaError)
+      } else {
+        console.log(`🎯 AUDIENCE DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
+        metaCampaigns?.forEach((c: any) => {
+          campaignMetadata[c.campaign_id] = {
+            name: c.campaign_name,
+            status: c.status,
+            platform: 'meta'
+          }
+        })
+      }
     }
-    // 'all' means no filter
     
-    const { data: campaigns } = await campaignStatusQuery
-    console.log(`🎯 AUDIENCE DEBUG: Found ${campaigns?.length || 0} campaigns with status filter: ${statusParam}`)
+    const allowedCampaignIds = Object.keys(campaignMetadata)
+    console.log(`🎯 AUDIENCE DEBUG: Allowed campaign IDs after filtering:`, allowedCampaignIds.length)
     
-    if (!campaigns || campaigns.length === 0) {
-      console.log(`🎯 AUDIENCE DEBUG: No campaigns match the status filter`)
+    if (allowedCampaignIds.length === 0) {
+      console.log(`🎯 AUDIENCE DEBUG: No campaigns match filters, returning empty`)
       return NextResponse.json({ opportunities: [] })
     }
-    
-    const campaignIds = campaigns.map(c => c.campaign_id)
 
     // Get campaign and audience performance data
     // Always use last 7 days
@@ -76,7 +89,7 @@ export async function GET(request: NextRequest) {
         purchase_value
       `)
       .eq('brand_id', brandId)
-      .in('campaign_id', campaignIds)
+      .in('campaign_id', allowedCampaignIds)
       .gte('date', sevenDaysAgo)
       .lte('date', today)
 
@@ -108,7 +121,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .in('campaign_id', campaignIds)
+        .in('campaign_id', allowedCampaignIds)
         .gte('date', thirtyDaysAgo)
       
       campaignStats = fallbackStats
@@ -134,7 +147,7 @@ export async function GET(request: NextRequest) {
           purchase_value
         `)
         .eq('brand_id', brandId)
-        .in('campaign_id', campaignIds)
+        .in('campaign_id', allowedCampaignIds)
         .order('date', { ascending: false })
         .limit(1000) // Reasonable limit
       
@@ -186,7 +199,7 @@ export async function GET(request: NextRequest) {
       return acc
     }, {})
 
-    const campaignPerformance = Object.values(campaignGroups).map((campaign: any) => ({
+    const campaigns = Object.values(campaignGroups).map((campaign: any) => ({
       ...campaign,
       avgRoas: campaign.totalSpend > 0 ? campaign.totalRevenue / campaign.totalSpend : 0,
       avgCpc: campaign.totalClicks > 0 ? campaign.totalSpend / campaign.totalClicks : 0,
@@ -196,14 +209,14 @@ export async function GET(request: NextRequest) {
 
     // Generate lookalike audience opportunities from top performers
     // Lower thresholds if no high performers exist
-    let topPerformers = campaignPerformance
+    let topPerformers = campaigns
       .filter((campaign: any) => campaign.avgRoas > 1.5 && campaign.totalConversions > 2 && campaign.totalSpend > 50)
       .sort((a: any, b: any) => b.avgRoas - a.avgRoas)
       .slice(0, 3)
 
     // If no high performers, use campaigns with any conversions and reasonable spend
     if (topPerformers.length === 0) {
-      topPerformers = campaignPerformance
+      topPerformers = campaigns
         .filter((campaign: any) => campaign.totalConversions > 0 && campaign.totalSpend > 10)
         .sort((a: any, b: any) => b.totalConversions - a.totalConversions)
         .slice(0, 2)
@@ -211,7 +224,7 @@ export async function GET(request: NextRequest) {
 
     // If still no performers, use any campaigns with spend and clicks
     if (topPerformers.length === 0) {
-      topPerformers = campaignPerformance
+      topPerformers = campaigns
         .filter((campaign: any) => campaign.totalSpend > 5 && campaign.totalClicks > 5)
         .sort((a: any, b: any) => b.avgCtr - a.avgCtr)
         .slice(0, 1)
@@ -232,11 +245,14 @@ export async function GET(request: NextRequest) {
         description = `Create lookalike audience based on engaged users from this campaign (${campaign.avgCtr.toFixed(1)}% CTR)`
       }
       
+      const metadata = campaignMetadata[campaign.campaign_id] || {}
       opportunities.push({
         id: `lookalike-${campaign.campaign_id}`,
         type: 'lookalike',
-        title: `Lookalike ${index + 1}% - Campaign ${campaign.campaign_id.slice(0, 8)}`,
+        title: `Lookalike ${index + 1}% - ${metadata.name || `Campaign ${campaign.campaign_id.slice(0, 8)}`}`,
         description,
+        platform: metadata.platform || 'meta',
+        status: metadata.status || 'UNKNOWN',
         currentReach: estimatedReach,
         projectedReach: Math.round(estimatedReach * 2.5), // 2.5x expansion potential
         estimatedCpa: Math.round(Math.max(campaign.avgCpc * 1.15, 5)), // Slightly higher CPA for expansion, min $5
@@ -245,9 +261,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Generate interest expansion based on campaign performance
-    if (campaignPerformance.length > 0) {
-      const avgCpc = campaignPerformance.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / campaignPerformance.length
-      const avgReach = campaignPerformance.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / campaignPerformance.length
+    if (campaigns.length > 0) {
+      const avgCpc = campaigns.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / campaigns.length
+      const avgReach = campaigns.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / campaigns.length
       
       opportunities.push({
         id: 'interest-expansion',
@@ -262,8 +278,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate geographic expansion based on current performance
-    if (campaignPerformance.some((c: any) => c.avgRoas > 2.0)) {
-      const strongPerformers = campaignPerformance.filter((c: any) => c.avgRoas > 2.0)
+    if (campaigns.some((c: any) => c.avgRoas > 2.0)) {
+      const strongPerformers = campaigns.filter((c: any) => c.avgRoas > 2.0)
       const avgReach = strongPerformers.reduce((sum: number, c: any) => sum + (c.totalImpressions / c.days * 7), 0) / strongPerformers.length
       const avgCpc = strongPerformers.reduce((sum: number, c: any) => sum + c.avgCpc, 0) / strongPerformers.length
 
