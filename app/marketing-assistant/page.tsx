@@ -365,8 +365,8 @@ export default function MarketingAssistantPage() {
         setOptimizationCards(data.recommendations)
       } else {
         console.error('🤖 AI recommendations error:', response.status)
-                  }
-                } catch (error) {
+            }
+          } catch (error) {
       console.error('Error loading optimization recommendations:', error)
     }
   }
@@ -376,16 +376,26 @@ export default function MarketingAssistantPage() {
     
     try {
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      const timestamp = Date.now()
+      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
             if (response.ok) {
               const data = await response.json()
         console.log('[Budget Allocations] Received data:', data)
         console.log('[Budget Allocations] Setting allocations:', data.allocations || [])
+        if (data.allocations && data.allocations.length > 0) {
+          console.log('💰 FRONTEND RECEIVED BUDGET:', data.allocations[0].currentBudget, 'for campaign:', data.allocations[0].campaignName)
+        }
         setBudgetAllocations(data.allocations || [])
       } else {
         console.error('[Budget Allocations] Response not OK:', response.status, response.statusText)
-      }
-    } catch (error) {
+                  }
+                } catch (error) {
       console.error('Error loading budget allocations:', error)
       setBudgetAllocations([])
     }
