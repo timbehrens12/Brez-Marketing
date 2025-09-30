@@ -699,32 +699,29 @@ export default function MarketingAssistantPage() {
 
   if (isLoadingPage || loading) {
     return (
-      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
-        <div className="text-center px-6">
-          {/* Agency Logo */}
-          <div className="mb-8 flex justify-center">
-            <div className="relative">
-              {agencySettings?.logoUrl ? (
+      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Main loading icon */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              {agencySettings?.logoUrl && (
                 <img 
                   src={agencySettings.logoUrl} 
                   alt={`${agencySettings.name || 'Agency'} Logo`} 
                   className="w-12 h-12 object-contain rounded" 
                 />
-              ) : (
-                <div className="w-12 h-12 bg-[#2A2A2A] border border-[#333] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">
-                    {agencySettings?.name ? agencySettings.name.slice(0, 2).toUpperCase() : 'BR'}
-                  </span>
-                </div>
               )}
-            </div>
-          </div>
-          
-          {/* Loading Spinner */}
-          <div className="mb-8 flex justify-center">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 border-4 border-gray-800 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-t-[#FF2A2A] rounded-full animate-spin"></div>
             </div>
           </div>
           
@@ -788,12 +785,12 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <Filter className="w-5 h-5 text-white" />
-            </div>
+          </div>
                   <div className="min-w-0 overflow-hidden">
                     <h3 className="text-base lg:text-lg font-bold text-white truncate">Scope & Filters</h3>
                     <p className="text-gray-400 text-xs lg:text-sm truncate">Configure analysis parameters</p>
-            </div>
-          </div>
+        </div>
+      </div>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
@@ -830,8 +827,8 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="tiktok">TikTok Only</SelectItem>
                     </SelectContent>
                   </Select>
-          </div>
-          
+      </div>
+
           
               </CardContent>
             </Card>
@@ -843,7 +840,7 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <TrendingUp className="w-5 h-5 text-gray-400" />
-          </div>
+                </div>
                   <div className="min-w-0 overflow-hidden">
                     <h3 className="text-base lg:text-lg font-bold text-white truncate">Campaign Scaling</h3>
                     <p className="text-gray-400 text-xs lg:text-sm truncate">Budget optimization & audience expansion</p>
