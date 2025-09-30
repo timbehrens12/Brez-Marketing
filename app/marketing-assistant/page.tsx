@@ -352,12 +352,19 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
+      console.log('🤖 Loading AI recommendations for brand:', selectedBrandId)
+      const timestamp = Date.now()
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+        cache: 'no-store'
+      })
       
       if (response.ok) {
         const data = await response.json()
+        console.log('🤖 AI recommendations received:', data.recommendations?.length, 'recommendations')
         setOptimizationCards(data.recommendations)
+      } else {
+        console.error('🤖 AI recommendations error:', response.status)
       }
     } catch (error) {
       console.error('Error loading optimization recommendations:', error)
@@ -407,11 +414,12 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
+      const timestamp = Date.now()
       console.log('🚨 Loading alerts for platforms:', selectedPlatforms)
       // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
       const [metricsResponse, trendsResponse] = await Promise.all([
-        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`),
-        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}`)
+        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, { cache: 'no-store' })
       ])
       
       if (metricsResponse.ok && trendsResponse.ok) {
@@ -560,7 +568,10 @@ export default function MarketingAssistantPage() {
           acknowledged: acknowledgedIds.includes(alert.id)
         }))
         
+        console.log('🚨 Generated alerts:', alertsWithAcknowledged.length, 'total,', alertsWithAcknowledged.filter(a => !a.acknowledged).length, 'unread')
         setAlerts(alertsWithAcknowledged)
+        } else {
+          console.log('🚨 No data - skipping alert generation')
         }
       } catch (error) {
       console.error('Error loading alerts:', error)
