@@ -698,17 +698,52 @@ export default function MarketingAssistantPage() {
   }
 
   if (isLoadingPage || loading) {
-    const loadingConfig = getPageLoadingConfig('/marketing-assistant')
     return (
-      <UnifiedLoading 
-        variant="page"
-        size="xl"
-        message={loadingConfig.message}
-        subMessage={loadingConfig.subMessage}
-        agencyLogo={agencySettings?.logoUrl || null}
-        agencyName={agencySettings?.name || 'Brez Marketing'}
-        showLogo={true}
-      />
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
+        <div className="text-center px-6">
+          {/* Agency Logo */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative">
+              {agencySettings?.logoUrl ? (
+                <img 
+                  src={agencySettings.logoUrl} 
+                  alt={`${agencySettings.name || 'Agency'} Logo`} 
+                  className="w-12 h-12 object-contain rounded" 
+                />
+              ) : (
+                <div className="w-12 h-12 bg-[#2A2A2A] border border-[#333] rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">
+                    {agencySettings?.name ? agencySettings.name.slice(0, 2).toUpperCase() : 'BR'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Loading Spinner */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-gray-800 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-t-[#FF2A2A] rounded-full animate-spin"></div>
+            </div>
+          </div>
+          
+          {/* Loading title */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Marketing Assistant
+          </h1>
+          
+          {/* Dynamic loading phase */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            Preparing AI insights
+          </p>
+          
+          {/* Subtle loading tip */}
+          <div className="mt-8 text-xs text-gray-500 italic">
+            Analyzing your campaigns and generating recommendations...
+          </div>
+        </div>
+      </div>
     )
   }
 
