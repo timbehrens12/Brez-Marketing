@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@clerk/nextjs'
 import { useBrandContext } from '@/lib/context/BrandContext'
 
@@ -829,11 +830,17 @@ export default function MarketingAssistantPage() {
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                              Meta
-                              </Badge>
-                            <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
+                            <div className="flex-shrink-0 w-5 h-5 relative">
+                              <Image 
+                                src="/meta-icon.png" 
+                                alt="Meta" 
+                                width={20} 
+                                height={20}
+                                className="rounded"
+                              />
                             </div>
+                            <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
+                          </div>
                           <Badge variant={allocation.risk === 'low' ? 'secondary' : allocation.risk === 'medium' ? 'default' : 'destructive'} className="flex-shrink-0 text-xs">
                             {allocation.confidence}%
                               </Badge>
@@ -898,9 +905,15 @@ export default function MarketingAssistantPage() {
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                              Meta
-                            </Badge>
+                            <div className="flex-shrink-0 w-5 h-5 relative">
+                              <Image 
+                                src="/meta-icon.png" 
+                                alt="Meta" 
+                                width={20} 
+                                height={20}
+                                className="rounded"
+                              />
+                            </div>
                             {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                             {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-green-400 flex-shrink-0" />}
                             {expansion.type === 'interest' && <Target className="w-4 h-4 text-purple-400 flex-shrink-0" />}
@@ -1084,9 +1097,15 @@ export default function MarketingAssistantPage() {
                           </div>
                           <div className="min-w-0 overflow-hidden flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <Badge className="flex-shrink-0 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                                Meta
-                              </Badge>
+                              <div className="flex-shrink-0 w-4 h-4 relative">
+                                <Image 
+                                  src="/meta-icon.png" 
+                                  alt="Meta" 
+                                  width={16} 
+                                  height={16}
+                                  className="rounded"
+                                />
+                              </div>
                               <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
                             </div>
                             <p className="text-gray-400 text-xs truncate">{card.projectedImpact.confidence}% confidence</p>
