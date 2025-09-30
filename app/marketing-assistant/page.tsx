@@ -190,9 +190,7 @@ export default function MarketingAssistantPage() {
         return
       }
 
-      // Reset state when brand changes
       setIsCheckingPlatforms(true)
-      setHasAdPlatforms(false)
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -333,16 +331,16 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedBrandId])
 
-  // Data Loading - Reload when brand changes
+  // Data Loading - Reload when brand changes and platform check is complete
   // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
   useEffect(() => {
-    if (selectedBrandId) {
-      console.log('🔄 Brand changed, loading data for brand:', selectedBrandId)
+    if (selectedBrandId && !isCheckingPlatforms && hasAdPlatforms) {
+      console.log('🔄 Brand changed and has platforms, loading data for brand:', selectedBrandId)
       setIsLoadingPage(true)
       setLoading(true)
       loadDashboardData()
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms])
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
@@ -957,6 +955,7 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  // Only show loading if we're checking platforms or we have platforms and are loading data
   if (isLoadingPage || loading || isCheckingPlatforms) {
     return (
       <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
