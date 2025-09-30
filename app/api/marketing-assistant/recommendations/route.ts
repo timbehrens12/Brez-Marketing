@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
       
       const { data, error } = await supabase
         .from('ai_campaign_recommendations')
-        .upsert({
+        .insert({
           brand_id: brandId,
           campaign_id: rec.campaignId,
           campaign_name: rec.campaignName,
@@ -214,9 +214,6 @@ export async function GET(request: NextRequest) {
             projectedImpact: rec.projectedImpact
           },
           expires_at: nextMonday.toISOString() // Expire next Monday
-        }, {
-          onConflict: 'data_hash', // Use data_hash for conflict resolution instead of (brand_id, campaign_id)
-          ignoreDuplicates: false
         })
         .select()
       
