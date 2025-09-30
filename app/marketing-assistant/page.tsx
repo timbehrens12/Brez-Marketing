@@ -280,10 +280,10 @@ export default function MarketingAssistantPage() {
     // If force refresh, clear ALL state first
     if (forceRefresh) {
       console.log('🧹 FORCE REFRESH - Clearing all React state')
-      setRecommendations([])
+      setOptimizationCards([])
       setAlerts([])
       setBudgetAllocations([])
-      setAudienceOpportunities([])
+      setAudienceExpansions([])
       setKpiMetrics(null)
       setActionKPIs(null)
       setTrends(null)
