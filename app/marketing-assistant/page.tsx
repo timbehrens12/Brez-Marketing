@@ -165,6 +165,19 @@ export default function MarketingAssistantPage() {
   const [dateRangeText, setDateRangeText] = useState<string>('')
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
 
+  // Filter data based on selected platforms (client-side filtering for display only)
+  const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
+  const filteredOptimizations = optimizationCards.filter(card => 
+    selectedPlatforms.includes('meta') // All recommendations are from meta_campaigns for now
+  )
+  const filteredBudgetAllocations = budgetAllocations.filter(allocation =>
+    selectedPlatforms.includes('meta') // Budget data is from meta_campaigns
+  )
+  const filteredAudienceExpansions = audienceExpansions.filter(expansion =>
+    selectedPlatforms.includes('meta') // Audience data is from meta_campaigns
+  )
+  // Note: Performance trends filter by platform in their rendering logic already
+
   // Calculate Monday-to-Monday date range
   const getMondayToMondayDates = () => {
     const now = new Date()
@@ -1067,7 +1080,7 @@ export default function MarketingAssistantPage() {
                         <p className="text-sm">Loading budget data...</p>
                       </div>
                     )}
-                    {!loading && budgetAllocations.length > 0 && budgetAllocations.map(allocation => (
+                    {!loading && filteredBudgetAllocations.length > 0 && filteredBudgetAllocations.map(allocation => (
                       <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1126,7 +1139,7 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                       ))}
-                    {!loading && budgetAllocations.length === 0 && (
+                    {!loading && filteredBudgetAllocations.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No budget optimization opportunities</p>
@@ -1142,7 +1155,7 @@ export default function MarketingAssistantPage() {
                         <p className="text-sm">Loading audience data...</p>
                             </div>
                     )}
-                    {!loading && audienceExpansions.length > 0 && audienceExpansions.map(expansion => (
+                    {!loading && filteredAudienceExpansions.length > 0 && filteredAudienceExpansions.map(expansion => (
                       <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
                         <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1203,7 +1216,7 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
                       ))}
-                    {!loading && audienceExpansions.length === 0 && (
+                    {!loading && filteredAudienceExpansions.length === 0 && (
                       <div className="text-center py-6 text-gray-400">
                         <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No audience expansion opportunities</p>
@@ -1237,7 +1250,7 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent className="p-6 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
-                  {optimizationCards.map(card => (
+                  {filteredOptimizations.map(card => (
                     <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
                       {/* Header with Priority Badge */}
                       <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#252525] to-[#1A1A1A] border-b border-[#333] gap-3">
@@ -1322,7 +1335,7 @@ export default function MarketingAssistantPage() {
                         </div>
                       ))}
                   
-                  {optimizationCards.length === 0 && (
+                  {filteredOptimizations.length === 0 && (
                     <div className="text-center py-12 text-gray-400">
                       <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-medium mb-2">No optimization opportunities detected</h3>
