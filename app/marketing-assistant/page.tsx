@@ -309,17 +309,16 @@ export default function MarketingAssistantPage() {
     
     console.log('🔄 loadDashboardData called, forceRefresh:', forceRefresh)
     
-    // If force refresh, clear ALL state first
-    if (forceRefresh) {
-      console.log('🧹 FORCE REFRESH - Clearing all React state')
-      setOptimizationCards([])
-      setAlerts([])
-      setBudgetAllocations([])
-      setAudienceExpansions([])
-      setKpiMetrics(null)
-      setActionKPIs(null)
-      setTrends(null)
-    }
+      // If force refresh, clear ALL state first
+      if (forceRefresh) {
+        console.log('🧹 FORCE REFRESH - Clearing all React state')
+        setOptimizationCards([])
+        setAlerts([])
+        setBudgetAllocations([])
+        setAudienceExpansions([])
+        setKpiMetrics(null)
+        setTrends(null)
+      }
     
     // Use initialDataLoad for first load, isRefreshingData for subsequent loads
     if (initialDataLoad) {
@@ -331,15 +330,14 @@ export default function MarketingAssistantPage() {
     }
     
     try {
-    await Promise.all([
-      loadKPIMetrics(),
-      loadActionKPIs(),
-      loadOptimizationRecommendations(),
-      loadBudgetAllocations(),
-      loadAudienceExpansions(),
-      loadAlerts(),
-      loadTrends()
-    ])
+      await Promise.all([
+        loadKPIMetrics(),
+        loadOptimizationRecommendations(),
+        loadBudgetAllocations(),
+        loadAudienceExpansions(),
+        loadAlerts(),
+        loadTrends()
+      ])
     console.log('✅ All data loaded successfully')
     } catch (error) {
       console.error('❌ Error loading dashboard data:', error)
@@ -993,8 +991,11 @@ export default function MarketingAssistantPage() {
                         method: 'DELETE'
                       })
                       
-                      // Clear local state including alerts
+                      // Clear local state including alerts AND save to localStorage
                       setRecommendationsViewed(true) // Mark as viewed so countdown shows
+                      if (selectedBrandId) {
+                        localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                      }
                       setCompletedItems(new Set())
                       setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
                       
@@ -1026,7 +1027,7 @@ export default function MarketingAssistantPage() {
                       <SelectItem value="tiktok">TikTok Only</SelectItem>
                     </SelectContent>
                   </Select>
-      </div>
+                </div>
 
           
               </CardContent>
@@ -1160,7 +1161,7 @@ export default function MarketingAssistantPage() {
                             {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                             <h4 className="text-white font-medium text-sm truncate min-w-0">{expansion.title}</h4>
                             </div>
-                          <Badge className="flex-shrink-0 text-xs bg-[#FF2A2A] text-black border-[#FF2A2A]">{expansion.confidence}%</Badge>
+                          <Badge className="flex-shrink-0 text-xs bg-gray-500 text-white border-gray-500">{expansion.confidence}%</Badge>
                         </div>
                         <p className="text-gray-400 text-xs mb-2 leading-relaxed">{expansion.description}</p>
                         <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
@@ -1218,100 +1219,7 @@ export default function MarketingAssistantPage() {
             {/* Middle Column - Main Work Area */}
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
-            {/* Action-Oriented KPI Band */}
-            {actionKPIs && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
-                {/* Active Campaigns */}
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-2 lg:p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Activity className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-                        </div>
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Active Now</p>
-                          <p className="text-white text-lg font-bold truncate">{actionKPIs.activeCampaigns}</p>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-gray-500 text-xs truncate">of {actionKPIs.totalCampaigns}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Budget Utilization */}
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-2 lg:p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Gauge className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-                        </div>
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Budget Use</p>
-                          <p className="text-white text-lg font-bold truncate">{actionKPIs.budgetUtilization}%</p>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-gray-500 text-xs truncate">daily avg</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Top Performer */}
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-2 lg:p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Award className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-                        </div>
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Top ROAS</p>
-                          <p className="text-white text-lg font-bold truncate">
-                            {actionKPIs.topPerformer ? `${actionKPIs.topPerformer.roas.toFixed(1)}x` : 'N/A'}
-                          </p>
-                          </div>
-                      </div>
-                      <div className="text-right flex-shrink-0 max-w-[80px]">
-                        {actionKPIs.topPerformer && (
-                          <p className="text-gray-500 text-[10px] truncate" title={actionKPIs.topPerformer.name}>
-                            {actionKPIs.topPerformer.name.length > 12 
-                              ? actionKPIs.topPerformer.name.substring(0, 12) + '...' 
-                              : actionKPIs.topPerformer.name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Needs Attention */}
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-2 lg:p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <AlertTriangle className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-                        </div>
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">At Risk</p>
-                          <p className="text-white text-lg font-bold truncate">{actionKPIs.needsAttention}</p>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-gray-500 text-xs truncate">campaigns</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Optimization Feed */}
+            {/* Optimization Feed - Expanded without top KPIs */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[807px] max-h-[807px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
@@ -1350,7 +1258,7 @@ export default function MarketingAssistantPage() {
                               </div>
                               <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
                             </div>
-                            <p className="text-[#FF2A2A] text-xs truncate font-medium">{card.projectedImpact.confidence}% confidence</p>
+                            <p className="text-gray-400 text-xs truncate font-medium">{card.projectedImpact.confidence}% confidence</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1398,33 +1306,33 @@ export default function MarketingAssistantPage() {
                       <div className="text-xs text-gray-400 min-w-0">
                         <div className="truncate">Completed</div>
                         <div className="text-xs truncate">{timeUntilRefresh}</div>
-                      </div>
+                          </div>
                     </div>
                   ) : (
-                  <Button
-                              size="sm" 
+                          <Button
+                            size="sm"
                               className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
                               onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                  >
+                          >
                               <span className="truncate">Mark as Done</span>
-                  </Button>
+                          </Button>
                   )}
                 </div>
           </div>
-        </div>
-                  ))}
+                        </div>
+                      ))}
                   
                   {optimizationCards.length === 0 && (
                     <div className="text-center py-12 text-gray-400">
                       <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-medium mb-2">No optimization opportunities detected</h3>
                       <p className="text-sm">Your campaigns are performing well. Check back later for new recommendations.</p>
-                </div>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-        </div>
+                </div>
 
             {/* Right Rail */}
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
@@ -1557,9 +1465,9 @@ export default function MarketingAssistantPage() {
                            <div className="text-gray-400 mb-1">Comparing:</div>
                            <div>Previous: <span className="text-white font-medium">${trends.revenue.previous.toLocaleString()}</span></div>
                            <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
-               </div>
-             </div>
-               </div>
+                </div>
+          </div>
+        </div>
 
                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                        <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1569,41 +1477,41 @@ export default function MarketingAssistantPage() {
                              <div className="relative group/platform">
                                <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors">
                                  <Image src="/meta-icon.png" alt="Meta" width={18} height={18} className="rounded" />
-                               </div>
+                </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
-                               </div>
-                             </div>
+              </div>
+                </div>
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
                                <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
                                  <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={18} height={18} className="rounded" />
-                               </div>
+              </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">Google: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-                               </div>
-                             </div>
+                </div>
+              </div>
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
                                <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors opacity-40">
                                  <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={18} height={18} className="rounded" />
-                               </div>
+                </div>
                                <div className="absolute top-full left-0 mt-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-[100] shadow-xl">
                                  <div className="text-white font-medium">TikTok: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
-                               </div>
-                             </div>
+              </div>
+                </div>
                            )}
-                         </div>
+              </div>
                          <div className="min-w-0">
                            <p className="text-gray-400 text-sm mb-0.5">ROAS</p>
                            <p className="text-white font-semibold text-base">{trends.roas.current.toFixed(2)}x</p>
-                         </div>
-                       </div>
+                </div>
+                </div>
                        <div 
                          className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                          title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
@@ -1767,7 +1675,7 @@ export default function MarketingAssistantPage() {
                         </div>
                    <div>
                      <p className="text-gray-400 text-xs">Confidence Level</p>
-                     <p className="text-[#FF2A2A] text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
+                     <p className="text-gray-400 text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
                     </div>
                    <div>
                      <p className="text-gray-400 text-xs">Time to Stabilize</p>
