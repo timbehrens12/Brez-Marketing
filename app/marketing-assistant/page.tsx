@@ -970,8 +970,8 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[#FF2A2A] truncate">Suggested: ${allocation.suggestedBudget}/day</p>
-                            <p className="text-[#FF2A2A] truncate">Est. ROAS: {allocation.projectedRoas}x</p>
+                            <p className="text-white truncate">Suggested: ${allocation.suggestedBudget}/day</p>
+                            <p className="text-white truncate">Est. ROAS: {allocation.projectedRoas}x</p>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2 min-w-0">
@@ -1047,7 +1047,7 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">Current: {expansion.currentReach.toLocaleString()}</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[#FF2A2A] truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
+                            <p className="text-white truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
                           </div>
                         </div>
                         <p className="text-blue-400 text-xs mt-1 truncate">Est. CPA: ${expansion.estimatedCpa}</p>
@@ -1102,15 +1102,15 @@ export default function MarketingAssistantPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 {/* Active Campaigns */}
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-3 lg:p-4">
+                  <CardContent className="p-2 lg:p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Activity className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Activity className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Active Now</p>
-                          <p className="text-white text-xl font-bold truncate">{actionKPIs.activeCampaigns}</p>
+                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Active Now</p>
+                          <p className="text-white text-lg font-bold truncate">{actionKPIs.activeCampaigns}</p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
@@ -1122,15 +1122,15 @@ export default function MarketingAssistantPage() {
 
                 {/* Budget Utilization */}
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-3 lg:p-4">
+                  <CardContent className="p-2 lg:p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Gauge className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Gauge className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Budget Use</p>
-                          <p className="text-white text-xl font-bold truncate">{actionKPIs.budgetUtilization}%</p>
+                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Budget Use</p>
+                          <p className="text-white text-lg font-bold truncate">{actionKPIs.budgetUtilization}%</p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
@@ -1142,15 +1142,15 @@ export default function MarketingAssistantPage() {
 
                 {/* Top Performer */}
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-3 lg:p-4">
+                  <CardContent className="p-2 lg:p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <Award className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Award className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Top ROAS</p>
-                          <p className="text-white text-xl font-bold truncate">
+                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">Top ROAS</p>
+                          <p className="text-white text-lg font-bold truncate">
                             {actionKPIs.topPerformer ? `${actionKPIs.topPerformer.roas.toFixed(1)}x` : 'N/A'}
                           </p>
                           </div>
@@ -1170,15 +1170,15 @@ export default function MarketingAssistantPage() {
 
                 {/* Needs Attention */}
                 <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] hover:border-[#444] transition-colors">
-                  <CardContent className="p-3 lg:p-4">
+                  <CardContent className="p-2 lg:p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
-                          <AlertTriangle className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                        <div className="w-7 h-7 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <AlertTriangle className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
-                          <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">At Risk</p>
-                          <p className="text-white text-xl font-bold truncate">{actionKPIs.needsAttention}</p>
+                          <p className="text-gray-400 text-[9px] uppercase tracking-wide truncate">At Risk</p>
+                          <p className="text-white text-lg font-bold truncate">{actionKPIs.needsAttention}</p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
@@ -1286,7 +1286,7 @@ export default function MarketingAssistantPage() {
                           </div>
                           <div className="bg-[#0F0F0F] rounded p-2 text-center">
                             <p className="text-gray-400 text-xs">Target</p>
-                            <p className="text-[#FF2A2A] text-sm font-medium">{card.recommendedValue}</p>
+                            <p className="text-white text-sm font-medium">{card.recommendedValue}</p>
                           </div>
                         </div>
 
