@@ -257,10 +257,16 @@ export default function MarketingAssistantPage() {
     const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
     if (completed) {
       try {
-        setCompletedItems(new Set(JSON.parse(completed)))
+        const loadedItems = new Set(JSON.parse(completed))
+        console.log('📋 Loaded completed items:', [...loadedItems])
+        setCompletedItems(loadedItems)
       } catch (e) {
         console.error('Error parsing completedItems:', e)
+        setCompletedItems(new Set())
       }
+    } else {
+      console.log('📋 No completed items found for brand:', selectedBrandId)
+      setCompletedItems(new Set())
     }
   }, [selectedBrandId])
 
@@ -683,9 +689,11 @@ export default function MarketingAssistantPage() {
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
       const newCompleted = new Set(completedItems).add(`opt-${cardId}`)
+      console.log('✅ Marking as done:', `opt-${cardId}`, 'Total completed:', [...newCompleted])
       setCompletedItems(newCompleted)
       if (selectedBrandId) {
         localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
+        console.log('💾 Saved to localStorage:', `completedItems_${selectedBrandId}`)
       }
       
       const card = optimizationCards.find(c => c.id === cardId)
@@ -1068,7 +1076,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Campaign Scaling Tools */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[474px] max-h-[474px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[502px] max-h-[502px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -1121,7 +1129,7 @@ export default function MarketingAssistantPage() {
                               <TooltipTrigger asChild>
                                 <Badge className="flex-shrink-0 text-xs bg-gray-500 text-white border-gray-500">
                                   {allocation.confidence}%
-                                </Badge>
+                              </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Confidence Score</p>
@@ -1263,7 +1271,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
             {/* Optimization Feed - Expanded without top KPIs */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[807px] max-h-[807px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[502px] max-h-[502px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
