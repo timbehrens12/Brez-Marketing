@@ -1058,9 +1058,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const optimizedCampaignsCount = optimizedCampaignIds.length
           const totalCampaignsCount = campaignIds.length
           
+          // Check if user has viewed recommendations for this brand
+          const storageKey = `recommendationsViewed_${brand.id}`
+          const hasViewedRecommendations = localStorage.getItem(storageKey) === 'true'
+          
           const hasUsedThisWeek = optimizedCampaignsCount > 0
-          // Weekly limit: if ANY optimization happened this week, no more optimizations available until next Monday
-          const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
+          // Weekly limit: if ANY optimization happened this week OR user has viewed recommendations, no more optimizations available until next Monday
+          const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek && !hasViewedRecommendations
 
           // Get detailed campaign optimization stats for display
           let lastOptimizationDate = null
@@ -3497,6 +3501,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                   detail: { toolId: tool.id, toolName: tool.name }
                                 }))
 
+                                // For Campaign Optimization, mark as viewed in localStorage
+                                if (tool.id === 'campaign-optimization' && selectedBrandId && selectedBrandId !== 'all') {
+                                  const storageKey = `recommendationsViewed_${selectedBrandId}`
+                                  localStorage.setItem(storageKey, 'true')
+                                  // Reload campaign optimization availability after marking as viewed
+                                  setTimeout(() => {
+                                    loadCampaignOptimizationAvailability()
+                                  }, 100)
+                                }
                                 
                                 // Navigate to tool - always allow navigation
                                 router.push(tool.href)
