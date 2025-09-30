@@ -258,6 +258,27 @@ export async function GET(request: NextRequest) {
         platform: rec.platform
       }))
 
+      // Capture baseline performance for each recommendation
+      for (const rec of recommendationsWithDbIds) {
+        try {
+          await supabase.from('recommendation_performance').insert({
+            brand_id: brandId,
+            campaign_id: rec.campaignId,
+            recommendation_id: rec.id,
+            recommendation_type: rec.type,
+            action_taken: false,
+            before_metrics: await capturePerformanceMetrics(brandId, rec.campaignId, dateRange),
+            before_period_start: dateRange.from,
+            before_period_end: dateRange.to,
+            recommendation_created_at: new Date().toISOString(),
+            outcome: 'pending'
+          })
+          console.log(`[Recommendations API] Captured baseline for recommendation ${rec.id}`)
+        } catch (error) {
+          console.error(`[Recommendations API] Error capturing baseline for ${rec.id}:`, error)
+        }
+      }
+
       console.log(`[Recommendations API] Returning ${recommendationsWithDbIds.length} recommendations with database IDs`)
       console.log(`[Recommendations API] Sample IDs:`, recommendationsWithDbIds.slice(0, 3).map(r => r.id))
       return NextResponse.json({ recommendations: recommendationsWithDbIds })
@@ -301,6 +322,46 @@ async function generateRecommendations(
 
     console.log(`[Recommendations] 🔍 Analyzing data from ${dateRange.from} to ${dateRange.to}`)
     console.log(`[Recommendations] 📊 Found ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
+
+    // Fetch historical recommendation performance to learn from past outcomes
+    const { data: historicalPerformance } = await supabase
+      .from('recommendation_performance')
+      .select('*')
+      .eq('brand_id', brandId)
+      .eq('action_taken', true)
+      .not('outcome', 'eq', 'pending')
+      .order('action_completed_at', { ascending: false })
+      .limit(20)
+
+    // Calculate success rates by recommendation type
+    const learnings: Record<string, { successRate: number; avgROASChange: number; avgRevenueChange: number; count: number }> = {}
+    
+    historicalPerformance?.forEach(record => {
+      const type = record.recommendation_type
+      if (!learnings[type]) {
+        learnings[type] = { successRate: 0, avgROASChange: 0, avgRevenueChange: 0, count: 0 }
+      }
+      learnings[type].count++
+      if (record.outcome === 'positive') {
+        learnings[type].successRate++
+      }
+      if (record.impact_analysis) {
+        learnings[type].avgROASChange += (record.impact_analysis as any).roas_change || 0
+        learnings[type].avgRevenueChange += (record.impact_analysis as any).revenue_change || 0
+      }
+    })
+
+    // Calculate averages
+    Object.keys(learnings).forEach(type => {
+      const learning = learnings[type]
+      learning.successRate = (learning.successRate / learning.count) * 100
+      learning.avgROASChange = learning.avgROASChange / learning.count
+      learning.avgRevenueChange = learning.avgRevenueChange / learning.count
+    })
+
+    if (Object.keys(learnings).length > 0) {
+      console.log(`[Recommendations] 📚 Historical learnings:`, learnings)
+    }
 
     if (!campaignStats || campaignStats.length === 0) {
       console.log(`[Recommendations] ❌ No campaign stats found for brand ${brandId}`)
@@ -743,5 +804,33 @@ async function simulateOptimizationAction(campaignId: string, actionId: string, 
   return {
     success: true,
     simulation: simulationResult
+  }
+}
+
+async function capturePerformanceMetrics(brandId: string, campaignId: string, dateRange: { from: string; to: string }) {
+  const { data: statsData } = await supabase
+    .from('meta_campaign_daily_stats')
+    .select('*')
+    .eq('brand_id', brandId)
+    .eq('campaign_id', campaignId)
+    .gte('date', dateRange.from)
+    .lte('date', dateRange.to)
+
+  const totals = (statsData || []).reduce((acc, day) => ({
+    spend: acc.spend + (day.spend || 0),
+    revenue: acc.revenue + (day.revenue || 0),
+    impressions: acc.impressions + (day.impressions || 0),
+    clicks: acc.clicks + (day.clicks || 0),
+    conversions: acc.conversions + (day.conversions || 0)
+  }), { spend: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0 })
+
+  return {
+    spend: totals.spend,
+    revenue: totals.revenue,
+    roas: totals.spend > 0 ? totals.revenue / totals.spend : 0,
+    ctr: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0,
+    cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
+    conversions: totals.conversions,
+    cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0
   }
 }

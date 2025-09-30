@@ -715,6 +715,25 @@ export default function MarketingAssistantPage() {
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) return
 
+      // Track performance impact
+      try {
+        const response = await fetch('/api/marketing-assistant/recommendation-performance', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recommendationId: cardId,
+            brandId: selectedBrandId,
+            campaignId: card.campaignId
+          })
+        })
+        if (response.ok) {
+          const result = await response.json()
+          console.log(`📊 Performance tracking initiated for ${cardId}:`, result.outcome)
+        }
+      } catch (err) {
+        console.error('Error tracking performance:', err)
+      }
+
       // Log the action as manually completed
       const response = await fetch('/api/marketing-assistant/recommendations', {
                     method: 'POST',
@@ -2061,6 +2080,71 @@ export default function MarketingAssistantPage() {
                       </div>
                     </div>
                 </div>
+                </div>
+              </div>
+
+              {/* How the AI Learns */}
+              <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] p-5 rounded-lg border border-emerald-500/30">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-emerald-400" />
+                  How the AI Learns from Your Results
+                </h4>
+                <p className="text-gray-300 text-sm mb-4">
+                  The system doesn't just generate recommendations—it tracks their outcomes and adapts its strategy based on what actually works for YOUR campaigns.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <span className="text-emerald-400 text-xs font-bold">1</span>
+                    </div>
+                    <div>
+                      <h5 className="text-white font-medium text-sm mb-1">Baseline Capture</h5>
+                      <p className="text-gray-400 text-xs">
+                        When a recommendation is created, the system captures your campaign's current performance (spend, ROAS, CTR, conversions) as a baseline.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <span className="text-emerald-400 text-xs font-bold">2</span>
+                    </div>
+                    <div>
+                      <h5 className="text-white font-medium text-sm mb-1">Action Tracking</h5>
+                      <p className="text-gray-400 text-xs">
+                        When you mark a recommendation as done, the system logs the action and waits 7 days to measure the impact.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <span className="text-emerald-400 text-xs font-bold">3</span>
+                    </div>
+                    <div>
+                      <h5 className="text-white font-medium text-sm mb-1">Impact Analysis</h5>
+                      <p className="text-gray-400 text-xs">
+                        After 7 days, it compares the new performance to the baseline: Did ROAS improve? Did CTR increase? Did revenue grow?
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <span className="text-emerald-400 text-xs font-bold">4</span>
+                    </div>
+                    <div>
+                      <h5 className="text-white font-medium text-sm mb-1">Strategy Adaptation</h5>
+                      <p className="text-gray-400 text-xs">
+                        Future recommendations are weighted based on historical success. If budget scaling worked 5 times but creative refresh failed 3 times, 
+                        you'll see more budget recommendations and fewer creative ones—or the creative recommendations will be adjusted.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-emerald-500/10 rounded border border-emerald-500/30">
+                  <p className="text-xs text-emerald-200">
+                    <strong className="text-emerald-100">Example:</strong> If "increase budget to $50/day" resulted in +35% revenue with stable ROAS, 
+                    the system will confidently suggest similar scaling next time. If "creative refresh" didn't improve CTR, it will adjust the threshold 
+                    or recommend different creative strategies.
+                  </p>
                 </div>
               </div>
 
