@@ -1564,7 +1564,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Alerts */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[500px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[501px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
