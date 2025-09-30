@@ -1245,7 +1245,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1254,7 +1254,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1295,7 +1295,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1304,7 +1304,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: $0</div>
                                  <div className="text-gray-400">No data</div>
@@ -1345,7 +1345,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('google') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/KjPyHQr.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">Google: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
@@ -1354,7 +1354,7 @@ export default function MarketingAssistantPage() {
                            )}
                            {selectedPlatforms.includes('tiktok') && (
                              <div className="relative group/platform">
-                               <img src="https://i.imgur.com/nnwQCaY.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
+                               <img src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={12} height={12} className="rounded opacity-30 cursor-help" />
                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/platform:block bg-[#0a0a0a] border border-[#555] rounded px-2 py-1.5 text-xs text-gray-300 whitespace-nowrap z-20 shadow-xl">
                                  <div className="text-white font-medium">TikTok: 0.00x</div>
                                  <div className="text-gray-400">No data</div>
