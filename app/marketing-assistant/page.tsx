@@ -1306,7 +1306,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
             {/* Optimization Feed - Expanded without top KPIs */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[870px] max-h-[870px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[880px] max-h-[880px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -2006,9 +2006,9 @@ export default function MarketingAssistantPage() {
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">2</span>
-                      </div>
-                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                     </div>
+                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
+                </div>
                     <div className="pb-6">
                       <h5 className="text-white font-medium mb-1">Tuesday-Sunday: Review & Apply Changes</h5>
                       <p className="text-gray-400 text-sm mb-2">
@@ -2037,9 +2037,9 @@ export default function MarketingAssistantPage() {
                           <strong className="text-white">Why weekly?</strong> Changes need time to stabilize. Algorithms need to learn. 
                           Testing changes mid-week would contaminate the data and give false signals.
                         </p>
-                      </div>
-                    </div>
                   </div>
+                  </div>
+                </div>
 
                   {/* Next Monday */}
                   <div className="flex gap-4">
@@ -2079,7 +2079,7 @@ export default function MarketingAssistantPage() {
                         </p>
                       </div>
                     </div>
-                </div>
+                  </div>
                 </div>
               </div>
 
@@ -2096,14 +2096,14 @@ export default function MarketingAssistantPage() {
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
                       <span className="text-emerald-400 text-xs font-bold">1</span>
-                    </div>
+                      </div>
                     <div>
                       <h5 className="text-white font-medium text-sm mb-1">Baseline Capture</h5>
                       <p className="text-gray-400 text-xs">
                         When a recommendation is created, the system captures your campaign's current performance (spend, ROAS, CTR, conversions) as a baseline.
                       </p>
                     </div>
-                  </div>
+                </div>
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
                       <span className="text-emerald-400 text-xs font-bold">2</span>
