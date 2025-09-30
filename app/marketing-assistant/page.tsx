@@ -115,6 +115,7 @@ interface AlertItem {
   description: string
   timestamp: Date
   acknowledged: boolean
+  platform?: 'meta' | 'google' | 'tiktok' | 'all' // Platform this alert is for
 }
 
 export default function MarketingAssistantPage() {
@@ -337,7 +338,8 @@ export default function MarketingAssistantPage() {
               title: 'Low Click-Through Rate',
               description: `CTR of ${metrics.ctr.toFixed(2)}% is below 2% benchmark - creative refresh may improve performance`,
               timestamp: new Date(),
-              acknowledged: false
+              acknowledged: false,
+              platform: 'all'
             })
           }
 
@@ -349,7 +351,8 @@ export default function MarketingAssistantPage() {
               title: 'High Cost Per Click',
               description: `CPC of $${metrics.cpc.toFixed(2)} is above $1.00 - consider optimizing targeting or ad quality`,
               timestamp: new Date(),
-              acknowledged: false
+              acknowledged: false,
+              platform: 'all'
             })
           }
 
@@ -361,7 +364,8 @@ export default function MarketingAssistantPage() {
               title: 'Low Return on Ad Spend',
               description: `ROAS of ${metrics.roas.toFixed(2)}x is below 2x target - review campaign effectiveness`,
               timestamp: new Date(),
-              acknowledged: false
+              acknowledged: false,
+              platform: 'all'
             })
           }
 
@@ -373,7 +377,8 @@ export default function MarketingAssistantPage() {
               title: 'Revenue Tracking Issue',
               description: `Campaign has spend of $${metrics.spend.toFixed(2)} but no tracked revenue - verify conversion tracking`,
               timestamp: new Date(),
-              acknowledged: false
+              acknowledged: false,
+              platform: 'all'
             })
           }
         }
@@ -386,7 +391,8 @@ export default function MarketingAssistantPage() {
             title: 'Ad Spend Increased',
             description: `Spend increased ${trends.spend.change}% to $${trends.spend.current.toLocaleString()} - monitor performance closely`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
@@ -397,7 +403,8 @@ export default function MarketingAssistantPage() {
             title: 'ROAS Declining',
             description: `ROAS dropped ${Math.abs(trends.roas.change)}% to ${trends.roas.current.toFixed(2)}x - immediate optimization needed`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
@@ -408,7 +415,8 @@ export default function MarketingAssistantPage() {
             title: 'Revenue Decreasing',
             description: `Revenue down ${Math.abs(trends.revenue.change)}% to $${trends.revenue.current.toLocaleString()} - investigate campaign performance`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
@@ -420,18 +428,20 @@ export default function MarketingAssistantPage() {
             title: 'Poor Ad Engagement',
             description: `CTR of ${metrics.ctr.toFixed(2)}% suggests ad fatigue - consider creative refresh`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
         if (metrics.cpc > 3.0 && metrics.clicks > 50) {
           generatedAlerts.push({
-            id: 'high-cpc',
+            id: 'high-cpc-2',
             type: 'error',
             title: 'High Cost Per Click',
             description: `CPC of $${metrics.cpc.toFixed(2)} is inefficient - optimize targeting or pause underperforming ads`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
@@ -443,7 +453,8 @@ export default function MarketingAssistantPage() {
             title: 'Scaling Opportunity',
             description: `Revenue up ${trends.revenue.change}% with ${metrics.roas.toFixed(2)}x ROAS - consider increasing budgets`,
             timestamp: new Date(),
-            acknowledged: false
+            acknowledged: false,
+            platform: 'all'
           })
         }
 
@@ -981,60 +992,80 @@ export default function MarketingAssistantPage() {
             {/* KPI Band */}
             {kpiMetrics && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10 flex-shrink-0">
                        <DollarSign className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                           </div>
-                      <div className="min-w-0 overflow-hidden">
-                        <p className="text-gray-400 text-xs truncate">Total Spend</p>
+                      <div className="min-w-0 overflow-hidden flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-gray-400 text-xs truncate">Total Spend</p>
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
+                          </div>
+                        </div>
                         <p className="text-white text-base lg:text-lg font-bold truncate">${kpiMetrics.spend.toLocaleString()}</p>
                         </div>
                         </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10 flex-shrink-0">
                        <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                     </div>
-                      <div className="min-w-0 overflow-hidden">
-                        <p className="text-gray-400 text-xs truncate">ROAS</p>
+                      <div className="min-w-0 overflow-hidden flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-gray-400 text-xs truncate">ROAS</p>
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
+                          </div>
+                        </div>
                         <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.roas.toFixed(2)}x</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10 flex-shrink-0">
                        <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                             </div>
-                      <div className="min-w-0 overflow-hidden">
-                        <p className="text-gray-400 text-xs truncate">Impressions</p>
+                      <div className="min-w-0 overflow-hidden flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-gray-400 text-xs truncate">Impressions</p>
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
+                          </div>
+                        </div>
                         <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.impressions.toLocaleString()}</p>
                           </div>
                         </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333]">
+                <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] group relative">
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                    flex items-center justify-center border border-white/10 flex-shrink-0">
                        <MousePointer className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
                     </div>
-                      <div className="min-w-0 overflow-hidden">
-                        <p className="text-gray-400 text-xs truncate">CTR</p>
+                      <div className="min-w-0 overflow-hidden flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-gray-400 text-xs truncate">CTR</p>
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {selectedPlatforms.includes('meta') && <Image src="/meta-icon.png" alt="Meta" width={12} height={12} className="rounded opacity-60" />}
+                          </div>
+                        </div>
                         <p className="text-white text-base lg:text-lg font-bold truncate">{kpiMetrics.ctr.toFixed(2)}%</p>
                       </div>
                     </div>
@@ -1179,10 +1210,10 @@ export default function MarketingAssistantPage() {
                       <p className="text-sm">Your campaigns are performing well. Check back later for new recommendations.</p>
                 </div>
                   )}
-              </div>
+                </div>
               </CardContent>
             </Card>
-                </div>
+        </div>
 
             {/* Right Rail */}
            <div className="col-span-1 xl:col-span-3 space-y-4 flex flex-col min-w-0">
@@ -1194,12 +1225,12 @@ export default function MarketingAssistantPage() {
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
                     <BarChart3 className="w-5 h-5 text-white" />
-              </div>
+                </div>
                   <div className="min-w-0 overflow-hidden">
                     <h3 className="text-base lg:text-lg font-bold text-white truncate">Performance Trends</h3>
                     <p className="text-gray-400 text-xs lg:text-sm truncate">7-day overview</p>
-                </div>
               </div>
+                </div>
               </CardHeader>
               <CardContent className="p-4">
                 <div className="space-y-4">
@@ -1209,7 +1240,7 @@ export default function MarketingAssistantPage() {
                         <div>
                           <p className="text-gray-400 text-sm">Spend</p>
                           <p className="text-white font-semibold">${trends.spend.current.toLocaleString()}</p>
-                </div>
+              </div>
                         <div 
                           className={`flex items-center gap-1 cursor-help relative group ${trends.spend.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: $${trends.spend.previous.toLocaleString()} → Current: $${trends.spend.current.toLocaleString()}`}
@@ -1220,15 +1251,15 @@ export default function MarketingAssistantPage() {
                             <div className="text-gray-400 mb-1">Comparing:</div>
                             <div>Previous: <span className="text-white font-medium">${trends.spend.previous.toLocaleString()}</span></div>
                             <div>Current: <span className="text-white font-medium">${trends.spend.current.toLocaleString()}</span></div>
-              </div>
                 </div>
               </div>
+                </div>
                       
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">Revenue</p>
                           <p className="text-white font-semibold">${trends.revenue.current.toLocaleString()}</p>
-                </div>
+              </div>
                         <div 
                           className={`flex items-center gap-1 cursor-help relative group ${trends.revenue.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: $${trends.revenue.previous.toLocaleString()} → Current: $${trends.revenue.current.toLocaleString()}`}
@@ -1241,13 +1272,13 @@ export default function MarketingAssistantPage() {
                             <div>Current: <span className="text-white font-medium">${trends.revenue.current.toLocaleString()}</span></div>
                 </div>
               </div>
-            </div>
+                </div>
 
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
                           <p className="text-gray-400 text-sm">ROAS</p>
                           <p className="text-white font-semibold">{trends.roas.current.toFixed(2)}x</p>
-                          </div>
+                </div>
                         <div 
                           className={`flex items-center gap-1 cursor-help relative group ${trends.roas.direction === 'up' ? 'text-[#10B981]' : 'text-[#FF2A2A]'}`}
                           title={`Previous: ${trends.roas.previous.toFixed(2)}x → Current: ${trends.roas.current.toFixed(2)}x`}
@@ -1272,8 +1303,8 @@ export default function MarketingAssistantPage() {
                         </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <span className="text-sm">—</span>
-                      </div>
-                    </div>
+              </div>
+            </div>
 
                       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
                         <div>
@@ -1319,13 +1350,30 @@ export default function MarketingAssistantPage() {
                   {alerts.map(alert => (
                     <div key={alert.id} className={`p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors ${alert.acknowledged ? 'opacity-50' : ''}`}>
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
                             alert.type === 'error' ? 'bg-red-400' :
                             alert.type === 'warning' ? 'bg-yellow-400' :
                             'bg-blue-400'
                           }`} />
                           <h4 className={`text-white font-medium text-sm ${alert.acknowledged ? 'line-through' : ''}`}>{alert.title}</h4>
+                          {alert.platform && (
+                            <div className="flex-shrink-0 w-4 h-4 relative">
+                              {alert.platform === 'all' ? (
+                                <div className="flex gap-0.5">
+                                  <Image src="/meta-icon.png" alt="All" width={12} height={12} className="rounded" />
+                                </div>
+                              ) : (
+                        <Image 
+                                  src={`/${alert.platform}-icon.png`}
+                                  alt={alert.platform}
+                          width={16} 
+                          height={16} 
+                                  className="rounded"
+                                />
+                              )}
+                            </div>
+                          )}
                             </div>
                             <Button
                           variant="ghost"
@@ -1359,10 +1407,10 @@ export default function MarketingAssistantPage() {
          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
            <div className="bg-[#111] border border-[#333] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
              <div className="flex items-center justify-between mb-6">
-               <div>
+                        <div>
                  <h3 className="text-xl font-bold text-white">Simulation Results</h3>
                  <p className="text-gray-400">{simulationData.card.title}</p>
-                            </div>
+                          </div>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1371,14 +1419,14 @@ export default function MarketingAssistantPage() {
                >
                  Close
                             </Button>
-                          </div>
+                        </div>
 
              <div className="space-y-6">
                {/* Action Details */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
                  <h4 className="text-white font-semibold mb-2">Proposed Action</h4>
                  <p className="text-gray-300 text-sm">{simulationData.action?.label}</p>
-                            </div>
+                      </div>
 
                {/* Projected Impact */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1387,11 +1435,11 @@ export default function MarketingAssistantPage() {
                    <div>
                      <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
                      <p className="text-green-400 text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
-                      </div>
+                        </div>
                    <div>
                      <p className="text-gray-400 text-xs">Projected ROAS</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.roas?.toFixed(2) || 0}x</p>
-                    </div>
+                        </div>
                    <div>
                      <p className="text-gray-400 text-xs">Confidence Level</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.projectedImpact?.confidence || 0}%</p>
@@ -1400,8 +1448,8 @@ export default function MarketingAssistantPage() {
                      <p className="text-gray-400 text-xs">Time to Stabilize</p>
                      <p className="text-white text-lg font-bold">{simulationData.simulation?.timeline || 'Unknown'}</p>
             </div>
-          </div>
-        </div>
+                      </div>
+                    </div>
 
                {/* Risks & Safeguards */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1417,7 +1465,7 @@ export default function MarketingAssistantPage() {
                          </li>
                        ))}
                      </ul>
-                    </div>
+                        </div>
                    <div>
                      <p className="text-gray-400 text-xs mb-1">Safeguards in Place</p>
                      <ul className="text-gray-300 text-sm space-y-1">
@@ -1429,8 +1477,8 @@ export default function MarketingAssistantPage() {
                        ))}
                      </ul>
                 </div>
-                  </div>
-                  </div>
+                        </div>
+                      </div>
 
                {/* Action Buttons */}
                <div className="flex gap-3">
@@ -1450,7 +1498,7 @@ export default function MarketingAssistantPage() {
                  >
                    Close
                             </Button>
-                          </div>
+                        </div>
                       </div>
                     </div>
                           </div>
@@ -1470,16 +1518,16 @@ export default function MarketingAssistantPage() {
                    <h3 className="text-xl font-bold text-white">AI Analysis</h3>
                    <p className="text-gray-400">In-depth recommendation explanation</p>
                       </div>
-                    </div>
-               <Button
+                            </div>
+                            <Button
                  variant="outline" 
-                 size="sm"
+                              size="sm"
                  onClick={() => setShowExplanation(false)}
                  className="border-[#333] text-gray-300"
                >
                  Close
-                    </Button>
-                  </div>
+                            </Button>
+                          </div>
 
              <div className="space-y-6">
                {/* Why This Matters */}
@@ -1489,7 +1537,7 @@ export default function MarketingAssistantPage() {
                    Why This Recommendation Matters
                  </h4>
                  <p className="text-gray-300 text-sm leading-relaxed">{explanationData.reasoning}</p>
-                      </div>
+                            </div>
 
                {/* Data Analysis */}
                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333]">
@@ -1549,12 +1597,12 @@ export default function MarketingAssistantPage() {
                  onClick={() => setShowExplanation(false)}
                >
                  Got It
-               </Button>
+                            </Button>
                 </div>
            </div>
-         </div>
-       )}
-
+                          </div>
+                        )}
+                        
       {/* How It Works Modal */}
       {showHowItWorks && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1563,7 +1611,7 @@ export default function MarketingAssistantPage() {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-2">How the Marketing Assistant Works</h3>
                 <p className="text-gray-400">Understanding the 7-day recommendation cycle</p>
-              </div>
+                        </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -1572,7 +1620,7 @@ export default function MarketingAssistantPage() {
               >
                 <X className="h-4 w-4" />
               </Button>
-            </div>
+                      </div>
 
             <div className="space-y-6">
               {/* Overview */}
@@ -1580,16 +1628,16 @@ export default function MarketingAssistantPage() {
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Brain className="w-5 h-5 text-white" />
-                  </div>
+                    </div>
                   <div>
                     <h4 className="text-white font-semibold mb-2">AI-Powered Weekly Optimization</h4>
                     <p className="text-gray-300 text-sm leading-relaxed">
                       The Marketing Assistant analyzes your campaigns every 7 days, generating intelligent recommendations based on actual performance data. 
                       It then tracks the effectiveness of those recommendations and learns from the results.
                     </p>
-                      </div>
-                    </div>
-                  </div>
+            </div>
+          </div>
+        </div>
 
               {/* The Cycle */}
               <div className="bg-[#1A1A1A] p-5 rounded-lg border border-[#333]">
@@ -1603,9 +1651,9 @@ export default function MarketingAssistantPage() {
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">1</span>
-                      </div>
-                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
                     </div>
+                      <div className="w-0.5 h-full bg-[#333] mt-2"></div>
+                </div>
                     <div className="pb-6">
                       <h5 className="text-white font-medium mb-1">Week 1: Analysis & Recommendations</h5>
                       <p className="text-gray-400 text-sm mb-2">
@@ -1630,8 +1678,8 @@ export default function MarketingAssistantPage() {
                           <strong className="text-white">Result:</strong> Generates prioritized recommendations (budget changes, 
                           audience expansions, creative optimizations)
                         </p>
-                      </div>
-                    </div>
+                  </div>
+                  </div>
                 </div>
 
                   {/* Week 2 */}
@@ -1666,9 +1714,9 @@ export default function MarketingAssistantPage() {
                           <strong className="text-white">Why wait?</strong> Changes need time to stabilize. Algorithms need to learn. 
                           Results in the first few days aren't representative.
                         </p>
-                        </div>
                       </div>
                     </div>
+                  </div>
 
                   {/* Week 3 */}
                   <div className="flex gap-4">
@@ -1701,9 +1749,9 @@ export default function MarketingAssistantPage() {
                           <strong className="text-white">Learning:</strong> If ROAS improved as predicted ✓, similar recommendations 
                           get higher confidence. If not ✗, the system adjusts its approach.
                         </p>
-      </div>
+                      </div>
                     </div>
-                  </div>
+                </div>
                 </div>
               </div>
 
@@ -1722,30 +1770,30 @@ export default function MarketingAssistantPage() {
                     <p className="text-gray-400 text-xs">
                       You won't see the same suggestion over and over. Once generated, it stays until resolved.
                     </p>
-                  </div>
+                        </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Data-Driven Decisions</h5>
-                    </div>
+                      </div>
                     <p className="text-gray-400 text-xs">
                       All recommendations based on real performance data, not guesses or hunches.
                     </p>
-                  </div>
+                    </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
                       <Brain className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Continuous Learning</h5>
-                    </div>
+          </div>
                     <p className="text-gray-400 text-xs">
                       System learns from what worked and what didn't, improving recommendations over time.
                     </p>
-                  </div>
+        </div>
                   <div className="p-3 bg-[#0f0f0f] rounded border border-[#444]">
                     <div className="flex items-center gap-2 mb-1">
                       <Target className="w-4 h-4 text-gray-400" />
                       <h5 className="text-white font-medium text-sm">Consistent Cadence</h5>
-                    </div>
+      </div>
                     <p className="text-gray-400 text-xs">
                       Weekly rhythm keeps you on track without overwhelming you with constant changes.
                     </p>

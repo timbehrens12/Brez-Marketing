@@ -19,9 +19,41 @@ export async function GET(request: NextRequest) {
     const days = parseInt(searchParams.get('days') || '7')
     const fromDate = searchParams.get('fromDate')
     const toDate = searchParams.get('toDate')
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
+    const status = searchParams.get('status') || 'active'
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    }
+
+    // Get filtered campaign IDs
+    let allowedCampaignIds: string[] = []
+    
+    if (platforms.includes('meta')) {
+      let metaCampaignsQuery = supabase
+        .from('meta_campaigns')
+        .select('campaign_id')
+        .eq('brand_id', brandId)
+      
+      if (status === 'active') {
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
+      } else if (status === 'paused') {
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
+      }
+      
+      const { data: metaCampaigns } = await metaCampaignsQuery
+      if (metaCampaigns) {
+        allowedCampaignIds = metaCampaigns.map(c => c.campaign_id)
+      }
+    }
+
+    // If meta is selected but no campaigns match, return empty trends
+    if (platforms.includes('meta') && allowedCampaignIds.length === 0) {
+      return NextResponse.json({
+        trends: { spend: { current: 0, previous: 0, change: 0 }, revenue: { current: 0, previous: 0, change: 0 }, roas: { current: 0, previous: 0, change: 0 }, cac: { current: 0, previous: 0, change: 0 } },
+        dailyData: [],
+        period: { days, startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0] }
+      })
     }
 
     // Calculate date range - use provided dates or default to last N days
@@ -37,21 +69,33 @@ export async function GET(request: NextRequest) {
     // Get historical data for comparison
     const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
 
-    // Current period data
-    const { data: currentPeriod } = await supabase
+    // Current period data - filter by allowed campaigns
+    let currentPeriodQuery = supabase
       .from('meta_campaign_daily_stats')
       .select('*')
       .eq('brand_id', brandId)
       .gte('date', startDate.toISOString().split('T')[0])
       .lte('date', endDate.toISOString().split('T')[0])
+    
+    if (allowedCampaignIds.length > 0) {
+      currentPeriodQuery = currentPeriodQuery.in('campaign_id', allowedCampaignIds)
+    }
+    
+    const { data: currentPeriod } = await currentPeriodQuery
 
-    // Previous period data for comparison
-    const { data: previousPeriod } = await supabase
+    // Previous period data for comparison - filter by allowed campaigns
+    let previousPeriodQuery = supabase
       .from('meta_campaign_daily_stats')
       .select('*')
       .eq('brand_id', brandId)
       .gte('date', previousStartDate.toISOString().split('T')[0])
       .lt('date', startDate.toISOString().split('T')[0])
+    
+    if (allowedCampaignIds.length > 0) {
+      previousPeriodQuery = previousPeriodQuery.in('campaign_id', allowedCampaignIds)
+    }
+    
+    const { data: previousPeriod } = await previousPeriodQuery
 
     // Get Shopify sales data for accurate revenue tracking
     const { data: currentShopifyData } = await supabase

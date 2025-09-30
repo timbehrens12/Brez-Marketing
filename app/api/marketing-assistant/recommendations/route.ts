@@ -50,6 +50,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
+    const status = searchParams.get('status') || 'active'
     const dateRange = {
       from: searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       to: searchParams.get('to') || new Date().toISOString().split('T')[0]
@@ -59,13 +61,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Get AI campaign recommendations from database
-    const { data: existingRecommendations } = await supabase
+    // Get filtered campaign IDs
+    let allowedCampaignIds: string[] = []
+    
+    if (platforms.includes('meta')) {
+      let metaCampaignsQuery = supabase
+        .from('meta_campaigns')
+        .select('campaign_id')
+        .eq('brand_id', brandId)
+      
+      if (status === 'active') {
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
+      } else if (status === 'paused') {
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
+      }
+      
+      const { data: metaCampaigns } = await metaCampaignsQuery
+      if (metaCampaigns) {
+        allowedCampaignIds.push(...metaCampaigns.map(c => c.campaign_id))
+      }
+    }
+
+    // Get AI campaign recommendations from database - filter by platforms and status
+    let recommendationsQuery = supabase
       .from('ai_campaign_recommendations')
       .select('*')
       .eq('brand_id', brandId)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
+    
+    if (allowedCampaignIds.length > 0) {
+      recommendationsQuery = recommendationsQuery.in('campaign_id', allowedCampaignIds)
+    } else if (platforms.includes('meta')) {
+      // If meta is selected but no campaigns match, return empty
+      return NextResponse.json({ recommendations: [] })
+    }
+    
+    const { data: existingRecommendations } = await recommendationsQuery
 
     if (existingRecommendations && existingRecommendations.length > 0) {
       const recommendations = existingRecommendations.map(rec => ({
@@ -88,7 +120,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate new recommendations if none exist
-    const recommendations = await generateRecommendations(brandId, dateRange)
+    const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
     
     // Store recommendations in database
     for (const rec of recommendations) {
@@ -122,13 +154,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function generateRecommendations(brandId: string, dateRange: { from: string; to: string }): Promise<OptimizationRecommendation[]> {
+async function generateRecommendations(
+  brandId: string, 
+  dateRange: { from: string; to: string },
+  platforms: string[],
+  status: string,
+  allowedCampaignIds: string[]
+): Promise<OptimizationRecommendation[]> {
   try {
-    // Get campaign performance data
+    // If no campaigns match filters, return empty
+    if (platforms.includes('meta') && allowedCampaignIds.length === 0) {
+      return []
+    }
+
+    // Get campaign performance data - filter by allowed campaigns
     const { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select('*')
       .eq('brand_id', brandId)
+      .in('campaign_id', allowedCampaignIds)
       .gte('date', dateRange.from)
       .lte('date', dateRange.to)
 
@@ -136,7 +180,7 @@ async function generateRecommendations(brandId: string, dateRange: { from: strin
       .from('meta_campaigns')
       .select('*')
       .eq('brand_id', brandId)
-      .eq('status', 'ACTIVE')
+      .in('campaign_id', allowedCampaignIds)
 
     if (!campaignStats || campaignStats.length === 0) {
       console.log(`[Recommendations] No campaign stats found for brand ${brandId}`)
