@@ -52,15 +52,26 @@ export async function GET(request: NextRequest) {
         .select('campaign_id, campaign_name, status')
         .eq('brand_id', brandId)
       
-      // Apply status filter
+      // Apply status filter - be flexible with status matching
       if (status === 'active') {
-        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'ACTIVE')
+        // Match ACTIVE or any status containing 'ACTIVE'
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
       } else if (status === 'paused') {
-        metaCampaignsQuery = metaCampaignsQuery.eq('status', 'PAUSED')
+        // Match PAUSED or any status containing 'PAUSED'
+        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
       }
       // 'all' status - no filter
       
       const { data: metaCampaigns, error: metaError } = await metaCampaignsQuery
+      
+      console.log(`🔍 BUDGET DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
+      if (metaCampaigns && metaCampaigns.length > 0) {
+        console.log(`🔍 BUDGET DEBUG: Sample campaign:`, {
+          name: metaCampaigns[0].campaign_name,
+          status: metaCampaigns[0].status,
+          id: metaCampaigns[0].campaign_id?.slice(0, 8)
+        })
+      }
       
       if (metaError) {
         console.error(`🔍 BUDGET DEBUG: Error fetching Meta campaigns:`, metaError)
