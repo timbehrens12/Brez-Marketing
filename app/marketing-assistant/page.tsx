@@ -318,6 +318,14 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
+  // Clear loading states when no brand is selected
+  useEffect(() => {
+    if (!selectedBrandId) {
+      setIsLoadingPage(false)
+      setLoading(false)
+    }
+  }, [selectedBrandId])
+
   // Data Loading - ONLY reload when brand changes on initial load
   // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
   useEffect(() => {
