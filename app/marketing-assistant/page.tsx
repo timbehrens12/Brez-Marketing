@@ -329,8 +329,10 @@ export default function MarketingAssistantPage() {
         const trends = trendsData.trends
         const generatedAlerts: AlertItem[] = []
 
-        // Always generate some basic alerts for testing
-        if (metrics) {
+        // Only generate alerts if there's actual spend (i.e., we have data)
+        const hasData = metrics && metrics.spend > 0
+
+        if (hasData) {
           // Low performance alerts
           if (metrics.ctr < 2.0) {
             generatedAlerts.push({
