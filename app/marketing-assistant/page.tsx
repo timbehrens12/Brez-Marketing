@@ -864,7 +864,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
             
             {/* Scope & Filters */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0 max-h-[280px] overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
