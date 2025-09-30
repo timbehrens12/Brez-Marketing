@@ -190,7 +190,9 @@ export default function MarketingAssistantPage() {
         return
       }
 
+      console.log('🔍 Checking platforms for brand:', selectedBrandId)
       setIsCheckingPlatforms(true)
+      setHasAdPlatforms(false) // Reset to false while checking
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -208,9 +210,11 @@ export default function MarketingAssistantPage() {
             data.metrics.impressions > 0 || 
             data.metrics.clicks > 0
           )
+          console.log('✅ Platform check result:', hasData ? 'HAS PLATFORMS' : 'NO PLATFORMS')
           setHasAdPlatforms(hasData)
         } else {
           // No metrics = no campaigns = no ad platforms
+          console.log('❌ Platform check: No metrics returned')
           setHasAdPlatforms(false)
         }
       } catch (error) {
@@ -323,23 +327,29 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Clear loading states when no brand is selected
+  // Handle brand changes and loading states
   useEffect(() => {
     if (!selectedBrandId) {
+      // No brand selected - clear loading
       setIsLoadingPage(false)
       setLoading(false)
+      setIsCheckingPlatforms(false)
+    } else if (!isCheckingPlatforms) {
+      // Platform check complete
+      if (hasAdPlatforms) {
+        // Has platforms - load data
+        console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
+        setIsLoadingPage(true)
+        setLoading(true)
+        loadDashboardData()
+      } else {
+        // No platforms - stop loading and show warning
+        console.log('⚠️ Brand has no platforms, showing warning')
+        setIsLoadingPage(false)
+        setLoading(false)
+      }
     }
-  }, [selectedBrandId])
-
-  // Data Loading - Reload when brand changes and platform check is complete
-  // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
-  useEffect(() => {
-    if (selectedBrandId && !isCheckingPlatforms && hasAdPlatforms) {
-      console.log('🔄 Brand changed and has platforms, loading data for brand:', selectedBrandId)
-      setIsLoadingPage(true)
-      setLoading(true)
-      loadDashboardData()
-    }
+    // If isCheckingPlatforms is true, loading screen will show (handled below)
   }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms])
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
