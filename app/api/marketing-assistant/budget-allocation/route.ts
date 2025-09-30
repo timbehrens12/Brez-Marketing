@@ -284,17 +284,34 @@ export async function GET(request: NextRequest) {
     })
     
     console.log(`🔍 BUDGET DEBUG: Generated ${Object.values(campaignGroups).length} raw allocations`)
-    console.log(`🔍 BUDGET DEBUG: Sample allocation before filter:`, Object.values(campaignGroups).length > 0 ? {
-      currentBudget: Math.round((Object.values(campaignGroups)[0] as any).totalSpend / (Object.values(campaignGroups)[0] as any).days),
-      days: (Object.values(campaignGroups)[0] as any).days,
-      totalSpend: (Object.values(campaignGroups)[0] as any).totalSpend
+    console.log(`🔍 BUDGET DEBUG: Sample raw campaign data:`, Object.values(campaignGroups).length > 0 ? {
+      campaign_id: (Object.values(campaignGroups)[0] as any).campaign_id?.slice(0, 8),
+      totalSpend: (Object.values(campaignGroups)[0] as any).totalSpend,
+      totalRevenue: (Object.values(campaignGroups)[0] as any).totalRevenue,
+      totalConversions: (Object.values(campaignGroups)[0] as any).totalConversions,
+      days: (Object.values(campaignGroups)[0] as any).days
     } : 'No campaigns')
     
-    const filteredAllocations = allocations.filter((allocation: any) => 
-      // Only show campaigns with any spend and budget differences (lowered threshold to $0.10)
-      allocation.currentBudget > 0.10 && 
-      Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 0.05
-    ).sort((a: any, b: any) => b.confidence - a.confidence) // Sort by confidence
+    console.log(`🔍 BUDGET DEBUG: All allocations before filter:`, allocations.map((a: any) => ({
+      id: a.id.slice(0, 8),
+      name: a.campaignName,
+      currentBudget: a.currentBudget,
+      suggestedBudget: a.suggestedBudget,
+      difference: Math.abs(a.suggestedBudget - a.currentBudget),
+      currentRoas: a.currentRoas,
+      projectedRoas: a.projectedRoas
+    })))
+    
+    const filteredAllocations = allocations.filter((allocation: any) => {
+      const passes = allocation.currentBudget > 0.10 && 
+        Math.abs(allocation.suggestedBudget - allocation.currentBudget) > 0.05
+      
+      if (!passes) {
+        console.log(`🔍 BUDGET DEBUG: Filtered out campaign ${allocation.id.slice(0, 8)}: currentBudget=${allocation.currentBudget}, difference=${Math.abs(allocation.suggestedBudget - allocation.currentBudget)}`)
+      }
+      
+      return passes
+    }).sort((a: any, b: any) => b.confidence - a.confidence) // Sort by confidence
 
     console.log(`🔍 BUDGET DEBUG: After filtering: ${filteredAllocations.length} allocations`)
     console.log(`Budget allocation: Returning ${filteredAllocations.length} allocation opportunities`)
