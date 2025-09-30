@@ -202,6 +202,7 @@ export default function MarketingAssistantPage() {
   // Data Loading - reload when brand or filters change
   useEffect(() => {
     if (selectedBrandId) {
+      console.log('🔄 Platform filter changed, reloading data for platforms:', selectedPlatforms)
       loadDashboardData()
     }
   }, [selectedBrandId, selectedPlatforms])
@@ -314,6 +315,7 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
+      console.log('🚨 Loading alerts for platforms:', selectedPlatforms)
       // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
       const [metricsResponse, trendsResponse] = await Promise.all([
         fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`),
@@ -671,6 +673,7 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
+      console.log('📊 Loading trends for platforms:', selectedPlatforms)
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}`)
       
