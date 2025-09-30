@@ -970,48 +970,47 @@ export default function MarketingAssistantPage() {
                     <Info className="h-3 w-3 mr-1" />
                     How It Works
                   </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async () => {
-                          console.log('🔄 DEV REFRESH: Starting hard refresh...')
-                          setIsRefreshingData(true)
-                          
-                          // Step 1: Reset AI recommendations
-                          try {
-                            console.log('🔄 DEV REFRESH: Resetting AI recommendations...')
-                            const resetResponse = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
-                              method: 'DELETE',
-                            })
-                            if (resetResponse.ok) {
-                              console.log('✅ DEV REFRESH: AI recommendations reset')
-                            } else {
-                              console.error('❌ DEV REFRESH: Failed to reset recommendations')
-                            }
-                          } catch (error) {
-                            console.error('❌ DEV REFRESH: Error resetting recommendations:', error)
-                          }
-                          
-                          // Step 2: Clear localStorage caches
-                          if (selectedBrandId) {
-                            console.log('🔄 DEV REFRESH: Clearing localStorage caches...')
-                            localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
-                            localStorage.removeItem(`completedItems_${selectedBrandId}`)
-                            localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
-                            setRecommendationsViewed(false)
-                          }
-                          
-                          // Step 3: Reload all widgets with fresh data
-                          console.log('🔄 DEV REFRESH: Reloading all widgets...')
-                          await loadDashboardData()
-                          console.log('✅ DEV REFRESH: Complete - all data refreshed!')
-                        }}
-                        className="w-full text-xs h-7 bg-[#FF2A2A]/10 hover:bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30"
-                        disabled={isRefreshingData}
-                      >
-                        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                        {isRefreshingData ? 'Refreshing...' : 'Dev Refresh'}
-                      </Button>
+                  
+                  {/* Update Recommendations Button - Shows countdown after first click */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
+                      setIsRefreshingData(true)
+                      
+                      // Clear ALL localStorage for this brand
+                      if (selectedBrandId) {
+                        console.log('🧹 Clearing localStorage')
+                        localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                        localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                        localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
+                      }
+                      
+                      // Delete AI recommendations from database
+                      console.log('🗑️ Deleting AI recommendations from database')
+                      await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                        method: 'DELETE'
+                      })
+                      
+                      // Clear local state including alerts
+                      setRecommendationsViewed(true) // Mark as viewed so countdown shows
+                      setCompletedItems(new Set())
+                      setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
+                      
+                      // Reload ALL widgets with FORCE REFRESH
+                      console.log('🔄 Calling loadDashboardData with forceRefresh=true')
+                      await loadDashboardData(true)
+                      
+                      setIsRefreshingData(false)
+                      console.log('✅ UPDATE COMPLETE')
+                    }}
+                    className="w-full text-xs h-7 bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] font-medium"
+                    disabled={isRefreshingData || recommendationsViewed}
+                  >
+                    <Wand2 className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next update: ${timeUntilRefresh}` : 'Update Recommendations'}
+                  </Button>
       </div>
 
                 <div>
@@ -1325,56 +1324,6 @@ export default function MarketingAssistantPage() {
                       <h2 className="text-lg lg:text-xl font-bold text-white truncate">AI Optimization Feed</h2>
                       <p className="text-gray-400 text-xs hidden lg:block truncate">Prioritized recommendations based on performance analysis</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-                    {/* ALWAYS SHOW BUTTON FOR TESTING - was: !recommendationsViewed */}
-                    {true ? (
-                          <Button
-              variant="outline"
-                  size="sm"
-              onClick={async () => {
-                console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
-
-                // Clear ALL localStorage for this brand
-                if (selectedBrandId) {
-                  console.log('🧹 Clearing localStorage')
-                  localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
-                  localStorage.removeItem(`completedItems_${selectedBrandId}`)
-                  localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
-                }
-
-                // Delete AI recommendations from database
-                console.log('🗑️ Deleting AI recommendations from database')
-                await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
-                  method: 'DELETE'
-                })
-
-                // Clear local state including alerts
-                setRecommendationsViewed(false)
-                setCompletedItems(new Set())
-                setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
-
-                // Reload ALL widgets with FORCE REFRESH
-                console.log('🔄 Calling loadDashboardData with forceRefresh=true')
-                await loadDashboardData(true)
-                console.log('✅ UPDATE COMPLETE')
-              }}
-              className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
-            >
-              <Wand2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 flex-shrink-0" />
-              <span className="hidden md:inline truncate">{timeUntilRefresh ? `Update (${timeUntilRefresh})` : 'Update Recommendations'}</span>
-              <span className="md:hidden truncate">Update</span>
-                          </Button>
-                    ) : (
-                      <div className="flex items-center gap-1.5 lg:gap-2 px-2 py-1.5 bg-[#1a1a1a] border border-[#333] rounded-lg min-w-0">
-                        <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0" />
-                        <div className="text-xs min-w-0">
-                          <div className="text-gray-400 whitespace-nowrap hidden lg:block truncate">Next refresh:</div>
-                          <div className="text-gray-400 whitespace-nowrap lg:hidden truncate">Next:</div>
-                          <div className="text-white font-medium whitespace-nowrap truncate">{timeUntilRefresh}</div>
-                        </div>
-                    </div>
-                  )}
                   </div>
                         </div>
               </CardHeader>
