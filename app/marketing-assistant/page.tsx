@@ -1278,17 +1278,27 @@ export default function MarketingAssistantPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-                    {!recommendationsViewed ? (
+                    {true ? ( {/* ALWAYS SHOW BUTTON FOR TESTING - was: !recommendationsViewed */}
                           <Button
                         variant="outline" 
                             size="sm"
-                        onClick={() => {
-                          setRecommendationsViewed(true)
+                        onClick={async () => {
+                          // Clear ALL localStorage for this brand
                           if (selectedBrandId) {
-                            localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                            localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                            localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                            localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
                           }
-                          // Reload ALL widgets with fresh 7-day data
+                          
+                          // Delete AI recommendations from database
+                          await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                            method: 'DELETE'
+                          })
+                          
+                          // Reload ALL widgets with fresh data
                           loadDashboardData()
+                          setRecommendationsViewed(false)
+                          setCompletedItems(new Set())
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
