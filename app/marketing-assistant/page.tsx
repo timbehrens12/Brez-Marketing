@@ -244,7 +244,7 @@ export default function MarketingAssistantPage() {
 
     try {
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+      const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -260,7 +260,7 @@ export default function MarketingAssistantPage() {
 
     try {
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -276,7 +276,7 @@ export default function MarketingAssistantPage() {
     
     try {
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       if (response.ok) {
         const data = await response.json()
         console.log('[Budget Allocations] Received data:', data)
@@ -295,7 +295,7 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
     
     try {
-      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       if (response.ok) {
         const data = await response.json()
         console.log('[Audience Expansion] Received data:', data)
@@ -316,8 +316,8 @@ export default function MarketingAssistantPage() {
     try {
       // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
       const [metricsResponse, trendsResponse] = await Promise.all([
-        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`),
-        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`),
+        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}`)
       ])
       
       if (metricsResponse.ok && trendsResponse.ok) {
@@ -672,7 +672,7 @@ export default function MarketingAssistantPage() {
 
     try {
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&status=${campaignStatus}`)
+      const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -785,19 +785,6 @@ export default function MarketingAssistantPage() {
                   </Select>
         </div>
         
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Campaign Status</label>
-                  <Select value={campaignStatus} onValueChange={setCampaignStatus}>
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active Only</SelectItem>
-                      <SelectItem value="all">All Campaigns</SelectItem>
-                      <SelectItem value="paused">Paused Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-          </div>
           
               </CardContent>
             </Card>
