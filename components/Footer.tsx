@@ -93,11 +93,11 @@ function FooterContentComponent() {
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="text-white">
+            <div className="text-white flex-shrink-0">
               <img 
                 src="https://i.imgur.com/j4AQPxj.png" 
                 alt="[bm] dashboard" 
-                className="h-8 w-auto"
+                className="h-8 w-auto flex-shrink-0"
               />
             </div>
             <span className="text-sm text-zinc-400 whitespace-nowrap">
