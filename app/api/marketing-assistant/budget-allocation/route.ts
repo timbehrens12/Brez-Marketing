@@ -331,6 +331,9 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 BUDGET DEBUG: After filtering: ${filteredAllocations.length} allocations`)
     console.log(`Budget allocation: Returning ${filteredAllocations.length} allocation opportunities`)
+    if (filteredAllocations.length > 0) {
+      console.log(`💰 CURRENT BUDGET BEING RETURNED: $${filteredAllocations[0].currentBudget} (Campaign: ${filteredAllocations[0].campaignName})`)
+    }
 
     return NextResponse.json({ allocations: filteredAllocations })
 
