@@ -223,13 +223,17 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Data Loading - reload when brand or filters change
+  // Data Loading - load on initial mount when brand changes
+  // All widgets use the same 7-day data snapshot until "Update Recommendations" is clicked
   useEffect(() => {
     if (selectedBrandId) {
-      console.log('🔄 Platform filter changed, reloading data for platforms:', selectedPlatforms)
+      console.log('🔄 Initial data load for brand:', selectedBrandId)
       loadDashboardData()
     }
-  }, [selectedBrandId, selectedPlatforms])
+  }, [selectedBrandId])
+  
+  // Platform filter changes should NOT reload data - data is fixed for the week
+  // Users must click "Update Recommendations" (available weekly) to refresh all data
 
   // Secret keyboard shortcut to reset AI recommendations
   useEffect(() => {
@@ -969,8 +973,8 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-green-400 truncate">Suggested: ${allocation.suggestedBudget}/day</p>
-                            <p className="text-green-400 truncate">Est. ROAS: {allocation.projectedRoas}x</p>
+                            <p className="text-[#ef4444] truncate">Suggested: ${allocation.suggestedBudget}/day</p>
+                            <p className="text-[#ef4444] truncate">Est. ROAS: {allocation.projectedRoas}x</p>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2 min-w-0">
@@ -1046,7 +1050,7 @@ export default function MarketingAssistantPage() {
                             <p className="text-gray-400 truncate">Current: {expansion.currentReach.toLocaleString()}</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-green-400 truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
+                            <p className="text-[#ef4444] truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
                           </div>
                         </div>
                         <p className="text-blue-400 text-xs mt-1 truncate">Est. CPA: ${expansion.estimatedCpa}</p>
@@ -1104,8 +1108,8 @@ export default function MarketingAssistantPage() {
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-9 h-9 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-lg flex items-center justify-center border border-green-500/30 flex-shrink-0">
-                          <Activity className="w-4 h-4 text-green-400" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Activity className="w-3.5 h-3.5 text-gray-400" />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Active Now</p>
@@ -1124,16 +1128,8 @@ export default function MarketingAssistantPage() {
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className={`w-9 h-9 bg-gradient-to-br rounded-lg flex items-center justify-center border flex-shrink-0 ${
-                          actionKPIs.budgetUtilization >= 90 ? 'from-red-500/20 to-red-500/10 border-red-500/30' :
-                          actionKPIs.budgetUtilization >= 70 ? 'from-yellow-500/20 to-yellow-500/10 border-yellow-500/30' :
-                          'from-blue-500/20 to-blue-500/10 border-blue-500/30'
-                        }`}>
-                          <Gauge className={`w-4 h-4 ${
-                            actionKPIs.budgetUtilization >= 90 ? 'text-red-400' :
-                            actionKPIs.budgetUtilization >= 70 ? 'text-yellow-400' :
-                            'text-blue-400'
-                          }`} />
+                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Gauge className="w-3.5 h-3.5 text-gray-400" />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Budget Use</p>
@@ -1152,15 +1148,15 @@ export default function MarketingAssistantPage() {
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="w-9 h-9 bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/30 flex-shrink-0">
-                          <Award className="w-4 h-4 text-purple-400" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <Award className="w-3.5 h-3.5 text-gray-400" />
                         </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">Top ROAS</p>
                           <p className="text-white text-xl font-bold truncate">
                             {actionKPIs.topPerformer ? `${actionKPIs.topPerformer.roas.toFixed(1)}x` : 'N/A'}
                           </p>
-                        </div>
+                          </div>
                       </div>
                       <div className="text-right flex-shrink-0 max-w-[80px]">
                         {actionKPIs.topPerformer && (
@@ -1180,11 +1176,9 @@ export default function MarketingAssistantPage() {
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className={`w-9 h-9 bg-gradient-to-br rounded-lg flex items-center justify-center border flex-shrink-0 ${
-                          actionKPIs.needsAttention > 0 ? 'from-orange-500/20 to-orange-500/10 border-orange-500/30' : 'from-gray-500/20 to-gray-500/10 border-gray-500/30'
-                        }`}>
-                          <AlertTriangle className={`w-4 h-4 ${actionKPIs.needsAttention > 0 ? 'text-orange-400' : 'text-gray-400'}`} />
-                          </div>
+                        <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0">
+                          <AlertTriangle className="w-3.5 h-3.5 text-gray-400" />
+                        </div>
                         <div className="min-w-0 overflow-hidden">
                           <p className="text-gray-400 text-[10px] uppercase tracking-wide truncate">At Risk</p>
                           <p className="text-white text-xl font-bold truncate">{actionKPIs.needsAttention}</p>
@@ -1218,11 +1212,13 @@ export default function MarketingAssistantPage() {
                           <Button
                         variant="outline" 
                             size="sm"
-                        onClick={() => {
+                        onClick={async () => {
                           setRecommendationsViewed(true)
                           if (selectedBrandId) {
                             localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
                           }
+                          // Reload ALL dashboard data (all widgets use same 7-day snapshot)
+                          await loadDashboardData()
                         }}
                         className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] whitespace-nowrap text-xs lg:text-sm font-medium"
                       >
@@ -1293,7 +1289,7 @@ export default function MarketingAssistantPage() {
                           </div>
                           <div className="bg-[#0F0F0F] rounded p-2 text-center">
                             <p className="text-gray-400 text-xs">Target</p>
-                            <p className="text-green-400 text-sm font-medium">{card.recommendedValue}</p>
+                            <p className="text-[#ef4444] text-sm font-medium">{card.recommendedValue}</p>
                           </div>
                         </div>
 
@@ -1654,7 +1650,7 @@ export default function MarketingAssistantPage() {
                  <div className="grid grid-cols-2 gap-4">
                    <div>
                      <p className="text-gray-400 text-xs">Expected Revenue Increase</p>
-                     <p className="text-green-400 text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
+                     <p className="text-[#ef4444] text-lg font-bold">+${simulationData.simulation?.projectedImpact?.revenue?.toLocaleString() || 0}</p>
                         </div>
                    <div>
                      <p className="text-gray-400 text-xs">Projected ROAS</p>
@@ -1691,7 +1687,7 @@ export default function MarketingAssistantPage() {
                      <ul className="text-gray-300 text-sm space-y-1">
                        {simulationData.simulation?.safeguards?.map((safeguard: string, index: number) => (
                          <li key={index} className="flex items-start gap-2">
-                           <span className="text-green-400 mt-1">✓</span>
+                           <span className="text-[#ef4444] mt-1">✓</span>
                            {safeguard}
                          </li>
                        ))}
@@ -1785,7 +1781,7 @@ export default function MarketingAssistantPage() {
                    {explanationData.outcomes?.map((outcome: any, index: number) => (
                      <div key={index} className="text-center">
                        <p className="text-gray-400 text-xs">{outcome.label}</p>
-                       <p className={`text-lg font-bold ${outcome.positive ? 'text-green-400' : 'text-red-400'}`}>
+                       <p className={`text-lg font-bold ${outcome.positive ? 'text-[#ef4444]' : 'text-red-400'}`}>
                          {outcome.value}
                        </p>
                         </div>
