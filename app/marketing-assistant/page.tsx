@@ -167,6 +167,7 @@ export default function MarketingAssistantPage() {
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
   const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean>(false)
   const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(true)
+  const [checkedBrandId, setCheckedBrandId] = useState<string | null>(null)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
@@ -191,8 +192,11 @@ export default function MarketingAssistantPage() {
       }
 
       console.log('🔍 Checking platforms for brand:', selectedBrandId)
+      
+      // CRITICAL: Set checking to true AND mark this brand as checked
       setIsCheckingPlatforms(true)
       setHasAdPlatforms(false) // Reset to false while checking
+      setCheckedBrandId(null) // Invalidate previous check
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -212,15 +216,18 @@ export default function MarketingAssistantPage() {
           )
           console.log('✅ Platform check result:', hasData ? 'HAS PLATFORMS' : 'NO PLATFORMS')
           setHasAdPlatforms(hasData)
+          setCheckedBrandId(selectedBrandId) // Mark this brand as checked
         } else {
           // No metrics = no campaigns = no ad platforms
           console.log('❌ Platform check: No metrics returned')
           setHasAdPlatforms(false)
+          setCheckedBrandId(selectedBrandId) // Mark this brand as checked
         }
       } catch (error) {
         console.error('Error checking platform connections:', error)
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
+        setCheckedBrandId(selectedBrandId) // Mark this brand as checked
       } finally {
         setIsCheckingPlatforms(false)
       }
@@ -334,6 +341,7 @@ export default function MarketingAssistantPage() {
       setIsLoadingPage(false)
       setLoading(false)
       setIsCheckingPlatforms(false)
+      setCheckedBrandId(null)
       return
     }
     
@@ -342,7 +350,14 @@ export default function MarketingAssistantPage() {
       return
     }
     
-    // Platform check is complete - now we can make decisions
+    // CRITICAL: Only act if we've checked THIS specific brand
+    // This prevents acting on stale hasAdPlatforms from previous brand
+    if (checkedBrandId !== selectedBrandId) {
+      console.log('⏳ Waiting for platform check to complete for current brand')
+      return
+    }
+    
+    // Platform check is complete for THIS brand - now we can make decisions
     if (hasAdPlatforms) {
       // Has platforms - load data (loadDashboardData sets loading states itself)
       console.log('🔄 Brand has platforms, loading data for:', selectedBrandId)
@@ -353,7 +368,7 @@ export default function MarketingAssistantPage() {
       setIsLoadingPage(false)
       setLoading(false)
     }
-  }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms])
+  }, [selectedBrandId, isCheckingPlatforms, hasAdPlatforms, checkedBrandId])
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
