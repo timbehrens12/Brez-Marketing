@@ -190,7 +190,9 @@ export default function MarketingAssistantPage() {
         return
       }
 
+      // Reset state when brand changes
       setIsCheckingPlatforms(true)
+      setHasAdPlatforms(false)
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -955,7 +957,7 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  if (isLoadingPage || loading) {
+  if (isLoadingPage || loading || isCheckingPlatforms) {
     return (
       <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
