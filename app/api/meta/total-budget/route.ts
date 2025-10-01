@@ -48,9 +48,11 @@ export async function GET(req: NextRequest) {
       .gte('updated_at', fiveMinutesAgo.toISOString())
       .limit(1);
     
-    // If forceRefresh is true AND we don't have recent data, fetch from Meta API
-    // Otherwise use cached database values to prevent rate limiting
-    if (forceRefresh && (!recentBudgetData || recentBudgetData.length === 0)) {
+    // 🚨 DISABLED: Prevent Meta API calls on page load to avoid rate limiting
+    // Always use database cache instead
+    const shouldFetchFromMeta = false; // Previously: forceRefresh && (!recentBudgetData || recentBudgetData.length === 0)
+    
+    if (shouldFetchFromMeta) {
       console.log('[Total Meta Budget] Force refresh requested and no recent cache, fetching fresh ad set data from Meta API');
       
       try {

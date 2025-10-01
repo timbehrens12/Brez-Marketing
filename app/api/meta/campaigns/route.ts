@@ -566,7 +566,10 @@ export async function GET(request: NextRequest) {
         let adsetBudgetType = 'unknown';
         let fetchedFromMetaAPI = false;
         try {
-          if (forceRefresh) {
+          // 🚨 DISABLED: Prevent Meta API calls to avoid rate limiting
+          const shouldFetchFromMeta = false; // Previously: forceRefresh
+          
+          if (shouldFetchFromMeta) {
             // Fetch fresh ad set data from Meta API
             console.log(`[Meta Campaigns] Force refresh - fetching ad sets for campaign ${campaign.campaign_id} from Meta API`);
             
@@ -1199,14 +1202,17 @@ export async function GET(request: NextRequest) {
     
          // After fetching campaigns, aggregate ad set budgets for each campaign
      const campaignsWithBudgets = await Promise.all(campaigns.map(async (campaign: any) => {
-       // Fetch ad sets to calculate campaign budget
-       let adsetBudgetTotal = 0;
-       let adsetBudgetType = 'unknown';
-       let fetchedFromMetaAPI = false;
-       try {
-         if (forceRefresh) {
-           // Fetch fresh ad set data from Meta API
-           console.log(`[Meta Campaigns] Force refresh - fetching ad sets for campaign ${campaign.campaign_id} from Meta API`);
+      // Fetch ad sets to calculate campaign budget
+      let adsetBudgetTotal = 0;
+      let adsetBudgetType = 'unknown';
+      let fetchedFromMetaAPI = false;
+      try {
+        // 🚨 DISABLED: Prevent Meta API calls to avoid rate limiting
+        const shouldFetchFromMeta = false; // Previously: forceRefresh
+        
+        if (shouldFetchFromMeta) {
+          // Fetch fresh ad set data from Meta API
+          console.log(`[Meta Campaigns] Force refresh - fetching ad sets for campaign ${campaign.campaign_id} from Meta API`);
            
            // Get Meta connection details
            const { data: connectionData, error: connectionError } = await supabase
