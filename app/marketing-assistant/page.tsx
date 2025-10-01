@@ -187,10 +187,14 @@ export default function MarketingAssistantPage() {
       if (!selectedBrandId) {
         setIsCheckingPlatforms(false)
         setHasAdPlatforms(false)
+        setIsLoadingPage(false)
+        setLoading(false)
         return
       }
 
       setIsCheckingPlatforms(true)
+      setIsLoadingPage(true)
+      setLoading(true)
 
       try {
         // Check if brand has any Meta campaigns (primary ad platform)
@@ -209,14 +213,28 @@ export default function MarketingAssistantPage() {
             data.metrics.clicks > 0
           )
           setHasAdPlatforms(hasData)
+          
+          // If brand has platforms, trigger data load
+          if (hasData) {
+            console.log('🔄 Brand has platforms, loading data for brand:', selectedBrandId)
+            await loadDashboardData()
+          } else {
+            // No platforms - stop loading
+            setIsLoadingPage(false)
+            setLoading(false)
+          }
         } else {
           // No metrics = no campaigns = no ad platforms
           setHasAdPlatforms(false)
+          setIsLoadingPage(false)
+          setLoading(false)
         }
       } catch (error) {
         console.error('Error checking platform connections:', error)
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
+        setIsLoadingPage(false)
+        setLoading(false)
       } finally {
         setIsCheckingPlatforms(false)
       }
@@ -323,24 +341,8 @@ export default function MarketingAssistantPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Clear loading states when no brand is selected
-  useEffect(() => {
-    if (!selectedBrandId) {
-      setIsLoadingPage(false)
-      setLoading(false)
-    }
-  }, [selectedBrandId])
-
-  // Data Loading - Reload when brand changes
-  // Data refreshes ONLY when "Update Recommendations" button is clicked (available Monday 12 AM)
-  useEffect(() => {
-    if (selectedBrandId) {
-      console.log('🔄 Brand changed, loading data for brand:', selectedBrandId)
-      setIsLoadingPage(true)
-      setLoading(true)
-      loadDashboardData()
-    }
-  }, [selectedBrandId])
+  // Note: Data loading is now handled in the platform check useEffect above
+  // This ensures we check for platforms first, then load data only if platforms exist
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
