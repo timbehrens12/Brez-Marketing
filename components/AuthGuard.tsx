@@ -21,14 +21,14 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     }
   }, [isLoaded, isSignedIn, router])
 
-  // Show nothing while Clerk is initializing - let page's own loading screen handle it
+  // Show empty black screen while Clerk is initializing - prevents footer flash
   if (!isLoaded) {
-    return null
+    return <div className="min-h-screen bg-[#0B0B0B]" />
   }
 
-  // Show nothing or redirect if not signed in - let page handle it
+  // Show empty black screen or redirect if not signed in - prevents footer flash
   if (!isSignedIn) {
-    return fallback || null
+    return fallback || <div className="min-h-screen bg-[#0B0B0B]" />
   }
 
   // User is authenticated, show the protected content
