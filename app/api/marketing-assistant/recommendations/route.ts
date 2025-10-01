@@ -292,6 +292,191 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper function to format segment names for readability
+function formatSegmentName(type: string, segment: string): string {
+  if (type === 'age_gender') {
+    const [age, gender] = segment.split('_')
+    return `${age} ${gender}s`
+  }
+  if (type === 'age') {
+    return `Ages ${segment}`
+  }
+  if (type === 'gender') {
+    return `${segment}s`
+  }
+  if (type === 'device') {
+    return segment.replace('_', ' ')
+  }
+  return segment
+}
+
+// Helper function to analyze demographic and device performance data
+function analyzeDemographics(demographics: any[], deviceData: any[]) {
+  const campaignInsights = new Map()
+
+  // Group demographic data by campaign
+  demographics.forEach(record => {
+    const campaignId = record.campaign_id
+    if (!campaignInsights.has(campaignId)) {
+      campaignInsights.set(campaignId, {
+        ageSegments: new Map(),
+        genderSegments: new Map(),
+        ageGenderSegments: new Map(),
+        devices: new Map(),
+        platforms: new Map(),
+        topPerformers: [],
+        underperformers: []
+      })
+    }
+
+    const insights = campaignInsights.get(campaignId)
+    const breakdownType = record.breakdown_type
+    const breakdownValue = record.breakdown_value
+    const impressions = parseInt(record.impressions) || 0
+    const clicks = parseInt(record.clicks) || 0
+    const spend = parseFloat(record.spend) || 0
+    const revenue = parseFloat(record.revenue || record.purchase_value) || 0
+    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+    const roas = spend > 0 ? revenue / spend : 0
+    const cpc = clicks > 0 ? spend / clicks : 0
+
+    const performance = {
+      segment: breakdownValue,
+      impressions,
+      clicks,
+      spend,
+      revenue,
+      ctr,
+      roas,
+      cpc,
+      conversions: parseInt(record.conversions) || 0
+    }
+
+    // Categorize by breakdown type
+    if (breakdownType === 'age') {
+      if (!insights.ageSegments.has(breakdownValue)) {
+        insights.ageSegments.set(breakdownValue, [])
+      }
+      insights.ageSegments.get(breakdownValue).push(performance)
+    } else if (breakdownType === 'gender') {
+      if (!insights.genderSegments.has(breakdownValue)) {
+        insights.genderSegments.set(breakdownValue, [])
+      }
+      insights.genderSegments.get(breakdownValue).push(performance)
+    } else if (breakdownType === 'age,gender') {
+      if (!insights.ageGenderSegments.has(breakdownValue)) {
+        insights.ageGenderSegments.set(breakdownValue, [])
+      }
+      insights.ageGenderSegments.get(breakdownValue).push(performance)
+    }
+  })
+
+  // Process device data
+  deviceData.forEach(record => {
+    const campaignId = record.campaign_id
+    if (!campaignInsights.has(campaignId)) {
+      campaignInsights.set(campaignId, {
+        ageSegments: new Map(),
+        genderSegments: new Map(),
+        ageGenderSegments: new Map(),
+        devices: new Map(),
+        platforms: new Map(),
+        topPerformers: [],
+        underperformers: []
+      })
+    }
+
+    const insights = campaignInsights.get(campaignId)
+    const breakdownType = record.breakdown_type
+    const breakdownValue = record.breakdown_value
+    const impressions = parseInt(record.impressions) || 0
+    const clicks = parseInt(record.clicks) || 0
+    const spend = parseFloat(record.spend) || 0
+    const revenue = parseFloat(record.revenue || record.purchase_value) || 0
+    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+    const roas = spend > 0 ? revenue / spend : 0
+    const cpc = clicks > 0 ? spend / clicks : 0
+
+    const performance = {
+      segment: breakdownValue,
+      impressions,
+      clicks,
+      spend,
+      revenue,
+      ctr,
+      roas,
+      cpc,
+      conversions: parseInt(record.conversions) || 0
+    }
+
+    if (breakdownType === 'device_platform' || breakdownType === 'publisher_platform') {
+      if (!insights.platforms.has(breakdownValue)) {
+        insights.platforms.set(breakdownValue, [])
+      }
+      insights.platforms.get(breakdownValue).push(performance)
+    } else {
+      if (!insights.devices.has(breakdownValue)) {
+        insights.devices.set(breakdownValue, [])
+      }
+      insights.devices.get(breakdownValue).push(performance)
+    }
+  })
+
+  // Aggregate and identify top/underperformers for each campaign
+  campaignInsights.forEach((insights, campaignId) => {
+    const allSegments: any[] = []
+
+    // Aggregate all segment types
+    const aggregateSegments = (segmentMap: Map<string, any[]>, type: string) => {
+      segmentMap.forEach((records, segment) => {
+        const aggregated = records.reduce((acc, r) => ({
+          impressions: acc.impressions + r.impressions,
+          clicks: acc.clicks + r.clicks,
+          spend: acc.spend + r.spend,
+          revenue: acc.revenue + r.revenue,
+          conversions: acc.conversions + r.conversions
+        }), { impressions: 0, clicks: 0, spend: 0, revenue: 0, conversions: 0 })
+
+        const ctr = aggregated.impressions > 0 ? (aggregated.clicks / aggregated.impressions) * 100 : 0
+        const roas = aggregated.spend > 0 ? aggregated.revenue / aggregated.spend : 0
+        const cpc = aggregated.clicks > 0 ? aggregated.spend / aggregated.clicks : 0
+
+        allSegments.push({
+          type,
+          segment,
+          ...aggregated,
+          ctr,
+          roas,
+          cpc,
+          efficiency: (ctr * (roas || 1)) // Combined efficiency score
+        })
+      })
+    }
+
+    aggregateSegments(insights.ageSegments, 'age')
+    aggregateSegments(insights.genderSegments, 'gender')
+    aggregateSegments(insights.ageGenderSegments, 'age_gender')
+    aggregateSegments(insights.devices, 'device')
+    aggregateSegments(insights.platforms, 'platform')
+
+    // Sort by efficiency and identify top/underperformers
+    allSegments.sort((a, b) => b.efficiency - a.efficiency)
+
+    const medianEfficiency = allSegments.length > 0 ? 
+      allSegments[Math.floor(allSegments.length / 2)].efficiency : 0
+
+    insights.topPerformers = allSegments.filter(s => 
+      s.efficiency > medianEfficiency * 1.3 && s.impressions > 50
+    ).slice(0, 5)
+
+    insights.underperformers = allSegments.filter(s => 
+      s.efficiency < medianEfficiency * 0.7 && s.spend > 5
+    ).slice(0, 5)
+  })
+
+  return campaignInsights
+}
+
 async function generateRecommendations(
   brandId: string, 
   dateRange: { from: string; to: string },
@@ -320,8 +505,28 @@ async function generateRecommendations(
       .eq('brand_id', brandId)
       .in('campaign_id', allowedCampaignIds)
 
+    // Fetch demographic data for each campaign
+    const { data: demographics } = await supabase
+      .from('meta_demographics')
+      .select('*')
+      .eq('brand_id', brandId)
+      .in('campaign_id', allowedCampaignIds)
+      .gte('date', dateRange.from)
+      .lte('date', dateRange.to)
+
+    // Fetch device/platform performance data
+    const { data: devicePerformance } = await supabase
+      .from('meta_device_performance')
+      .select('*')
+      .eq('brand_id', brandId)
+      .in('campaign_id', allowedCampaignIds)
+      .gte('date', dateRange.from)
+      .lte('date', dateRange.to)
+
     console.log(`[Recommendations] 🔍 Analyzing data from ${dateRange.from} to ${dateRange.to}`)
     console.log(`[Recommendations] 📊 Found ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
+    console.log(`[Recommendations] 👥 Found ${demographics?.length || 0} demographic records`)
+    console.log(`[Recommendations] 📱 Found ${devicePerformance?.length || 0} device performance records`)
 
     // Fetch historical recommendation performance to learn from past outcomes
     const { data: historicalPerformance } = await supabase
@@ -399,6 +604,9 @@ async function generateRecommendations(
       perf.days += 1
     })
 
+    // Process demographic data by campaign
+    const campaignDemographics = analyzeDemographics(demographics || [], devicePerformance || [])
+
     // Analyze each campaign for optimization opportunities
     for (const campaign of campaigns) {
       const perf = campaignPerformance.get(campaign.campaign_id)
@@ -409,11 +617,18 @@ async function generateRecommendations(
       const cpc = perf.totalClicks > 0 ? perf.totalSpend / perf.totalClicks : 0
       const roas = perf.totalSpend > 0 ? perf.totalRevenue / perf.totalSpend : 0 // Use actual revenue data
       
+      // Get demographic insights for this campaign
+      const demoInsights = campaignDemographics.get(campaign.campaign_id)
+      
       console.log(`[Recommendations] 📈 Campaign "${campaign.campaign_name}":`)
       console.log(`  - Total Spend: $${perf.totalSpend.toFixed(2)} over ${perf.days} days (avg $${avgDailySpend.toFixed(2)}/day)`)
       console.log(`  - Set Budget: $${campaign.budget || 'N/A'} (${campaign.budget_type || 'N/A'})`)
       console.log(`  - Revenue: $${perf.totalRevenue.toFixed(2)} | ROAS: ${roas.toFixed(2)}x`)
       console.log(`  - CTR: ${ctr.toFixed(2)}% | Clicks: ${perf.totalClicks} | Conversions: ${perf.totalConversions}`)
+      
+      if (demoInsights) {
+        console.log(`  - Demographics: ${demoInsights.topPerformers.length} high-performing segments, ${demoInsights.underperformers.length} underperforming`)
+      }
 
       // Smart Budget Optimization with Multiple Scaling Options (relaxed thresholds)
       if ((roas > 0.8 || (perf.totalClicks > 3 && ctr > 0.5)) && avgDailySpend > 1) {
@@ -615,6 +830,102 @@ async function generateRecommendations(
             revenue: perf.totalSpend * 0.2,
             roas: roas * 1.3,
             confidence: 70
+          },
+          campaignId: campaign.campaign_id,
+          campaignName: campaign.campaign_name,
+          platform: 'meta'
+        })
+      }
+
+      // Demographic-Based Audience Optimization
+      if (demoInsights && demoInsights.topPerformers.length > 0) {
+        const topSegments = demoInsights.topPerformers.slice(0, 3)
+        const hasUnderperformers = demoInsights.underperformers.length > 0
+
+        // Build recommendation description based on insights
+        const topSegmentDescriptions = topSegments.map(s => {
+          const roasText = s.roas > 0 ? `${s.roas.toFixed(1)}x ROAS` : `${s.ctr.toFixed(1)}% CTR`
+          return `${formatSegmentName(s.type, s.segment)} (${roasText})`
+        }).join(', ')
+
+        const underperformerDescriptions = hasUnderperformers
+          ? demoInsights.underperformers.slice(0, 2).map(s => {
+              const issue = s.roas < 1 ? `${s.roas.toFixed(1)}x ROAS` : `${s.ctr.toFixed(1)}% CTR`
+              return `${formatSegmentName(s.type, s.segment)} (${issue})`
+            }).join(', ')
+          : ''
+
+        const actions = []
+
+        // Action 1: Scale top performers
+        if (topSegments.length > 0) {
+          const totalTopPerformerSpend = topSegments.reduce((sum, s) => sum + s.spend, 0)
+          const avgTopROAS = topSegments.reduce((sum, s) => sum + s.roas, 0) / topSegments.length
+          const projectedRevenue = totalTopPerformerSpend * 0.5 * avgTopROAS // 50% budget increase
+
+          actions.push({
+            id: 'scale_top_demographics',
+            type: 'audience_targeting',
+            label: `Increase budget for ${topSegments[0].type === 'age_gender' ? 'age-gender' : topSegments[0].type} segments: ${topSegments.map(s => s.segment).join(', ')}`,
+            impact: {
+              revenue: projectedRevenue,
+              roas: avgTopROAS * 0.95,
+              confidence: 85
+            },
+            estimatedTimeToStabilize: '3-5 days'
+          })
+        }
+
+        // Action 2: Reduce or exclude underperformers
+        if (hasUnderperformers && demoInsights.underperformers[0].spend > 5) {
+          const underperformerSpend = demoInsights.underperformers.reduce((sum, s) => sum + s.spend, 0)
+          const avgTopROAS = topSegments.reduce((sum, s) => sum + s.roas, 0) / topSegments.length
+
+          actions.push({
+            id: 'reduce_underperforming_demographics',
+            type: 'audience_exclusion',
+            label: `Reduce spend on ${demoInsights.underperformers.slice(0, 2).map(s => formatSegmentName(s.type, s.segment)).join(' and ')}`,
+            impact: {
+              revenue: underperformerSpend * avgTopROAS * 0.8,
+              roas: roas * 1.4,
+              confidence: 80
+            },
+            estimatedTimeToStabilize: '2-4 days'
+          })
+        }
+
+        // Action 3: Device/platform optimization if applicable
+        const deviceSegments = topSegments.filter(s => s.type === 'device')
+        if (deviceSegments.length > 0) {
+          actions.push({
+            id: 'optimize_device_targeting',
+            type: 'device_optimization',
+            label: `Optimize creative for ${deviceSegments[0].segment}`,
+            impact: {
+              revenue: deviceSegments[0].spend * 0.3 * deviceSegments[0].roas,
+              roas: deviceSegments[0].roas * 1.2,
+              confidence: 75
+            },
+            estimatedTimeToStabilize: '5-7 days'
+          })
+        }
+
+        const priority: 'high' | 'medium' | 'low' = topSegments[0].roas > 3 ? 'high' : 'medium'
+
+        recommendations.push({
+          id: `audience_demo_${campaign.campaign_id}_${Date.now()}`,
+          type: 'audience',
+          priority,
+          title: `Smart Demographic Targeting - ${campaign.campaign_name}`,
+          description: `Data reveals clear performance patterns across demographics. Top segments: ${topSegmentDescriptions}${hasUnderperformers ? `. Underperformers: ${underperformerDescriptions}` : ''}.`,
+          rootCause: `Demographic analysis shows ${topSegments.length} high-efficiency segment${topSegments.length > 1 ? 's' : ''} with ${((topSegments.reduce((sum, s) => sum + s.efficiency, 0) / topSegments.length)).toFixed(1)}x average efficiency score${hasUnderperformers ? `, while ${demoInsights.underperformers.length} segment${demoInsights.underperformers.length > 1 ? 's are' : ' is'} underperforming and draining budget` : ''}.`,
+          actions,
+          currentValue: 'Broad demographic targeting',
+          recommendedValue: `Optimized: Focus on ${topSegments.map(s => s.segment).slice(0, 2).join(', ')}`,
+          projectedImpact: {
+            revenue: actions[0]?.impact.revenue || 0,
+            roas: actions[0]?.impact.roas || roas * 1.2,
+            confidence: 85
           },
           campaignId: campaign.campaign_id,
           campaignName: campaign.campaign_name,
