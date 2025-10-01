@@ -1417,24 +1417,24 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'lead-generator') {
                   const used = toolUsageData.leadGenerator[userId || ''] || 0
                   const limit = 1
-                  return used >= limit ? 'text-red-400' : 'text-green-400'
+                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
                 }
                 if (tool.id === 'outreach-tool') {
                   const used = toolUsageData.outreachTool[userId || ''] || 0
                   const limit = 25
-                  return used >= limit ? 'text-red-400' : 'text-green-400'
+                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
                 }
                 if (tool.id === 'ai-consultant') {
                   const used = toolUsageData.aiConsultant[userId || ''] || 0
                   const limit = 15
-                  return used >= limit ? 'text-red-400' : 'text-green-400'
+                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
                 }
                                   if (tool.id === 'creative-studio') {
                     const used = toolUsageData.creativeStudio[userId || ''] || 0
                     const limit = 50
-                    return used >= limit ? 'text-red-400' : 'text-green-400'
+                    return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
                   }
-                return tool.status === 'available' ? 'text-green-400' : 'text-red-400'
+                return tool.status === 'available' ? 'text-green-400' : 'text-[#FF2A2A]'
               })()}`}>
               {(() => {
                 if (tool.id === 'lead-generator') {
@@ -1506,13 +1506,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Daily Reports</span>
-                <span className={`text-xs font-medium ${dailyUsed < dailyTotal ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-xs font-medium ${dailyUsed < dailyTotal ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                   {isEarlyHours && dailyUsed === 0 ? `${dailyTotal}/${dailyTotal} unavailable` : `${dailyUsed}/${dailyTotal} used`}
                 </span>
               </div>
               <div className="flex flex-col text-right">
                 <span className="text-xs text-gray-400">Monthly Reports</span>
-                <span className={`text-xs font-medium ${monthlyUsed < monthlyTotal ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-xs font-medium ${monthlyUsed < monthlyTotal ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                   {monthlyUsed}/{monthlyTotal} used
                 </span>
               </div>
@@ -1547,10 +1547,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
-                        <div className={`text-[10px] ${availability?.dailyAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className={`text-[10px] ${availability?.dailyAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                           Daily: {availability?.dailyAvailable ? 'Available' : (isEarlyHours ? 'Too early - reports available after 6am' : 'Used today')}
                         </div>
-                        <div className={`text-[10px] ${availability?.monthlyAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className={`text-[10px] ${availability?.monthlyAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                           Monthly: {availability?.monthlyAvailable ? 'Available' : 'Generated'}
                         </div>
                       </div>
@@ -1623,7 +1623,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
-                        <div className={`text-[10px] ${optimizationAvailable ? 'text-[#ef4444]' : 'text-gray-400'}`}>
+                        <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                           Status: {optimizationAvailable ? 'Ready for Review' : 'Used'}
                         </div>
                         {availability?.lastOptimizationDate && (
@@ -1692,7 +1692,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-400">Brand Dependent</span>
-            <span className={`text-xs font-medium ${availableBrands.length > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <span className={`text-xs font-medium ${availableBrands.length > 0 ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
               {availableBrands.length > 0 ? `${availableBrands.length} Available` : 'Missing Platforms'}
             </span>
           </div>
