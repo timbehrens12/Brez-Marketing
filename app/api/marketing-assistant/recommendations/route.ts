@@ -311,25 +311,22 @@ function formatSegmentName(type: string, segment: string): string {
 }
 
 // Helper function to analyze demographic and device performance data
+// Note: Demographics are at account level, so we create a single insight object
+// that can be applied to all campaigns in the account
 function analyzeDemographics(demographics: any[], deviceData: any[]) {
-  const campaignInsights = new Map()
+  const accountInsights = {
+    ageSegments: new Map(),
+    genderSegments: new Map(),
+    ageGenderSegments: new Map(),
+    devices: new Map(),
+    platforms: new Map(),
+    topPerformers: [],
+    underperformers: []
+  }
 
-  // Group demographic data by campaign
+  // Group demographic data (account-level)
   demographics.forEach(record => {
-    const campaignId = record.campaign_id
-    if (!campaignInsights.has(campaignId)) {
-      campaignInsights.set(campaignId, {
-        ageSegments: new Map(),
-        genderSegments: new Map(),
-        ageGenderSegments: new Map(),
-        devices: new Map(),
-        platforms: new Map(),
-        topPerformers: [],
-        underperformers: []
-      })
-    }
-
-    const insights = campaignInsights.get(campaignId)
+    const insights = accountInsights
     const breakdownType = record.breakdown_type
     const breakdownValue = record.breakdown_value
     const impressions = parseInt(record.impressions) || 0
@@ -371,22 +368,9 @@ function analyzeDemographics(demographics: any[], deviceData: any[]) {
     }
   })
 
-  // Process device data
+  // Process device data (account-level)
   deviceData.forEach(record => {
-    const campaignId = record.campaign_id
-    if (!campaignInsights.has(campaignId)) {
-      campaignInsights.set(campaignId, {
-        ageSegments: new Map(),
-        genderSegments: new Map(),
-        ageGenderSegments: new Map(),
-        devices: new Map(),
-        platforms: new Map(),
-        topPerformers: [],
-        underperformers: []
-      })
-    }
-
-    const insights = campaignInsights.get(campaignId)
+    const insights = accountInsights
     const breakdownType = record.breakdown_type
     const breakdownValue = record.breakdown_value
     const impressions = parseInt(record.impressions) || 0
@@ -422,59 +406,58 @@ function analyzeDemographics(demographics: any[], deviceData: any[]) {
     }
   })
 
-  // Aggregate and identify top/underperformers for each campaign
-  campaignInsights.forEach((insights, campaignId) => {
-    const allSegments: any[] = []
+  // Aggregate and identify top/underperformers at account level
+  const allSegments: any[] = []
 
-    // Aggregate all segment types
-    const aggregateSegments = (segmentMap: Map<string, any[]>, type: string) => {
-      segmentMap.forEach((records, segment) => {
-        const aggregated = records.reduce((acc, r) => ({
-          impressions: acc.impressions + r.impressions,
-          clicks: acc.clicks + r.clicks,
-          spend: acc.spend + r.spend,
-          revenue: acc.revenue + r.revenue,
-          conversions: acc.conversions + r.conversions
-        }), { impressions: 0, clicks: 0, spend: 0, revenue: 0, conversions: 0 })
+  // Aggregate all segment types
+  const aggregateSegments = (segmentMap: Map<string, any[]>, type: string) => {
+    segmentMap.forEach((records, segment) => {
+      const aggregated = records.reduce((acc, r) => ({
+        impressions: acc.impressions + r.impressions,
+        clicks: acc.clicks + r.clicks,
+        spend: acc.spend + r.spend,
+        revenue: acc.revenue + r.revenue,
+        conversions: acc.conversions + r.conversions
+      }), { impressions: 0, clicks: 0, spend: 0, revenue: 0, conversions: 0 })
 
-        const ctr = aggregated.impressions > 0 ? (aggregated.clicks / aggregated.impressions) * 100 : 0
-        const roas = aggregated.spend > 0 ? aggregated.revenue / aggregated.spend : 0
-        const cpc = aggregated.clicks > 0 ? aggregated.spend / aggregated.clicks : 0
+      const ctr = aggregated.impressions > 0 ? (aggregated.clicks / aggregated.impressions) * 100 : 0
+      const roas = aggregated.spend > 0 ? aggregated.revenue / aggregated.spend : 0
+      const cpc = aggregated.clicks > 0 ? aggregated.spend / aggregated.clicks : 0
 
-        allSegments.push({
-          type,
-          segment,
-          ...aggregated,
-          ctr,
-          roas,
-          cpc,
-          efficiency: (ctr * (roas || 1)) // Combined efficiency score
-        })
+      allSegments.push({
+        type,
+        segment,
+        ...aggregated,
+        ctr,
+        roas,
+        cpc,
+        efficiency: (ctr * (roas || 1)) // Combined efficiency score
       })
-    }
+    })
+  }
 
-    aggregateSegments(insights.ageSegments, 'age')
-    aggregateSegments(insights.genderSegments, 'gender')
-    aggregateSegments(insights.ageGenderSegments, 'age_gender')
-    aggregateSegments(insights.devices, 'device')
-    aggregateSegments(insights.platforms, 'platform')
+  aggregateSegments(accountInsights.ageSegments, 'age')
+  aggregateSegments(accountInsights.genderSegments, 'gender')
+  aggregateSegments(accountInsights.ageGenderSegments, 'age_gender')
+  aggregateSegments(accountInsights.devices, 'device')
+  aggregateSegments(accountInsights.platforms, 'platform')
 
-    // Sort by efficiency and identify top/underperformers
-    allSegments.sort((a, b) => b.efficiency - a.efficiency)
+  // Sort by efficiency and identify top/underperformers
+  allSegments.sort((a, b) => b.efficiency - a.efficiency)
 
-    const medianEfficiency = allSegments.length > 0 ? 
-      allSegments[Math.floor(allSegments.length / 2)].efficiency : 0
+  const medianEfficiency = allSegments.length > 0 ? 
+    allSegments[Math.floor(allSegments.length / 2)].efficiency : 0
 
-    insights.topPerformers = allSegments.filter(s => 
-      s.efficiency > medianEfficiency * 1.3 && s.impressions > 50
-    ).slice(0, 5)
+  accountInsights.topPerformers = allSegments.filter(s => 
+    s.efficiency > medianEfficiency * 1.3 && s.impressions > 20
+  ).slice(0, 5)
 
-    insights.underperformers = allSegments.filter(s => 
-      s.efficiency < medianEfficiency * 0.7 && s.spend > 5
-    ).slice(0, 5)
-  })
+  accountInsights.underperformers = allSegments.filter(s => 
+    s.efficiency < medianEfficiency * 0.7 && s.spend > 1
+  ).slice(0, 5)
 
-  return campaignInsights
+  // Return the account insights - this will be applied to all campaigns
+  return accountInsights
 }
 
 async function generateRecommendations(
@@ -505,23 +488,22 @@ async function generateRecommendations(
       .eq('brand_id', brandId)
       .in('campaign_id', allowedCampaignIds)
 
-    // Fetch demographic data for each campaign
+    // Fetch demographic data for the brand (account-level data)
+    // Note: meta_demographics is at account level, not campaign level
     const { data: demographics } = await supabase
       .from('meta_demographics')
       .select('*')
       .eq('brand_id', brandId)
-      .in('campaign_id', allowedCampaignIds)
-      .gte('date', dateRange.from)
-      .lte('date', dateRange.to)
+      .gte('date_range_start', dateRange.from)
+      .lte('date_range_end', dateRange.to)
 
-    // Fetch device/platform performance data
+    // Fetch device/platform performance data (if available)
     const { data: devicePerformance } = await supabase
       .from('meta_device_performance')
       .select('*')
       .eq('brand_id', brandId)
-      .in('campaign_id', allowedCampaignIds)
-      .gte('date', dateRange.from)
-      .lte('date', dateRange.to)
+      .gte('date_range_start', dateRange.from)
+      .lte('date_range_end', dateRange.to)
 
     console.log(`[Recommendations] 🔍 Analyzing data from ${dateRange.from} to ${dateRange.to}`)
     console.log(`[Recommendations] 📊 Found ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
@@ -604,8 +586,8 @@ async function generateRecommendations(
       perf.days += 1
     })
 
-    // Process demographic data by campaign
-    const campaignDemographics = analyzeDemographics(demographics || [], devicePerformance || [])
+    // Process demographic data at account level (applies to all campaigns)
+    const demoInsights = analyzeDemographics(demographics || [], devicePerformance || [])
 
     // Analyze each campaign for optimization opportunities
     for (const campaign of campaigns) {
@@ -617,8 +599,7 @@ async function generateRecommendations(
       const cpc = perf.totalClicks > 0 ? perf.totalSpend / perf.totalClicks : 0
       const roas = perf.totalSpend > 0 ? perf.totalRevenue / perf.totalSpend : 0 // Use actual revenue data
       
-      // Get demographic insights for this campaign
-      const demoInsights = campaignDemographics.get(campaign.campaign_id)
+      // Use account-level demographic insights for all campaigns
       
       console.log(`[Recommendations] 📈 Campaign "${campaign.campaign_name}":`)
       console.log(`  - Total Spend: $${perf.totalSpend.toFixed(2)} over ${perf.days} days (avg $${avgDailySpend.toFixed(2)}/day)`)
