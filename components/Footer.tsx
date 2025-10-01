@@ -70,7 +70,7 @@ function FooterContentComponent() {
   
   return (
     <footer 
-      className={`w-full backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto relative ${
+      className={`w-full backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto relative snap-start ${
         sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
       }`}
       style={{

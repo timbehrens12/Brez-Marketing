@@ -152,7 +152,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   },
   {
     id: 'campaign-optimization',
-    name: 'Campaign Optimization',
+    name: 'Marketing Assistant',
     description: 'Weekly AI recommendations and performance tracking',
     icon: Target,
     category: 'analytics',
@@ -1595,7 +1595,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             {/* Usage stats */}
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
-                <span className="text-xs text-gray-400">Campaign Optimization</span>
+                <span className="text-xs text-gray-400">Marketing Assistant</span>
                 <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-gray-400' : 'text-[#FF2A2A]'}`}>
                   {optimizationsUsed}/{optimizationsTotal} used this week
                 </span>
