@@ -1393,8 +1393,50 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, toolUsageData, brandReportAvailability, campaignOptimizationAvailability, selectedBrandFilter, brands])
 
 
+  // Helper function to get time until reset
+  const getTimeUntilReset = (resetType: 'daily' | 'weekly' | 'monthly') => {
+    const now = new Date()
+    let resetDate = new Date()
+    
+    if (resetType === 'daily') {
+      // Reset at midnight
+      resetDate.setDate(now.getDate() + 1)
+      resetDate.setHours(0, 0, 0, 0)
+    } else if (resetType === 'weekly') {
+      // Reset on Monday at midnight
+      const daysUntilMonday = (8 - now.getDay()) % 7 || 7
+      resetDate.setDate(now.getDate() + daysUntilMonday)
+      resetDate.setHours(0, 0, 0, 0)
+    } else if (resetType === 'monthly') {
+      // Reset on 1st of next month
+      resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0)
+    }
+    
+    const diff = resetDate.getTime() - now.getTime()
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24)
+      return `${days}d ${hours % 24}h`
+    }
+    return `${hours}h ${minutes}m`
+  }
+
   const getStatusBadge = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
+      // Determine reset type based on tool
+      const getResetInfo = () => {
+        if (tool.id === 'lead-generator') return { type: 'weekly' as const, resetDay: 'Monday' }
+        if (tool.id === 'outreach-tool') return { type: 'daily' as const, resetDay: 'Tomorrow' }
+        if (tool.id === 'ai-consultant') return { type: 'daily' as const, resetDay: 'Tomorrow' }
+        if (tool.id === 'creative-studio') return { type: 'weekly' as const, resetDay: 'Monday' }
+        return { type: 'daily' as const, resetDay: 'Tomorrow' }
+      }
+      
+      const resetInfo = getResetInfo()
+      const timeUntilReset = getTimeUntilReset(resetInfo.type)
+      
       // User-dependent tools - show agency logo with status
       return (
         <div className="flex items-center gap-2">
@@ -1464,6 +1506,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
               })()}
+            </span>
+            <span className="text-[10px] text-gray-500 mt-0.5">
+              Resets {resetInfo.resetDay} • {timeUntilReset}
             </span>
           </div>
         </div>
@@ -1548,16 +1593,26 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     {hasAnyAvailable && (
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
                     )}
-                    {/* Custom tooltip for brand reports */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
-                      <div className="font-medium">{brand.name}</div>
-                      <div className="flex flex-col mt-1 gap-0.5">
+                    {/* Custom tooltip for brand reports - fixed positioning to prevent clipping */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 border border-[#333] shadow-lg pointer-events-none">
+                      <div className="font-medium mb-1">{brand.name}</div>
+                      <div className="flex flex-col gap-1">
                         <div className={`text-[10px] ${availability?.dailyAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
-                          Daily: {availability?.dailyAvailable ? 'Available' : (isEarlyHours ? 'Too early - reports available after 6am' : 'Used today')}
+                          Daily: {availability?.dailyAvailable ? 'Available' : (isEarlyHours ? 'Too early (6am)' : 'Used')} • Resets Tomorrow
                         </div>
                         <div className={`text-[10px] ${availability?.monthlyAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
-                          Monthly: {availability?.monthlyAvailable ? 'Available' : 'Generated'}
+                          Monthly: {availability?.monthlyAvailable ? 'Available' : 'Used'} • Resets {(() => {
+                            const now = new Date()
+                            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+                            const diff = nextMonth.getTime() - now.getTime()
+                            const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+                            return `in ${days}d`
+                          })()}
                         </div>
+                      </div>
+                      {/* Arrow pointing down */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                        <div className="border-4 border-transparent border-t-[#333]"></div>
                       </div>
                     </div>
                   </div>
@@ -1682,9 +1737,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     </div>
                   )}
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1A1A1A]"></div>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
-                    {brand.name}: Available
+                  {/* Tooltip - fixed positioning */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 border border-[#333] shadow-lg pointer-events-none">
+                    <div className="font-medium">{brand.name}</div>
+                    <div className="text-[10px] text-green-400 mt-0.5">Available for this tool</div>
+                    {/* Arrow pointing down */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                      <div className="border-4 border-transparent border-t-[#333]"></div>
+                    </div>
                   </div>
                 </div>
               )
