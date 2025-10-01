@@ -1749,9 +1749,10 @@ const CampaignWidget = ({
     // 🔧 FIXED: Handle key mismatch between campaign.id and campaign.campaign_id
     // campaign.id is internal UUID, campaign.campaign_id is Meta's ID - budget API uses campaign_id
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
-    // Use API budget if it exists (including 0) and we're not currently loading budgets
+    // Use API budget if it exists (including 0)
     // 0 is a valid budget value that should be respected - means no active adsets with budgets
-    if (currentBudgetData && typeof currentBudgetData.budget === 'number' && !isLoadingBudgets) {
+    // 🚨 REMOVED: !isLoadingBudgets check - we want to use API data even while loading
+    if (currentBudgetData && typeof currentBudgetData.budget === 'number') {
       // 🚨 Log API budget usage
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
@@ -1761,18 +1762,6 @@ const CampaignWidget = ({
         budget_source: 'api'
       };
     } else {
-      // 🚨 TRUST API DATA: If API explicitly returns 0, that means no active adsets with budgets
-      // Don't treat 0 as a fallback situation - it's valid data!
-      if (currentBudgetData && typeof currentBudgetData.budget === 'number') {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: API returned budget $${currentBudgetData.budget} - trusting this value`);
-        return {
-          budget: currentBudgetData.budget,
-          formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
-          budget_type: currentBudgetData.budget_type || 'unknown',
-          budget_source: 'api_trusted'
-        };
-      }
-      
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, trying campaign props:`, {
         currentBudgetData_budget: currentBudgetData?.budget,
         campaign_adset_budget_total: campaign.adset_budget_total,
