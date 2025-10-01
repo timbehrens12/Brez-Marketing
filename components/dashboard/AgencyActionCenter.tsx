@@ -1594,7 +1594,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
                     )}
                     {/* Custom tooltip for brand reports - fixed positioning to prevent clipping */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 border border-[#333] shadow-lg pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[9999] border border-[#333] shadow-2xl pointer-events-none">
                       <div className="font-medium mb-1">{brand.name}</div>
                       <div className="flex flex-col gap-1">
                         <div className={`text-[10px] ${availability?.dailyAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
@@ -1680,7 +1680,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
                     )}
                     {/* Custom tooltip for campaign optimization */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[9999] border border-[#333] shadow-2xl pointer-events-none">
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
@@ -1691,6 +1691,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                             Last used: {availability.lastOptimizationDate}
                           </div>
                         )}
+                      </div>
+                      {/* Arrow pointing down */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                        <div className="border-4 border-transparent border-t-[#333]"></div>
                       </div>
                     </div>
                   </div>
@@ -1738,7 +1742,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   )}
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1A1A1A]"></div>
                   {/* Tooltip - fixed positioning */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 border border-[#333] shadow-lg pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[9999] border border-[#333] shadow-2xl pointer-events-none">
                     <div className="font-medium">{brand.name}</div>
                     <div className="text-[10px] text-green-400 mt-0.5">Available for this tool</div>
                     {/* Arrow pointing down */}
@@ -3279,7 +3283,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           {/* Reusable Tools Widget */}
           <div className="lg:col-span-3">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col overflow-hidden transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
             )}>
               <CardHeader className="pb-2 flex-shrink-0">
@@ -3385,7 +3389,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
+              <CardContent className="flex-1 overflow-y-auto overflow-x-hidden">
                 {isWidgetLoading.reusableTools ? (
                   <div className="text-center py-12">
                     <Settings className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -3393,7 +3397,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col overflow-hidden">
+                  <div className="h-full flex flex-col">
                     {/* Responsive grid for all tools */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
                       {filteredTools.map((tool) => {
@@ -3471,7 +3475,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                               }}
                               disabled={isDisabled}
                               className={cn(
-                                "w-full text-xs h-7 mt-auto",
+                                "w-full text-xs h-8 mt-auto flex items-center justify-center",
                                 isDisabled
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                                   : isMaxedOut
