@@ -129,11 +129,23 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
         .then(res => res.json())
         .then(result => {
           console.log('[TotalMetaBudget] ✅ Ad sets refreshed:', result);
+          
+          // Notify other components that ad set refresh is complete
+          window.dispatchEvent(new CustomEvent('adset-refresh-complete', {
+            detail: { brandId, timestamp: Date.now(), result }
+          }));
+          
           // Now fetch budget data from database (which has fresh ad set data)
           fetchTotalBudget(false); // false = use cached database data
         })
         .catch(err => {
           console.error('[TotalMetaBudget] ⚠️ Ad set refresh failed, using cached data:', err);
+          
+          // Notify failure too so components don't wait forever
+          window.dispatchEvent(new CustomEvent('adset-refresh-complete', {
+            detail: { brandId, timestamp: Date.now(), error: err.message }
+          }));
+          
           // Fallback to cached data
           fetchTotalBudget(false);
         });

@@ -1211,20 +1211,34 @@ const CampaignWidget = ({
   }, [brandId, createAbortController, removeAbortController]);
   
   // Fetch budgets on mount and when brandId changes
-  // 🚨 CHANGED: Wait 2 seconds for TotalBudgetMetricCard to finish ad set refresh before reading from database
+  // 🚨 CHANGED: Listen for ad set refresh completion event instead of fixed delay
   useEffect(() => {
     console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
       console.log('[CampaignWidget] Waiting for ad set refresh to complete before fetching budgets...');
       setIsLoadingBudgets(true);
       
-      // Wait for the centralized ad set refresh to complete
-      const timer = setTimeout(() => {
-        console.log('[CampaignWidget] Ad set refresh complete - fetching budgets from database');
-        fetchCurrentBudgets(false); // Read from database (ad sets already refreshed by TotalBudgetMetricCard)
-      }, 2500); // 2.5 second delay to ensure ad sets are saved to database
+      // Listen for the ad set refresh completion event from TotalBudgetMetricCard
+      const handleAdSetRefreshComplete = (event: CustomEvent) => {
+        if (event.detail?.brandId === brandId) {
+          console.log('[CampaignWidget] 🎉 Ad set refresh complete - fetching budgets from database');
+          fetchCurrentBudgets(false); // Read from database (ad sets already refreshed)
+        }
+      };
       
-      return () => clearTimeout(timer);
+      // Add event listener
+      window.addEventListener('adset-refresh-complete', handleAdSetRefreshComplete as EventListener);
+      
+      // Fallback timer in case event doesn't fire
+      const fallbackTimer = setTimeout(() => {
+        console.log('[CampaignWidget] ⏱️ Fallback timer - fetching budgets from database');
+        fetchCurrentBudgets(false);
+      }, 5000); // 5 second fallback
+      
+      return () => {
+        window.removeEventListener('adset-refresh-complete', handleAdSetRefreshComplete as EventListener);
+        clearTimeout(fallbackTimer);
+      };
     } else {
       // If no brandId, no need to load budgets
       console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');
