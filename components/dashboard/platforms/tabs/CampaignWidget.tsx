@@ -1330,6 +1330,12 @@ const CampaignWidget = ({
         forceRefresh = !!event.detail.forceRefresh;
       }
       
+      // Always treat these event types as force refresh
+      const forceRefreshEvents = ['global-refresh-all', 'force-meta-refresh', 'globalRefresh'];
+      if (forceRefreshEvents.includes(event.type)) {
+        forceRefresh = true;
+      }
+      
       logger.debug(`[CampaignWidget] Processing ${event.type} event, force=${forceRefresh}`);
       
       // Call refresh with slight delay
@@ -1343,7 +1349,7 @@ const CampaignWidget = ({
           onRefresh();
           
           // 🚨 ENSURE BUDGET REFRESH: Also refresh budget data on global refresh
-          if (forceRefresh || event.type === 'globalRefresh') {
+          if (forceRefresh) {
             console.log(`[CampaignWidget] Global refresh triggered - also refreshing budget data`);
             fetchCurrentBudgets(true); // Force refresh budget data
           }
@@ -1370,6 +1376,8 @@ const CampaignWidget = ({
     document.addEventListener('meta-refresh-all', debouncedHandler as EventListener);
     window.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     document.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
+    window.addEventListener('global-refresh-all', debouncedHandler as EventListener); // Listen to dashboard refresh button
+    window.addEventListener('force-meta-refresh', debouncedHandler as EventListener); // Additional Meta refresh event
     
     // Return cleanup function
     return () => {
@@ -1380,6 +1388,8 @@ const CampaignWidget = ({
       document.removeEventListener('meta-refresh-all', debouncedHandler as EventListener);
       window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
       document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
+      window.removeEventListener('global-refresh-all', debouncedHandler as EventListener);
+      window.removeEventListener('force-meta-refresh', debouncedHandler as EventListener);
     };
   }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef]);
   
