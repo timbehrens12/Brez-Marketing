@@ -82,30 +82,30 @@ export async function POST(req: NextRequest) {
         console.log(`[AdSet Refresh] 📡 Fetching ad sets for campaign ${campaign.campaign_id} (${campaign.campaign_name})`);
         
         // This will fetch from Meta API and save to database
-        const adSets = await fetchMetaAdSets(
+        const result = await fetchMetaAdSets(
           brandId,
           campaign.campaign_id,
           true // forceSave = true
         );
         
-        if (adSets && adSets.length > 0) {
-          totalAdSets += adSets.length;
+        if (result.success && result.adSets && result.adSets.length > 0) {
+          totalAdSets += result.adSets.length;
           results.push({
             campaignId: campaign.campaign_id,
             campaignName: campaign.campaign_name,
-            adSetCount: adSets.length,
+            adSetCount: result.adSets.length,
             success: true
           });
-          console.log(`[AdSet Refresh] ✅ Synced ${adSets.length} ad sets for campaign ${campaign.campaign_name}`);
+          console.log(`[AdSet Refresh] ✅ Synced ${result.adSets.length} ad sets for campaign ${campaign.campaign_name}`);
         } else {
           results.push({
             campaignId: campaign.campaign_id,
             campaignName: campaign.campaign_name,
             adSetCount: 0,
             success: true,
-            note: 'No ad sets found'
+            note: result.error || 'No ad sets found'
           });
-          console.log(`[AdSet Refresh] ℹ️ No ad sets found for campaign ${campaign.campaign_name}`);
+          console.log(`[AdSet Refresh] ℹ️ No ad sets found for campaign ${campaign.campaign_name}:`, result.error || 'empty result');
         }
       } catch (campaignError: any) {
         console.error(`[AdSet Refresh] ⚠️ Failed to sync ad sets for campaign ${campaign.campaign_name}:`, campaignError.message);
