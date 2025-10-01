@@ -226,9 +226,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     setSelectedBrandFilterState(value)
   }, [selectedBrandFilter])
 
-  // Brand health read state
-  const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
-
   // Brand report availability tracking
   const [brandReportAvailability, setBrandReportAvailability] = useState<{
     [brandId: string]: {
@@ -1851,28 +1848,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
 
 
-  // Functions for marking brand health reports as read
-  const markBrandAsRead = (brandId: string) => {
-    setReadBrandReports(prev => {
-      const newReadState = {
-        ...prev,
-        [brandId]: true
-      }
-      
-      // Save to localStorage immediately
-      if (userId) {
-        localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newReadState))
-      }
-      
-      return newReadState
-    })
-    
-
-    
-    // Show feedback
-    toast.success('Report marked as read', { duration: 2000 })
-  }
-
   // Sort brand health data
   const sortedBrandHealthData = useMemo(() => {
     const sorted = [...brandHealthData]
@@ -1902,31 +1877,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [brandHealthData, brandHealthSort])
 
-  const markAllBrandsAsRead = () => {
-    const unreadCount = brandHealthData.filter(brand => !readBrandReports[brand.id]).length
-    
-    if (unreadCount === 0) {
-      toast('All reports are already marked as read', { duration: 2000 })
-      return
-    }
-    
-    const allReadState: {[key: string]: boolean} = {}
-    brandHealthData.forEach(brand => {
-      allReadState[brand.id] = true
-    })
-    
-    setReadBrandReports(allReadState)
-    
-    // Save to localStorage immediately
-    if (userId) {
-      localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(allReadState))
-    }
-
-
-    
-    // Show feedback
-    toast.success(`Marked ${unreadCount} reports as read`, { duration: 2000 })
-  }
 
   // Render brand avatar
   const renderBrandAvatar = (brand: any, size: 'sm' | 'md' = 'sm') => {
@@ -2542,16 +2492,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
 
 
-      // Load read brand reports
-      const savedRead = localStorage.getItem(`readBrandReports_${userId}`)
-      if (savedRead) {
-        try {
-          setReadBrandReports(JSON.parse(savedRead))
-        } catch (error) {
-
-          setReadBrandReports({})
-        }
-      }
 
       // Load last refresh time
       const lastRefresh = localStorage.getItem(`lastRefreshTime_${userId}`)
@@ -2608,8 +2548,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
     // Listen for localStorage changes from other tabs/windows
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `actionCenter_taskStates_${userId}` || 
-          e.key === `readBrandReports_${userId}`) {
+      if (e.key === `actionCenter_taskStates_${userId}`) {
 
       }
     }
@@ -2942,24 +2881,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md px-2"
-                        onClick={markAllBrandsAsRead}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{brandHealthData.length} Reports</span>
-                          {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
-                            <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
-                              <span className="text-xs text-blue-400">
-                                {brandHealthData.filter(brand => !readBrandReports[brand.id]).length} new
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </Button>
+                      <div className="h-6 text-xs text-gray-400 rounded-md px-2 flex items-center">
+                        <span>{brandHealthData.length} Reports</span>
+                      </div>
 
                     </>
                   )}
@@ -3030,10 +2954,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          {/* Unread indicator */}
-                          {!readBrandReports[brand.id] && (
-                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="New report available"></div>
-                          )}
                           <span className={cn(
                             "text-xs font-medium px-2 py-1 rounded-full",
                             brand.status === 'critical' && "bg-red-900/50 text-red-400 border border-red-700/50",
@@ -3046,41 +2966,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                             {brand.status === 'info' && "Too Early"}
                             {brand.status === 'healthy' && "Healthy"}
                           </span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                                onClick={() => {
-                                  if (readBrandReports[brand.id]) {
-                                    // Unmark as read
-                                    setReadBrandReports(prev => {
-                                      const newState = { ...prev }
-                                      delete newState[brand.id]
-                                      if (userId) {
-                                        localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newState))
-                                      }
-                                      return newState
-                                    })
-                                    toast.success('Report marked as unread', { duration: 2000 })
-                                  } else {
-                                    // Mark as read
-                                    markBrandAsRead(brand.id)
-                                  }
-                                }}
-                              >
-                                {readBrandReports[brand.id] ? (
-                                  <RefreshCw className="w-3 h-3" />
-                                ) : (
-                                  <Check className="w-3 h-3" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{readBrandReports[brand.id] ? 'Mark as unread' : 'Mark as read'}</p>
-                            </TooltipContent>
-                          </Tooltip>
                         </div>
                       </div>
 
