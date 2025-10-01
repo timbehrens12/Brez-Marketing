@@ -216,7 +216,6 @@ export default function MarketingAssistantPage() {
           
           // If brand has platforms, trigger data load
           if (hasData) {
-            console.log('🔄 Brand has platforms, loading data for brand:', selectedBrandId)
             await loadDashboardData()
           } else {
             // No platforms - stop loading
@@ -230,7 +229,6 @@ export default function MarketingAssistantPage() {
           setLoading(false)
         }
       } catch (error) {
-        console.error('Error checking platform connections:', error)
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
         setIsLoadingPage(false)
@@ -319,17 +317,14 @@ export default function MarketingAssistantPage() {
     }
     
     const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
-    console.log('📋 Loading completed items from localStorage:', completed)
     if (completed) {
       try {
         const completedArray = JSON.parse(completed)
-        console.log('📋 Parsed completed items:', completedArray)
         setCompletedItems(new Set(completedArray))
       } catch (e) {
-        console.error('Error parsing completedItems:', e)
+        setCompletedItems(new Set())
       }
     } else {
-      console.log('📋 No completed items found in localStorage')
       setCompletedItems(new Set())
     }
   }, [selectedBrandId])
@@ -347,7 +342,6 @@ export default function MarketingAssistantPage() {
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
     if (selectedBrandId && !initialDataLoad) {
-      console.log('🔄 Platform filter changed, reloading data for:', selectedPlatforms)
       // Reload metrics, trends, alerts, budget, audience - but NOT recommendations (those stay cached)
       loadKPIMetrics()
       loadTrends()
@@ -357,33 +351,11 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedPlatforms])
 
-  // Secret keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = async (e: KeyboardEvent) => {
-      // Ctrl+Shift+U to unlock Update Recommendations button
-      if (e.ctrlKey && e.shiftKey && e.key === 'U') {
-        e.preventDefault()
-        if (selectedBrandId) {
-          localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
-          setRecommendationsViewed(false)
-          console.log('Update Recommendations button unlocked!')
-        }
-        return
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [selectedBrandId])
-
   const loadDashboardData = async (forceRefresh = false) => {
     if (!selectedBrandId) return
     
-    console.log('🔄 loadDashboardData called, forceRefresh:', forceRefresh)
-    
       // If force refresh, clear ALL state first
       if (forceRefresh) {
-        console.log('🧹 FORCE REFRESH - Clearing all React state')
         setOptimizationCards([])
         setAlerts([])
         setBudgetAllocations([])
@@ -405,9 +377,7 @@ export default function MarketingAssistantPage() {
         loadAlerts(),
         loadTrends()
       ])
-    console.log('✅ All data loaded successfully')
     } catch (error) {
-      console.error('❌ Error loading dashboard data:', error)
     } finally {
       // Always clear loading states when done
       setInitialDataLoad(false)
@@ -429,7 +399,6 @@ export default function MarketingAssistantPage() {
         setKpiMetrics(data.metrics)
       }
     } catch (error) {
-      console.error('Error loading KPI metrics:', error)
     }
   }
 
@@ -437,24 +406,19 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      console.log('🎯 Loading Action KPIs for brand:', selectedBrandId, 'platforms:', selectedPlatforms)
       const timestamp = Date.now()
       const response = await fetch(`/api/marketing-assistant/action-kpis?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
         cache: 'no-store'
       })
       
-      console.log('🎯 Action KPIs response status:', response.status)
             
             if (response.ok) {
               const data = await response.json()
-        console.log('🎯 Action KPIs data received:', data)
         setActionKPIs(data.actionKPIs)
       } else {
         const errorText = await response.text()
-        console.error('🎯 Action KPIs error response:', errorText)
             }
           } catch (error) {
-      console.error('Error loading Action KPIs:', error)
     }
   }
 
@@ -462,7 +426,6 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      console.log('🤖 Loading AI recommendations for brand:', selectedBrandId)
       const timestamp = Date.now()
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
@@ -471,14 +434,10 @@ export default function MarketingAssistantPage() {
       
       if (response.ok) {
         const data = await response.json()
-        console.log('🤖 AI recommendations received:', data.recommendations?.length, 'recommendations')
-        console.log('🤖 Sample recommendation IDs:', data.recommendations?.slice(0, 3).map((r: any) => r.id))
         setOptimizationCards(data.recommendations)
       } else {
-        console.error('🤖 AI recommendations error:', response.status)
-            }
-          } catch (error) {
-      console.error('Error loading optimization recommendations:', error)
+                  }
+                } catch (error) {
     }
   }
 
@@ -497,17 +456,12 @@ export default function MarketingAssistantPage() {
       })
             if (response.ok) {
               const data = await response.json()
-        console.log('[Budget Allocations] Received data:', data)
-        console.log('[Budget Allocations] Setting allocations:', data.allocations || [])
         if (data.allocations && data.allocations.length > 0) {
-          console.log('💰 FRONTEND RECEIVED BUDGET:', data.allocations[0].currentBudget, 'for campaign:', data.allocations[0].campaignName)
         }
         setBudgetAllocations(data.allocations || [])
       } else {
-        console.error('[Budget Allocations] Response not OK:', response.status, response.statusText)
-                  }
-                } catch (error) {
-      console.error('Error loading budget allocations:', error)
+        }
+      } catch (error) {
       setBudgetAllocations([])
     }
   }
@@ -519,14 +473,10 @@ export default function MarketingAssistantPage() {
       const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       if (response.ok) {
         const data = await response.json()
-        console.log('[Audience Expansion] Received data:', data)
-        console.log('[Audience Expansion] Setting opportunities:', data.opportunities || [])
         setAudienceExpansions(data.opportunities || [])
       } else {
-        console.error('[Audience Expansion] Response not OK:', response.status, response.statusText)
         }
       } catch (error) {
-      console.error('Error loading audience expansions:', error)
       setAudienceExpansions([])
     }
   }
@@ -536,7 +486,6 @@ export default function MarketingAssistantPage() {
 
     try {
       const timestamp = Date.now()
-      console.log('🚨 Loading alerts for platforms:', selectedPlatforms)
       // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
       const [metricsResponse, trendsResponse] = await Promise.all([
         fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, { cache: 'no-store' }),
@@ -689,13 +638,10 @@ export default function MarketingAssistantPage() {
           acknowledged: acknowledgedIds.includes(alert.id)
         }))
         
-        console.log('🚨 Generated alerts:', alertsWithAcknowledged.length, 'total,', alertsWithAcknowledged.filter(a => !a.acknowledged).length, 'unread')
         setAlerts(alertsWithAcknowledged)
       } else {
-          console.log('🚨 No data - skipping alert generation')
         }
       } catch (error) {
-      console.error('Error loading alerts:', error)
       setAlerts([])
     }
   }
@@ -721,14 +667,11 @@ export default function MarketingAssistantPage() {
     try {
       const itemId = `opt-${cardId}`
       const newCompleted = new Set(completedItems).add(itemId)
-      console.log('✅ Marking as done:', itemId)
-      console.log('✅ New completed items:', [...newCompleted])
       setCompletedItems(newCompleted)
       if (selectedBrandId) {
         const storageKey = `completedItems_${selectedBrandId}`
         const storageValue = JSON.stringify([...newCompleted])
         localStorage.setItem(storageKey, storageValue)
-        console.log('✅ Saved to localStorage:', storageKey, '=', storageValue)
       }
       
       const card = optimizationCards.find(c => c.id === cardId)
@@ -747,10 +690,8 @@ export default function MarketingAssistantPage() {
         })
         if (response.ok) {
           const result = await response.json()
-          console.log(`📊 Performance tracking initiated for ${cardId}:`, result.outcome)
         }
       } catch (err) {
-        console.error('Error tracking performance:', err)
       }
 
       // Log the action as manually completed
@@ -770,10 +711,8 @@ export default function MarketingAssistantPage() {
 
       if (response.ok) {
         // Keep the item visible - just marked as completed in state
-        console.log(`Marked recommendation ${cardId} as done`)
                   }
     } catch (error) {
-      console.error('Error marking as done:', error)
     }
   }
 
@@ -800,7 +739,6 @@ export default function MarketingAssistantPage() {
         setShowExplanation(true)
         }
       } catch (error) {
-      console.error('Error getting explanation:', error)
     }
   }
 
@@ -827,7 +765,6 @@ export default function MarketingAssistantPage() {
         setShowExplanation(true)
         }
       } catch (error) {
-      console.error('Error getting budget explanation:', error)
     }
   }
 
@@ -854,7 +791,6 @@ export default function MarketingAssistantPage() {
         setShowExplanation(true)
       }
     } catch (error) {
-      console.error('Error getting audience explanation:', error)
     }
   }
 
@@ -866,7 +802,6 @@ export default function MarketingAssistantPage() {
         localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
       }
     } catch (error) {
-      console.error('Error marking budget allocation as done:', error)
     }
   }
 
@@ -878,7 +813,6 @@ export default function MarketingAssistantPage() {
         localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
       }
     } catch (error) {
-      console.error('Error marking audience expansion as done:', error)
     }
   }
 
@@ -886,11 +820,9 @@ export default function MarketingAssistantPage() {
     try {
       const card = optimizationCards.find(c => c.id === cardId)
       if (!card) {
-        console.error('Card not found:', cardId)
       return
     }
 
-      console.log('Simulating action:', { cardId, actionId, card })
 
       const response = await fetch('/api/marketing-assistant/recommendations', {
         method: 'POST',
@@ -905,11 +837,9 @@ export default function MarketingAssistantPage() {
         })
       })
 
-      console.log('Simulation response status:', response.status)
       
       if (response.ok) {
         const result = await response.json()
-        console.log('Simulation result:', result)
         
         setSimulationData({
           card,
@@ -919,10 +849,8 @@ export default function MarketingAssistantPage() {
         setShowSimulation(true)
       } else {
         const errorText = await response.text()
-        console.error('Simulation failed:', response.status, errorText)
       }
     } catch (error) {
-      console.error('Error simulating action:', error)
     }
   }
 
@@ -932,20 +860,16 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId) return
 
     try {
-      console.log('📊 Loading trends for platforms:', selectedPlatforms)
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}`)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('[Dashboard] Trends data received:', data)
         setTrends(data.trends)
       } else {
-        console.error('Failed to load trends')
         setTrends(null)
       }
     } catch (error) {
-      console.error('Error loading trends:', error)
       setTrends(null)
     }
   }
@@ -1126,19 +1050,16 @@ export default function MarketingAssistantPage() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      console.log('🔥 UPDATE RECOMMENDATIONS CLICKED')
                       setIsRefreshingData(true)
                       
                       // Clear ALL localStorage for this brand
                       if (selectedBrandId) {
-                        console.log('🧹 Clearing localStorage')
                         localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
                         localStorage.removeItem(`completedItems_${selectedBrandId}`)
                         localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
                       }
                       
                       // Delete AI recommendations from database
-                      console.log('🗑️ Deleting AI recommendations from database')
                       await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
                         method: 'DELETE'
                       })
@@ -1152,11 +1073,9 @@ export default function MarketingAssistantPage() {
                       setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
                       
                       // Reload ALL widgets with FORCE REFRESH
-                      console.log('🔄 Calling loadDashboardData with forceRefresh=true')
                       await loadDashboardData(true)
                       
                       setIsRefreshingData(false)
-                      console.log('✅ UPDATE COMPLETE')
                     }}
                     className="w-full text-xs h-7 bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] font-medium"
                     disabled={isRefreshingData || recommendationsViewed}
@@ -1248,7 +1167,7 @@ export default function MarketingAssistantPage() {
                             </div>
                         <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
                           <div className="min-w-0">
-                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day {console.log('🎨 RENDERING BUDGET:', allocation.currentBudget)}</p>
+                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day</p>
                             <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
                           </div>
                           <div className="min-w-0">
