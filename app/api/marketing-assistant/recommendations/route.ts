@@ -715,7 +715,11 @@ async function generateRecommendations(
       // Advanced Creative Performance Analysis (relaxed threshold)
       if (ctr < 2.5 && perf.totalImpressions > 20) {
         const severity = ctr < 0.8 ? 'critical' : ctr < 1.2 ? 'high' : 'medium'
-        const urgency = severity === 'critical' ? 'high' : 'medium'
+        // HIGH priority if critical/high severity OR spending a lot with poor CTR
+        const urgency: 'high' | 'medium' | 'low' = 
+          severity === 'critical' || (severity === 'high' && perf.totalSpend > 5) || (ctr < 1.5 && perf.totalSpend > 10)
+            ? 'high' 
+            : 'medium'
         
         // Calculate potential improvements
         const benchmarkCTR = 2.0 // Industry benchmark
@@ -768,10 +772,13 @@ async function generateRecommendations(
 
       // No revenue tracking - if campaign has spend and clicks but no tracked revenue
       if (perf.totalSpend > 1 && perf.totalClicks > 0 && perf.totalRevenue === 0) {
+        // Conversion tracking is CRITICAL - without it, you can't optimize
+        const trackingPriority: 'high' | 'medium' | 'low' = perf.totalSpend > 10 ? 'high' : perf.totalSpend > 5 ? 'high' : 'medium'
+        
         recommendations.push({
           id: `tracking_${campaign.campaign_id}_${Date.now()}`,
           type: 'audience',
-          priority: 'medium',
+          priority: trackingPriority,
           title: 'Set Up Conversion Tracking',
           description: `Campaign "${campaign.campaign_name}" has spend and clicks but no tracked revenue. Verify conversion tracking is properly configured.`,
           rootCause: `Campaign generated ${perf.totalClicks} clicks and spent $${perf.totalSpend.toFixed(2)} but no revenue is being tracked. This suggests conversion tracking issues or attribution problems.`,
@@ -905,12 +912,23 @@ async function generateRecommendations(
           })
         }
 
-        const priority: 'high' | 'medium' | 'low' = topSegments[0].roas > 3 ? 'high' : 'medium'
+        // Priority based on opportunity size and efficiency gap
+        const topEfficiency = topSegments[0]?.efficiency || 0
+        const avgEfficiency = allSegments.length > 0 
+          ? allSegments.reduce((sum, s) => sum + s.efficiency, 0) / allSegments.length 
+          : 1
+        const efficiencyGap = avgEfficiency > 0 ? topEfficiency / avgEfficiency : 1
+        
+        // HIGH priority if: massive efficiency gap (3x+) OR top ROAS > 3 OR significant underperformers draining budget
+        const demoPriority: 'high' | 'medium' | 'low' = 
+          efficiencyGap > 3 || topSegments[0].roas > 3 || (hasUnderperformers && demoInsights.underperformers[0].spend > 5)
+            ? 'high' 
+            : efficiencyGap > 2 ? 'medium' : 'low'
 
         recommendations.push({
           id: `audience_demo_${campaign.campaign_id}_${Date.now()}`,
           type: 'audience',
-          priority,
+          priority: demoPriority,
           title: `Smart Demographic Targeting - ${campaign.campaign_name}`,
           description: `Data reveals clear performance patterns across demographics. Top segments: ${topSegmentDescriptions}${hasUnderperformers ? `. Underperformers: ${underperformerDescriptions}` : ''}.`,
           rootCause: `Demographic analysis shows ${topSegments.length} high-efficiency segment${topSegments.length > 1 ? 's' : ''} with ${((topSegments.reduce((sum, s) => sum + s.efficiency, 0) / topSegments.length)).toFixed(1)}x average efficiency score${hasUnderperformers ? `, while ${demoInsights.underperformers.length} segment${demoInsights.underperformers.length > 1 ? 's are' : ' is'} underperforming and draining budget` : ''}.`,
