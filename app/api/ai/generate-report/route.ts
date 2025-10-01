@@ -151,7 +151,7 @@ export async function POST(request: Request) {
           content: body.customPrompt
         }
       ],
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini', // GPT-5 Mini - client-facing comprehensive reports need premium quality
       temperature: 0.7,
       max_tokens: 4000
     })
