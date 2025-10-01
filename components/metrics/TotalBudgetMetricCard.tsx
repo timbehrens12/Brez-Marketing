@@ -114,22 +114,20 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   
   // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
-    // 🚨 FIXED: Only force refresh on mount when explicitly requested
+    // FIXED: Use cached database data on mount to prevent Meta API rate limiting
     if (brandId && !hasInitialLoadRef.current) {
-      console.log('[TotalMetaBudget] Initial mount - fetching budget data');
-      // Use cached data on mount, force refresh only when forceRefresh prop is true
-      fetchTotalBudget(true) // Force refresh to get latest Meta budget data
+      // Use cached database data on initial load - no force refresh
+      fetchTotalBudget(false)
     }
   }, [brandId])
 
   // Handle unified loading completion - fetch when unified loading finishes
   useEffect(() => {
-    // When unified loading was true and now becomes false, fetch fresh data
+    // When unified loading was true and now becomes false, fetch from database (not Meta API)
     if (unifiedLoading === false && disableAutoFetch && brandId) {
-      console.log("[TotalMetaBudget] Unified loading completed, fetching fresh budget data with force refresh");
       // Use a small delay to ensure other data fetches complete first
       setTimeout(() => {
-        fetchTotalBudget(true); // Force refresh to get latest data
+        fetchTotalBudget(false); // Use cached database data to prevent rate limiting
       }, 500);
     }
   }, [unifiedLoading, disableAutoFetch, brandId])

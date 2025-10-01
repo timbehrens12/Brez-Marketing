@@ -39,9 +39,19 @@ export async function GET(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // If forceRefresh is true, fetch fresh data from Meta API
-    if (forceRefresh) {
-      console.log('[Total Meta Budget] Force refresh requested, fetching fresh ad set data from Meta API');
+    // Check if we have recent budget data in cache (last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const { data: recentBudgetData } = await supabase
+      .from('meta_ad_sets')
+      .select('updated_at')
+      .eq('brand_id', brandId)
+      .gte('updated_at', fiveMinutesAgo.toISOString())
+      .limit(1);
+    
+    // If forceRefresh is true AND we don't have recent data, fetch from Meta API
+    // Otherwise use cached database values to prevent rate limiting
+    if (forceRefresh && (!recentBudgetData || recentBudgetData.length === 0)) {
+      console.log('[Total Meta Budget] Force refresh requested and no recent cache, fetching fresh ad set data from Meta API');
       
       try {
         // Get Meta connection data - FIXED: Removed page_id reference
@@ -240,9 +250,13 @@ export async function GET(req: NextRequest) {
         console.error('[Total Meta Budget] Error fetching from Meta API, falling back to database:', error);
         // Fall through to database query
       }
+    } else if (forceRefresh && recentBudgetData && recentBudgetData.length > 0) {
+      console.log('[Total Meta Budget] Force refresh requested but recent cache exists (< 5 min old), using database to prevent rate limiting');
+    } else {
+      console.log('[Total Meta Budget] No force refresh requested, using database');
     }
     
-        console.log('[Total Meta Budget] Fetching data from database (fallback or non-force refresh)');
+    console.log('[Total Meta Budget] Fetching data from database (fallback or non-force refresh)');
 
     let adSets: any[] = [];
     let totalDailyBudget = 0;
