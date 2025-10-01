@@ -1208,10 +1208,10 @@ const CampaignWidget = ({
   useEffect(() => {
     console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
-      console.log('[CampaignWidget] Fetching budget data on mount/brandId change (using cached database data)');
-      // 🚨 FIXED: Use cached database data on mount to prevent Meta API rate limiting
+      console.log('[CampaignWidget] Fetching fresh ad set budgets from Meta on page load');
+      // Fetch fresh ad set budgets from Meta API on page load - one call, no spam
       setIsLoadingBudgets(true);
-      fetchCurrentBudgets(false); // Use cached data - only force refresh on manual button click
+      fetchCurrentBudgets(true); // Get fresh Meta data on page load
     } else {
       // If no brandId, no need to load budgets
       console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');

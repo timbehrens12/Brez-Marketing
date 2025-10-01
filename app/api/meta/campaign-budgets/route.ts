@@ -36,12 +36,12 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Only fetch from Meta API on explicit force refresh to prevent rate limiting
-    // Otherwise, always use database which is updated by scheduled sync jobs
+    // Fetch fresh ad set budgets from Meta API when requested
+    // The rate limiter allows 200 requests/hour, so one call on page load is fine
     let shouldFetchFromMeta = forceRefresh;
     
     if (forceRefresh) {
-      // Check when we last updated to avoid spamming Meta API
+      // Check if we JUST fetched (within 30 seconds) to prevent rapid duplicate calls
       const { data: lastUpdateCheck } = await supabase
         .from('meta_adsets')
         .select('updated_at')
@@ -53,17 +53,17 @@ export async function GET(request: NextRequest) {
       if (lastUpdateCheck && lastUpdateCheck.length > 0) {
         const lastUpdate = new Date(lastUpdateCheck[0].updated_at);
         const now = new Date();
-        const minutesSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+        const secondsSinceUpdate = (now.getTime() - lastUpdate.getTime()) / 1000;
         
-        // If we just updated within 5 minutes, use cached data even on force refresh
-        if (minutesSinceUpdate < 5) {
-          console.log(`[API] Budget data is very fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database even with forceRefresh to prevent rate limiting`);
+        // Only prevent spam if we JUST fetched within 30 seconds (prevents duplicate tab loads)
+        if (secondsSinceUpdate < 30) {
+          console.log(`[API] Budget data was just fetched ${secondsSinceUpdate.toFixed(1)} seconds ago, using database to prevent spam`);
           shouldFetchFromMeta = false;
         } else {
-          console.log(`[API] Budget data is ${minutesSinceUpdate.toFixed(1)} minutes old, allowing Meta API call`);
+          console.log(`[API] Fetching fresh ad set budgets from Meta API (last update: ${secondsSinceUpdate.toFixed(1)} seconds ago)`);
         }
       } else {
-        console.log(`[API] No recent budget data found, will use database fallback`);
+        console.log(`[API] No recent budget data found, fetching from Meta API`);
       }
     } else {
       console.log(`[API] No force refresh requested, using database`);
