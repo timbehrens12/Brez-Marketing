@@ -523,12 +523,12 @@ export default function RootLayout({
             }}
           >
             <AuthenticatedProviders>
-              <div className="flex min-h-screen relative">
+              <div className="flex min-h-screen relative snap-y snap-mandatory overflow-y-auto">
                 
                 <ConditionalSidebar />
                 <div className="flex-1 flex flex-col relative z-10">
                   <ConditionalLayout>
-                    <div className="flex-1">
+                    <div className="flex-1 snap-start">
                       {children}
                     </div>
                   </ConditionalLayout>

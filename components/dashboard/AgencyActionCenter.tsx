@@ -3532,7 +3532,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                   : isMaxedOut
                                     ? getButtonText(tool) === 'Connect Brand First'
                                       ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
-                                      : "bg-red-600/80 hover:bg-red-600 text-white" // Red button for "Weekly Limit Reached"
+                                      : "bg-[#FF2A2A]/80 hover:bg-[#FF2A2A] text-white" // Red button for "Weekly Limit Reached"
                                     : "bg-[#2A2A2A] hover:bg-[#333] text-white"
                               )}
                             >
