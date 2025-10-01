@@ -392,14 +392,9 @@ export default function MarketingAssistantPage() {
         setTrends(null)
       }
     
-    // Use initialDataLoad for first load, isRefreshingData for subsequent loads
-    if (initialDataLoad) {
-      setLoading(true)
-      setIsRefreshingData(false)
-    } else {
-      setIsRefreshingData(true)
-      setLoading(false)
-    }
+    // Always set loading for data fetch
+    setLoading(true)
+    setIsRefreshingData(false)
     
     try {
       await Promise.all([
@@ -414,13 +409,11 @@ export default function MarketingAssistantPage() {
     } catch (error) {
       console.error('❌ Error loading dashboard data:', error)
     } finally {
-      if (initialDataLoad) {
-        setInitialDataLoad(false)
-        setLoading(false)
-        setIsLoadingPage(false)
-      } else {
-        setIsRefreshingData(false)
-      }
+      // Always clear loading states when done
+      setInitialDataLoad(false)
+      setLoading(false)
+      setIsLoadingPage(false)
+      setIsRefreshingData(false)
     }
   }
 
