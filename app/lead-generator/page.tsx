@@ -353,42 +353,6 @@ export default function LeadGeneratorPage() {
     }
   }, [leads.length, showFilters])
 
-  // Secret keyboard shortcut to reset lead gen usage (Ctrl+Shift+L)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
-        e.preventDefault()
-        if (!userId) {
-          toast.error('Please sign in to reset usage')
-          return
-        }
-        
-        // Reset usage data
-        fetch('/api/lead-generation/reset-usage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              toast.success('🔄 Lead gen usage reset!')
-              loadUsageData()
-            } else {
-              toast.error('Failed to reset usage')
-            }
-          })
-          .catch(err => {
-            console.error('Reset error:', err)
-            toast.error('Failed to reset usage')
-          })
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [userId])
-
   const loadUsageData = async () => {
     if (!userId) {
       setIsLoadingPage(false)
@@ -2356,7 +2320,7 @@ export default function LeadGeneratorPage() {
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
                       variant="outline"
-                      className="bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50"
+                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50"
                     >
                       {isSendingToOutreach ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
