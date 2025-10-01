@@ -1336,10 +1336,15 @@ const CampaignWidget = ({
         forceRefresh = !!event.detail.forceRefresh;
       }
       
-      // Always treat these event types as force refresh
-      const forceRefreshEvents = ['global-refresh-all', 'force-meta-refresh', 'globalRefresh'];
-      if (forceRefreshEvents.includes(event.type)) {
+      // 🚨 ONLY allow manual refresh button to prevent rate limiting
+      const manualRefreshEvents = ['manual-meta-refresh-button'];
+      if (manualRefreshEvents.includes(event.type)) {
         forceRefresh = true;
+        logger.debug(`[CampaignWidget] Manual refresh button clicked - force=${forceRefresh}`);
+      } else {
+        // Ignore all other refresh events to prevent rate limiting
+        console.log(`[CampaignWidget] Refresh event IGNORED to prevent rate limits: ${event.type}`);
+        return;
       }
       
       logger.debug(`[CampaignWidget] Processing ${event.type} event, force=${forceRefresh}`);
@@ -1374,28 +1379,12 @@ const CampaignWidget = ({
     // Create debounced version of the handler
     const debouncedHandler = debounce('global-refresh-handler', handleRefresh, 300);
     
-    // Add listeners for all event types using the debounced handler
-    window.addEventListener('page-refresh', debouncedHandler as EventListener);
-    window.addEventListener('metaDataRefreshed', debouncedHandler as EventListener);
-    window.addEventListener('meta_platform_refresh', debouncedHandler as EventListener);
-    window.addEventListener('meta-data-refreshed', debouncedHandler as EventListener);
-    document.addEventListener('meta-refresh-all', debouncedHandler as EventListener);
-    window.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
-    document.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
-    window.addEventListener('global-refresh-all', debouncedHandler as EventListener); // Listen to dashboard refresh button
-    window.addEventListener('force-meta-refresh', debouncedHandler as EventListener); // Additional Meta refresh event
+    // 🚨 ONLY listen for manual refresh button to prevent rate limiting
+    window.addEventListener('manual-meta-refresh-button', debouncedHandler as EventListener);
     
     // Return cleanup function
     return () => {
-      window.removeEventListener('page-refresh', debouncedHandler as EventListener);
-      window.removeEventListener('metaDataRefreshed', debouncedHandler as EventListener);
-      window.removeEventListener('meta_platform_refresh', debouncedHandler as EventListener);
-      window.removeEventListener('meta-data-refreshed', debouncedHandler as EventListener);
-      document.removeEventListener('meta-refresh-all', debouncedHandler as EventListener);
-      window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
-      document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
-      window.removeEventListener('global-refresh-all', debouncedHandler as EventListener);
-      window.removeEventListener('force-meta-refresh', debouncedHandler as EventListener);
+      window.removeEventListener('manual-meta-refresh-button', debouncedHandler as EventListener);
     };
   }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef]);
   

@@ -214,13 +214,34 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
 
     const handleGlobalRefresh = (event: CustomEvent) => {
-      // 🚨 FIXED: Allow manual refresh button but ignore auto-refreshes to prevent rate limiting
-      const source = event.detail?.source;
-      if (source === 'manual-refresh-button' || source === 'global-refresh') {
-        console.log("[TotalMetaBudget] Manual refresh button clicked - refreshing budget data", source);
-        fetchTotalBudget(true); // Force refresh for manual button clicks
-      } else {
-        console.log("[TotalMetaBudget] global refresh event IGNORED to prevent rate limits:", event.type);
+      // 🚨 DISABLED: Auto-refresh to prevent rate limiting
+      console.log("[TotalMetaBudget] global refresh event IGNORED to prevent rate limits:", event.type);
+    }
+
+    const handleManualRefreshButton = (event: CustomEvent) => {
+      // ✅ ALLOW: Manual refresh button clicks (user-initiated)
+      console.log("[TotalMetaBudget] 🔄 Manual refresh button clicked - refreshing budget data from Meta API");
+      
+      // Call the centralized ad set refresh endpoint
+      if (brandId) {
+        fetch(`/api/meta/adsets/refresh?brandId=${brandId}`, {
+          method: 'POST',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
+          .then(res => res.json())
+          .then(result => {
+            console.log('[TotalMetaBudget] ✅ Manual refresh - Ad sets refreshed:', result);
+            // Now fetch budget data from database (which has fresh ad set data)
+            fetchTotalBudget(false); // false = use fresh database data
+          })
+          .catch(err => {
+            console.error('[TotalMetaBudget] ⚠️ Manual refresh failed:', err);
+            // Fallback to cached data
+            fetchTotalBudget(false);
+          });
       }
     }
 
@@ -228,10 +249,12 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
     window.addEventListener('campaignStatusChanged', handleCampaignStatusChanged as EventListener)
     window.addEventListener('adSetStatusChanged', handleAdSetStatusChanged as EventListener)
-    // 🚨 FIX: Listen for the correct global refresh events
+    // 🚨 AUTO-REFRESH DISABLED: To prevent rate limiting
     window.addEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
     window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
-    window.addEventListener('globalRefresh', handleGlobalRefresh as EventListener) // Keep legacy for compatibility
+    window.addEventListener('globalRefresh', handleGlobalRefresh as EventListener)
+    // ✅ MANUAL REFRESH ENABLED: User-initiated only
+    window.addEventListener('manual-meta-refresh-button', handleManualRefreshButton as EventListener)
 
     // Cleanup on component unmount
     return () => {
@@ -241,7 +264,8 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       // 🚨 FIX: Remove the correct global refresh events
       window.removeEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
       window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
-      window.removeEventListener('globalRefresh', handleGlobalRefresh as EventListener) // Keep legacy for compatibility
+      window.removeEventListener('globalRefresh', handleGlobalRefresh as EventListener)
+      window.removeEventListener('manual-meta-refresh-button', handleManualRefreshButton as EventListener)
     }
   }, [brandId])
   
