@@ -112,31 +112,13 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
   }, [brandId, unifiedLoading])
   
-  // 🔄 Centralized ad set refresh on initial load
+  // 🚨 DISABLED: Automatic refresh on page load to prevent rate limiting
+  // Use manual refresh button or background sync instead
   useEffect(() => {
-    // ONE Meta API call to refresh all ad set data on page load
+    // Just fetch from database cache on page load (no Meta API call)
     if (brandId && !hasInitialLoadRef.current) {
-      console.log('[TotalMetaBudget] 🔄 Triggering centralized ad set refresh on page load');
-      
-      // Call the centralized refresh endpoint (ONE Meta API call for everything)
-      fetch(`/api/meta/adsets/refresh?brandId=${brandId}`, {
-        method: 'POST',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      })
-        .then(res => res.json())
-        .then(result => {
-          console.log('[TotalMetaBudget] ✅ Ad sets refreshed:', result);
-          // Now fetch budget data from database (which has fresh ad set data)
-          fetchTotalBudget(false); // false = use cached database data
-        })
-        .catch(err => {
-          console.error('[TotalMetaBudget] ⚠️ Ad set refresh failed, using cached data:', err);
-          // Fallback to cached data
-          fetchTotalBudget(false);
-        });
+      console.log('[TotalMetaBudget] 📊 Loading budget data from database cache');
+      fetchTotalBudget(false); // false = use cached database data
     }
   }, [brandId])
 
