@@ -886,9 +886,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                      report.createdAt.startsWith(today)
                                    )
 
-          // Check monthly report availability - resets at midnight on the 1st of each month
+          // Check monthly report availability - resets at midnight on the 1st of each month (LOCAL TIME)
           const now = new Date()
-          const currentMonthKey = now.toISOString().slice(0, 7) // YYYY-MM format
+          // Use local date, not UTC
+          const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` // YYYY-MM format in local time
           const brandSpecificMonthlyKey = `lastMonthlyGeneration_${brand.id}`
           const brandLastMonthlyGeneration = localStorage.getItem(brandSpecificMonthlyKey)
           
@@ -3333,7 +3334,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           {/* Reusable Tools Widget */}
           <div className="md:col-span-3">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col overflow-hidden transition-all duration-300",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
             )}>
               <CardHeader className="pb-2 flex-shrink-0">
@@ -3439,7 +3440,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
                 </div>
               </CardHeader>
-              <CardContent className="flex-1">
+              <CardContent className="flex-1 overflow-hidden">
                 {isWidgetLoading.reusableTools ? (
                   <div className="text-center py-12">
                     <Settings className="h-16 w-16 text-gray-600 mx-auto mb-4" />
