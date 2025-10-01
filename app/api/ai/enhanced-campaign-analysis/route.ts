@@ -452,7 +452,7 @@ Respond in JSON format:
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini', // GPT-5 Mini - enhanced campaign analysis with recommendations
       messages: [
         {
           role: 'system',
