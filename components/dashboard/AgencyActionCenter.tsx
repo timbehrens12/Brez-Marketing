@@ -2630,8 +2630,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           setIsLoadingBrandHealth(false)
           setIsRefreshing(false)
           
-          // Wait another tick for the loading state callback to fire
-          await new Promise(resolve => setTimeout(resolve, 50))
+          // Wait for React to render the content before dismissing loading screen
+          await new Promise(resolve => setTimeout(resolve, 300))
           
           // Notify parent that action center is ready
           window.dispatchEvent(new CustomEvent('action-center-loaded'))
@@ -2657,8 +2657,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             quickActions: false
           })
           
-          // Wait for loading state callback to fire
-          await new Promise(resolve => setTimeout(resolve, 50))
+          // Wait for React to render content even on error
+          await new Promise(resolve => setTimeout(resolve, 300))
           
           // Even on error, notify parent to prevent infinite loading
           window.dispatchEvent(new CustomEvent('action-center-loaded'))
