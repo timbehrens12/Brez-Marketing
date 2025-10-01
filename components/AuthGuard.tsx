@@ -21,22 +21,14 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     }
   }, [isLoaded, isSignedIn, router])
 
-  // Show loading state while Clerk is initializing
+  // Show nothing while Clerk is initializing - let page's own loading screen handle it
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return null
   }
 
-  // Show fallback or redirect if not signed in
+  // Show nothing or redirect if not signed in - let page handle it
   if (!isSignedIn) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
-        <div className="text-white">Redirecting to sign-in...</div>
-      </div>
-    )
+    return fallback || null
   }
 
   // User is authenticated, show the protected content
