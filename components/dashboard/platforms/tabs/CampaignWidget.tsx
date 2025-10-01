@@ -1751,7 +1751,6 @@ const CampaignWidget = ({
     const currentBudgetData = currentBudgets[campaign.campaign_id] || currentBudgets[campaign.id];
     // Use API budget if it exists (including 0)
     // 0 is a valid budget value that should be respected - means no active adsets with budgets
-    // 🚨 REMOVED: !isLoadingBudgets check - we want to use API data even while loading
     if (currentBudgetData && typeof currentBudgetData.budget === 'number') {
       // 🚨 Log API budget usage
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
@@ -1761,13 +1760,13 @@ const CampaignWidget = ({
         budget_type: currentBudgetData.budget_type || 'unknown',
         budget_source: 'api'
       };
-    } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, trying campaign props:`, {
-        currentBudgetData_budget: currentBudgetData?.budget,
-        campaign_adset_budget_total: campaign.adset_budget_total,
-        campaign_budget: campaign.budget
-      });
     }
+      
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No API data available, trying campaign props:`, {
+      currentBudgetData_budget: currentBudgetData?.budget,
+      campaign_adset_budget_total: campaign.adset_budget_total,
+      campaign_budget: campaign.budget
+    });
 
     // 🚨 SMART FALLBACK: Calculate from expanded adsets if available
     if (expandedCampaign === campaign.campaign_id && adSets.length > 0) {
