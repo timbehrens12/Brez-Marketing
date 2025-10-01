@@ -11,20 +11,29 @@ export async function POST(request: NextRequest) {
 
     const supabase = await getAuthenticatedSupabaseClient()
 
-    // Delete existing usage record to reset
-    const { error: deleteError } = await supabase
-      .from('lead_generation_usage')
+    // Delete user_usage records (daily generation count)
+    const { error: usageError } = await supabase
+      .from('user_usage')
       .delete()
       .eq('user_id', userId)
 
-    if (deleteError) {
-      console.error('Error resetting usage:', deleteError)
-      return NextResponse.json({ error: 'Failed to reset usage' }, { status: 500 })
+    if (usageError) {
+      console.error('Error resetting user_usage:', usageError)
+    }
+
+    // Delete user_niche_usage records (niche cooldowns)
+    const { error: nicheError } = await supabase
+      .from('user_niche_usage')
+      .delete()
+      .eq('user_id', userId)
+
+    if (nicheError) {
+      console.error('Error resetting user_niche_usage:', nicheError)
     }
 
     return NextResponse.json({ 
       success: true,
-      message: 'Usage reset successfully'
+      message: 'Usage and niche cooldowns reset successfully'
     })
 
   } catch (error) {
