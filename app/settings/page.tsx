@@ -1745,8 +1745,8 @@ export default function SettingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#333]">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-lg bg-green-500/20 flex items-center justify-center">
-                              <Check className="w-3 h-3 text-green-400" />
+                            <div className="w-6 h-6 rounded-lg bg-gray-500/20 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-gray-400" />
                             </div>
                             <h3 className="text-white font-medium text-sm">Professional Reports</h3>
                           </div>
@@ -1754,8 +1754,8 @@ export default function SettingsPage() {
                         </div>
                         <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#333]">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-400" />
+                            <div className="w-6 h-6 rounded-lg bg-gray-500/20 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-gray-400" />
                             </div>
                             <h3 className="text-white font-medium text-sm">Client Contracts</h3>
                           </div>
@@ -1793,7 +1793,7 @@ export default function SettingsPage() {
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
                             <Label className="text-base font-medium text-white">Agency Name</Label>
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+                            <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30 text-xs">
                               Required
                             </Badge>
                           </div>
@@ -1807,8 +1807,8 @@ export default function SettingsPage() {
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               {tempAgencyName && (
-                                <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                                  <Check className="w-3 h-3 text-green-400" />
+                                <div className="w-5 h-5 rounded-full bg-gray-500/20 flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-gray-400" />
                                 </div>
                               )}
                             </div>
@@ -2113,8 +2113,8 @@ export default function SettingsPage() {
                     <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
-                            <Tag className="w-4 h-4 text-blue-400" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-600/20 flex items-center justify-center">
+                            <Tag className="w-4 h-4 text-gray-400" />
                           </div>
                           <h3 className="text-white font-semibold text-sm">Total Brands</h3>
                         </div>
@@ -2125,8 +2125,8 @@ export default function SettingsPage() {
                     <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-green-400" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-600/20 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-gray-400" />
                           </div>
                           <h3 className="text-white font-semibold text-sm">Platforms Connected</h3>
                         </div>
@@ -2137,8 +2137,8 @@ export default function SettingsPage() {
                     <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-purple-400" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-600/20 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-gray-400" />
                           </div>
                           <h3 className="text-white font-semibold text-sm">Owned by You</h3>
                         </div>
