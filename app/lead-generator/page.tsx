@@ -1146,11 +1146,11 @@ export default function LeadGeneratorPage() {
       if (data.success) {
         toast.success(`${data.message}! Created ${data.tasksCreated || data.leadsAdded || selectedLeads.length} follow-up tasks.`)
         
-        // Mark leads as sent for visual confirmation
+        // Mark leads as sent for visual confirmation with checkmark
         setSentLeads([...selectedLeads])
         setSendingLeads([])
         
-        // Remove sent leads after a delay for confirmation
+        // Remove sent leads after a longer delay to show checkmark animation
         setTimeout(() => {
           const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
           setLeads(prev => {
@@ -2652,11 +2652,11 @@ export default function LeadGeneratorPage() {
                         return (
                         <TableRow
                           key={lead.id}
-                          className={`border-[#333] cursor-pointer transition-all duration-300 ${
+                          className={`border-[#333] cursor-pointer transition-all duration-500 ${
                             isLeadSent 
-                              ? 'bg-gray-700/50 text-white' 
+                              ? 'bg-emerald-500/10 opacity-50' 
                               : isLeadSending 
-                                ? 'bg-gray-800/40 animate-pulse' 
+                                ? 'bg-white/5 opacity-75' 
                                 : 'hover:bg-[#222]/50'
                           }`}
                           onClick={() => {
@@ -2679,12 +2679,18 @@ export default function LeadGeneratorPage() {
                               <div className="font-medium text-gray-400 flex items-center gap-2">
                                 {lead.business_name}
                                 {isLeadSending && (
-                                  <span className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-gray-300 px-2 py-1 rounded-full animate-pulse">
-                                    Sending...
-                                  </span>
+                                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                  </div>
                                 )}
                                 {isLeadSent && (
-                                  <span className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-white px-2 py-1 rounded-full">
+                                  <div className="flex items-center gap-1 text-xs text-emerald-400 animate-in fade-in zoom-in duration-300">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span className="font-medium">
                                     ✓ Sent
                                   </span>
                                 )}
