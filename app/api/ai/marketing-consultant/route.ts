@@ -1795,7 +1795,7 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
     })
 
     const openaiPromise = openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-5-mini', // GPT-5 Mini - strategic marketing consultant chat
       messages: [
         {
           role: 'system',

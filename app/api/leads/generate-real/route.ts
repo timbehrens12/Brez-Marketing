@@ -927,7 +927,7 @@ IMPORTANT:
 
     // console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-nano", // Cheapest GPT-5 - perfect for simple data extraction
       messages: [{ role: "user", content: prompt }],
       temperature: 0,
       max_tokens: 500

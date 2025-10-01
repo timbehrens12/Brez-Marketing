@@ -453,12 +453,12 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
 
     console.log('🔮 Sending request to OpenAI with optimized timeout...')
     
-    // Use GPT-3.5-turbo for faster response to prevent 504s (Vercel has 10s limit)
-    // Add extra timeout wrapper to ensure we NEVER exceed platform limits
+    // Use GPT-5 Mini for high-quality outreach messages that convert
+    // Faster and better quality than GPT-3.5, perfect for revenue-generating content
     const completion = await Promise.race([
       Promise.race([
         openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "gpt-5-mini",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }

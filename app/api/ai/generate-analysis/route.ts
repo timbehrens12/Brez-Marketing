@@ -42,7 +42,7 @@ Generate a 1-2 sentence synopsis that:
 Keep it conversational and specific to the numbers provided. Avoid generic statements.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // Cheapest model - perfect for simple summaries
+        model: "gpt-5-nano", // Cheapest GPT-5 - perfect for simple summaries
         messages: [
           { 
             role: "system", 
@@ -80,7 +80,7 @@ If any data appears suspicious or all zeros, acknowledge this but still provide 
 
     // Generate analysis using OpenAI
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Legacy code path - use cheapest model
+      model: "gpt-5-nano", // Legacy unused code path - use cheapest GPT-5
       messages: [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage }

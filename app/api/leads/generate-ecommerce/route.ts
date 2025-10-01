@@ -55,9 +55,9 @@ JSON format:
 
 Return only the JSON array:`;
 
-    // Use faster model and shorter timeout
+    // Use GPT-5 Nano - fastest and cheapest for simple pattern generation
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Faster than gpt-4o-mini
+      model: "gpt-5-nano", // Cheapest GPT-5 - perfect for generating fictional lead data
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 800, // Reduced from 1500

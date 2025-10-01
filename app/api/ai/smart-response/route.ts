@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAIClient()
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-5-mini", // GPT-5 Mini - high-quality lead responses for conversion
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Generate a response to: "${cleanResponse}"` }
