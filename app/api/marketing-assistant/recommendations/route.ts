@@ -201,9 +201,12 @@ export async function GET(request: NextRequest) {
     
     console.log(`[Recommendations API] Storing ${recommendations.length} new recommendations, expiring at ${nextMonday.toISOString()}`)
     
-    for (const rec of recommendations) {
+    for (let i = 0; i < recommendations.length; i++) {
+      const rec = recommendations[i]
       // Create a hash of the recommendation data for deduplication
-      const dataHash = `${rec.campaignId}_${rec.type}_${rec.priority}`
+      // Include title to differentiate multiple recommendations of the same type
+      const titleHash = rec.title.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_')
+      const dataHash = `${rec.campaignId}_${rec.type}_${titleHash}_${i}`
       
       const { data, error } = await supabase
         .from('ai_campaign_recommendations')
