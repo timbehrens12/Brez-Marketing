@@ -45,24 +45,63 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch fresh ad set data from Meta API
-    console.log(`[AdSet Sync] Fetching ad sets from Meta API`)
-    const adSetsResult = await fetchMetaAdSets(brandId)
+    // Get all active campaigns for this brand
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from('meta_campaigns')
+      .select('campaign_id, campaign_name')
+      .eq('brand_id', brandId)
+      .eq('status', 'ACTIVE')
 
-    if (!adSetsResult.success || !adSetsResult.adsets) {
-      console.error(`[AdSet Sync] Failed to fetch ad sets:`, adSetsResult.error)
+    if (campaignsError) {
+      console.error(`[AdSet Sync] Failed to fetch campaigns:`, campaignsError)
       return NextResponse.json(
-        { error: adSetsResult.error || 'Failed to fetch ad sets from Meta' },
+        { error: 'Failed to fetch campaigns' },
         { status: 500 }
       )
     }
 
-    console.log(`[AdSet Sync] Successfully synced ${adSetsResult.adsets.length} ad sets`)
+    if (!campaigns || campaigns.length === 0) {
+      console.log(`[AdSet Sync] No active campaigns found for brand ${brandId}`)
+      return NextResponse.json({
+        success: true,
+        message: 'No active campaigns to sync',
+        adSetCount: 0,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    console.log(`[AdSet Sync] Found ${campaigns.length} active campaigns, fetching their ad sets`)
+
+    // Fetch ad sets for each campaign
+    let totalAdSets = 0
+    const errors: string[] = []
+
+    for (const campaign of campaigns) {
+      try {
+        console.log(`[AdSet Sync] Fetching ad sets for campaign ${campaign.campaign_id} (${campaign.campaign_name})`)
+        const adSetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true)
+
+        if (adSetsResult.success && adSetsResult.adsets) {
+          totalAdSets += adSetsResult.adsets.length
+          console.log(`[AdSet Sync] ✅ Synced ${adSetsResult.adsets.length} ad sets for campaign ${campaign.campaign_name}`)
+        } else {
+          console.warn(`[AdSet Sync] ⚠️ Failed to sync ad sets for campaign ${campaign.campaign_name}:`, adSetsResult.error)
+          errors.push(`${campaign.campaign_name}: ${adSetsResult.error}`)
+        }
+      } catch (error: any) {
+        console.error(`[AdSet Sync] Error syncing campaign ${campaign.campaign_name}:`, error)
+        errors.push(`${campaign.campaign_name}: ${error.message}`)
+      }
+    }
+
+    console.log(`[AdSet Sync] Successfully synced ${totalAdSets} ad sets across ${campaigns.length} campaigns`)
 
     return NextResponse.json({
       success: true,
-      message: `Synced ${adSetsResult.adsets.length} ad sets`,
-      adSetCount: adSetsResult.adsets.length,
+      message: `Synced ${totalAdSets} ad sets across ${campaigns.length} campaigns`,
+      adSetCount: totalAdSets,
+      campaignCount: campaigns.length,
+      errors: errors.length > 0 ? errors : undefined,
       timestamp: new Date().toISOString()
     })
 
