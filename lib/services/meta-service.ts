@@ -1333,7 +1333,7 @@ export async function fetchMetaAdSets(
       adSetsResponse = await withMetaRateLimit(
         adAccountId,
         async () => {
-          const response = await fetch(`https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status&access_token=${metaConnection.access_token}`);
+          const response = await fetch(`https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${metaConnection.access_token}`);
           
           if (!response.ok) {
             const errorData = await response.json();
