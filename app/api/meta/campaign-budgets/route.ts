@@ -36,11 +36,12 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Check if we need to refresh based on data freshness
+    // Only fetch from Meta API on explicit force refresh to prevent rate limiting
+    // Otherwise, always use database which is updated by scheduled sync jobs
     let shouldFetchFromMeta = forceRefresh;
     
-    if (!shouldFetchFromMeta) {
-      // Check when we last updated campaign budgets
+    if (forceRefresh) {
+      // Check when we last updated to avoid spamming Meta API
       const { data: lastUpdateCheck } = await supabase
         .from('meta_adsets')
         .select('updated_at')
@@ -54,17 +55,18 @@ export async function GET(request: NextRequest) {
         const now = new Date();
         const minutesSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
         
-        // If data is older than 5 minutes, fetch fresh data
-        if (minutesSinceUpdate > 5) {
-          console.log(`[API] Budget data is ${minutesSinceUpdate.toFixed(1)} minutes old, fetching fresh data from Meta API`);
-          shouldFetchFromMeta = true;
+        // If we just updated within 5 minutes, use cached data even on force refresh
+        if (minutesSinceUpdate < 5) {
+          console.log(`[API] Budget data is very fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database even with forceRefresh to prevent rate limiting`);
+          shouldFetchFromMeta = false;
         } else {
-          console.log(`[API] Budget data is fresh (${minutesSinceUpdate.toFixed(1)} minutes old), using database`);
+          console.log(`[API] Budget data is ${minutesSinceUpdate.toFixed(1)} minutes old, allowing Meta API call`);
         }
       } else {
-        console.log(`[API] No recent budget data found, fetching from Meta API`);
-        shouldFetchFromMeta = true;
+        console.log(`[API] No recent budget data found, will use database fallback`);
       }
+    } else {
+      console.log(`[API] No force refresh requested, using database`);
     }
 
     try {
