@@ -96,6 +96,31 @@ export async function GET(request: NextRequest) {
           } else {
             console.warn(`[API] Meta API returned all $0 budgets - budgets are likely at adset level, falling back to adset aggregation`)
             console.log(`[API] 🔍 About to query database fallback for brandId: ${brandId}, forceRefresh: ${forceRefresh}`)
+            
+            // 🔥 CRITICAL: When forceRefresh is true, sync fresh ad set data from Meta first
+            if (forceRefresh) {
+              console.log(`[API] 🔄 forceRefresh=true: Syncing fresh ad set data from Meta API before aggregating`)
+              try {
+                const adsetSyncResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/adsets/sync?brandId=${brandId}`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  }
+                )
+                
+                if (adsetSyncResponse.ok) {
+                  const syncResult = await adsetSyncResponse.json()
+                  console.log(`[API] ✅ Ad set sync completed:`, syncResult)
+                } else {
+                  console.warn(`[API] ⚠️ Ad set sync failed, continuing with database data:`, await adsetSyncResponse.text())
+                }
+              } catch (syncError) {
+                console.warn(`[API] ⚠️ Ad set sync error, continuing with database data:`, syncError)
+              }
+            }
           }
         } else {
           console.warn(`[API] Meta API failed or returned empty data, falling back to database:`, result)
