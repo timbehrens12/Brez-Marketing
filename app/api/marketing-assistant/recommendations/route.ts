@@ -65,7 +65,18 @@ export async function DELETE(request: NextRequest) {
 
     console.log('[Recommendations] Deleting all recommendations for brand:', brandId)
 
-    // Delete all recommendations for this brand
+    // First, delete all performance tracking records for this brand's recommendations
+    const { error: perfError } = await supabase
+      .from('recommendation_performance')
+      .delete()
+      .eq('brand_id', brandId)
+
+    if (perfError) {
+      console.error('[Recommendations] Error deleting performance records:', perfError)
+      // Continue anyway - performance records may not exist
+    }
+
+    // Then delete all recommendations for this brand
     const { error } = await supabase
       .from('ai_campaign_recommendations')
       .delete()
@@ -76,7 +87,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete recommendations' }, { status: 500 })
     }
 
-    console.log('[Recommendations] Successfully reset recommendations for brand:', brandId)
+    console.log('[Recommendations] Successfully reset recommendations and performance tracking for brand:', brandId)
 
     return NextResponse.json({ 
       success: true, 
