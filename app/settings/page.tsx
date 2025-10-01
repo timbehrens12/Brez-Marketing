@@ -1857,7 +1857,8 @@ export default function SettingsPage() {
                               </div>
                               <label className="block cursor-pointer">
                                 <div className="h-10 bg-[#1a1a1a] border border-[#333] text-white rounded-xl flex items-center justify-center hover:bg-[#222] transition-colors">
-                                  <span className="text-sm text-gray-400">Click to upload new logo</span>
+                                  <Upload className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span className="text-sm text-gray-300">Upload New Logo</span>
                                 </div>
                                 <Input
                                   type="file"
@@ -2016,7 +2017,8 @@ export default function SettingsPage() {
                               </div>
                               <label className="block cursor-pointer">
                                 <div className="h-10 bg-[#1a1a1a] border border-[#333] text-white rounded-xl flex items-center justify-center hover:bg-[#222] transition-colors">
-                                  <span className="text-sm text-gray-400">Click to upload new signature</span>
+                                  <Upload className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span className="text-sm text-gray-300">Upload New Signature</span>
                                 </div>
                                 <Input
                                   type="file"
