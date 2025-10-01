@@ -353,6 +353,42 @@ export default function LeadGeneratorPage() {
     }
   }, [leads.length, showFilters])
 
+  // Secret keyboard shortcut to reset lead gen usage (Ctrl+Shift+L)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault()
+        if (!userId) {
+          toast.error('Please sign in to reset usage')
+          return
+        }
+        
+        // Reset usage data
+        fetch('/api/lead-generation/reset-usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              toast.success('🔄 Lead gen usage reset!')
+              loadUsageData()
+            } else {
+              toast.error('Failed to reset usage')
+            }
+          })
+          .catch(err => {
+            console.error('Reset error:', err)
+            toast.error('Failed to reset usage')
+          })
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [userId])
+
   const loadUsageData = async () => {
     if (!userId) {
       setIsLoadingPage(false)
@@ -2320,7 +2356,7 @@ export default function LeadGeneratorPage() {
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
                       variant="outline"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
+                      className="bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50"
                     >
                       {isSendingToOutreach ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -2654,7 +2690,7 @@ export default function LeadGeneratorPage() {
                           key={lead.id}
                           className={`border-[#333] cursor-pointer transition-all duration-500 ${
                             isLeadSent 
-                              ? 'bg-emerald-500/10 opacity-50' 
+                              ? 'bg-[#FF2A2A]/10 opacity-50' 
                               : isLeadSending 
                                 ? 'bg-white/5 opacity-75' 
                                 : 'hover:bg-[#222]/50'
@@ -2686,11 +2722,11 @@ export default function LeadGeneratorPage() {
                                   </div>
                                 )}
                                 {isLeadSent && (
-                                  <div className="flex items-center gap-1 text-xs text-emerald-400 animate-in fade-in zoom-in duration-300">
+                                  <div className="flex items-center gap-1 text-xs text-[#FF2A2A] animate-in fade-in zoom-in duration-300">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span className="font-medium">✓ Sent</span>
+                                    <span className="font-medium">Sent</span>
                                   </div>
                                 )}
                               </div>
