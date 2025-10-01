@@ -1165,6 +1165,12 @@ const CampaignWidget = ({
           setCurrentBudgets(budgetMap);
           console.log(`[CampaignWidget] ✅ Set currentBudgets:`, budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+          
+          // Trigger parent refresh to update campaign data with fresh budgets
+          if (onRefresh && typeof onRefresh === 'function') {
+            console.log('[CampaignWidget] Triggering parent refresh after budget update');
+            onRefresh();
+          }
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
