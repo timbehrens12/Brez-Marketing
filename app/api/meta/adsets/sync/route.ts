@@ -81,12 +81,14 @@ export async function POST(request: NextRequest) {
         console.log(`[AdSet Sync] Fetching ad sets for campaign ${campaign.campaign_id} (${campaign.campaign_name})`)
         const adSetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true)
 
-        if (adSetsResult.success && adSetsResult.adsets) {
-          totalAdSets += adSetsResult.adsets.length
-          console.log(`[AdSet Sync] ✅ Synced ${adSetsResult.adsets.length} ad sets for campaign ${campaign.campaign_name}`)
+        if (adSetsResult.success) {
+          const count = adSetsResult.adsets?.length || 0
+          totalAdSets += count
+          console.log(`[AdSet Sync] ✅ Synced ${count} ad sets for campaign ${campaign.campaign_name}`)
         } else {
-          console.warn(`[AdSet Sync] ⚠️ Failed to sync ad sets for campaign ${campaign.campaign_name}:`, adSetsResult.error)
-          errors.push(`${campaign.campaign_name}: ${adSetsResult.error}`)
+          const errorMsg = adSetsResult.error || 'Unknown error'
+          console.warn(`[AdSet Sync] ⚠️ Failed to sync ad sets for campaign ${campaign.campaign_name}:`, errorMsg)
+          errors.push(`${campaign.campaign_name}: ${errorMsg}`)
         }
       } catch (error: any) {
         console.error(`[AdSet Sync] Error syncing campaign ${campaign.campaign_name}:`, error)
