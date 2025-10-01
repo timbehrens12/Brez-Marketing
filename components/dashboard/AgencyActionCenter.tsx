@@ -1680,11 +1680,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
                     )}
                     {/* Custom tooltip for campaign optimization */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[9999] border border-[#333] shadow-2xl pointer-events-none">
-                      <div className="font-medium">{brand.name}</div>
-                      <div className="flex flex-col mt-1 gap-0.5">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[9999] border border-[#333] shadow-2xl pointer-events-none">
+                      <div className="font-medium mb-1">{brand.name}</div>
+                      <div className="flex flex-col gap-1">
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
-                          Status: {optimizationAvailable ? 'Ready for Review' : 'Used'}
+                          Status: {optimizationAvailable ? 'Ready for Review' : 'Used'} • Resets {(() => {
+                            const now = new Date()
+                            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+                            const diff = nextMonth.getTime() - now.getTime()
+                            const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+                            return `in ${days}d`
+                          })()}
                         </div>
                         {availability?.lastOptimizationDate && (
                           <div className="text-[10px] text-gray-400">
@@ -3389,7 +3395,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto overflow-x-hidden">
+              <CardContent className="flex-1 overflow-y-auto overflow-x-visible">
                 {isWidgetLoading.reusableTools ? (
                   <div className="text-center py-12">
                     <Settings className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -3399,7 +3405,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 ) : (
                   <div className="h-full flex flex-col">
                     {/* Responsive grid for all tools */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0 overflow-visible">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools
@@ -3475,7 +3481,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                               }}
                               disabled={isDisabled}
                               className={cn(
-                                "w-full text-xs h-8 mt-auto flex items-center justify-center",
+                                "w-full text-xs h-7 mt-auto",
                                 isDisabled
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                                   : isMaxedOut
