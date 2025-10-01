@@ -80,7 +80,7 @@ If any data appears suspicious or all zeros, acknowledge this but still provide 
 
     // Generate analysis using OpenAI
     const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: "gpt-4o-mini", // Legacy code path - use cheapest model
       messages: [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage }

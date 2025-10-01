@@ -110,7 +110,7 @@ Format as JSON with these sections: grade, insights, issues, optimizations, budg
 
     // Get AI analysis
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini", // Campaign metrics analysis - cheap model handles numbers fine
       messages: [
         {
           role: "system",

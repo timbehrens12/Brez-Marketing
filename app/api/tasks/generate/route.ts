@@ -74,7 +74,7 @@ Return as JSON array of task objects.
 `
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini", // Simple task generation - cheap model works fine
       messages: [
         {
           role: "system",
