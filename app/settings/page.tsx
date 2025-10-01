@@ -1855,13 +1855,18 @@ export default function SettingsPage() {
                                   <X className="w-3 h-3" />
                                 </Button>
                               </div>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleLogoChange(e.target.files?.[0] || null)}
-                                className="h-10 bg-[#1a1a1a] border-[#333] text-white file:bg-[#333] file:text-gray-300 file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 rounded-xl"
-                                disabled={agencyLoading || isSavingAgency}
-                              />
+                              <label className="block cursor-pointer">
+                                <div className="h-10 bg-[#1a1a1a] border border-[#333] text-white rounded-xl flex items-center justify-center hover:bg-[#222] transition-colors">
+                                  <span className="text-sm text-gray-400">Click to upload new logo</span>
+                                </div>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleLogoChange(e.target.files?.[0] || null)}
+                                  className="hidden"
+                                  disabled={agencyLoading || isSavingAgency}
+                                />
+                              </label>
                             </div>
                           ) : (
                             <div className="space-y-3">
@@ -1871,22 +1876,22 @@ export default function SettingsPage() {
                                 onDrop={handleLogoDrop}
                               >
                                 <div className="w-full h-40 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-4 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center w-full px-2 overflow-hidden">
-                                    <div className="w-12 h-12 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-3 group-hover:bg-[#444] transition-colors flex-shrink-0">
+                                  <div className="text-center w-full px-2">
+                                    <div className="w-12 h-12 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-3 group-hover:bg-[#444] transition-colors">
                                       <Upload className="w-6 h-6 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium mb-1 text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Upload Agency Logo</p>
-                                    <p className="text-gray-400 text-xs mb-3 leading-tight break-words">
+                                    <p className="text-white font-medium mb-1 text-sm leading-tight">Upload Agency Logo</p>
+                                    <p className="text-gray-400 text-xs mb-3 leading-tight">
                                       Drag & drop or click to browse
                                     </p>
                                     <div className="flex items-center justify-center gap-1 flex-wrap">
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
                                         PNG
                                       </Badge>
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
                                         JPG
                                       </Badge>
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
                                         SVG
                                       </Badge>
                                     </div>
@@ -2009,24 +2014,29 @@ export default function SettingsPage() {
                                   <X className="w-3 h-3" />
                                 </Button>
                               </div>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleSignatureChange(e.target.files?.[0] || null)}
-                                className="h-10 bg-[#1a1a1a] border-[#333] text-white file:bg-[#333] file:text-gray-300 file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 rounded-xl"
-                                disabled={agencyLoading || isSavingAgency}
-                              />
+                              <label className="block cursor-pointer">
+                                <div className="h-10 bg-[#1a1a1a] border border-[#333] text-white rounded-xl flex items-center justify-center hover:bg-[#222] transition-colors">
+                                  <span className="text-sm text-gray-400">Click to upload new signature</span>
+                                </div>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleSignatureChange(e.target.files?.[0] || null)}
+                                  className="hidden"
+                                  disabled={agencyLoading || isSavingAgency}
+                                />
+                              </label>
                             </div>
                           ) : (
                             <div className="space-y-3">
                               <div className="relative group cursor-pointer">
                                 <div className="w-full h-24 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-3 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center max-w-full overflow-hidden">
-                                    <div className="w-8 h-8 rounded-lg bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors flex-shrink-0">
+                                  <div className="text-center max-w-full">
+                                    <div className="w-8 h-8 rounded-lg bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors">
                                       <Upload className="w-4 h-4 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium text-xs mb-1 whitespace-nowrap overflow-hidden text-ellipsis">Upload Signature</p>
-                                    <p className="text-gray-400 text-xs break-words">
+                                    <p className="text-white font-medium text-xs mb-1">Upload Signature</p>
+                                    <p className="text-gray-400 text-xs">
                                       Handwritten signature
                                     </p>
                                   </div>
