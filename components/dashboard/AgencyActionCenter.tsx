@@ -3244,10 +3244,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           
           {/* Outreach Tasks Widget */}
-          <div className="md:col-span-1">
+          <div className="lg:col-span-1">
             <Card className={cn(
               "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
               isWidgetLoading.quickActions && "opacity-50 grayscale pointer-events-none"
@@ -3332,7 +3332,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           </div>
 
           {/* Reusable Tools Widget */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             <Card className={cn(
               "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col overflow-hidden transition-all duration-300",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
@@ -3449,8 +3449,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   </div>
                 ) : (
                   <div className="h-full flex flex-col overflow-hidden">
-                    {/* 3x2 grid for all tools */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
+                    {/* Responsive grid for all tools */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools
@@ -3463,26 +3463,26 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           <div
                             key={tool.id}
                             className={cn(
-                              "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full",
+                              "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full min-w-0",
                               getCategoryColor(tool.category),
                               isDisabled && "opacity-60",
                               // Remove red border for maxed out tools - only button should be red
                               false
                             )}
                           >
-                            <div className="flex items-start gap-3 mb-2">
-                              <div className="mt-0.5">
+                            <div className="flex items-start gap-3 mb-2 min-w-0">
+                              <div className="mt-0.5 flex-shrink-0">
                                 <IconComponent className="h-5 w-5" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-white text-sm leading-tight">
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <h4 className="font-medium text-white text-sm leading-tight break-words">
                                     {tool.name}
                                   </h4>
                                   {getStatusBadge(tool)}
                                 </div>
 
-                                <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
+                                <p className="text-[#9ca3af] text-xs leading-relaxed mb-2 break-words">
                                   {tool.description}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mb-2">
