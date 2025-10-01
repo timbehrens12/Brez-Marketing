@@ -1871,22 +1871,22 @@ export default function SettingsPage() {
                                 onDrop={handleLogoDrop}
                               >
                                 <div className="w-full h-40 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-4 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center w-full px-2">
-                                    <div className="w-12 h-12 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-3 group-hover:bg-[#444] transition-colors">
+                                  <div className="text-center w-full px-2 overflow-hidden">
+                                    <div className="w-12 h-12 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-3 group-hover:bg-[#444] transition-colors flex-shrink-0">
                                       <Upload className="w-6 h-6 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium mb-1 text-sm leading-tight">Upload Agency Logo</p>
-                                    <p className="text-gray-400 text-xs mb-3 leading-tight">
+                                    <p className="text-white font-medium mb-1 text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Upload Agency Logo</p>
+                                    <p className="text-gray-400 text-xs mb-3 leading-tight break-words">
                                       Drag & drop or click to browse
                                     </p>
                                     <div className="flex items-center justify-center gap-1 flex-wrap">
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
                                         PNG
                                       </Badge>
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
                                         JPG
                                       </Badge>
-                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs flex-shrink-0">
                                         SVG
                                       </Badge>
                                     </div>
@@ -2021,12 +2021,12 @@ export default function SettingsPage() {
                             <div className="space-y-3">
                               <div className="relative group cursor-pointer">
                                 <div className="w-full h-24 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-3 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center max-w-full">
-                                    <div className="w-8 h-8 rounded-lg bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors">
+                                  <div className="text-center max-w-full overflow-hidden">
+                                    <div className="w-8 h-8 rounded-lg bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors flex-shrink-0">
                                       <Upload className="w-4 h-4 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium text-xs mb-1">Upload Signature</p>
-                                    <p className="text-gray-400 text-xs">
+                                    <p className="text-white font-medium text-xs mb-1 whitespace-nowrap overflow-hidden text-ellipsis">Upload Signature</p>
+                                    <p className="text-gray-400 text-xs break-words">
                                       Handwritten signature
                                     </p>
                                   </div>

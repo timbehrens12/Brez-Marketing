@@ -1005,7 +1005,7 @@ export default function MarketingAssistantPage() {
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
               <Brain className="w-8 h-8 text-gray-400" />
-            </div>
+        </div>
             <h2 className="text-2xl font-bold text-white mb-2">No Brand Selected</h2>
             <p className="text-gray-400">Please select a brand from the sidebar to access the Marketing Assistant</p>
           </CardHeader>
