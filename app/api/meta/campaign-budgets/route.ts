@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Fetch fresh ad set budgets from Meta API when requested
-    // The rate limiter allows 200 requests/hour, so one call on page load is fine
-    let shouldFetchFromMeta = forceRefresh;
+    // 🚨 DISABLED: Prevent Meta API calls on page load to avoid rate limiting
+    // Always use database cache instead
+    let shouldFetchFromMeta = false; // Previously: forceRefresh
     
     if (forceRefresh) {
       // Check if we JUST fetched (within 30 seconds) to prevent rapid duplicate calls
