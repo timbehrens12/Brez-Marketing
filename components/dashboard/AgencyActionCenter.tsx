@@ -3287,34 +3287,34 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <div
                       key={todo.id}
                       className={cn(
-                        "rounded-lg border p-3 transition-all hover:shadow-md",
+                        "rounded-lg border p-3 transition-all hover:shadow-md min-w-0",
                         getPriorityColor(todo.priority)
                       )}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="mt-0.5 flex-shrink-0">
                           {getTypeIcon(todo.type)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-[#2A2A2A] text-white text-xs px-2 py-0.5">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Badge className="bg-[#2A2A2A] text-white text-xs px-2 py-0.5 flex-shrink-0">
                               {todo.count}
                             </Badge>
                             {getPriorityBadge(todo.priority)}
                           </div>
-                          <h4 className="font-medium text-white text-sm leading-tight mb-1">
+                          <h4 className="font-medium text-white text-sm leading-tight mb-1 break-words">
                             {todo.title}
                           </h4>
-                          <p className="text-[#9ca3af] text-xs leading-relaxed mb-3">
+                          <p className="text-[#9ca3af] text-xs leading-relaxed mb-3 break-words">
                             {todo.description}
                           </p>
                           <Button 
                             size="sm" 
-                            className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-8"
+                            className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs min-h-[2rem] h-auto py-1.5 whitespace-normal break-words"
                             onClick={() => router.push(todo.targetPage)}
                           >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            {todo.action}
+                            <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className="break-words">{todo.action}</span>
                           </Button>
                         </div>
                       </div>
