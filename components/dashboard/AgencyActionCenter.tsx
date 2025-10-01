@@ -1188,7 +1188,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'high': return <Badge className="text-xs bg-red-600 text-white">High</Badge>
+      case 'high': return <Badge className="text-xs bg-[#FF2A2A] text-white">High</Badge>
       case 'medium': return <Badge className="text-xs bg-orange-600 text-white">Medium</Badge>
       case 'low': return <Badge className="text-xs bg-gray-600 text-white">Low</Badge>
       default: return <Badge variant="outline" className="text-xs">Normal</Badge>
@@ -3530,10 +3530,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                 isDisabled
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                                   : isMaxedOut
-                                    ? getButtonText(tool) === 'Connect Brand First'
-                                      ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
-                                      : "bg-[#FF2A2A]/80 hover:bg-[#FF2A2A] text-white" // Red button for "Weekly Limit Reached"
-                                    : "bg-[#2A2A2A] hover:bg-[#333] text-white"
+                                      ? getButtonText(tool) === 'Connect Brand First'
+                                        ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
+                                       : "bg-[#FF2A2A]/80 hover:bg-[#FF2A2A] text-white" // Red button for "Weekly Limit Reached"
+                                      : "bg-[#2A2A2A] hover:bg-[#333] text-white"
                               )}
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
