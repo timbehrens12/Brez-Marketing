@@ -1211,13 +1211,20 @@ const CampaignWidget = ({
   }, [brandId, createAbortController, removeAbortController]);
   
   // Fetch budgets on mount and when brandId changes
+  // 🚨 CHANGED: Wait 2 seconds for TotalBudgetMetricCard to finish ad set refresh before reading from database
   useEffect(() => {
     console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
-      console.log('[CampaignWidget] Fetching fresh ad set budgets from Meta on page load');
-      // Fetch fresh ad set budgets from Meta API on page load - one call, no spam
+      console.log('[CampaignWidget] Waiting for ad set refresh to complete before fetching budgets...');
       setIsLoadingBudgets(true);
-      fetchCurrentBudgets(true); // Get fresh Meta data on page load
+      
+      // Wait for the centralized ad set refresh to complete
+      const timer = setTimeout(() => {
+        console.log('[CampaignWidget] Ad set refresh complete - fetching budgets from database');
+        fetchCurrentBudgets(false); // Read from database (ad sets already refreshed by TotalBudgetMetricCard)
+      }, 2500); // 2.5 second delay to ensure ad sets are saved to database
+      
+      return () => clearTimeout(timer);
     } else {
       // If no brandId, no need to load budgets
       console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');
