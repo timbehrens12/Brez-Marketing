@@ -894,6 +894,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           
           // Only allow monthly report on or after the 1st of a new month
           const hasUsedMonthlyThisMonth = brandLastMonthlyGeneration === currentMonthKey
+          
+          console.log(`[Brand Report Availability] ${brand.name}:`, {
+            currentMonth: currentMonthKey,
+            lastGenerated: brandLastMonthlyGeneration,
+            hasUsedMonthly: hasUsedMonthlyThisMonth,
+            monthlyAvailable: hasRequiredPlatforms && !hasUsedMonthlyThisMonth
+          })
 
           // Check time restrictions for daily reports (after 6:30 AM)
           const currentHour = new Date().getHours()
@@ -3440,9 +3447,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col">
+                  <div className="h-full flex flex-col overflow-hidden">
                     {/* 3x2 grid for all tools */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 auto-rows-fr">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools
