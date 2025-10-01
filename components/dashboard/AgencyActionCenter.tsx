@@ -3403,7 +3403,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="h-full overflow-y-auto overflow-x-hidden pr-2">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden">
                     {/* Responsive grid for all tools */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
                       {filteredTools.map((tool) => {
