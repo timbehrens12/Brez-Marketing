@@ -3199,7 +3199,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start overflow-visible">
           
           {/* Outreach Tasks Widget */}
           <div className="lg:col-span-1">
@@ -3287,12 +3287,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           </div>
 
           {/* Reusable Tools Widget */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 overflow-visible">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300 overflow-visible",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
             )}>
-              <CardHeader className="pb-2 flex-shrink-0">
+              <CardHeader className="pb-2 flex-shrink-0 overflow-visible">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-5 w-5 text-gray-400" />
@@ -3395,7 +3395,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto overflow-x-visible">
+              <CardContent className="flex-1 overflow-y-auto overflow-x-visible relative">
                 {isWidgetLoading.reusableTools ? (
                   <div className="text-center py-12">
                     <Settings className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -3403,9 +3403,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col">
+                  <div className="h-full flex flex-col overflow-visible">
                     {/* Responsive grid for all tools */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0 overflow-visible">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1 auto-rows-fr min-h-0">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools
@@ -3418,7 +3418,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           <div
                             key={tool.id}
                             className={cn(
-                              "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full min-w-0",
+                              "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full min-w-0 relative overflow-visible",
                               getCategoryColor(tool.category),
                               isDisabled && "opacity-60",
                               // Remove red border for maxed out tools - only button should be red
@@ -3456,7 +3456,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                             </div>
                             <div className="flex-grow"></div>
                             <Button
-                              size="sm"
                               onClick={() => {
                                 // Set navigating state to prevent button text flashing
                                 setNavigatingToolId(tool.id)
