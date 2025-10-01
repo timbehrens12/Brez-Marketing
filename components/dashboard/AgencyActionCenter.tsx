@@ -886,11 +886,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                      report.createdAt.startsWith(today)
                                    )
 
-          // Check monthly report availability using same logic as brand report page
-          const currentMonthKey = new Date().toISOString().slice(0, 7) // YYYY-MM format
+          // Check monthly report availability - resets at midnight on the 1st of each month
+          const now = new Date()
+          const currentMonthKey = now.toISOString().slice(0, 7) // YYYY-MM format
           const brandSpecificMonthlyKey = `lastMonthlyGeneration_${brand.id}`
           const brandLastMonthlyGeneration = localStorage.getItem(brandSpecificMonthlyKey)
           
+          // Only allow monthly report on or after the 1st of a new month
           const hasUsedMonthlyThisMonth = brandLastMonthlyGeneration === currentMonthKey
 
           // Check time restrictions for daily reports (after 6:30 AM)
@@ -1586,7 +1588,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Campaign Optimization</span>
-                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-[#ef4444]' : 'text-gray-400'}`}>
+                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-gray-400' : 'text-[#FF2A2A]'}`}>
                   {optimizationsUsed}/{optimizationsTotal} used this week
                 </span>
               </div>
