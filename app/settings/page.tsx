@@ -891,8 +891,8 @@ export default function SettingsPage() {
   useEffect(() => {
     setTempAgencyName(agencySettings.agency_name)
     setTempSignatureName(agencySettings.signature_name || '')
-    setLogoPreview(null)
-    setSignaturePreview(null)
+    // Don't clear previews - they should persist to show saved images
+    // Only reset removal flags
     setRemoveLogo(false)
     setRemoveSignature(false)
   }, [agencySettings.agency_name, agencySettings.signature_name])
