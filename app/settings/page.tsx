@@ -1001,19 +1001,22 @@ export default function SettingsPage() {
 
   // Handle logo file selection
   const handleLogoChange = async (file: File | null) => {
-    setTempAgencyLogo(file)
     if (file) {
       try {
         const base64 = await fileToBase64(file)
         setLogoPreview(base64)
+        setTempAgencyLogo(file)
         // Auto-save after loading
-        setTimeout(() => handleSaveAgencySettings(), 100)
+        setTimeout(() => {
+          handleSaveAgencySettings()
+        }, 100)
       } catch (error) {
         console.error('Error converting file to base64:', error)
         toast.error('Failed to process image file')
       }
     } else {
       setLogoPreview(null)
+      setTempAgencyLogo(null)
     }
   }
 
@@ -1040,19 +1043,22 @@ export default function SettingsPage() {
 
   // Handle signature file selection
   const handleSignatureChange = async (file: File | null) => {
-    setTempSignatureImage(file)
     if (file) {
       try {
         const base64 = await fileToBase64(file)
         setSignaturePreview(base64)
-        // Auto-save after loading
-        setTimeout(() => handleSaveAgencySettings(), 100)
+        setTempSignatureImage(file)
+        // Auto-save with the base64 data directly
+        setTimeout(() => {
+          handleSaveAgencySettings()
+        }, 100)
       } catch (error) {
         console.error('Error converting signature file to base64:', error)
         toast.error('Failed to process signature image')
       }
     } else {
       setSignaturePreview(null)
+      setTempSignatureImage(null)
     }
   }
 
@@ -1135,6 +1141,9 @@ export default function SettingsPage() {
       // Handle logo changes
       if (removeLogo) {
         logoUrl = null
+      } else if (logoPreview) {
+        // Use the preview if available (already converted to base64)
+        logoUrl = logoPreview
       } else if (tempAgencyLogo) {
         logoUrl = await fileToBase64(tempAgencyLogo)
       }
@@ -1142,6 +1151,9 @@ export default function SettingsPage() {
       // Handle signature changes
       if (removeSignature) {
         signatureUrl = null
+      } else if (signaturePreview) {
+        // Use the preview if available (already converted to base64)
+        signatureUrl = signaturePreview
       } else if (tempSignatureImage) {
         signatureUrl = await fileToBase64(tempSignatureImage)
       }
