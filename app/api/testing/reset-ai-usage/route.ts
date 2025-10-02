@@ -127,7 +127,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'All AI usage tracking data cleared successfully',
+      message: 'All AI usage tracking data cleared successfully. IMPORTANT: You must also clear localStorage by running this in your browser console: Object.keys(localStorage).filter(k => k.includes("usage") || k.includes("Generation") || k.includes("creative") || k.includes("consultant") || k.includes("msg_count") || k.includes("method_used")).forEach(k => localStorage.removeItem(k)); window.location.reload();',
+      clearLocalStorageScript: `Object.keys(localStorage).filter(k => k.includes("usage") || k.includes("Generation") || k.includes("creative") || k.includes("consultant") || k.includes("msg_count") || k.includes("method_used")).forEach(k => localStorage.removeItem(k)); window.location.reload();`,
       ...results
     })
 
