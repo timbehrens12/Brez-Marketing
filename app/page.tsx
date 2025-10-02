@@ -182,16 +182,15 @@ function BrandCountWidget() {
           </div>
         </div>
 
-        {/* Features List - Horizontal Layout */}
+        {/* Features List - Clean Grid Layout */}
         <div className="mb-6">
-          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-2">
+          <h4 className="text-white/90 font-semibold text-xs mb-4 uppercase tracking-wide">What's Included</h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             {currentOption.features.map((feature, index) => (
-              <div key={index} className="flex justify-between items-center gap-4">
-                <span className="text-white/70 text-xs">{feature.split(':')[0] || feature.split('(')[0]}</span>
+              <div key={index} className="flex justify-between items-center gap-4 bg-white/5 border border-white/10 rounded-lg p-2.5">
+                <span className="text-white/70 text-xs">{feature.split(':')[0]}</span>
                 <span className="text-white font-semibold text-xs whitespace-nowrap">
-                  {feature.includes(':') ? feature.split(':')[1].trim() : 
-                   feature.includes('(') ? feature.match(/\(([^)]+)\)/)?.[1] || '✓' : '✓'}
+                  {feature.split(':')[1]?.trim()}
                 </span>
               </div>
             ))}
@@ -208,15 +207,6 @@ function BrandCountWidget() {
           </div>
         )}
 
-        {/* CTA Button */}
-        <div className="flex gap-3 justify-center">
-          <Button 
-            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black text-base px-8 py-6 shadow-[0_8px_0_rgba(0,0,0,.6)]"
-          >
-            Get {currentOption.plan} Now <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
       </div>
 
       {/* See All Tiers Button */}
@@ -999,8 +989,8 @@ export default function HomePage() {
                     key={plan.name}
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
-                        ? 'bg-gradient-to-br from-red-900/40 via-black/90 to-red-900/40 border-2 border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
-                        : 'bg-gradient-to-br from-red-900/20 via-black/80 to-red-900/20 border border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
+                        ? 'bg-gradient-to-br from-red-900/40 via-black/90 to-red-900/40 border-[3px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
+                        : 'bg-gradient-to-br from-red-900/20 via-black/80 to-red-900/20 border-2 border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
                     }`}
                   >
                     {plan.popular && (
