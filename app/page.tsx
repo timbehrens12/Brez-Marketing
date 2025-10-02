@@ -162,7 +162,7 @@ function BrandCountWidget() {
       </div>
 
       {/* Enhanced Recommendation Card */}
-      <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+      <div className="bg-gradient-to-br from-red-900/20 via-black/80 to-red-900/20 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
         {/* Header Section */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
