@@ -24,34 +24,36 @@ export async function POST(req: NextRequest) {
       // Create a specialized prompt for brand synopsis
       const synopsisPrompt = `Generate a concise, actionable brand performance synopsis for ${brandData.name}. 
 
-Current Performance:
+IMPORTANT: This brand has ${brandData.connections.length > 0 ? brandData.connections.join(' and ') : 'no connected platforms'}. Analyze data from ALL connected platforms.
+
+Current Performance Across All Platforms:
 - ROAS: ${brandData.roas ? brandData.roas.toFixed(2) : 'No data'}
 - ROAS Change: ${brandData.roasChange ? (brandData.roasChange > 0 ? '+' : '') + brandData.roasChange.toFixed(1) + '%' : 'No change data'}
-- Ad Spend: $${brandData.spend ? brandData.spend.toLocaleString() : '0'}
-- Revenue: $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'}
+- Ad Spend (Meta): $${brandData.spend ? brandData.spend.toLocaleString() : '0'}
+- Sales Revenue (Shopify): $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'}
 - Sales Change: ${brandData.salesChange ? (brandData.salesChange > 0 ? '+' : '') + brandData.salesChange.toFixed(1) + '%' : 'No change data'}
 - Status: ${brandData.status}
 - Connected Platforms: ${brandData.connections.length > 0 ? brandData.connections.join(', ') : 'None'}
 - Has Performance Data: ${brandData.hasData ? 'Yes' : 'No'}
 
-Generate a 1-2 sentence synopsis that:
-1. Summarizes current performance status
-2. Highlights key metrics or concerns
-3. Provides a brief actionable recommendation (e.g., "review Marketing Assistant", "continue current strategy", "connect platforms")
+Generate a 2-3 sentence synopsis that:
+1. Mentions performance from EACH connected platform (e.g., "Meta ads spent $X" AND "Shopify generated $Y in sales")
+2. Highlights ROAS and key metrics from all sources
+3. Provides a brief actionable recommendation
 
-Keep it conversational and specific to the numbers provided. Avoid generic statements.`;
+Keep it conversational, specific to the numbers, and ensure you reference ALL connected platforms in your analysis. Avoid generic statements.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5-nano", // Cheapest GPT-5 - perfect for simple summaries
         messages: [
           { 
             role: "system", 
-            content: "You are a marketing performance analyst. Generate concise, data-driven brand performance summaries. Be specific about numbers and actionable in recommendations. Keep responses under 50 words." 
+            content: "You are a marketing performance analyst. Generate concise, data-driven brand performance summaries that cover ALL connected platforms (Shopify sales, Meta ads, etc.). Always mention performance from each platform explicitly. Be specific about numbers and actionable in recommendations. Keep responses under 75 words." 
           },
           { role: "user", content: synopsisPrompt }
         ],
         temperature: 0.3, // Lower temperature for more consistent, factual responses
-        max_tokens: 150, // Shorter responses for synopsis
+        max_tokens: 200, // Longer responses to cover all platforms
       });
 
       const analysis = response.choices[0]?.message?.content || "Performance analysis unavailable";
