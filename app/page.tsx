@@ -167,67 +167,59 @@ function BrandCountWidget() {
         </div>
       </div>
 
-      {/* Clean Modern Recommendation Card */}
-      <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border border-[var(--brand-red)]/30 rounded-2xl p-8 mb-6 transition-all duration-300">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h4 className="text-4xl font-light text-white mb-3 tracking-tight">{currentOption.plan}</h4>
-          <div className="flex items-baseline justify-center gap-3 mb-2">
-            <span className="text-6xl font-extralight text-[var(--brand-red)]">{currentOption.price.replace('/mo', '')}</span>
-            <span className="text-white/40 text-lg font-light">/month</span>
+      {/* Enhanced Recommendation Card */}
+      <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full mb-4">
+            <Target className="w-4 h-4 text-[var(--brand-red)]" />
+            <span className="text-[var(--brand-red)] text-sm font-bold uppercase tracking-wide">Perfect Match</span>
           </div>
-          <div className="text-white/50 text-sm line-through font-light">{currentOption.originalPrice}</div>
-        </div>
-
-        {/* Clean Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 pb-8 border-b border-white/10">
-          <div className="text-center">
-            <div className="text-2xl font-light text-white mb-1">{currentOption.features.find(f => f.includes('Brand'))?.match(/\d+/)?.[0] || '1'}</div>
-            <div className="text-xs text-white/50 font-light">Brand{currentOption.features.find(f => f.includes('Brand'))?.match(/\d+/)?.[0] !== '1' ? 's' : ''}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-light text-white mb-1">
-              {currentOption.features.find(f => f.includes('Lead Gen'))?.match(/\d+/)?.[0] || '0'}
+          <h4 className="text-4xl font-black text-white mb-2">{currentOption.plan}</h4>
+          <p className="text-white/60 text-sm mb-6 max-w-2xl mx-auto">{currentOption.description}</p>
+          
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-5xl font-black text-[var(--brand-red)] mb-1">{currentOption.price}</div>
+              <div className="text-sm text-white/50 line-through">{currentOption.originalPrice}</div>
             </div>
-            <div className="text-xs text-white/50 font-light">Leads/mo</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-light text-white mb-1">
-              {currentOption.features.find(f => f.includes('Outreach'))?.match(/[\d,]+/)?.[0] || '0'}
+            <div className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl">
+              <div className="text-green-400 text-xs font-bold uppercase tracking-wide">Limited Time</div>
+              <div className="text-green-300 text-2xl font-black">
+                Save {Math.round((1 - parseFloat(currentOption.price.replace(/[$,]/g, '')) / parseFloat(currentOption.originalPrice.replace(/[$,]/g, ''))) * 100)}%
+              </div>
             </div>
-            <div className="text-xs text-white/50 font-light">Emails/mo</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-light text-white mb-1">
-              {currentOption.features.find(f => f.includes('AI Chatbot'))?.includes('Unlimited') ? '∞' : currentOption.features.find(f => f.includes('Chatbot'))?.match(/\d+/)?.[0] || '5'}
-            </div>
-            <div className="text-xs text-white/50 font-light">AI/day</div>
           </div>
         </div>
 
-        {/* Key Features - Clean List */}
-        <div className="space-y-2 mb-8">
-          {currentOption.features.slice(0, 6).map((feature, index) => (
-            <div key={index} className="flex items-center gap-3 text-white/80 text-sm font-light">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-red)]" />
-              {feature}
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 gap-3 mb-6">
+          {currentOption.features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
+              <div className="w-5 h-5 rounded-full bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-[var(--brand-red)]" />
+              </div>
+              <span className="text-white/90 text-sm font-medium">{feature}</span>
             </div>
           ))}
-          {currentOption.whiteLabel && (
-            <div className="flex items-center gap-3 text-white/80 text-sm font-light">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-red)]" />
-              White-Label Branding
-            </div>
-          )}
         </div>
+
+        {/* White Label Badge */}
+        {currentOption.whiteLabel && (
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full">
+              <Award className="w-4 h-4 text-[var(--brand-red)]" />
+              <span className="text-[var(--brand-red)] text-sm font-bold">White-Label Ready</span>
+            </div>
+          </div>
+        )}
 
         {/* CTA Button */}
         <div className="flex gap-3 justify-center">
           <Button 
             onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            className="w-full bg-[var(--brand-red)] text-black hover:brightness-110 font-medium text-sm px-8 py-4"
+            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black text-base px-8 py-6 shadow-[0_8px_0_rgba(0,0,0,.6)]"
           >
-            Get {currentOption.plan} <ArrowRight className="ml-2 h-4 w-4" />
+            Get {currentOption.plan} Now <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>
@@ -872,16 +864,15 @@ export default function HomePage() {
                     aiChats: 5,
                     creativeGen: 10,
                     features: [
-                      "Brand Analytics & Reports",
-                      "Weekly AI Marketing Analysis",
-                      "AI Marketing Chatbot", 
-                      "Campaign Optimization",
-                      "Shopify Integration",
-                      "Meta Ads Analytics",
-                      "Creative Generation",
-                      "Basic Performance Reports"
+                      "Brand Analytics Dashboard",
+                      "Shopify & Meta Integration",
+                      "AI Campaign Optimization",
+                      "Weekly Marketing Analysis",
+                      "AI Chatbot (5/day)",
+                      "Creative Generation (10/mo)",
+                      "Performance Reports"
                     ],
-                    limitations: ["No Lead Generation", "No Outreach CRM"],
+                    limitations: ["No Lead Generation", "No Outreach CRM", "No White-Label"],
                     whiteLabel: false
                   },
                   {
@@ -897,13 +888,13 @@ export default function HomePage() {
                     aiChats: 10,
                     creativeGen: 25,
                     features: [
-                      "Everything in DTC Owner",
-                      "Weekly AI Marketing Analysis",
-                      "Lead Generation",
-                      "Outreach CRM",
-                      "White-Label Reports",
-                      "Contract Generation AI",
-                      "Ad Creative Studio"
+                      "All DTC Owner Features +",
+                      "Lead Generation (100/mo)",
+                      "Outreach CRM (250 emails/mo)",
+                      "White-Label Reports & Branding",
+                      "Contract Generator AI",
+                      "Enhanced Creative Studio (25/mo)",
+                      "AI Chatbot (10/day)"
                     ],
                     limitations: [],
                     whiteLabel: true
@@ -921,12 +912,13 @@ export default function HomePage() {
                     aiChats: 25,
                     creativeGen: 75,
                     features: [
-                      "Everything in Beginner",
-                      "Weekly AI Marketing Analysis",
-                      "Multi-Brand Management",
-                      "Higher AI Usage Limits",
-                      "More Lead Generation Quotas",
-                      "Extended Creative Generation"
+                      "All Beginner Features +",
+                      "Multi-Brand Dashboard (5 brands)",
+                      "Lead Generation (300/mo)",
+                      "Outreach CRM (750 emails/mo)",
+                      "AI Chatbot (25/day)",
+                      "Creative Studio (75/mo)",
+                      "Advanced Analytics"
                     ],
                     limitations: [],
                     whiteLabel: true
@@ -944,12 +936,14 @@ export default function HomePage() {
                     aiChats: 50,
                     creativeGen: 150,
                     features: [
-                      "Everything in Growing",
-                      "Weekly AI Marketing Analysis",
+                      "All Growing Features +",
+                      "Multi-Brand Dashboard (15 brands)",
                       "Team Collaboration (15 users)",
-                      "Even Higher AI Usage Limits",
-                      "Maximum Lead Generation Quotas",
-                      "Premium Creative Generation"
+                      "Lead Generation (750/mo)",
+                      "Outreach CRM (2,000 emails/mo)",
+                      "AI Chatbot (50/day)",
+                      "Creative Studio (150/mo)",
+                      "Priority Support"
                     ],
                     limitations: [],
                     whiteLabel: true
@@ -967,12 +961,14 @@ export default function HomePage() {
                     aiChats: "Unlimited",
                     creativeGen: 500,
                     features: [
-                      "Everything in Multi-Brand",
-                      "Weekly AI Marketing Analysis",
+                      "All Multi-Brand Features +",
+                      "Multi-Brand Dashboard (25 brands)",
                       "Unlimited Team Members",
-                      "Unlimited AI Chatbot Usage",
-                      "Maximum Creative Generation",
-                      "Priority Email Support",
+                      "Unlimited AI Chatbot",
+                      "Lead Generation (2,500/mo)",
+                      "Outreach CRM (7,500 emails/mo)",
+                      "Creative Studio (500/mo)",
+                      "Dedicated Account Manager",
                       "Advanced Usage Analytics"
                     ],
                     limitations: [],
