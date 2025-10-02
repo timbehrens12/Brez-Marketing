@@ -1046,18 +1046,6 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        {/* Features */}
-                        <div className="mb-4">
-                          <div className="space-y-1">
-                            {plan.features.map((feature: string, i: number) => (
-                              <div key={i} className="flex items-center">
-                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
-                                <span className="text-white/75 text-xs">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
                         {/* Limitations */}
                         {plan.limitations.length > 0 && (
                           <div className="mb-4">
