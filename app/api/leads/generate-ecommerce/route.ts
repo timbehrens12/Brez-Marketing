@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getSupabaseServiceClient } from '@/lib/supabase/client';
+import { aiUsageService } from '@/lib/services/ai-usage-service';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -160,6 +161,15 @@ Return only the JSON array:`;
     if (insertError) {
       console.error('Database insert error:', insertError);
       return NextResponse.json({ error: 'Failed to save leads' }, { status: 500 });
+    }
+
+    // Record AI usage for ecommerce lead generation
+    if (brandId && insertedLeads && insertedLeads.length > 0) {
+      await aiUsageService.recordUsage(brandId, userId, 'lead_gen_ecommerce', {
+        leadsGenerated: insertedLeads.length,
+        niches: nicheNames,
+        timestamp: new Date().toISOString()
+      })
     }
 
     return NextResponse.json({ 

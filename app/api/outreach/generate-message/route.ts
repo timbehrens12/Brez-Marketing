@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -484,6 +485,16 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
 
     // Track successful usage
     await trackUsage(userId, leadId, messageType, 0.02) // Estimate $0.02 per message
+
+    // Record AI usage
+    if (brandId) {
+      await aiUsageService.recordUsage(brandId, userId, 'outreach_messages', {
+        leadId,
+        messageType,
+        businessName: lead.business_name,
+        timestamp: new Date().toISOString()
+      })
+    }
 
     // Extract subject line for email
     let subject = ''

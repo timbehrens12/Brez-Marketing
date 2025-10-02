@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,6 +22,12 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { brandId, taskType = 'daily' } = body
+
+    // Record AI usage
+    await aiUsageService.recordUsage(brandId, userId, 'task_generation', {
+      taskType,
+      timestamp: new Date().toISOString()
+    })
 
     // Get leads and existing tasks for context
     const { data: leads } = await supabase

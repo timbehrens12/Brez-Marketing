@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/client'
 import OpenAI from 'openai'
 import { validateRequest, leadGenerationRequestSchema, checkRateLimit, addSecurityHeaders, sanitizeString, sanitizeAIInput } from '@/lib/utils/validation'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const supabase = getSupabaseServiceClient()
 
@@ -377,6 +378,16 @@ export async function POST(request: NextRequest) {
        }
        
        // console.log(`🔄 DIVERSIFICATION: Successfully tracked ${distributionEntries.length} lead distributions`)
+    }
+
+    // Record AI usage for lead gen enrichment
+    if (brandId) {
+      await aiUsageService.recordUsage(brandId, userId, 'lead_gen_enrichment', {
+        leadsEnriched: savedCount,
+        niches: sanitizedNiches,
+        location: sanitizedLocation,
+        timestamp: new Date().toISOString()
+      })
     }
 
     // Update usage tracking
@@ -932,6 +943,8 @@ IMPORTANT:
       temperature: 0,
       max_tokens: 500
     })
+
+    // Note: AI usage tracking is done in the main POST function once per generation batch
 
     const result = response.choices[0]?.message?.content?.trim()
     

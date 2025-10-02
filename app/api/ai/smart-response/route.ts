@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 // Initialize OpenAI client only when needed to avoid build-time issues
 const getOpenAIClient = () => {
@@ -70,10 +71,19 @@ const incrementUsage = (userId: string) => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { leadResponse, platform, leadInfo, userId } = await request.json()
+    const { leadResponse, platform, leadInfo, userId, brandId } = await request.json()
 
     if (!leadResponse || !platform || !leadInfo || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Record AI usage (if brandId provided)
+    if (brandId) {
+      await aiUsageService.recordUsage(brandId, userId, 'smart_response', {
+        platform,
+        businessName: leadInfo.business_name,
+        timestamp: new Date().toISOString()
+      })
     }
 
     // Rate limiting check

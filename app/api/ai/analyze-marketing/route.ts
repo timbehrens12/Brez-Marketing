@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { addSecurityHeaders, sanitizeAIInput } from '@/lib/utils/validation'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
+import { auth } from '@clerk/nextjs'
 
 // Set maximum duration for this API route (300 seconds max for Vercel Pro)
 export const maxDuration = 300
@@ -12,9 +14,25 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authentication
+    const { userId } = auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const data = await request.json()
     
     console.log('Received data for AI analysis:', JSON.stringify(data, null, 2))
+
+    // Record AI usage
+    if (data.brand?.id) {
+      await aiUsageService.recordUsage(data.brand.id, userId, 'marketing_analysis', {
+        brandName: data.brand.name,
+        reportType: data.formatting_instructions?.report_type,
+        dateRange: data.date_range,
+        timestamp: new Date().toISOString()
+      })
+    }
     
     // Extract historical context for improvement tracking
     const historicalContext = data.historical_context || { previous_reports: [], count: 0 }

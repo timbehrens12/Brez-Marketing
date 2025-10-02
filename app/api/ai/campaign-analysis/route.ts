@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -27,6 +28,14 @@ export async function POST(request: NextRequest) {
     if (!brandId || !campaignId || !campaign) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
+
+    // Record AI usage
+    await aiUsageService.recordUsage(brandId, userId, 'campaign_analysis', {
+      campaignId,
+      campaignName: campaign.campaign_name,
+      includeCreatives,
+      timestamp: new Date().toISOString()
+    })
 
     // Get ad sets and ads for this campaign
     const { data: adSets, error: adSetsError } = await supabase

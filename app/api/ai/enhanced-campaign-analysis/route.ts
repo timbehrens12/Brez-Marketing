@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,6 +30,13 @@ export async function POST(request: NextRequest) {
     if (!brandId || !campaignId || !campaignData) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
+
+    // Record AI usage
+    await aiUsageService.recordUsage(brandId, userId, 'enhanced_campaign_analysis', {
+      campaignId,
+      campaignName: campaignData?.campaign_name,
+      timestamp: new Date().toISOString()
+    })
 
     const supabase = createClient()
 
