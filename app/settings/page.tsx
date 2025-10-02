@@ -1001,13 +1001,16 @@ export default function SettingsPage() {
 
   // Handle logo file selection
   const handleLogoChange = async (file: File | null) => {
+    console.log('🖼️ handleLogoChange called with file:', file?.name, file?.size)
     if (file) {
       try {
         const base64 = await fileToBase64(file)
+        console.log('✅ Logo converted to base64, length:', base64.length)
         setLogoPreview(base64)
         setTempAgencyLogo(file)
         // Auto-save after loading
         setTimeout(() => {
+          console.log('⏰ Auto-save triggered for logo')
           handleSaveAgencySettings()
         }, 100)
       } catch (error) {
@@ -1043,13 +1046,16 @@ export default function SettingsPage() {
 
   // Handle signature file selection
   const handleSignatureChange = async (file: File | null) => {
+    console.log('✍️ handleSignatureChange called with file:', file?.name, file?.size)
     if (file) {
       try {
         const base64 = await fileToBase64(file)
+        console.log('✅ Signature converted to base64, length:', base64.length)
         setSignaturePreview(base64)
         setTempSignatureImage(file)
         // Auto-save with the base64 data directly
         setTimeout(() => {
+          console.log('⏰ Auto-save triggered for signature')
           handleSaveAgencySettings()
         }, 100)
       } catch (error) {
@@ -1162,7 +1168,11 @@ export default function SettingsPage() {
         hasLogo: !!logoUrl,
         logoLength: logoUrl?.length,
         hasSignature: !!signatureUrl,
-        signatureLength: signatureUrl?.length
+        signatureLength: signatureUrl?.length,
+        logoPreviewExists: !!logoPreview,
+        signaturePreviewExists: !!signaturePreview,
+        tempAgencyLogoExists: !!tempAgencyLogo,
+        tempSignatureImageExists: !!tempSignatureImage
       })
 
       const success = await updateAgencySettings({
