@@ -364,7 +364,7 @@ export default function HomePage() {
             <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-800/90 to-gray-700/90 border border-gray-600/50 rounded-full mb-5 shadow-lg">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-[#1a1a1a] via-[#252525] to-[#1a1a1a] border border-gray-600/50 rounded-full mb-5 shadow-lg">
                   <div className="relative flex items-center justify-center flex-shrink-0">
                     <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
                     <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
