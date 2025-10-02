@@ -162,61 +162,70 @@ function BrandCountWidget() {
       </div>
 
       {/* Enhanced Recommendation Card */}
-      <div className="bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
-        {/* Header Section */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
-            <Target className="w-6 h-6 text-[var(--brand-red)]" />
-          </div>
-          <div>
-            <h4 className="text-2xl font-black text-white">{currentOption.plan}</h4>
-            <p className="text-white/60 text-sm mt-1">{currentOption.description}</p>
-          </div>
-        </div>
-
-        {/* Pricing Section - Horizontal Layout */}
-        <div className="mb-6">
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-black text-white">{currentOption.price}</span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-lg text-white/50 line-through">{currentOption.originalPrice}</span>
-            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-              Save ${parseFloat(currentOption.originalPrice.replace(/[$,]/g, '')) - parseFloat(currentOption.price.replace(/[$,]/g, ''))}
-            </span>
-          </div>
-        </div>
-
-        {/* Features List - Clean Grid Layout */}
-        <div className="mb-6">
-          <h4 className="text-white/90 font-semibold text-xs mb-4 uppercase tracking-wide">What's Included</h4>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-            {currentOption.features.map((feature, index) => (
-              <div 
-                key={index} 
-                className={`flex justify-between items-center gap-4 bg-white/5 border border-white/10 rounded-lg p-2.5 ${
-                  currentOption.features.length % 2 !== 0 && index === currentOption.features.length - 1 ? 'col-span-2 max-w-[calc(50%-0.75rem)] mx-auto' : ''
-                }`}
-              >
-                <span className="text-white/70 text-xs">{feature.split(':')[0]}</span>
-                <span className="text-white font-semibold text-xs whitespace-nowrap">
-                  {feature.split(':')[1]?.trim()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* White Label Badge */}
-        {currentOption.whiteLabel && (
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full">
-              <Award className="w-4 h-4 text-[var(--brand-red)]" />
-              <span className="text-[var(--brand-red)] text-sm font-bold">White-Label Ready</span>
+      <div className="relative bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)] overflow-hidden">
+        {/* Additional Red Splotches */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--brand-red)]/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--brand-red)]/8 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-[var(--brand-red)]/6 rounded-full blur-3xl"></div>
+        
+        {/* Content */}
+        <div className="relative z-10">
+          {/* Header Section */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-[var(--brand-red)]/30 to-[var(--brand-red)]/10 border-2 border-[var(--brand-red)]/40 shadow-[0_0_20px_rgba(255,42,42,0.3)]">
+              <svg className="w-6 h-6 text-[var(--brand-red)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="text-2xl font-black text-white">{currentOption.plan}</h4>
+              <p className="text-white/60 text-sm mt-1">{currentOption.description}</p>
             </div>
           </div>
-        )}
 
+          {/* Pricing Section - Horizontal Layout */}
+          <div className="mb-6">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black text-white">{currentOption.price}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-lg text-white/50 line-through">{currentOption.originalPrice}</span>
+              <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                Save ${parseFloat(currentOption.originalPrice.replace(/[$,]/g, '')) - parseFloat(currentOption.price.replace(/[$,]/g, ''))}
+              </span>
+            </div>
+          </div>
+
+          {/* Features List - Clean Grid Layout */}
+          <div className="mb-6">
+            <h4 className="text-white/90 font-semibold text-xs mb-4 uppercase tracking-wide">What's Included</h4>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {currentOption.features.map((feature, index) => (
+                <div 
+                  key={index} 
+                  className={`flex justify-between items-center gap-4 bg-white/5 border border-white/10 rounded-lg p-2.5 ${
+                    currentOption.features.length % 2 !== 0 && index === currentOption.features.length - 1 ? 'col-span-2 max-w-[calc(50%-0.75rem)] mx-auto' : ''
+                  }`}
+                >
+                  <span className="text-white/70 text-xs">{feature.split(':')[0]}</span>
+                  <span className="text-white font-semibold text-xs whitespace-nowrap">
+                    {feature.split(':')[1]?.trim()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* White Label Badge */}
+          {currentOption.whiteLabel && (
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full">
+                <Award className="w-4 h-4 text-[var(--brand-red)]" />
+                <span className="text-[var(--brand-red)] text-sm font-bold">White-Label Ready</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* More Details Button */}
@@ -880,7 +889,11 @@ export default function HomePage() {
                     price: 67,
                     originalPrice: 97,
                     popular: false,
-                    icon: Users,
+                    icon: ({ className }: { className?: string }) => (
+                      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    ),
                     brands: 1,
                     teamMembers: null,
                     leadGen: 0,
@@ -905,7 +918,11 @@ export default function HomePage() {
                     price: 97,
                     originalPrice: 147,
                     popular: true,
-                    icon: Rocket,
+                    icon: ({ className }: { className?: string }) => (
+                      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    ),
                     brands: 1,
                     teamMembers: null,
                     leadGen: 100,
@@ -930,7 +947,11 @@ export default function HomePage() {
                     price: 397,
                     originalPrice: 597,
                     popular: false,
-                    icon: TrendingUp,
+                    icon: ({ className }: { className?: string }) => (
+                      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    ),
                     brands: 5,
                     teamMembers: 1,
                     leadGen: 300,
@@ -955,7 +976,11 @@ export default function HomePage() {
                     price: 697,
                     originalPrice: 997,
                     popular: false,
-                    icon: Zap,
+                    icon: ({ className }: { className?: string }) => (
+                      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    ),
                     brands: 15,
                     teamMembers: 3,
                     leadGen: 750,
@@ -981,7 +1006,11 @@ export default function HomePage() {
                     price: 1337,
                     originalPrice: 1997,
                     popular: false,
-                    icon: Award,
+                    icon: ({ className }: { className?: string }) => (
+                      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    ),
                     brands: 25,
                     teamMembers: 10,
                     leadGen: 2500,
