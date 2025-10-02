@@ -23,7 +23,17 @@ function BrandCountWidget() {
       price: "$67/mo",
       originalPrice: "$97/mo",
       description: "Perfect for tracking your own business performance with essential analytics and reporting.",
-      features: ["1 Brand Dashboard", "Shopify & Meta Integration", "Basic AI Marketing Tools", "Daily Performance Reports"],
+      features: [
+        "Brand Analytics & Reports",
+        "Weekly AI Marketing Analysis",
+        "AI Marketing Chatbot (5/day)",
+        "Campaign Optimization",
+        "Shopify Integration",
+        "Meta Ads Analytics",
+        "Creative Generation (10/mo)",
+        "Basic Performance Reports"
+      ],
+      whiteLabel: false,
       tier: "dtc-owner"
     },
     {
@@ -33,7 +43,17 @@ function BrandCountWidget() {
       price: "$97/mo",
       originalPrice: "$147/mo",
       description: "Everything you need to land and manage your first freelance brandscaling clients with lead generation and outreach automation.",
-      features: ["1 Brand + Lead Gen", "100 Leads per Month", "250 Outreach Emails", "Client Management Tools", "White-Label Reports"],
+      features: [
+        "Everything in DTC Owner",
+        "Weekly AI Marketing Analysis",
+        "Lead Generation (100/mo)",
+        "Outreach CRM (250 emails/mo)",
+        "White-Label Reports",
+        "Contract Generation AI",
+        "Ad Creative Studio (25/mo)",
+        "AI Chatbot (10/day)"
+      ],
+      whiteLabel: true,
       tier: "beginner"
     },
     {
@@ -43,7 +63,17 @@ function BrandCountWidget() {
       price: "$397/mo",
       originalPrice: "$597/mo",
       description: "Scale your freelance brandscaling business with multi-client management, increased lead generation, and advanced automation.",
-      features: ["Up to 5 Brands", "300 Leads per Month", "750 Outreach Emails", "Advanced AI Tools", "Team Collaboration"],
+      features: [
+        "Everything in Beginner",
+        "Weekly AI Marketing Analysis",
+        "Up to 5 Brands",
+        "Lead Generation (300/mo)",
+        "Outreach CRM (750 emails/mo)",
+        "Higher AI Usage (25 chats/day)",
+        "Creative Generation (75/mo)",
+        "White-Label Reports"
+      ],
+      whiteLabel: true,
       tier: "growing"
     },
     {
@@ -53,7 +83,18 @@ function BrandCountWidget() {
       price: "$697/mo",
       originalPrice: "$997/mo",
       description: "Full agency toolkit with team collaboration, white-label branding, and maximum automation for managing multiple clients efficiently.",
-      features: ["Up to 15 Brands", "750 Leads per Month", "2,500 Outreach Emails", "Priority Support", "Advanced Analytics"],
+      features: [
+        "Everything in Growing",
+        "Weekly AI Marketing Analysis",
+        "Up to 15 Brands",
+        "Team Collaboration (15 users)",
+        "Lead Generation (750/mo)",
+        "Outreach CRM (2,000 emails/mo)",
+        "AI Chatbot (50/day)",
+        "Creative Generation (150/mo)",
+        "White-Label Reports"
+      ],
+      whiteLabel: true,
       tier: "multi-brand"
     },
     {
@@ -63,7 +104,20 @@ function BrandCountWidget() {
       price: "$1,337/mo",
       originalPrice: "$1,997/mo",
       description: "Enterprise-grade platform for large agencies with unlimited features, dedicated support, and maximum performance capabilities.",
-      features: ["Up to 25 Brands", "Unlimited AI Chatbot", "5,000 Outreach Emails", "Dedicated Account Manager", "Custom Integrations"],
+      features: [
+        "Everything in Multi-Brand",
+        "Weekly AI Marketing Analysis",
+        "Up to 25 Brands",
+        "Unlimited Team Members",
+        "Unlimited AI Chatbot Usage",
+        "Lead Generation (2,500/mo)",
+        "Outreach CRM (7,500 emails/mo)",
+        "Creative Generation (500/mo)",
+        "Priority Email Support",
+        "Advanced Usage Analytics",
+        "White-Label Reports"
+      ],
+      whiteLabel: true,
       tier: "enterprise"
     }
   ]
@@ -148,6 +202,16 @@ function BrandCountWidget() {
             </div>
           ))}
         </div>
+
+        {/* White Label Badge */}
+        {currentOption.whiteLabel && (
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full">
+              <Award className="w-4 h-4 text-[var(--brand-red)]" />
+              <span className="text-[var(--brand-red)] text-sm font-bold">White-Label Ready</span>
+            </div>
+          </div>
+        )}
 
         {/* CTA Button */}
         <div className="flex gap-3 justify-center">
