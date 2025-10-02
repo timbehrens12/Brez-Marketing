@@ -365,11 +365,11 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-800/90 to-gray-700/90 border border-gray-600/50 rounded-full mb-5 shadow-lg">
-                  <div className="relative flex items-center justify-center">
+                  <div className="relative flex items-center justify-center flex-shrink-0">
                     <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
                     <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <span className="text-white font-bold tracking-wider text-xs uppercase">
+                  <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap">
                     LIMITED TIME OFFER - Try for free for your first 7 days, cancel anytime
                   </span>
                 </div>
