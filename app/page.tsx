@@ -187,7 +187,12 @@ function BrandCountWidget() {
           <h4 className="text-white/90 font-semibold text-xs mb-4 uppercase tracking-wide">What's Included</h4>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             {currentOption.features.map((feature, index) => (
-              <div key={index} className="flex justify-between items-center gap-4 bg-white/5 border border-white/10 rounded-lg p-2.5">
+              <div 
+                key={index} 
+                className={`flex justify-between items-center gap-4 bg-white/5 border border-white/10 rounded-lg p-2.5 ${
+                  currentOption.features.length % 2 !== 0 && index === currentOption.features.length - 1 ? 'col-span-2 max-w-[calc(50%-0.75rem)] mx-auto' : ''
+                }`}
+              >
                 <span className="text-white/70 text-xs">{feature.split(':')[0]}</span>
                 <span className="text-white font-semibold text-xs whitespace-nowrap">
                   {feature.split(':')[1]?.trim()}
@@ -209,14 +214,14 @@ function BrandCountWidget() {
 
       </div>
 
-      {/* See All Tiers Button */}
+      {/* More Details Button */}
       <div className="text-center">
         <Button 
           onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
           variant="outline"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          Compare All Plans
+          More Details
         </Button>
       </div>
     </div>
