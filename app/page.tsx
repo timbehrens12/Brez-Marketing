@@ -338,19 +338,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Video Claim CTA */}
-          <div className="w-full flex justify-center py-4 bg-black/40">
-            <button className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-800/90 to-gray-700/90 hover:from-gray-700/90 hover:to-gray-600/90 border border-gray-600/50 rounded-full transition-all shadow-lg hover:shadow-xl">
-              <div className="relative flex items-center justify-center">
-                <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
-                <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
-              </div>
-              <span className="text-white font-bold tracking-wider text-sm uppercase">
-                CLAIM YOUR VIDEO BELOW
-              </span>
-            </button>
-          </div>
-
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10 relative">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -377,7 +364,15 @@ export default function HomePage() {
             <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
-                <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER - Try for free for your first 7 days, cancel anytime</TagBadge>
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-800/90 to-gray-700/90 border border-gray-600/50 rounded-full mb-5 shadow-lg">
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
+                    <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-white font-bold tracking-wider text-xs uppercase">
+                    LIMITED TIME OFFER - Try for free for your first 7 days, cancel anytime
+                  </span>
+                </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
                   THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1.1em] mx-2" /><br />
                   FOR SIGNING AND SCALING <span className="relative inline-block">
