@@ -1058,7 +1058,7 @@ export default function HomePage() {
                           <div className="space-y-2">
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Brand Connections</span>
-                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.brands}</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.brands}</span>
                             </div>
                             {plan.teamMembers && (
                               <div className="flex justify-between items-center gap-4">
