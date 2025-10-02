@@ -338,6 +338,19 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Video Claim CTA */}
+          <div className="w-full flex justify-center py-4 bg-black/40">
+            <button className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-800/90 to-gray-700/90 hover:from-gray-700/90 hover:to-gray-600/90 border border-gray-600/50 rounded-full transition-all shadow-lg hover:shadow-xl">
+              <div className="relative flex items-center justify-center">
+                <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
+                <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
+              </div>
+              <span className="text-white font-bold tracking-wider text-sm uppercase">
+                CLAIM YOUR VIDEO BELOW
+              </span>
+            </button>
+          </div>
+
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10 relative">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1084,7 +1097,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Premium Report Generation</span>
-                              <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Daily & Monthly</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs text-right">✓ Daily & Monthly</span>
                             </div>
                           </div>
                         </div>
