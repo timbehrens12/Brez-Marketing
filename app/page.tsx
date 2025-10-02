@@ -1008,7 +1008,7 @@ export default function HomePage() {
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
                         ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
-                        : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
+                        : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
                   >
                     {plan.popular && (
