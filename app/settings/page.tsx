@@ -1019,17 +1019,55 @@ export default function SettingsPage() {
 
   // Handle signature file selection
   const handleSignatureChange = async (file: File | null) => {
-    setTempSignatureImage(file)
-    if (file) {
-      try {
-        const base64 = await fileToBase64(file)
-        setSignaturePreview(base64)
-      } catch (error) {
-        console.error('Error converting signature file to base64:', error)
-        toast.error('Failed to process signature image')
-      }
-    } else {
+    if (!file) {
+      setTempSignatureImage(null)
       setSignaturePreview(null)
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (PNG, JPG, SVG)')
+      return
+    }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image file size must be less than 2MB')
+      return
+    }
+
+    setTempSignatureImage(file)
+    try {
+      const base64 = await fileToBase64(file)
+      setSignaturePreview(base64)
+      toast.success('Signature image loaded successfully')
+    } catch (error) {
+      console.error('Error converting signature file to base64:', error)
+      toast.error('Failed to process signature image')
+      setTempSignatureImage(null)
+      setSignaturePreview(null)
+    }
+  }
+
+  // Handle signature drag events
+  const handleSignatureDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleSignatureDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      const file = files[0]
+      if (file.type.startsWith('image/')) {
+        await handleSignatureChange(file)
+      } else {
+        toast.error('Please upload an image file (PNG, JPG, SVG)')
+      }
     }
   }
 
@@ -2031,16 +2069,31 @@ export default function SettingsPage() {
                             </div>
                           ) : (
                             <div className="space-y-3">
-                              <div className="relative group cursor-pointer">
-                                <div className="w-full h-24 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-3 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
-                                  <div className="text-center max-w-full">
-                                    <div className="w-8 h-8 rounded-lg bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors">
-                                      <Upload className="w-4 h-4 text-gray-400" />
+                              <div 
+                                className="relative group cursor-pointer"
+                                onDragOver={handleSignatureDragOver}
+                                onDrop={handleSignatureDrop}
+                              >
+                                <div className="w-full h-32 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-[#333] flex items-center justify-center p-4 transition-all duration-200 hover:border-[#444] hover:bg-[#222]">
+                                  <div className="text-center w-full px-2">
+                                    <div className="w-10 h-10 rounded-xl bg-[#333] flex items-center justify-center mx-auto mb-2 group-hover:bg-[#444] transition-colors">
+                                      <Upload className="w-5 h-5 text-gray-400" />
                                     </div>
-                                    <p className="text-white font-medium text-xs mb-1">Upload Signature</p>
-                                    <p className="text-gray-400 text-xs">
-                                      Handwritten signature
+                                    <p className="text-white font-medium mb-1 text-sm leading-tight">Upload Signature Image</p>
+                                    <p className="text-gray-400 text-xs mb-2 leading-tight">
+                                      Drag & drop or click to browse
                                     </p>
+                                    <div className="flex items-center justify-center gap-1 flex-wrap">
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                        PNG
+                                      </Badge>
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                        JPG
+                                      </Badge>
+                                      <Badge variant="outline" className="bg-[#333] text-gray-300 border-[#444] text-xs">
+                                        SVG
+                                      </Badge>
+                                    </div>
                                   </div>
                                 </div>
                                 <Input
@@ -2053,13 +2106,11 @@ export default function SettingsPage() {
                               </div>
                               <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#333]">
                                 <p className="text-sm text-gray-400 mb-1">
-                                  <strong className="text-white">Tips for best results:</strong>
+                                  <strong className="text-white">Recommended:</strong> Wide format (8:3 ratio) for best results
                                 </p>
-                                <ul className="text-xs text-gray-500 space-y-1">
-                                  <li>• Use a white or transparent background</li>
-                                  <li>• Ensure signature is clearly visible and high contrast</li>
-                                  <li>• Recommended dimensions: 400x150px</li>
-                                </ul>
+                                <p className="text-xs text-gray-500">
+                                  Maximum file size: 2MB • Optimal dimensions: 400x150px • Use transparent or white background
+                                </p>
                               </div>
                             </div>
                           )}
