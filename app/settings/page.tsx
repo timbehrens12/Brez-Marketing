@@ -1091,28 +1091,22 @@ export default function SettingsPage() {
 
   // Handle logo removal
   const handleRemoveLogo = () => {
-    if (logoPreview) {
-      // If it's just a preview, clear it
-      setLogoPreview(null)
-      setTempAgencyLogo(null)
-    } else {
-      // If it's an existing logo, mark for removal and auto-save
-      setRemoveLogo(true)
-      setTimeout(() => handleSaveAgencySettings(), 100)
-    }
+    // Clear preview and temp file
+    setLogoPreview(null)
+    setTempAgencyLogo(null)
+    // Mark for removal and auto-save to remove from database
+    setRemoveLogo(true)
+    setTimeout(() => handleSaveAgencySettings(null, undefined), 100)
   }
 
   // Handle signature removal
   const handleRemoveSignature = () => {
-    if (signaturePreview) {
-      // If it's just a preview, clear it
-      setSignaturePreview(null)
-      setTempSignatureImage(null)
-    } else {
-      // If it's an existing signature, mark for removal and auto-save
-      setRemoveSignature(true)
-      setTimeout(() => handleSaveAgencySettings(), 100)
-    }
+    // Clear preview and temp file
+    setSignaturePreview(null)
+    setTempSignatureImage(null)
+    // Mark for removal and auto-save to remove from database
+    setRemoveSignature(true)
+    setTimeout(() => handleSaveAgencySettings(undefined, null), 100)
   }
 
   // Handle brand image change
