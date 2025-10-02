@@ -29,7 +29,8 @@ function BrandCountWidget() {
         "Outreach Emails: None",
         "AI Chatbot: 5/day",
         "Creative Generation: 10/month",
-        "Custom AI Campaign Optimization: ✓ Weekly"
+        "Custom AI Campaign Optimization: ✓ Weekly",
+        "Premium Report Generation: ✓ Daily & Monthly"
       ],
       whiteLabel: false,
       tier: "dtc-owner"
@@ -47,7 +48,8 @@ function BrandCountWidget() {
         "Outreach Emails: 250/month",
         "AI Chatbot: 10/day",
         "Creative Generation: 25/month",
-        "Custom AI Campaign Optimization: ✓ Weekly"
+        "Custom AI Campaign Optimization: ✓ Weekly",
+        "Premium Report Generation: ✓ Daily & Monthly"
       ],
       whiteLabel: true,
       tier: "beginner"
@@ -66,7 +68,8 @@ function BrandCountWidget() {
         "Outreach Emails: 750/month",
         "AI Chatbot: 25/day",
         "Creative Generation: 75/month",
-        "Custom AI Campaign Optimization: ✓ Weekly"
+        "Custom AI Campaign Optimization: ✓ Weekly",
+        "Premium Report Generation: ✓ Daily & Monthly"
       ],
       whiteLabel: true,
       tier: "growing"
@@ -85,7 +88,8 @@ function BrandCountWidget() {
         "Outreach Emails: 2000/month",
         "AI Chatbot: 50/day",
         "Creative Generation: 150/month",
-        "Custom AI Campaign Optimization: ✓ Weekly"
+        "Custom AI Campaign Optimization: ✓ Weekly",
+        "Premium Report Generation: ✓ Daily & Monthly"
       ],
       whiteLabel: true,
       tier: "multi-brand"
@@ -104,7 +108,8 @@ function BrandCountWidget() {
         "Outreach Emails: 7500/month",
         "AI Chatbot: Unlimited/day",
         "Creative Generation: 500/month",
-        "Custom AI Campaign Optimization: ✓ Weekly"
+        "Custom AI Campaign Optimization: ✓ Weekly",
+        "Premium Report Generation: ✓ Daily & Monthly"
       ],
       whiteLabel: true,
       tier: "enterprise"
@@ -1076,6 +1081,10 @@ export default function HomePage() {
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Custom AI Campaign Optimization</span>
                               <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Weekly</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Premium Report Generation</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Daily & Monthly</span>
                             </div>
                           </div>
                         </div>
