@@ -889,6 +889,12 @@ export default function SettingsPage() {
 
   // Sync temp agency name with context when agency settings change
   useEffect(() => {
+    console.log('📥 Agency settings loaded:', {
+      hasLogo: !!agencySettings.agency_logo_url,
+      logoLength: agencySettings.agency_logo_url?.length,
+      hasSignature: !!agencySettings.signature_image,
+      signatureLength: agencySettings.signature_image?.length
+    })
     setTempAgencyName(agencySettings.agency_name)
     setTempSignatureName(agencySettings.signature_name || '')
     // Only reset removal flags
@@ -1139,6 +1145,13 @@ export default function SettingsPage() {
       } else if (tempSignatureImage) {
         signatureUrl = await fileToBase64(tempSignatureImage)
       }
+
+      console.log('🔍 Saving agency settings:', {
+        hasLogo: !!logoUrl,
+        logoLength: logoUrl?.length,
+        hasSignature: !!signatureUrl,
+        signatureLength: signatureUrl?.length
+      })
 
       const success = await updateAgencySettings({
         agency_name: tempAgencyName.trim(),
