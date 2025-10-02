@@ -7,6 +7,15 @@ export type AIFeatureType =
   | 'ai_consultant_chat'
   | 'marketing_analysis'
   | 'creative_analysis'
+  | 'brand_analysis'           // Brand Health Synopsis
+  | 'task_generation'           // Task Generator
+  | 'campaign_analysis'         // Campaign Analysis
+  | 'smart_response'            // Smart Response
+  | 'enhanced_campaign_analysis' // Enhanced Campaign Analysis  
+  | 'creative_generation'       // Creative Generation
+  | 'lead_gen_enrichment'       // Lead Gen Enrichment
+  | 'lead_gen_ecommerce'        // E-commerce Lead Gen
+  | 'outreach_messages'         // Outreach Message Generator
 
 export interface AIUsageStatus {
   canUse: boolean
@@ -25,7 +34,7 @@ export interface AIFeatureLimits {
 // Define limits for each AI feature
 const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
   campaign_recommendations: {
-    cooldownHours: 24, // 24-hour cooldown
+    cooldownHours: 24, // 24-hour cooldown (weekly)
     requiresPreviousRecommendations: true
   },
   health_report: {
@@ -39,6 +48,33 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
   },
   creative_analysis: {
     dailyLimit: 10 // 10 creative analyses per day
+  },
+  brand_analysis: {
+    dailyLimit: 50 // 50 brand synopses per day (high limit for frequent refreshes)
+  },
+  task_generation: {
+    dailyLimit: 20 // 20 task generations per day
+  },
+  campaign_analysis: {
+    dailyLimit: 30 // 30 campaign analyses per day
+  },
+  smart_response: {
+    dailyLimit: 50 // 50 smart responses per day
+  },
+  enhanced_campaign_analysis: {
+    dailyLimit: 30 // 30 enhanced analyses per day
+  },
+  creative_generation: {
+    dailyLimit: 20 // 20 creative generations per day
+  },
+  lead_gen_enrichment: {
+    dailyLimit: 100 // 100 lead enrichments per day
+  },
+  lead_gen_ecommerce: {
+    dailyLimit: 50 // 50 ecommerce lead generations per day
+  },
+  outreach_messages: {
+    dailyLimit: 100 // 100 outreach messages per day
   }
 }
 
@@ -284,7 +320,16 @@ export class AIUsageService {
         health_report: { canUse: true },
         ai_consultant_chat: { canUse: true },
         marketing_analysis: { canUse: true },
-        creative_analysis: { canUse: true }
+        creative_analysis: { canUse: true },
+        brand_analysis: { canUse: true },
+        task_generation: { canUse: true },
+        campaign_analysis: { canUse: true },
+        smart_response: { canUse: true },
+        enhanced_campaign_analysis: { canUse: true },
+        creative_generation: { canUse: true },
+        lead_gen_enrichment: { canUse: true },
+        lead_gen_ecommerce: { canUse: true },
+        outreach_messages: { canUse: true }
       }
 
       // Get brand owner's user ID for checking usage

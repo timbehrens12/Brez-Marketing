@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { aiUsageService } from '@/lib/services/ai-usage-service';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -20,6 +21,17 @@ export async function POST(req: NextRequest) {
     // Handle brand synopsis generation
     if (type === 'brand_synopsis' && data) {
       const brandData = data;
+      
+      // Record AI usage for brand analysis
+      if (brandData.id) {
+        await aiUsageService.recordUsage(brandData.id, userId, 'brand_analysis', {
+          brandName: brandData.name,
+          connections: brandData.connections,
+          roas: brandData.roas,
+          spend: brandData.spend,
+          revenue: brandData.revenue
+        });
+      }
       
       // Create a specialized prompt for brand synopsis
       const synopsisPrompt = `Generate a concise, actionable brand performance synopsis for ${brandData.name}. 
