@@ -879,7 +879,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Users,
                     brands: 1,
-                    teamMembers: 1,
+                    teamMembers: null,
                     leadGen: 0,
                     outreach: 0,
                     aiChats: 5,
@@ -904,7 +904,7 @@ export default function HomePage() {
                     popular: true,
                     icon: Rocket,
                     brands: 1,
-                    teamMembers: 1,
+                    teamMembers: null,
                     leadGen: 100,
                     outreach: 250,
                     aiChats: 10,
@@ -1016,37 +1016,37 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <div className="p-6 flex flex-col h-full">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
-                          <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                          <p className="text-white/60 text-xs mt-1">{plan.description}</p>
-                        </div>
-                      </div>
-                      <div className="mb-6">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-black text-white">
-                            ${billingInterval === 'yearly' ? Math.round(plan.price * 0.9) : plan.price}
-                          </span>
-                          <span className="text-white/40 text-sm">/{billingInterval === 'yearly' ? 'mo' : 'mo'}</span>
-                        </div>
-                        {billingInterval === 'yearly' && (
-                          <div className="text-xs text-white/50 mt-1">
-                            Billed ${Math.round(plan.price * 0.9 * 12)}/year
+                      <div className="p-6 flex flex-col h-full">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
+                            <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                           </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-lg text-white/50 line-through">
-                            ${billingInterval === 'yearly' ? plan.price : plan.originalPrice}
-                          </span>
-                          <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                            Save ${billingInterval === 'yearly' ? Math.round(plan.price * 0.1) : (plan.originalPrice - plan.price)}
-                          </span>
+                          <div>
+                            <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                            <p className="text-white/60 text-xs mt-1">{plan.description}</p>
+                          </div>
                         </div>
-                      </div>
+                        <div className="mb-6">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">
+                              ${billingInterval === 'yearly' ? Math.round(plan.price * 0.9) : plan.price}
+                            </span>
+                            <span className="text-white/40 text-sm">/mo</span>
+                          </div>
+                          {billingInterval === 'yearly' && (
+                            <div className="text-xs text-white/50 mt-1">
+                              Billed ${Math.round(plan.price * 0.9 * 12)}/year
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-lg text-white/50 line-through">
+                              ${billingInterval === 'yearly' ? plan.price : plan.originalPrice}
+                            </span>
+                            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                              Save ${billingInterval === 'yearly' ? Math.round(plan.price * 0.1) : (plan.originalPrice - plan.price)}
+                            </span>
+                          </div>
+                        </div>
                       
                       {/* Usage Limits */}
                       <div className="flex-1">
@@ -1057,7 +1057,7 @@ export default function HomePage() {
                               <span className="text-white/70 text-xs">Brand Connections</span>
                               <span className="text-white font-semibold text-xs">{plan.brands}</span>
                             </div>
-                            {plan.teamMembers && plan.teamMembers !== 1 && (
+                            {plan.teamMembers && (
                               <div className="flex justify-between items-center">
                                 <span className="text-white/70 text-xs">Team Member Add-Ons</span>
                                 <span className="text-white font-semibold text-xs">Up to {plan.teamMembers}</span>
