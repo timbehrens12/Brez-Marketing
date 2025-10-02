@@ -820,6 +820,7 @@ export default function HomePage() {
                     creativeGen: 10,
                     features: [
                       "Brand Analytics & Reports",
+                      "Weekly AI Marketing Analysis",
                       "AI Marketing Chatbot", 
                       "Campaign Optimization",
                       "Shopify Integration",
@@ -844,6 +845,7 @@ export default function HomePage() {
                     creativeGen: 25,
                     features: [
                       "Everything in DTC Owner",
+                      "Weekly AI Marketing Analysis",
                       "Lead Generation",
                       "Outreach CRM",
                       "White-Label Reports",
@@ -867,6 +869,7 @@ export default function HomePage() {
                     creativeGen: 75,
                     features: [
                       "Everything in Beginner",
+                      "Weekly AI Marketing Analysis",
                       "Multi-Brand Management",
                       "Higher AI Usage Limits",
                       "More Lead Generation Quotas",
@@ -889,6 +892,7 @@ export default function HomePage() {
                     creativeGen: 150,
                     features: [
                       "Everything in Growing",
+                      "Weekly AI Marketing Analysis",
                       "Team Collaboration (15 users)",
                       "Even Higher AI Usage Limits",
                       "Maximum Lead Generation Quotas",
@@ -911,6 +915,7 @@ export default function HomePage() {
                     creativeGen: 500,
                     features: [
                       "Everything in Multi-Brand",
+                      "Weekly AI Marketing Analysis",
                       "Unlimited Team Members",
                       "Unlimited AI Chatbot Usage",
                       "Maximum Creative Generation",
