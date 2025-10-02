@@ -1008,10 +1008,10 @@ export default function SettingsPage() {
         console.log('✅ Logo converted to base64, length:', base64.length)
         setLogoPreview(base64)
         setTempAgencyLogo(file)
-        // Auto-save after loading
+        // Auto-save after loading, passing the base64 data directly
         setTimeout(() => {
           console.log('⏰ Auto-save triggered for logo')
-          handleSaveAgencySettings()
+          handleSaveAgencySettings(base64, undefined)
         }, 100)
       } catch (error) {
         console.error('Error converting file to base64:', error)
@@ -1056,7 +1056,7 @@ export default function SettingsPage() {
         // Auto-save with the base64 data directly
         setTimeout(() => {
           console.log('⏰ Auto-save triggered for signature')
-          handleSaveAgencySettings()
+          handleSaveAgencySettings(undefined, base64)
         }, 100)
       } catch (error) {
         console.error('Error converting signature file to base64:', error)
@@ -1132,7 +1132,7 @@ export default function SettingsPage() {
   }
 
   // Handle agency settings save
-  const handleSaveAgencySettings = async () => {
+  const handleSaveAgencySettings = async (logoBase64?: string | null, signatureBase64?: string | null) => {
     if (!tempAgencyName.trim()) {
       toast.error('Agency name is required')
       return
@@ -1147,6 +1147,9 @@ export default function SettingsPage() {
       // Handle logo changes
       if (removeLogo) {
         logoUrl = null
+      } else if (logoBase64 !== undefined) {
+        // Use the passed base64 if provided
+        logoUrl = logoBase64
       } else if (logoPreview) {
         // Use the preview if available (already converted to base64)
         logoUrl = logoPreview
@@ -1157,6 +1160,9 @@ export default function SettingsPage() {
       // Handle signature changes
       if (removeSignature) {
         signatureUrl = null
+      } else if (signatureBase64 !== undefined) {
+        // Use the passed base64 if provided
+        signatureUrl = signatureBase64
       } else if (signaturePreview) {
         // Use the preview if available (already converted to base64)
         signatureUrl = signaturePreview
