@@ -26,7 +26,7 @@ function BrandCountWidget() {
       features: [
         "Brand Connections: Up to 1",
         "Lead Generation: None",
-        "Outreach Emails: None",
+        "Outreach Messages: None",
         "AI Chatbot: 5/day",
         "Creative Generation: 10/month",
         "Custom AI Campaign Optimization: ✓ Weekly",
@@ -45,7 +45,7 @@ function BrandCountWidget() {
       features: [
         "Brand Connections: Up to 1",
         "Lead Generation: 100/month",
-        "Outreach Emails: 250/month",
+        "Outreach Messages: 250/month",
         "AI Chatbot: 10/day",
         "Creative Generation: 25/month",
         "Custom AI Campaign Optimization: ✓ Weekly",
@@ -65,7 +65,7 @@ function BrandCountWidget() {
         "Brand Connections: Up to 5",
         "Team Member Add-Ons: Up to 1",
         "Lead Generation: 300/month",
-        "Outreach Emails: 750/month",
+        "Outreach Messages: 750/month",
         "AI Chatbot: 25/day",
         "Creative Generation: 75/month",
         "Custom AI Campaign Optimization: ✓ Weekly",
@@ -85,7 +85,7 @@ function BrandCountWidget() {
         "Brand Connections: Up to 15",
         "Team Member Add-Ons: Up to 3",
         "Lead Generation: 750/month",
-        "Outreach Emails: 2000/month",
+        "Outreach Messages: 2000/month",
         "AI Chatbot: 50/day",
         "Creative Generation: 150/month",
         "Custom AI Campaign Optimization: ✓ Weekly",
@@ -105,7 +105,7 @@ function BrandCountWidget() {
         "Brand Connections: Up to 25",
         "Team Member Add-Ons: Up to 10",
         "Lead Generation: 2500/month",
-        "Outreach Emails: 7500/month",
+        "Outreach Messages: 7500/month",
         "AI Chatbot: Unlimited/day",
         "Creative Generation: 500/month",
         "Custom AI Campaign Optimization: ✓ Weekly",
@@ -1065,7 +1065,7 @@ export default function HomePage() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
-                              <span className="text-white/70 text-xs">Outreach Emails</span>
+                              <span className="text-white/70 text-xs">Outreach Messages</span>
                               <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
                                 {plan.outreach === 0 ? "None" : `${plan.outreach}/month`}
                               </span>
