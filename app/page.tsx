@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, X, ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, TrendingDown, Target, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail } from "lucide-react"
+import { X, Zap, Shield, Users, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail, ArrowRight, Check, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,183 +10,164 @@ import { useState } from "react"
 
 const BRAND_RED = "#FF2A2A"
 
-// Plan Recommendation Quiz Component
-function PlanRecommendationQuiz() {
-  const [showResult, setShowResult] = useState(false)
-  const [selectedSituation, setSelectedSituation] = useState<string>("")
+// Interactive Slider Plan Recommendation Widget
+function BrandCountWidget() {
+  const [sliderValue, setSliderValue] = useState(0)
 
-  const handleAnswer = (value: string) => {
-    setSelectedSituation(value)
-    setShowResult(true)
-  }
-
-  const getRecommendation = () => {
-    // Map directly to pricing tiers based on brand count
-    switch (selectedSituation) {
-      case "single-brand":
-        return {
-          plan: "DTC Owner",
-          reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
-          price: "$67/mo",
-          originalPrice: "$97/mo",
-          features: ["1 Brand", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
-        }
-      
-      case "aspiring-freelancer":
-        return {
-          plan: "Beginner",
-          reason: "Includes lead generation and outreach tools to help you land your first freelance brandscaling clients.",
-          price: "$97/mo",
-          originalPrice: "$147/mo",
-          features: ["1 Brand", "100 leads/month", "250 outreach emails", "Client management tools"]
-        }
-      
-      case "few-clients":
-        return {
-          plan: "Growing",
-          reason: "Perfect for managing multiple freelance brandscaling clients efficiently.",
-          price: "$397/mo",
-          originalPrice: "$597/mo",
-          features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Higher AI usage limits"]
-        }
-      
-      case "established-agency":
-        return {
-          plan: "Multi-Brand",
-          reason: "Built for agencies managing multiple clients with team collaboration features.",
-          price: "$697/mo",
-          originalPrice: "$997/mo",
-          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Maximum AI usage limits"]
-        }
-      
-      case "enterprise":
-        return {
-          plan: "Enterprise",
-          reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
-          price: "$1,337/mo",
-          originalPrice: "$1,997/mo",
-          features: ["Up to 25 brands", "Unlimited AI chatbot", "Priority email support", "Advanced usage analytics"]
-        }
-      
-      default:
-        return {
-          plan: "Beginner",
-          reason: "A great starting point with all essential features for freelance brandscaling.",
-          price: "$97/mo",
-          originalPrice: "$147/mo",
-          features: ["1 Brand", "Lead generation", "Client management", "White-label reports"]
-        }
+  // Define the slider options and corresponding plan recommendations
+  const options = [
+    {
+      label: "1 brand",
+      sublabel: "(my own)",
+      plan: "DTC Owner",
+      price: "$67/mo",
+      originalPrice: "$97/mo",
+      description: "Perfect for tracking your own business performance with essential analytics and reporting.",
+      features: ["1 Brand Dashboard", "Shopify & Meta Integration", "Basic AI Marketing Tools", "Daily Performance Reports"],
+      tier: "dtc-owner"
+    },
+    {
+      label: "0 clients",
+      sublabel: "(want to start)",
+      plan: "Beginner",
+      price: "$97/mo",
+      originalPrice: "$147/mo",
+      description: "Everything you need to land and manage your first freelance brandscaling clients with lead generation and outreach automation.",
+      features: ["1 Brand + Lead Gen", "100 Leads per Month", "250 Outreach Emails", "Client Management Tools", "White-Label Reports"],
+      tier: "beginner"
+    },
+    {
+      label: "2-5 clients",
+      sublabel: "(growing)",
+      plan: "Growing",
+      price: "$397/mo",
+      originalPrice: "$597/mo",
+      description: "Scale your freelance brandscaling business with multi-client management, increased lead generation, and advanced automation.",
+      features: ["Up to 5 Brands", "300 Leads per Month", "750 Outreach Emails", "Advanced AI Tools", "Team Collaboration"],
+      tier: "growing"
+    },
+    {
+      label: "6-15 clients",
+      sublabel: "(agency)",
+      plan: "Multi-Brand",
+      price: "$697/mo",
+      originalPrice: "$997/mo",
+      description: "Full agency toolkit with team collaboration, white-label branding, and maximum automation for managing multiple clients efficiently.",
+      features: ["Up to 15 Brands", "750 Leads per Month", "2,500 Outreach Emails", "Priority Support", "Advanced Analytics"],
+      tier: "multi-brand"
+    },
+    {
+      label: "16+ clients",
+      sublabel: "(enterprise)",
+      plan: "Enterprise",
+      price: "$1,337/mo",
+      originalPrice: "$1,997/mo",
+      description: "Enterprise-grade platform for large agencies with unlimited features, dedicated support, and maximum performance capabilities.",
+      features: ["Up to 25 Brands", "Unlimited AI Chatbot", "5,000 Outreach Emails", "Dedicated Account Manager", "Custom Integrations"],
+      tier: "enterprise"
     }
-  }
+  ]
 
-  const resetQuiz = () => {
-    setSelectedSituation("")
-    setShowResult(false)
-  }
-
-  if (showResult) {
-    const recommendation = getRecommendation()
-    return (
-      <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8 text-center">
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Target className="w-8 h-8 text-[var(--brand-red)]" />
-          </div>
-          <h3 className="text-2xl font-bold mb-2">We recommend the <span className="text-[var(--brand-red)]">{recommendation.plan}</span> plan</h3>
-          <p className="text-white/70 mb-4">{recommendation.reason}</p>
-          <div className="mb-6">
-            <div className="text-3xl font-black text-[var(--brand-red)] mb-2">{recommendation.price}</div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-lg text-white/50 line-through">{recommendation.originalPrice}</span>
-              <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                Limited Time
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {recommendation.features.map((feature, index) => (
-            <div key={index} className="flex items-center text-left">
-              <Check className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
-              <span className="text-white/80">{feature}</span>
-            </div>
-          ))}
-        </div>
-        
-        <div className="flex gap-4 justify-center">
-          <Button 
-            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
-          >
-            Get {recommendation.plan} <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-            variant="outline"
-            className="border-white/30 text-white hover:bg-white/10"
-          >
-            See All Tiers
-          </Button>
-          <Button 
-            onClick={resetQuiz}
-            variant="outline"
-            className="border-white/30 text-white hover:bg-white/10"
-          >
-            Retake Quiz
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  const currentOption = options[sliderValue]
 
   return (
     <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8">
       {/* Question */}
-      <h3 className="text-xl font-bold text-white mb-6">How many brands do you currently manage?</h3>
+      <h3 className="text-2xl font-bold text-white mb-8 text-center">How many brands do you currently manage?</h3>
 
-      {/* Options */}
-      <div className="space-y-3">
-        <button
-          onClick={() => handleAnswer("single-brand")}
-          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-        >
-          <span className="text-white group-hover:text-white">1 brand (my own business)</span>
-        </button>
-        <button
-          onClick={() => handleAnswer("aspiring-freelancer")}
-          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-        >
-          <span className="text-white group-hover:text-white">0 clients (want to start freelance brandscaling)</span>
-        </button>
-        <button
-          onClick={() => handleAnswer("few-clients")}
-          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-        >
-          <span className="text-white group-hover:text-white">2-5 freelance brandscaling clients</span>
-        </button>
-        <button
-          onClick={() => handleAnswer("established-agency")}
-          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-        >
-          <span className="text-white group-hover:text-white">6-15 freelance brandscaling clients</span>
-        </button>
-        <button
-          onClick={() => handleAnswer("enterprise")}
-          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-        >
-          <span className="text-white group-hover:text-white">16+ freelance brandscaling clients</span>
-        </button>
+      {/* Rectangular Slider with Labels Inside */}
+      <div className="mb-10">
+        <div className="relative">
+          {/* Slider Track Container */}
+          <div className="relative h-16 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            {/* Active Selection Overlay */}
+            <div 
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[var(--brand-red)] to-[var(--brand-red)]/90 transition-all duration-300 border-r-2 border-[var(--brand-red)]"
+              style={{ width: `${((sliderValue + 1) / options.length) * 100}%` }}
+            />
+
+            {/* Option Buttons */}
+            <div className="relative h-full grid grid-cols-5">
+              {options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSliderValue(index)}
+                  className={`relative h-full border-r border-white/10 last:border-r-0 transition-all duration-300 flex flex-col items-center justify-center px-2 ${
+                    sliderValue === index ? 'bg-transparent' : 'bg-transparent hover:bg-white/5'
+                  }`}
+                >
+                  <div className={`text-xs font-bold transition-all duration-300 text-center ${
+                    sliderValue === index ? 'text-white scale-105' : 'text-white/60'
+                  }`}>
+                    {option.label}
+                  </div>
+                  <div className={`text-[10px] transition-all duration-300 text-center ${
+                    sliderValue === index ? 'text-white/90' : 'text-white/40'
+                  }`}>
+                    {option.sublabel}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Skip Quiz Option */}
-      <div className="mt-6 text-center">
+      {/* Enhanced Recommendation Card */}
+      <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full mb-4">
+            <Target className="w-4 h-4 text-[var(--brand-red)]" />
+            <span className="text-[var(--brand-red)] text-sm font-bold uppercase tracking-wide">Perfect Match</span>
+          </div>
+          <h4 className="text-4xl font-black text-white mb-2">{currentOption.plan}</h4>
+          <p className="text-white/60 text-sm mb-6 max-w-2xl mx-auto">{currentOption.description}</p>
+          
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-5xl font-black text-[var(--brand-red)] mb-1">{currentOption.price}</div>
+              <div className="text-sm text-white/50 line-through">{currentOption.originalPrice}</div>
+            </div>
+            <div className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl">
+              <div className="text-green-400 text-xs font-bold uppercase tracking-wide">Limited Time</div>
+              <div className="text-green-300 text-2xl font-black">
+                Save {Math.round((1 - parseFloat(currentOption.price.replace(/[$,]/g, '')) / parseFloat(currentOption.originalPrice.replace(/[$,]/g, ''))) * 100)}%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 gap-3 mb-6">
+          {currentOption.features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
+              <div className="w-5 h-5 rounded-full bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-[var(--brand-red)]" />
+              </div>
+              <span className="text-white/90 text-sm font-medium">{feature}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA Button */}
+        <div className="flex gap-3 justify-center">
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black text-base px-8 py-6 shadow-[0_8px_0_rgba(0,0,0,.6)]"
+          >
+            Get {currentOption.plan} Now <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* See All Tiers Button */}
+      <div className="text-center">
         <Button 
           onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
           variant="outline"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          See All Tiers Instead
+          Compare All Plans
         </Button>
       </div>
     </div>
@@ -790,7 +771,7 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <PlanRecommendationQuiz />
+              <BrandCountWidget />
             </div>
           </section>
 
