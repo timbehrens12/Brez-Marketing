@@ -987,6 +987,8 @@ export default function SettingsPage() {
       try {
         const base64 = await fileToBase64(file)
         setLogoPreview(base64)
+        // Auto-save after loading
+        setTimeout(() => handleSaveAgencySettings(), 100)
       } catch (error) {
         console.error('Error converting file to base64:', error)
         toast.error('Failed to process image file')
@@ -1024,6 +1026,8 @@ export default function SettingsPage() {
       try {
         const base64 = await fileToBase64(file)
         setSignaturePreview(base64)
+        // Auto-save after loading
+        setTimeout(() => handleSaveAgencySettings(), 100)
       } catch (error) {
         console.error('Error converting signature file to base64:', error)
         toast.error('Failed to process signature image')
@@ -1061,8 +1065,9 @@ export default function SettingsPage() {
       setLogoPreview(null)
       setTempAgencyLogo(null)
     } else {
-      // If it's an existing logo, mark for removal
+      // If it's an existing logo, mark for removal and auto-save
       setRemoveLogo(true)
+      setTimeout(() => handleSaveAgencySettings(), 100)
     }
   }
 
@@ -1073,8 +1078,9 @@ export default function SettingsPage() {
       setSignaturePreview(null)
       setTempSignatureImage(null)
     } else {
-      // If it's an existing signature, mark for removal
+      // If it's an existing signature, mark for removal and auto-save
       setRemoveSignature(true)
+      setTimeout(() => handleSaveAgencySettings(), 100)
     }
   }
 
@@ -1819,13 +1825,14 @@ export default function SettingsPage() {
                             </Badge>
                           </div>
                           <div className="relative">
-                            <Input 
-                              value={tempAgencyName}
-                              onChange={(e) => setTempAgencyName(e.target.value)}
-                              placeholder="Enter your agency name"
-                              className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
-                              disabled={agencyLoading || isSavingAgency}
-                            />
+                          <Input 
+                            value={tempAgencyName}
+                            onChange={(e) => setTempAgencyName(e.target.value)}
+                            onBlur={handleSaveAgencySettings}
+                            placeholder="Enter your agency name"
+                            className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
+                            disabled={agencyLoading || isSavingAgency}
+                          />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               {tempAgencyName && (
                                 <div className="w-5 h-5 rounded-full bg-gray-500/20 flex items-center justify-center">
@@ -1977,6 +1984,7 @@ export default function SettingsPage() {
                           <Input 
                             value={tempSignatureName}
                             onChange={(e) => setTempSignatureName(e.target.value)}
+                            onBlur={handleSaveAgencySettings}
                             placeholder="Enter your full legal name"
                             className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
                             disabled={agencyLoading || isSavingAgency}
@@ -2097,45 +2105,6 @@ export default function SettingsPage() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Save Settings */}
-                  <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-white mb-1">Save Your Changes</h3>
-                          <p className="text-gray-400 text-sm">
-                            Apply your branding across all reports, contracts, and platform features
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {(tempAgencyName !== agencySettings.agency_name || tempAgencyLogo || tempSignatureImage || tempSignatureName !== (agencySettings.signature_name || '') || removeLogo || removeSignature) && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                              <Clock className="w-3 h-3 text-orange-400" />
-                              <span className="text-orange-400 text-sm">Unsaved changes</span>
-                            </div>
-                          )}
-                          <Button
-                            onClick={handleSaveAgencySettings}
-                            disabled={agencyLoading || isSavingAgency || (tempAgencyName === agencySettings.agency_name && !tempAgencyLogo && !tempSignatureImage && tempSignatureName === (agencySettings.signature_name || '') && !removeLogo && !removeSignature)}
-                            className="bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black font-medium px-6 py-2 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isSavingAgency ? (
-                              <>
-                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                                Saving Changes...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="w-4 h-4 mr-2" />
-                                Save Agency Settings
-                              </>
-                            )}
-                          </Button>
                         </div>
                       </div>
                     </CardContent>
