@@ -1692,10 +1692,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                           Status: {optimizationAvailable ? 'Ready for Review' : 'Used'} • Resets {(() => {
                             const now = new Date()
-                            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-                            const diff = nextMonth.getTime() - now.getTime()
+                            const dayOfWeek = now.getDay()
+                            const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) // If Sunday, 1 day. Otherwise, days until next Monday
+                            const nextMonday = new Date(now)
+                            nextMonday.setDate(now.getDate() + daysUntilMonday)
+                            nextMonday.setHours(0, 0, 0, 0)
+                            const diff = nextMonday.getTime() - now.getTime()
                             const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-                            return `in ${days}d`
+                            return days <= 1 ? 'Tomorrow' : `in ${days}d`
                           })()}
                         </div>
                         {availability?.lastOptimizationDate && (
