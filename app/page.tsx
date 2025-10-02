@@ -670,9 +670,15 @@ export default function HomePage() {
               <div className="rounded-2xl border border-white/15 p-8 text-center bg-[linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))]">
                 <TagBadge tone="red" className="mb-3">White-Label</TagBadge>
                 <h3 className="text-2xl font-bold mb-3">Your Clients Think It's Your Software</h3>
-                <p className="text-white/80 text-lg max-w-4xl mx-auto font-mono">
+                <p className="text-white/80 text-lg max-w-4xl mx-auto font-mono mb-6">
                   Complete white-label solution means you can sell this as your own proprietary platform. Charge premium prices for "your" custom-built marketing software while we handle all the backend infrastructure.
                 </p>
+                <Button 
+                  onClick={scrollToPricing}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                >
+                  SIGN YOUR FIRST CLIENT <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
               </div>
             </div>
           </section>
@@ -763,12 +769,20 @@ export default function HomePage() {
               </div>
 
               <div className="text-center mt-12">
-                <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4">
+                <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4 mb-8">
                   <TrendingDown className="w-6 h-6 text-green-400" />
                   <div>
                     <div className="text-green-300 font-bold text-lg">Save $2,780+ per month</div>
                     <div className="text-green-200 text-sm">That's $33,360+ per year in tool costs alone</div>
                   </div>
+                </div>
+                <div>
+                  <Button 
+                    onClick={scrollToPricing}
+                    className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                  >
+                    SIGN YOUR FIRST CLIENT <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -823,6 +837,14 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="text-center mt-12">
+                <Button 
+                  onClick={scrollToPricing}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                >
+                  SIGN YOUR FIRST CLIENT <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
               </div>
             </div>
           </section>
