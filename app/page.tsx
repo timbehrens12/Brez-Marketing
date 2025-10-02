@@ -294,6 +294,7 @@ function Ribbon({ children }: { children: React.ReactNode }) {
 export default function HomePage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [activePreview, setActivePreview] = useState('analytics')
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly')
 
   const scrollToPricing = () => {
     const pricingSection = document.getElementById('pricing')
@@ -849,7 +850,26 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
+              {/* Billing Toggle */}
+              <div className="flex items-center justify-center gap-4 mt-8 mb-6">
+                <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                  className="relative w-14 h-7 bg-white/10 rounded-full border border-white/20 transition-colors hover:bg-white/15"
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
+                </button>
+                <span className={`text-sm font-medium transition-colors ${billingInterval === 'yearly' ? 'text-white' : 'text-white/50'}`}>
+                  Yearly
+                  <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
+                    Save 10%
+                  </span>
+                </span>
+              </div>
+
+              <div className="grid lg:grid-cols-5 gap-6 items-start">
                 {[
                   {
                     name: "DTC Owner",
@@ -909,7 +929,7 @@ export default function HomePage() {
                     popular: false,
                     icon: TrendingUp,
                     brands: 5,
-                    teamMembers: 3,
+                    teamMembers: 1,
                     leadGen: 300,
                     outreach: 750,
                     aiChats: 25,
@@ -934,7 +954,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Zap,
                     brands: 15,
-                    teamMembers: 5,
+                    teamMembers: 3,
                     leadGen: 750,
                     outreach: 2000,
                     aiChats: 50,
@@ -960,7 +980,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Award,
                     brands: 25,
-                    teamMembers: "Unlimited",
+                    teamMembers: 10,
                     leadGen: 2500,
                     outreach: 7500,
                     aiChats: "Unlimited",
@@ -997,24 +1017,33 @@ export default function HomePage() {
                     )}
 
                     <div className="p-6 flex flex-col h-full">
-                      <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
                           <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                          <p className="text-white/60 text-xs">{plan.description}</p>
+                          <p className="text-white/60 text-xs mt-1">{plan.description}</p>
                         </div>
                       </div>
                       <div className="mb-6">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-black text-white">${plan.price}</span>
-                          <span className="text-white/40 text-sm">/mo</span>
+                          <span className="text-4xl font-black text-white">
+                            ${billingInterval === 'yearly' ? Math.round(plan.price * 0.9) : plan.price}
+                          </span>
+                          <span className="text-white/40 text-sm">/{billingInterval === 'yearly' ? 'mo' : 'mo'}</span>
                         </div>
+                        {billingInterval === 'yearly' && (
+                          <div className="text-xs text-white/50 mt-1">
+                            Billed ${Math.round(plan.price * 0.9 * 12)}/year
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-lg text-white/50 line-through">${plan.originalPrice}</span>
+                          <span className="text-lg text-white/50 line-through">
+                            ${billingInterval === 'yearly' ? plan.price : plan.originalPrice}
+                          </span>
                           <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                            Save ${plan.originalPrice - plan.price}
+                            Save ${billingInterval === 'yearly' ? Math.round(plan.price * 0.1) : (plan.originalPrice - plan.price)}
                           </span>
                         </div>
                       </div>
@@ -1025,13 +1054,13 @@ export default function HomePage() {
                           <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-white/70 text-xs">Brands</span>
+                              <span className="text-white/70 text-xs">Brand Connections</span>
                               <span className="text-white font-semibold text-xs">{plan.brands}</span>
                             </div>
-                            {plan.teamMembers && (
+                            {plan.teamMembers && plan.teamMembers !== 1 && (
                               <div className="flex justify-between items-center">
-                                <span className="text-white/70 text-xs">Team Members</span>
-                                <span className="text-white font-semibold text-xs">{plan.teamMembers}</span>
+                                <span className="text-white/70 text-xs">Team Member Add-Ons</span>
+                                <span className="text-white font-semibold text-xs">Up to {plan.teamMembers}</span>
                               </div>
                             )}
                             <div className="flex justify-between items-center">
@@ -1055,8 +1084,8 @@ export default function HomePage() {
                               <span className="text-white font-semibold text-xs">{plan.creativeGen}/month</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-white/70 text-xs">Weekly AI Analysis</span>
-                              <span className="text-[var(--brand-red)] font-semibold text-xs">✓ Included</span>
+                              <span className="text-white/70 text-xs">AI Campaign Analysis</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs">✓ Weekly</span>
                             </div>
                           </div>
                         </div>
