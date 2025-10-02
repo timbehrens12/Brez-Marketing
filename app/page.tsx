@@ -24,14 +24,12 @@ function BrandCountWidget() {
       originalPrice: "$97/mo",
       description: "Perfect for tracking your own business performance with essential analytics and reporting.",
       features: [
-        "Brand Analytics & Reports",
-        "Weekly AI Marketing Analysis",
-        "AI Marketing Chatbot (5/day)",
-        "Campaign Optimization",
-        "Shopify Integration",
-        "Meta Ads Analytics",
-        "Creative Generation (10/mo)",
-        "Basic Performance Reports"
+        "Brand Connections: Up to 1",
+        "Lead Generation: None",
+        "Outreach Emails: None",
+        "AI Chatbot: 5/day",
+        "Creative Generation: 10/month",
+        "Custom AI Campaign Optimization: ✓ Weekly"
       ],
       whiteLabel: false,
       tier: "dtc-owner"
@@ -42,16 +40,14 @@ function BrandCountWidget() {
       plan: "Beginner",
       price: "$97/mo",
       originalPrice: "$147/mo",
-      description: "Everything you need to land and manage your first freelance brandscaling clients with lead generation and outreach automation.",
+      description: "Everything you need to land and manage your first freelance brandscaling client with lead generation and outreach automation.",
       features: [
-        "Everything in DTC Owner",
-        "Weekly AI Marketing Analysis",
-        "Lead Generation (100/mo)",
-        "Outreach CRM (250 emails/mo)",
-        "White-Label Reports",
-        "Contract Generation AI",
-        "Ad Creative Studio (25/mo)",
-        "AI Chatbot (10/day)"
+        "Brand Connections: Up to 1",
+        "Lead Generation: 100/month",
+        "Outreach Emails: 250/month",
+        "AI Chatbot: 10/day",
+        "Creative Generation: 25/month",
+        "Custom AI Campaign Optimization: ✓ Weekly"
       ],
       whiteLabel: true,
       tier: "beginner"
@@ -64,14 +60,13 @@ function BrandCountWidget() {
       originalPrice: "$597/mo",
       description: "Scale your freelance brandscaling business with multi-client management, increased lead generation, and advanced automation.",
       features: [
-        "Everything in Beginner",
-        "Weekly AI Marketing Analysis",
-        "Up to 5 Brands",
-        "Lead Generation (300/mo)",
-        "Outreach CRM (750 emails/mo)",
-        "Higher AI Usage (25 chats/day)",
-        "Creative Generation (75/mo)",
-        "White-Label Reports"
+        "Brand Connections: Up to 5",
+        "Team Member Add-Ons: Up to 1",
+        "Lead Generation: 300/month",
+        "Outreach Emails: 750/month",
+        "AI Chatbot: 25/day",
+        "Creative Generation: 75/month",
+        "Custom AI Campaign Optimization: ✓ Weekly"
       ],
       whiteLabel: true,
       tier: "growing"
@@ -84,15 +79,13 @@ function BrandCountWidget() {
       originalPrice: "$997/mo",
       description: "Full agency toolkit with team collaboration, white-label branding, and maximum automation for managing multiple clients efficiently.",
       features: [
-        "Everything in Growing",
-        "Weekly AI Marketing Analysis",
-        "Up to 15 Brands",
-        "Team Collaboration (15 users)",
-        "Lead Generation (750/mo)",
-        "Outreach CRM (2,000 emails/mo)",
-        "AI Chatbot (50/day)",
-        "Creative Generation (150/mo)",
-        "White-Label Reports"
+        "Brand Connections: Up to 15",
+        "Team Member Add-Ons: Up to 3",
+        "Lead Generation: 750/month",
+        "Outreach Emails: 2000/month",
+        "AI Chatbot: 50/day",
+        "Creative Generation: 150/month",
+        "Custom AI Campaign Optimization: ✓ Weekly"
       ],
       whiteLabel: true,
       tier: "multi-brand"
@@ -105,17 +98,13 @@ function BrandCountWidget() {
       originalPrice: "$1,997/mo",
       description: "Enterprise-grade platform for large agencies with unlimited features, dedicated support, and maximum performance capabilities.",
       features: [
-        "Everything in Multi-Brand",
-        "Weekly AI Marketing Analysis",
-        "Up to 25 Brands",
-        "Unlimited Team Members",
-        "Unlimited AI Chatbot Usage",
-        "Lead Generation (2,500/mo)",
-        "Outreach CRM (7,500 emails/mo)",
-        "Creative Generation (500/mo)",
-        "Priority Email Support",
-        "Advanced Usage Analytics",
-        "White-Label Reports"
+        "Brand Connections: Up to 25",
+        "Team Member Add-Ons: Up to 10",
+        "Lead Generation: 2500/month",
+        "Outreach Emails: 7500/month",
+        "AI Chatbot: Unlimited/day",
+        "Creative Generation: 500/month",
+        "Custom AI Campaign Optimization: ✓ Weekly"
       ],
       whiteLabel: true,
       tier: "enterprise"
@@ -193,14 +182,17 @@ function BrandCountWidget() {
           </div>
         </div>
 
-        {/* Features List */}
+        {/* Features List - Horizontal Layout */}
         <div className="mb-6">
           <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-2">
             {currentOption.features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Check className="w-3 h-3 flex-shrink-0 text-[var(--brand-red)]" />
-                <span className="text-white/75 text-xs">{feature}</span>
+              <div key={index} className="flex justify-between items-center gap-4">
+                <span className="text-white/70 text-xs">{feature.split(':')[0] || feature.split('(')[0]}</span>
+                <span className="text-white font-semibold text-xs whitespace-nowrap">
+                  {feature.includes(':') ? feature.split(':')[1].trim() : 
+                   feature.includes('(') ? feature.match(/\(([^)]+)\)/)?.[1] || '✓' : '✓'}
+                </span>
               </div>
             ))}
           </div>
@@ -1087,7 +1079,7 @@ export default function HomePage() {
                               <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.creativeGen}/month</span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
-                              <span className="text-white/70 text-xs">AI Optimization & Insights</span>
+                              <span className="text-white/70 text-xs">Custom AI Campaign Optimization</span>
                               <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Weekly</span>
                             </div>
                           </div>
