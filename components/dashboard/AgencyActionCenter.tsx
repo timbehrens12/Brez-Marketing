@@ -700,7 +700,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           newToolUsageData.outreachTool[userId] = 0
         }
 
-        // AI Consultant Usage - fetch from API for consistency with local timezone handling
+        // AI Consultant Usage - get from centralized AI usage tracking
+        // Note: We need a brandId to check AI usage, but consultant is user-level
+        // For now, keep existing API-based logic until we refactor to have a user-level tracking endpoint
         try {
           const response = await fetch('/api/ai/marketing-consultant', {
             method: 'POST',
