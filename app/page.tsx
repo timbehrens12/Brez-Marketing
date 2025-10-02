@@ -162,7 +162,7 @@ function BrandCountWidget() {
       </div>
 
       {/* Enhanced Recommendation Card */}
-      <div className="bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+      <div className="bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
         {/* Header Section */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
@@ -1007,8 +1007,8 @@ export default function HomePage() {
                     key={plan.name}
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
-                        ? 'bg-gradient-to-br from-gray-900/80 via-gray-800/70 to-gray-900/80 border-[3px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
-                        : 'bg-gradient-to-br from-gray-900/70 via-gray-800/60 to-gray-900/70 border-2 border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
+                        ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
+                        : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
                     }`}
                   >
                     {plan.popular && (
