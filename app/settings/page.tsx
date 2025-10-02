@@ -1136,14 +1136,14 @@ export default function SettingsPage() {
 
       if (success) {
         toast.success('Agency settings updated successfully!')
-        // Clear temp files and removal flags, but keep previews from saved data
+        // Clear temp files, previews, and removal flags
+        // The UI will now show images from agencySettings which was updated by updateAgencySettings
         setTempAgencyLogo(null)
         setTempSignatureImage(null)
+        setLogoPreview(null)
+        setSignaturePreview(null)
         setRemoveLogo(false)
         setRemoveSignature(false)
-        // Don't clear previews - they should show the saved images
-        // setLogoPreview(null) 
-        // setSignaturePreview(null)
       } else {
         toast.error('Failed to update agency settings')
       }
