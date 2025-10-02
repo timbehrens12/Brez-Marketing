@@ -859,6 +859,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Users,
                     brands: 1,
+                    teamMembers: 1,
                     leadGen: 0,
                     outreach: 0,
                     aiChats: 5,
@@ -883,6 +884,7 @@ export default function HomePage() {
                     popular: true,
                     icon: Rocket,
                     brands: 1,
+                    teamMembers: 1,
                     leadGen: 100,
                     outreach: 250,
                     aiChats: 10,
@@ -907,6 +909,7 @@ export default function HomePage() {
                     popular: false,
                     icon: TrendingUp,
                     brands: 5,
+                    teamMembers: 3,
                     leadGen: 300,
                     outreach: 750,
                     aiChats: 25,
@@ -931,6 +934,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Zap,
                     brands: 15,
+                    teamMembers: 5,
                     leadGen: 750,
                     outreach: 2000,
                     aiChats: 50,
@@ -956,6 +960,7 @@ export default function HomePage() {
                     popular: false,
                     icon: Award,
                     brands: 25,
+                    teamMembers: "Unlimited",
                     leadGen: 2500,
                     outreach: 7500,
                     aiChats: "Unlimited",
@@ -1017,12 +1022,18 @@ export default function HomePage() {
                       {/* Usage Limits */}
                       <div className="flex-1">
                         <div className="mb-6">
-                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">Usage Limits</h4>
+                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
                               <span className="text-white/70 text-xs">Brands</span>
                               <span className="text-white font-semibold text-xs">{plan.brands}</span>
                             </div>
+                            {plan.teamMembers && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-white/70 text-xs">Team Members</span>
+                                <span className="text-white font-semibold text-xs">{plan.teamMembers}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between items-center">
                               <span className="text-white/70 text-xs">Lead Generation</span>
                               <span className={`font-semibold text-xs ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
@@ -1042,6 +1053,10 @@ export default function HomePage() {
                             <div className="flex justify-between items-center">
                               <span className="text-white/70 text-xs">Creative Generation</span>
                               <span className="text-white font-semibold text-xs">{plan.creativeGen}/month</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">Weekly AI Analysis</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs">✓ Included</span>
                             </div>
                           </div>
                         </div>
