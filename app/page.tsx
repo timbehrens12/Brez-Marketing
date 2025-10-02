@@ -17,43 +17,53 @@ function BrandCountWidget() {
   // Define the slider options and corresponding plan recommendations
   const options = [
     {
-      label: "1 brand (my own business)",
+      label: "1 brand",
+      sublabel: "(my own)",
       plan: "DTC Owner",
       price: "$67/mo",
       originalPrice: "$97/mo",
       description: "Perfect for tracking your own business performance with essential analytics and reporting.",
+      features: ["1 Brand Dashboard", "Shopify & Meta Integration", "Basic AI Marketing Tools", "Daily Performance Reports"],
       tier: "dtc-owner"
     },
     {
-      label: "0 clients (want to start freelance brandscaling)",
+      label: "0 clients",
+      sublabel: "(want to start)",
       plan: "Beginner",
       price: "$97/mo",
       originalPrice: "$147/mo",
-      description: "Includes lead generation and outreach tools to help you land your first freelance brandscaling clients.",
+      description: "Everything you need to land and manage your first freelance brandscaling clients with lead generation and outreach automation.",
+      features: ["1 Brand + Lead Gen", "100 Leads per Month", "250 Outreach Emails", "Client Management Tools", "White-Label Reports"],
       tier: "beginner"
     },
     {
-      label: "2-5 freelance brandscaling clients",
+      label: "2-5 clients",
+      sublabel: "(growing)",
       plan: "Growing",
       price: "$397/mo",
       originalPrice: "$597/mo",
-      description: "Perfect for managing multiple freelance brandscaling clients efficiently.",
+      description: "Scale your freelance brandscaling business with multi-client management, increased lead generation, and advanced automation.",
+      features: ["Up to 5 Brands", "300 Leads per Month", "750 Outreach Emails", "Advanced AI Tools", "Team Collaboration"],
       tier: "growing"
     },
     {
-      label: "6-15 freelance brandscaling clients",
+      label: "6-15 clients",
+      sublabel: "(agency)",
       plan: "Multi-Brand",
       price: "$697/mo",
       originalPrice: "$997/mo",
-      description: "Built for agencies managing multiple clients with team collaboration features.",
+      description: "Full agency toolkit with team collaboration, white-label branding, and maximum automation for managing multiple clients efficiently.",
+      features: ["Up to 15 Brands", "750 Leads per Month", "2,500 Outreach Emails", "Priority Support", "Advanced Analytics"],
       tier: "multi-brand"
     },
     {
-      label: "16+ freelance brandscaling clients",
+      label: "16+ clients",
+      sublabel: "(enterprise)",
       plan: "Enterprise",
       price: "$1,337/mo",
       originalPrice: "$1,997/mo",
-      description: "Full-scale operations for large agencies with unlimited features and dedicated support.",
+      description: "Enterprise-grade platform for large agencies with unlimited features, dedicated support, and maximum performance capabilities.",
+      features: ["Up to 25 Brands", "Unlimited AI Chatbot", "5,000 Outreach Emails", "Dedicated Account Manager", "Custom Integrations"],
       tier: "enterprise"
     }
   ]
@@ -65,68 +75,88 @@ function BrandCountWidget() {
       {/* Question */}
       <h3 className="text-2xl font-bold text-white mb-8 text-center">How many brands do you currently manage?</h3>
 
-      {/* Slider */}
-      <div className="mb-12">
-        <div className="relative px-4">
-          {/* Track */}
-          <div className="absolute top-1/2 left-4 right-4 h-2 bg-white/10 rounded-full -translate-y-1/2" />
-          
-          {/* Active Track */}
-          <div 
-            className="absolute top-1/2 left-4 h-2 bg-gradient-to-r from-[var(--brand-red)] to-[var(--brand-red)]/80 rounded-full -translate-y-1/2 transition-all duration-300"
-            style={{ width: `calc(${(sliderValue / (options.length - 1)) * 100}% - 1rem)` }}
-          />
+      {/* Rectangular Slider with Labels Inside */}
+      <div className="mb-10">
+        <div className="relative">
+          {/* Slider Track Container */}
+          <div className="relative h-16 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            {/* Active Selection Overlay */}
+            <div 
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[var(--brand-red)] to-[var(--brand-red)]/90 transition-all duration-300 border-r-2 border-[var(--brand-red)]"
+              style={{ width: `${((sliderValue + 1) / options.length) * 100}%` }}
+            />
 
-          {/* Tick Marks */}
-          {options.map((_, index) => (
-            <div
-              key={index}
-              className="absolute top-1/2 w-4 h-4 bg-white/20 rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-black/50 transition-all duration-300"
-              style={{ left: `calc(${(index / (options.length - 1)) * 100}%)` }}
-            >
-              <div
-                className={`absolute inset-0 rounded-full transition-all duration-300 ${
-                  index <= sliderValue ? 'bg-[var(--brand-red)] scale-100' : 'bg-transparent scale-0'
-                }`}
-              />
+            {/* Option Buttons */}
+            <div className="relative h-full grid grid-cols-5">
+              {options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSliderValue(index)}
+                  className={`relative h-full border-r border-white/10 last:border-r-0 transition-all duration-300 flex flex-col items-center justify-center px-2 ${
+                    sliderValue === index ? 'bg-transparent' : 'bg-transparent hover:bg-white/5'
+                  }`}
+                >
+                  <div className={`text-xs font-bold transition-all duration-300 text-center ${
+                    sliderValue === index ? 'text-white scale-105' : 'text-white/60'
+                  }`}>
+                    {option.label}
+                  </div>
+                  <div className={`text-[10px] transition-all duration-300 text-center ${
+                    sliderValue === index ? 'text-white/90' : 'text-white/40'
+                  }`}>
+                    {option.sublabel}
+                  </div>
+                </button>
+              ))}
             </div>
-          ))}
-
-          {/* Slider Input */}
-          <input
-            type="range"
-            min="0"
-            max={options.length - 1}
-            value={sliderValue}
-            onChange={(e) => setSliderValue(parseInt(e.target.value))}
-            className="relative w-full h-8 bg-transparent appearance-none cursor-pointer z-10"
-            style={{
-              WebkitAppearance: 'none',
-            }}
-          />
-        </div>
-
-        {/* Current Selection Label */}
-        <div className="mt-6 text-center">
-          <p className="text-white/90 text-lg font-medium">{currentOption.label}</p>
+          </div>
         </div>
       </div>
 
-      {/* Recommendation Card */}
-      <div className="bg-gradient-to-br from-black/40 to-black/60 border border-[var(--brand-red)]/30 rounded-xl p-6 mb-6 transition-all duration-300">
-        <div className="text-center">
-          <p className="text-white/70 text-sm mb-2">We recommend</p>
-          <h4 className="text-3xl font-black text-[var(--brand-red)] mb-3">{currentOption.plan}</h4>
-          
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-2xl font-bold text-white">{currentOption.price}</span>
-            <span className="text-lg text-white/50 line-through">{currentOption.originalPrice}</span>
-            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-              Save {Math.round((1 - parseFloat(currentOption.price.replace(/[$,]/g, '')) / parseFloat(currentOption.originalPrice.replace(/[$,]/g, ''))) * 100)}%
-            </span>
+      {/* Enhanced Recommendation Card */}
+      <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full mb-4">
+            <Target className="w-4 h-4 text-[var(--brand-red)]" />
+            <span className="text-[var(--brand-red)] text-sm font-bold uppercase tracking-wide">Perfect Match</span>
           </div>
+          <h4 className="text-4xl font-black text-white mb-2">{currentOption.plan}</h4>
+          <p className="text-white/60 text-sm mb-6 max-w-2xl mx-auto">{currentOption.description}</p>
+          
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-5xl font-black text-[var(--brand-red)] mb-1">{currentOption.price}</div>
+              <div className="text-sm text-white/50 line-through">{currentOption.originalPrice}</div>
+            </div>
+            <div className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl">
+              <div className="text-green-400 text-xs font-bold uppercase tracking-wide">Limited Time</div>
+              <div className="text-green-300 text-2xl font-black">
+                Save {Math.round((1 - parseFloat(currentOption.price.replace(/[$,]/g, '')) / parseFloat(currentOption.originalPrice.replace(/[$,]/g, ''))) * 100)}%
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <p className="text-white/80 text-sm leading-relaxed">{currentOption.description}</p>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 gap-3 mb-6">
+          {currentOption.features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
+              <div className="w-5 h-5 rounded-full bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-[var(--brand-red)]" />
+              </div>
+              <span className="text-white/90 text-sm font-medium">{feature}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA Button */}
+        <div className="flex gap-3 justify-center">
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black text-base px-8 py-6 shadow-[0_8px_0_rgba(0,0,0,.6)]"
+          >
+            Get {currentOption.plan} Now <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
       </div>
 
@@ -137,53 +167,9 @@ function BrandCountWidget() {
           variant="outline"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          See All Tiers Instead
+          Compare All Plans
         </Button>
       </div>
-
-      {/* Custom Slider Styles */}
-      <style jsx>{`
-        input[type="range"]::-webkit-slider-thumb {
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          background: linear-gradient(135deg, var(--brand-red), #ff4444);
-          border: 3px solid #000;
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 0 0 4px rgba(255, 42, 42, 0.2), 0 4px 8px rgba(0, 0, 0, 0.4);
-          transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-          transform: scale(1.1);
-          box-shadow: 0 0 0 6px rgba(255, 42, 42, 0.3), 0 6px 12px rgba(0, 0, 0, 0.5);
-        }
-
-        input[type="range"]::-webkit-slider-thumb:active {
-          transform: scale(0.95);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          background: linear-gradient(135deg, var(--brand-red), #ff4444);
-          border: 3px solid #000;
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 0 0 4px rgba(255, 42, 42, 0.2), 0 4px 8px rgba(0, 0, 0, 0.4);
-          transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
-          transform: scale(1.1);
-          box-shadow: 0 0 0 6px rgba(255, 42, 42, 0.3), 0 6px 12px rgba(0, 0, 0, 0.5);
-        }
-
-        input[type="range"]::-moz-range-thumb:active {
-          transform: scale(0.95);
-        }
-      `}</style>
     </div>
   )
 }
