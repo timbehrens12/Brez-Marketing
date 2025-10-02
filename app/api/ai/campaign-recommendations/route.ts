@@ -403,6 +403,13 @@ export async function POST(request: NextRequest) {
       'campaign_recommendations'
     )
 
+    // Fetch brand information (niche/industry)
+    const { data: brandInfo } = await supabase
+      .from('brands')
+      .select('name, niche')
+      .eq('id', brandId)
+      .single()
+
     // Fetch additional campaign data from database
     const { data: campaign, error: campaignError } = await supabase
       .from('meta_campaigns')
@@ -449,6 +456,26 @@ export async function POST(request: NextRequest) {
     // Calculate key metrics and benchmarks with historical context
     const metrics = calculateCampaignMetrics(campaignData, adSets || [], ads || [], historicalData)
     
+    // Check if previous recommendations were marked as done
+    let completedPreviousRecs = null
+    if (previousRecommendations?.recommendations?.recommendation) {
+      const { data: completedActions } = await supabase
+        .from('optimization_action_log')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('campaign_id', campaignId)
+        .eq('status', 'completed_manually')
+        .gte('applied_at', new Date(previousRecommendations.lastUsed).toISOString())
+        .order('applied_at', { ascending: false })
+      
+      if (completedActions && completedActions.length > 0) {
+        completedPreviousRecs = {
+          ...previousRecommendations,
+          completedActions
+        }
+      }
+    }
+
     // Generate AI recommendation with comprehensive analysis including previous recommendations tracking
     const recommendation = await generateAIRecommendation(
       campaign, 
@@ -458,8 +485,9 @@ export async function POST(request: NextRequest) {
       historicalData,
       adSetHistoricalData,
       adHistoricalData,
-      previousRecommendations,
-      demographicsData
+      completedPreviousRecs || previousRecommendations,
+      demographicsData,
+      brandInfo
     )
 
     // Record usage and store current recommendations for future comparison
@@ -1254,7 +1282,7 @@ function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], hist
   }
 }
 
-async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData, adSetHistoricalData: AdSetPerformance[], adHistoricalData: AdPerformance[], previousRecommendations: any, demographicsData: any) {
+async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData, adSetHistoricalData: AdSetPerformance[], adHistoricalData: AdPerformance[], previousRecommendations: any, demographicsData: any, brandInfo: any) {
   // Format adset analysis
   const adSetAnalysis = adSetHistoricalData.map(adSet => 
     `AdSet: ${adSet.adset_name} (${adSet.status})
@@ -1282,31 +1310,47 @@ async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics,
   const topAds = adHistoricalData.filter(ad => ad.historical.trend === 'improving' && ad.roas > 2.0)
   const underperformingAds = adHistoricalData.filter(ad => ad.historical.trend === 'declining' || ad.roas < 1.0)
 
-  // Include previous recommendations context if available
-  const previousRecContext = previousRecommendations ? `
+  // Include previous recommendations context ONLY if they were marked as done
+  const previousRecContext = (previousRecommendations?.completedActions && previousRecommendations.completedActions.length > 0) ? `
 PREVIOUS RECOMMENDATION ANALYSIS (from ${previousRecommendations.lastUsed.toLocaleDateString()}):
 - Previous Action: ${previousRecommendations.recommendations.recommendation?.action || 'Unknown'}
 - Previous Reasoning: ${previousRecommendations.recommendations.recommendation?.reasoning || 'No details'}
-- Effectiveness Since Last Recommendation: ${calculateRecommendationEffectiveness(previousRecommendations.recommendations, campaign)}
-- Time Since Last Recommendation: ${Math.round((new Date().getTime() - previousRecommendations.lastUsed.getTime()) / (1000 * 60 * 60))} hours
+- User Marked as COMPLETED: ${previousRecommendations.completedActions.map((a: any) => a.action_details?.description || 'Action completed').join(', ')}
+- Completed On: ${new Date(previousRecommendations.completedActions[0].applied_at).toLocaleDateString()}
+- Effectiveness Since Completion: ${calculateRecommendationEffectiveness(previousRecommendations.recommendations, campaign)}
+- Time Since Completion: ${Math.round((new Date().getTime() - new Date(previousRecommendations.completedActions[0].applied_at).getTime()) / (1000 * 60 * 60))} hours
 
-KEY INSTRUCTION: Compare current performance with previous metrics and evaluate if the previous recommendation worked. Adjust strategy accordingly.
+CRITICAL INSTRUCTION: The user IMPLEMENTED the previous recommendation. Compare current performance with previous metrics and evaluate if the recommendation worked. Adjust strategy based on actual results.
+` : previousRecommendations ? `
+PREVIOUS RECOMMENDATION (NOT IMPLEMENTED - from ${previousRecommendations.lastUsed.toLocaleDateString()}):
+- Previous Action Suggested: ${previousRecommendations.recommendations.recommendation?.action || 'Unknown'}
+- Previous Reasoning: ${previousRecommendations.recommendations.recommendation?.reasoning || 'No details'}
+- Status: User DID NOT mark this as done (not implemented)
+
+CRITICAL INSTRUCTION: The previous recommendation was NOT implemented by the user. DO NOT evaluate its effectiveness. Provide fresh recommendations based solely on current data. You may reference the previous suggestion as context but do not assume it was applied.
 ` : `
 FIRST-TIME ANALYSIS: This is the first recommendation for this campaign.
 `
 
   const prompt = `
-You are an expert Meta advertising strategist. Analyze the following campaign data focusing EXCLUSIVELY on 7-day historical performance data. Base your recommendations ONLY on the 7-day analysis period provided below. Reference specific metrics from the 7-day data in your reasoning. CRITICALLY evaluate the effectiveness of any previous recommendations. Provide a specific, actionable recommendation that considers granular performance at the adset and ad level.
+You are an expert Meta advertising strategist specializing in ${brandInfo?.niche || 'e-commerce'} brands. Analyze the following campaign data focusing EXCLUSIVELY on 7-day historical performance data. Base your recommendations ONLY on the 7-day analysis period provided below. Reference specific metrics from the 7-day data in your reasoning. CRITICALLY evaluate the effectiveness of any previous recommendations. Provide a specific, actionable recommendation that considers granular performance at the adset and ad level.
 
 ${previousRecContext}
 
+BRAND CONTEXT:
+Brand: ${brandInfo?.name || 'Unknown'}
+Industry/Niche: ${brandInfo?.niche || 'General E-commerce'}
+IMPORTANT: Tailor your recommendations specifically for this industry. Consider industry-specific benchmarks, customer behavior, and best practices for ${brandInfo?.niche || 'e-commerce'} advertising.
+
 CAMPAIGN OVERVIEW:
 Campaign: ${campaign.campaign_name}
-Objective: ${campaign.objective}
+Campaign Objective: ${campaign.objective} (${campaign.objective === 'OUTCOME_SALES' ? 'Sales/Conversions' : campaign.objective === 'OUTCOME_LEADS' ? 'Lead Generation' : campaign.objective === 'OUTCOME_TRAFFIC' ? 'Traffic' : campaign.objective === 'OUTCOME_AWARENESS' ? 'Brand Awareness' : campaign.objective})
 Status: ${campaign.status}
 Budget: $${campaign.budget} (${campaign.budget_type})
 Total Spent (Campaign Lifetime): $${campaign.spent}
 Budget Utilization: ${metrics.budgetUtilization.toFixed(1)}%
+
+CRITICAL: Your recommendations MUST align with the campaign objective (${campaign.objective}). For sales campaigns, focus on ROAS and conversions. For lead gen, focus on cost per lead and lead quality. For awareness, focus on reach and CPM.
 
 7-DAY PERFORMANCE ANALYSIS (Last 7 Days):
 - Total Impressions: ${historicalData.last7Days.reduce((sum, day) => sum + day.impressions, 0).toLocaleString() || 0}

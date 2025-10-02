@@ -2083,7 +2083,8 @@ export default function MarketingAssistantPage() {
                   How the AI Learns from Your Results
                 </h4>
                 <p className="text-gray-300 text-sm mb-4">
-                  The system doesn't just generate recommendations—it tracks their outcomes and adapts its strategy based on what actually works for YOUR campaigns.
+                  The system doesn't just generate recommendations—it tracks their outcomes and adapts its strategy based on what actually works for YOUR campaigns. 
+                  Recommendations are tailored to your brand's industry/niche and each campaign's specific objective (sales, leads, traffic, or awareness).
                 </p>
                 <div className="space-y-3">
                   <div className="flex gap-3">
@@ -2103,9 +2104,16 @@ export default function MarketingAssistantPage() {
                     </div>
                     <div>
                       <h5 className="text-white font-medium text-sm mb-1">Action Tracking</h5>
-                      <p className="text-gray-400 text-xs">
+                      <p className="text-gray-400 text-xs mb-2">
                         When you mark a recommendation as done, the system logs the action and waits 7 days to measure the impact.
                       </p>
+                      <div className="p-2 bg-red-500/10 rounded border border-red-500/30 mt-2">
+                        <p className="text-xs text-red-200">
+                          <strong className="text-red-100">⚠️ IMPORTANT:</strong> The AI only evaluates recommendations you marked as "Done". 
+                          If you don't mark a recommendation as done, the AI will NOT consider it when analyzing next week's performance. 
+                          This ensures the AI only learns from changes you actually implemented.
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-3">
