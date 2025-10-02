@@ -1048,7 +1048,6 @@ export default function HomePage() {
 
                         {/* Features */}
                         <div className="mb-4">
-                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included Features</h4>
                           <div className="space-y-1">
                             {plan.features.map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
