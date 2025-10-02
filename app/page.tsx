@@ -162,17 +162,9 @@ function BrandCountWidget() {
       </div>
 
       {/* Enhanced Recommendation Card */}
-      <div className="relative bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)] overflow-hidden">
-        {/* Red Splotches */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--brand-red)]/8 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-56 h-56 bg-[var(--brand-red)]/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-40 h-40 bg-[var(--brand-red)]/6 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-1/4 right-1/3 w-48 h-48 bg-[var(--brand-red)]/7 rounded-full blur-3xl"></div>
-        
-        {/* Content */}
-        <div className="relative z-10">
-          {/* Header Section */}
-          <div className="flex items-center gap-3 mb-6">
+      <div className="bg-gradient-to-br from-red-900/30 via-black/80 to-red-900/30 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+        {/* Header Section */}
+        <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
             <Target className="w-6 h-6 text-[var(--brand-red)]" />
           </div>
@@ -224,7 +216,6 @@ function BrandCountWidget() {
             </div>
           </div>
         )}
-        </div>
 
       </div>
 
