@@ -1019,33 +1019,16 @@ export default function SettingsPage() {
 
   // Handle signature file selection
   const handleSignatureChange = async (file: File | null) => {
-    if (!file) {
-      setTempSignatureImage(null)
-      setSignaturePreview(null)
-      return
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file (PNG, JPG, SVG)')
-      return
-    }
-
-    // Validate file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image file size must be less than 2MB')
-      return
-    }
-
     setTempSignatureImage(file)
-    try {
-      const base64 = await fileToBase64(file)
-      setSignaturePreview(base64)
-      toast.success('Signature image loaded successfully')
-    } catch (error) {
-      console.error('Error converting signature file to base64:', error)
-      toast.error('Failed to process signature image')
-      setTempSignatureImage(null)
+    if (file) {
+      try {
+        const base64 = await fileToBase64(file)
+        setSignaturePreview(base64)
+      } catch (error) {
+        console.error('Error converting signature file to base64:', error)
+        toast.error('Failed to process signature image')
+      }
+    } else {
       setSignaturePreview(null)
     }
   }
