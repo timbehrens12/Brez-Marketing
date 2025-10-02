@@ -326,18 +326,6 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
-          {/* Top banner */}
-          <div className="w-full bg-black/70 border-b border-white/10">
-            <div className="flex justify-center py-2">
-              <div className="flex items-center gap-2">
-                <TagBadge tone="red">LAUNCH SPECIAL</TagBadge>
-                <span className="text-sm text-white/80 tracking-wide font-bold">
-                  Early access pricing ends soon
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10 relative">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -370,7 +358,7 @@ export default function HomePage() {
                     <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
                   </div>
                   <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap">
-                    LIMITED TIME OFFER - Try for free for your first 7 days, cancel anytime
+                    LAUNCH SPECIAL - Early access pricing ends soon
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
