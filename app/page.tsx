@@ -193,16 +193,17 @@ function BrandCountWidget() {
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 gap-3 mb-6">
-          {currentOption.features.map((feature, index) => (
-            <div key={index} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
-              <div className="w-5 h-5 rounded-full bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-[var(--brand-red)]" />
+        {/* Features List */}
+        <div className="mb-6">
+          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
+          <div className="space-y-2">
+            {currentOption.features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Check className="w-3 h-3 flex-shrink-0 text-[var(--brand-red)]" />
+                <span className="text-white/75 text-xs">{feature}</span>
               </div>
-              <span className="text-white/90 text-sm font-medium">{feature}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* White Label Badge */}
