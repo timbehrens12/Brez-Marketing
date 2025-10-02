@@ -169,25 +169,27 @@ function BrandCountWidget() {
 
       {/* Enhanced Recommendation Card */}
       <div className="bg-gradient-to-br from-black/80 via-black/60 to-black/80 border-2 border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-full mb-4">
-            <Target className="w-4 h-4 text-[var(--brand-red)]" />
-            <span className="text-[var(--brand-red)] text-sm font-bold uppercase tracking-wide">Perfect Match</span>
+        {/* Header Section */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
+            <Target className="w-6 h-6 text-[var(--brand-red)]" />
           </div>
-          <h4 className="text-4xl font-black text-white mb-2">{currentOption.plan}</h4>
-          <p className="text-white/60 text-sm mb-6 max-w-2xl mx-auto">{currentOption.description}</p>
-          
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="text-center">
-              <div className="text-5xl font-black text-[var(--brand-red)] mb-1">{currentOption.price}</div>
-              <div className="text-sm text-white/50 line-through">{currentOption.originalPrice}</div>
-            </div>
-            <div className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl">
-              <div className="text-green-400 text-xs font-bold uppercase tracking-wide">Limited Time</div>
-              <div className="text-green-300 text-2xl font-black">
-                Save {Math.round((1 - parseFloat(currentOption.price.replace(/[$,]/g, '')) / parseFloat(currentOption.originalPrice.replace(/[$,]/g, ''))) * 100)}%
-              </div>
-            </div>
+          <div>
+            <h4 className="text-2xl font-black text-white">{currentOption.plan}</h4>
+            <p className="text-white/60 text-sm mt-1">{currentOption.description}</p>
+          </div>
+        </div>
+
+        {/* Pricing Section - Horizontal Layout */}
+        <div className="mb-6">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-black text-white">{currentOption.price}</span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-lg text-white/50 line-through">{currentOption.originalPrice}</span>
+            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+              Save ${parseFloat(currentOption.originalPrice.replace(/[$,]/g, '')) - parseFloat(currentOption.price.replace(/[$,]/g, ''))}
+            </span>
           </div>
         </div>
 
@@ -1053,39 +1055,39 @@ export default function HomePage() {
                         <div className="mb-6">
                           <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
                           <div className="space-y-2">
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Brand Connections</span>
-                              <span className="text-white font-semibold text-xs">{plan.brands}</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.brands}</span>
                             </div>
                             {plan.teamMembers && (
-                              <div className="flex justify-between items-center">
+                              <div className="flex justify-between items-center gap-4">
                                 <span className="text-white/70 text-xs">Team Member Add-Ons</span>
-                                <span className="text-white font-semibold text-xs">Up to {plan.teamMembers}</span>
+                                <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.teamMembers}</span>
                               </div>
                             )}
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Lead Generation</span>
-                              <span className={`font-semibold text-xs ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
+                              <span className={`font-semibold text-xs whitespace-nowrap ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
                                 {plan.leadGen === 0 ? "None" : `${plan.leadGen}/month`}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Outreach Emails</span>
-                              <span className={`font-semibold text-xs ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
+                              <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
                                 {plan.outreach === 0 ? "None" : `${plan.outreach}/month`}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">AI Chatbot</span>
-                              <span className="text-white font-semibold text-xs">{plan.aiChats}/day</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.aiChats}/day</span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Creative Generation</span>
-                              <span className="text-white font-semibold text-xs">{plan.creativeGen}/month</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.creativeGen}/month</span>
                             </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-white/70 text-xs">AI Campaign Analysis</span>
-                              <span className="text-[var(--brand-red)] font-semibold text-xs">✓ Weekly</span>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">AI Optimization & Insights</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Weekly</span>
                             </div>
                           </div>
                         </div>
