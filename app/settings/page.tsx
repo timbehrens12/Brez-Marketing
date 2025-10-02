@@ -891,11 +891,24 @@ export default function SettingsPage() {
   useEffect(() => {
     setTempAgencyName(agencySettings.agency_name)
     setTempSignatureName(agencySettings.signature_name || '')
-    // Don't clear previews - they should persist to show saved images
     // Only reset removal flags
     setRemoveLogo(false)
     setRemoveSignature(false)
   }, [agencySettings.agency_name, agencySettings.signature_name])
+
+  // Clear logo preview when saved logo is available in agencySettings
+  useEffect(() => {
+    if (agencySettings.agency_logo_url && logoPreview) {
+      setLogoPreview(null)
+    }
+  }, [agencySettings.agency_logo_url])
+
+  // Clear signature preview when saved signature is available in agencySettings
+  useEffect(() => {
+    if (agencySettings.signature_image && signaturePreview) {
+      setSignaturePreview(null)
+    }
+  }, [agencySettings.signature_image])
 
   // Check if agency branding is completed
   const isAgencyBrandingComplete = () => {
@@ -1136,12 +1149,10 @@ export default function SettingsPage() {
 
       if (success) {
         toast.success('Agency settings updated successfully!')
-        // Clear temp files, previews, and removal flags
-        // The UI will now show images from agencySettings which was updated by updateAgencySettings
+        // Clear temp files and removal flags
+        // Keep previews - they will be used until agencySettings updates
         setTempAgencyLogo(null)
         setTempSignatureImage(null)
-        setLogoPreview(null)
-        setSignaturePreview(null)
         setRemoveLogo(false)
         setRemoveSignature(false)
       } else {
