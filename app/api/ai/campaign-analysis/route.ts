@@ -119,7 +119,7 @@ Format as JSON with these sections: grade, insights, issues, optimizations, budg
 
     // Get AI analysis
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // GPT-4o-mini - campaign metrics analysis
+      model: "gpt-5-nano", // GPT-5 Nano - campaign metrics analysis
       messages: [
         {
           role: "system",
@@ -130,8 +130,8 @@ Format as JSON with these sections: grade, insights, issues, optimizations, budg
           content: analysisPrompt
         }
       ],
-      max_completion_tokens: 2000,
-      temperature: 0.7
+      max_completion_tokens: 2000
+      // Note: GPT-5-nano only supports temperature=1 (default), so we don't specify it
     })
 
     let analysis

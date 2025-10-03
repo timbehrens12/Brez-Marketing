@@ -1450,7 +1450,7 @@ Focus on the most impactful actions that address specific adset and ad performan
   try {
     // Add timeout to OpenAI call to prevent hanging
     const openaiPromise = openai.chat.completions.create({
-      model: 'gpt-4o', // GPT-4o - strategic campaign recommendations
+      model: 'gpt-5-mini', // GPT-5 Mini - strategic campaign recommendations
       messages: [
         {
           role: 'system',

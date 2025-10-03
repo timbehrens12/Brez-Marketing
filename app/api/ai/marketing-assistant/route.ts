@@ -502,7 +502,7 @@ BRAND CONTEXT: Provide general marketing insights while acknowledging that indus
     `
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // GPT-4o-mini - strategic marketing advice & chat interface
+      model: 'gpt-5-mini', // GPT-5 Mini - strategic marketing advice & chat interface
       messages: [
         {
           role: 'system',
