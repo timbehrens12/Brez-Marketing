@@ -70,12 +70,12 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // Get all active campaigns for this brand
+    // Get ALL campaigns for this brand (don't filter by status - we need to sync everything)
+    // This ensures campaigns that were turned ON in Meta will be detected and synced
     const { data: campaigns, error: campaignError } = await supabase
       .from('meta_campaigns')
       .select('campaign_id, campaign_name, status')
-      .eq('brand_id', brandId)
-      .eq('status', 'ACTIVE');
+      .eq('brand_id', brandId);
     
     if (campaignError) {
       console.error('[AdSet Refresh] Error fetching campaigns:', campaignError);
@@ -86,17 +86,26 @@ export async function POST(req: NextRequest) {
     }
     
     if (!campaigns || campaigns.length === 0) {
-      console.log('[AdSet Refresh] No active campaigns found');
+      console.log('[AdSet Refresh] No campaigns found for this brand');
       return NextResponse.json({
         success: true,
-        message: 'No active campaigns to refresh',
+        message: 'No campaigns found to refresh',
         campaignCount: 0,
         adSetCount: 0,
         timestamp: new Date().toISOString()
       });
     }
     
-    console.log(`[AdSet Refresh] Found ${campaigns.length} active campaigns`);
+    console.log(`[AdSet Refresh] Found ${campaigns.length} campaigns to sync`);
+    
+    // Get Meta access token for campaign status checks
+    const { data: connection } = await supabase
+      .from('platform_connections')
+      .select('access_token')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+      .single();
     
     // Fetch ad sets for each campaign from Meta API
     let totalAdSets = 0;
@@ -104,9 +113,49 @@ export async function POST(req: NextRequest) {
     
     for (const campaign of campaigns) {
       try {
-        console.log(`[AdSet Refresh] 📡 Fetching ad sets for campaign ${campaign.campaign_id} (${campaign.campaign_name})`);
+        console.log(`[AdSet Refresh] 📡 Fetching data for campaign ${campaign.campaign_id} (${campaign.campaign_name})`);
         
-        // This will fetch from Meta API and save to database
+        // 🔥 FIRST: Fetch and update campaign status from Meta
+        if (connection?.access_token) {
+          try {
+            const statusUrl = `https://graph.facebook.com/v18.0/${campaign.campaign_id}?fields=effective_status,status,configured_status&access_token=${connection.access_token}`;
+            const statusResponse = await fetch(statusUrl, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              }
+            });
+            
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              const freshStatus = statusData.effective_status || statusData.configured_status || statusData.status;
+              
+              // Update campaign status in database
+              if (freshStatus && freshStatus !== campaign.status) {
+                console.log(`[AdSet Refresh] 🔄 Campaign ${campaign.campaign_id} status changed: ${campaign.status} → ${freshStatus}`);
+                await supabase
+                  .from('meta_campaigns')
+                  .update({ 
+                    status: freshStatus,
+                    last_refresh_date: new Date().toISOString()
+                  })
+                  .eq('campaign_id', campaign.campaign_id)
+                  .eq('brand_id', brandId);
+                
+                // Update local campaign object for budget calculation
+                campaign.status = freshStatus;
+              } else if (freshStatus) {
+                console.log(`[AdSet Refresh] ✅ Campaign ${campaign.campaign_id} status unchanged: ${freshStatus}`);
+              }
+            }
+          } catch (statusError) {
+            console.error(`[AdSet Refresh] ⚠️ Failed to fetch status for campaign ${campaign.campaign_id}:`, statusError);
+            // Continue anyway - status update is optional
+          }
+        }
+        
+        // SECOND: Fetch ad sets from Meta API and save to database
         const result = await fetchMetaAdSets(
           brandId,
           campaign.campaign_id,
