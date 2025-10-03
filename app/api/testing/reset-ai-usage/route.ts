@@ -94,6 +94,45 @@ export async function POST(req: NextRequest) {
       results.deleted.user_usage = userUsageDeleted
     }
 
+    // Clear ai_campaign_recommendations (Marketing Assistant weekly cooldown)
+    const { error: campaignRecsError, count: campaignRecsDeleted } = await supabase
+      .from('ai_campaign_recommendations')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+
+    if (campaignRecsError) {
+      console.error('Error clearing ai_campaign_recommendations:', campaignRecsError)
+      results.errors.push({ table: 'ai_campaign_recommendations', error: campaignRecsError.message })
+    } else {
+      results.deleted.campaign_recommendations = campaignRecsDeleted
+    }
+
+    // Clear recommendation_performance (Marketing Assistant performance tracking)
+    const { error: recPerfError, count: recPerfDeleted } = await supabase
+      .from('recommendation_performance')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+
+    if (recPerfError) {
+      console.error('Error clearing recommendation_performance:', recPerfError)
+      results.errors.push({ table: 'recommendation_performance', error: recPerfError.message })
+    } else {
+      results.deleted.recommendation_performance = recPerfDeleted
+    }
+
+    // Clear optimization_action_log (Marketing Assistant action tracking)
+    const { error: actionLogError, count: actionLogDeleted } = await supabase
+      .from('optimization_action_log')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+
+    if (actionLogError) {
+      console.error('Error clearing optimization_action_log:', actionLogError)
+      results.errors.push({ table: 'optimization_action_log', error: actionLogError.message })
+    } else {
+      results.deleted.optimization_action_log = actionLogDeleted
+    }
+
     // Get final counts
     const { count: remainingLogs } = await supabase
       .from('ai_usage_logs')
@@ -115,12 +154,27 @@ export async function POST(req: NextRequest) {
       .from('user_usage')
       .select('*', { count: 'exact', head: true })
 
+    const { count: remainingCampaignRecs } = await supabase
+      .from('ai_campaign_recommendations')
+      .select('*', { count: 'exact', head: true })
+
+    const { count: remainingRecPerf } = await supabase
+      .from('recommendation_performance')
+      .select('*', { count: 'exact', head: true })
+
+    const { count: remainingActionLog } = await supabase
+      .from('optimization_action_log')
+      .select('*', { count: 'exact', head: true })
+
     results.remaining = {
       logs: remainingLogs || 0,
       tracking: remainingTracking || 0,
       feature_usage: remainingFeature || 0,
       outreach: remainingOutreach || 0,
-      user_usage: remainingUserUsage || 0
+      user_usage: remainingUserUsage || 0,
+      campaign_recommendations: remainingCampaignRecs || 0,
+      recommendation_performance: remainingRecPerf || 0,
+      optimization_action_log: remainingActionLog || 0
     }
 
     console.log('✅ AI usage data cleared:', results)
