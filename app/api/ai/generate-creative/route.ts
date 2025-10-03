@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
 import sharp from 'sharp';
+import { aiUsageService } from '@/lib/services/ai-usage-service';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
@@ -678,6 +679,23 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
         });
 
       console.log('✅ Usage tracked successfully');
+      
+      // ALSO log to ai_usage_logs for centralized tracking
+      await aiUsageService.logUsage({
+        userId,
+        brandId: null, // Creative Studio is not brand-specific
+        endpoint: 'creative_generation',
+        metadata: {
+          backgroundType,
+          aspectRatio,
+          quality,
+          lighting,
+          model: 'gemini-2.5-flash-image-preview',
+          customModifiers: !!customPromptModifiers,
+          timestamp: new Date().toISOString()
+        }
+      });
+      console.log('✅ Also logged to ai_usage_logs');
     } catch (usageTrackingError) {
       console.error('Error tracking usage:', usageTrackingError);
       // Don't fail the generation if usage tracking fails

@@ -513,6 +513,21 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     }, supabase)
     console.log(`[AI Marketing] Usage recorded successfully!`)
+    
+    // ALSO log to ai_usage_logs for centralized tracking
+    await aiUsageService.logUsage({
+      userId,
+      brandId: brandId || null,
+      endpoint: 'marketing_consultant',
+      metadata: {
+        promptLength: prompt.length,
+        responseLength: response.length,
+        marketingGoal,
+        hasDateRange: !!customDateRange,
+        timestamp: new Date().toISOString()
+      }
+    })
+    console.log(`[AI Marketing] Also logged to ai_usage_logs`)
 
     // Get updated usage status to return remaining uses
     console.log(`[AI Marketing] Checking updated usage status for user ${userId}...`)
