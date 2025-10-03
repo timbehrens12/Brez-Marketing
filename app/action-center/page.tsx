@@ -1388,9 +1388,8 @@ export default function ActionCenterPage() {
           // Generate AI synopsis instead of hardcoded text
           try {
             if (forceRefresh || todaySpend > 0 || todayMeta.length > 0 || todaySales > 0 || todayOrders.length > 0) {
-              // Check Marketing Assistant availability from tool usage data
-              const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
-              const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+              // Marketing Assistant not tracked in this standalone page - default to false
+              const marketingAssistantAvailable = false;
               
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
@@ -1441,8 +1440,7 @@ export default function ActionCenterPage() {
           } catch (error) {
             console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Use simple overview without AI
-            const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
-            const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+            const marketingAssistantAvailable = false;
             
             synopsis = `Shopify sales are $${todaySales.toFixed(2)} from ${todayOrders.length} orders today. Meta ad spend: $${todaySpend.toFixed(2)} with ${todayROAS.toFixed(2)}x ROAS, ${todayConversions} conversions from ${todayImpressions.toLocaleString()} impressions and ${todayClicks.toLocaleString()} clicks.`
             

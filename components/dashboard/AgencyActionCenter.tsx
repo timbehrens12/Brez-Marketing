@@ -2426,9 +2426,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             
             if (forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0) {
               console.log(`[Brand Health] ${brand.name} - Calling AI synopsis API...`);
-              // Check Marketing Assistant availability from tool usage data
-              const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
-              const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+              // Check Marketing Assistant availability from campaign optimization data
+              const marketingAssistantAvailable = campaignOptimizationAvailability[brand.id]?.optimizationAvailable || false;
               
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
@@ -2477,8 +2476,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           } catch (error) {
             console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Use simple overview without AI
-            const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
-            const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+            const marketingAssistantAvailable = campaignOptimizationAvailability[brand.id]?.optimizationAvailable || false;
             
             synopsis = `Shopify sales are $${totalSales.toFixed(2)} from ${totalOrders.length} orders today. Meta ad spend: $${totalSpend.toFixed(2)} with ${avgROAS.toFixed(2)}x ROAS, ${totalConversions} conversions from ${totalImpressions.toLocaleString()} impressions and ${totalClicks.toLocaleString()} clicks.`
             
