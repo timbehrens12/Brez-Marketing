@@ -17,7 +17,7 @@ const openai = new OpenAI({
 // Free: 25 leads per generation
 // Pro: 100 leads per generation  
 // Agency: 625 leads per generation
-const WEEKLY_GENERATION_LIMIT = 100 // TODO: Make this dynamic based on tier (25/week for Basic, 625/week for Elite)
+const WEEKLY_GENERATION_LIMIT = 100 // TODO: Make this dynamic based on tier (25/week for Basic, 625/week for Elite) - v2
 const TOTAL_LEADS_PER_GENERATION = 25 // TODO: Make dynamic based on subscription tier 
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
 const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search
