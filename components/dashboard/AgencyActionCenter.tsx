@@ -2465,21 +2465,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               synopsis = `${brand.name} has no ad activity today yet. Campaigns may be scheduled to start later or need to be activated.`
             }
           } catch (error) {
-
-            // Fallback to simple factual statement
-            if (totalSpend === 0 && totalMeta.length === 0) {
-              synopsis = `${brand.name} has no ad activity today yet. Campaigns may be scheduled to start later or need to be activated.`
-            } else {
-              synopsis = `${brand.name} spent $${totalSpend.toFixed(2)} with ${avgROAS.toFixed(2)} ROAS for the selected period. ${totalConversions} conversions from ${totalImpressions.toLocaleString()} impressions and ${totalClicks.toLocaleString()} clicks.`
-              
-              if (shopifyData?.length) {
-                synopsis += ` Sales: $${totalSales.toFixed(2)} (${salesChange > 0 ? '+' : ''}${salesChange.toFixed(1)}% latest day vs previous).`
-              }
-              
-              if (roasChange !== 0) {
-                synopsis += ` ROAS ${roasChange > 0 ? 'improved' : 'declined'} ${Math.abs(roasChange).toFixed(1)}% vs yesterday.`
-              }
-            }
+            console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
+            // Use simple overview without AI
+            synopsis = `Shopify sales are $${totalSales.toFixed(2)} from ${totalOrders.length} orders today. Meta ad spend: $${totalSpend.toFixed(2)} with ${avgROAS.toFixed(2)}x ROAS, ${totalConversions} conversions from ${totalImpressions.toLocaleString()} impressions and ${totalClicks.toLocaleString()} clicks.`
           }
         }
 
