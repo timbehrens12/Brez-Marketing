@@ -941,12 +941,12 @@ IMPORTANT:
 `
 
     // console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
-    const response = await openai.chat.completions.create({
-      model: "gpt-5-nano", // Cheapest GPT-5 - perfect for simple data extraction
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0,
-      max_tokens: 500
-    })
+      const response = await openai.chat.completions.create({
+        model: "gpt-5-mini", // GPT-5 Mini for quality enrichment
+        messages: [{ role: "user", content: prompt }],
+        // Note: GPT-5 only supports temperature=1 (default), so we don't specify it
+        max_completion_tokens: 500
+      })
 
     // Note: AI usage tracking is done in the main POST function once per generation batch
 

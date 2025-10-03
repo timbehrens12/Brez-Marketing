@@ -2300,22 +2300,6 @@ export default function LeadGeneratorPage() {
                         <TrendingUp className="h-4 w-4 mr-2" />
                       Delete ({selectedLeads.length})
                     </Button>
-                    {leads.length > 0 && (
-                      <Button
-                        onClick={clearAllLeads}
-                        disabled={isProcessingBatch}
-                        variant="outline"
-                        size="sm"
-                        className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
-                      >
-                        {isProcessingBatch ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                        )}
-                        {isProcessingBatch ? 'Clearing...' : 'Clear All'}
-                      </Button>
-                    )}
                     <Button
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
