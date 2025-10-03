@@ -281,20 +281,14 @@ export default function BrandReportPage() {
       }
       
     } else if (checkPeriod === "last-month") {
-      const currentDay = now.getDate()
-      const reportMonth = format(dateRange.from!, 'yyyy-MM')
+      // For monthly reports, we always check availability for LAST month
+      // regardless of what dateRange is currently set to (today vs last-month view)
       const currentMonth = format(now, 'yyyy-MM')
+      const lastMonth = format(subMonths(now, 1), 'yyyy-MM')
       
-      // STEP 5B: Check if trying to generate report for current month
-      if (reportMonth === currentMonth) {
-        return {
-          available: false,
-          reason: "Report not yet available",
-          nextAvailable: `Available ${format(startOfMonth(addMonths(now, 1)), 'MMM d')}`,
-          buttonText: "Not Available",
-          type: "not-ready"
-        }
-      }
+      // Monthly reports are for the PREVIOUS month (e.g., in Oct 2025, you can generate Sep 2025 report)
+      // The report month is always last month, not dependent on current dateRange
+      const reportMonth = lastMonth
       
       // STEP 6B: Monthly reports are available throughout the month (not just on the 1st)
       // The report becomes available starting the 1st of the following month and remains available
