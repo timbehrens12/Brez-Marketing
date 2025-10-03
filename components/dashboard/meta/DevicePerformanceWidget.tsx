@@ -213,14 +213,8 @@ export function DevicePerformanceWidget({
   }
 
   const getMetricForChart = () => {
-    switch (selectedBreakdown) {
-      case 'device':
-        return 'impressions'
-      case 'placement':
-        return 'spend'
-      default:
-        return 'clicks'
-    }
+    // Always use impressions for all breakdowns
+    return 'impressions'
   }
 
   const getMetricColor = () => {
