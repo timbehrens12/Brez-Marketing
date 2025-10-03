@@ -3256,15 +3256,6 @@ export default function BrandReportPage() {
                 Reset Month's Usage
               </Button>
               
-              <Button
-                onClick={resetAllUsage}
-                disabled={isLoadingReport || !selectedBrandId}
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
-                Reset All Usage
-              </Button>
-              
               <div className="pt-4 border-t border-gray-600">
                 <p className="text-xs text-gray-500 text-center">
                   Type "reset" to show this menu again
