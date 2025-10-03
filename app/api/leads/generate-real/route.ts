@@ -35,10 +35,9 @@ export async function POST(request: NextRequest) {
     
     const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = validatedData
 
-    // Rate limiting - 100 requests per hour for testing (was 2)
-    const rateLimitResponse = await checkRateLimit(userId, 'lead-generation', 100, 3600)
-    if (rateLimitResponse) return rateLimitResponse
-
+    // NOTE: Rate limiting is handled by tier-based weekly limits (lines 94-104)
+    // No need for Redis rate limiting since subscription tiers already control usage
+    
     // Sanitize inputs
     const sanitizedBusinessType = sanitizeString(businessType, 100)
     const sanitizedNiches = niches.map(niche => sanitizeString(niche, 100))
