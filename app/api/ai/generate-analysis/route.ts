@@ -70,7 +70,7 @@ Write the synopsis now, ensuring you mention BOTH platforms:`;
           { role: "user", content: synopsisPrompt }
         ],
         temperature: 0.3, // Lower temperature for more consistent, factual responses
-        max_tokens: 200, // Longer responses to cover all platforms
+        max_completion_tokens: 200, // Longer responses to cover all platforms
       });
 
       const analysis = response.choices[0]?.message?.content || "Performance analysis unavailable";
@@ -105,7 +105,7 @@ If any data appears suspicious or all zeros, acknowledge this but still provide 
         { role: "user", content: userMessage }
       ],
       temperature: 0.7, // Slightly creative but still factual
-      max_tokens: 1500, // Allow for a detailed response
+      max_completion_tokens: 1500, // Allow for a detailed response
     });
 
     // Extract and return the generated analysis
