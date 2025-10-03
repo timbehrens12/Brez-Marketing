@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: `Generate a response to: "${cleanResponse}"` }
       ],
-      max_completion_tokens: 200,
-      temperature: 0.7,
+      max_completion_tokens: 200
+      // Note: GPT-5 models only support temperature=1 (default)
     })
 
     const smartResponse = completion.choices[0]?.message?.content?.trim()

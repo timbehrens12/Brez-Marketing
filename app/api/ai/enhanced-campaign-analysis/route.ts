@@ -471,8 +471,8 @@ Respond in JSON format:
           content: prompt
         }
       ],
-      max_completion_tokens: 1500,
-      temperature: 0.3
+      max_completion_tokens: 1500
+      // Note: GPT-5 models only support temperature=1 (default)
     })
 
     return JSON.parse(response.choices[0].message.content || '{}')

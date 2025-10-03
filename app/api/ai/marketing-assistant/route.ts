@@ -513,7 +513,7 @@ BRAND CONTEXT: Provide general marketing insights while acknowledging that indus
           content: prompt
         }
       ],
-      temperature: 0.7,
+      // Note: GPT-5 models only support temperature=1 (default)
       max_completion_tokens: 1000,
       response_format: { type: 'json_object' }
     })

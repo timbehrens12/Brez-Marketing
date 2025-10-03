@@ -1461,8 +1461,8 @@ Focus on the most impactful actions that address specific adset and ad performan
           content: prompt
         }
       ],
-      max_completion_tokens: 1000,
-      temperature: 0.3
+      max_completion_tokens: 1000
+      // Note: GPT-5 models only support temperature=1 (default)
     })
 
     // Add 15-second timeout to OpenAI API call
