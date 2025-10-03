@@ -306,11 +306,11 @@ export default function DashboardPage() {
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
       console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
       // Calculate how long we've been showing the loader
-      const MIN_DISPLAY_TIME = 4000 // Must match the interval timer above
-      const elapsedTime = Date.now() - loadingStartTime
+      const MIN_DISPLAY_TIME = 8000 // Must match the interval timer above
+      const elapsedTime = loadingStartTime > 0 ? Date.now() - loadingStartTime : 0
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
       
-      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing (elapsed:', elapsedTime, 'ms)')
+      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing (elapsed:', elapsedTime, 'ms, startTime:', loadingStartTime, ')')
       
       // Wait for minimum display time, then complete
       setTimeout(() => {
@@ -405,9 +405,9 @@ export default function DashboardPage() {
       document.body.style.overflow = 'hidden'
       
       // Use smooth interval-based progress that spreads evenly over minimum display time
-      const MIN_DISPLAY_TIME = 4000 // 4 seconds minimum
-      const UPDATE_INTERVAL = 100 // Update every 100ms for smooth but not too fast animation
-      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL
+      const MIN_DISPLAY_TIME = 8000 // 8 seconds - match data loading time
+      const UPDATE_INTERVAL = 200 // Update every 200ms for slower, more visible progression
+      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL // 40 updates
       
       const loadingPhases = [
         { phase: 'Connecting to workspace...', progressThreshold: 15 },
@@ -419,12 +419,14 @@ export default function DashboardPage() {
       
       let currentUpdate = 0
       let currentPhaseIndex = 0
-      const startTime = Date.now() // Capture start time RIGHT when interval begins
-      
-      // Set it in state on first update
-      setLoadingStartTime(startTime)
       
       const progressInterval = setInterval(() => {
+        // Set start time on FIRST interval tick (not when effect runs)
+        if (currentUpdate === 0) {
+          setLoadingStartTime(Date.now())
+          console.log('[Dashboard] ⏱️ Loading animation started at:', Date.now())
+        }
+        
         currentUpdate++
         const progressPercent = Math.round(Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95)) // Round to integer, max 95% until complete
         
@@ -440,6 +442,7 @@ export default function DashboardPage() {
         // Stop at 95% and wait for actual loading to complete
         if (currentUpdate >= TOTAL_UPDATES) {
           clearInterval(progressInterval)
+          console.log('[Dashboard] ⏱️ Progress reached 95% at:', Date.now())
         }
       }, UPDATE_INTERVAL)
       
