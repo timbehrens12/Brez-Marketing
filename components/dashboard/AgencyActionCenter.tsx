@@ -2417,6 +2417,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           try {
             if (forceRefresh || totalSpend > 0 || totalMeta.length > 0) {
               const brandDataForAI = {
+                id: brand.id, // Required for AI usage tracking
                 name: brand.name,
                 roas: avgROAS,
                 roasChange: roasChange,
