@@ -459,12 +459,12 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
     const completion = await Promise.race([
       Promise.race([
         openai.chat.completions.create({
-          model: "gpt-5-mini",
+          model: "gpt-4o-mini",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          max_tokens: 600, // Reduced for faster response
+          max_completion_tokens: 600, // Reduced for faster response
           temperature: 0.7,
         }),
         new Promise((_, reject) => 
