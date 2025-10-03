@@ -338,13 +338,13 @@ export function DevicePerformanceWidget({
         ) : (
           <div className="text-center py-12">
             <div className="mb-3">
-              <div className="text-gray-600 text-5xl mb-2">📱</div>
+              <div className="text-gray-500 text-5xl mb-2">📱</div>
             </div>
             <p className="text-gray-300 font-medium mb-1">No {BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label.toLowerCase()} data found</p>
             <p className="text-sm text-gray-500 mb-4">No device/platform performance data for this date range</p>
-            <div className="text-xs text-blue-400/80 bg-blue-950/20 p-3 rounded-lg border border-blue-800/30 max-w-sm mx-auto">
-              <p className="font-medium mb-1">💡 This could mean:</p>
-              <ul className="text-left space-y-1 text-blue-300/70">
+            <div className="text-xs text-gray-400 bg-gray-900/30 p-3 rounded-lg border border-gray-700/30 max-w-sm mx-auto">
+              <p className="font-medium mb-1 text-gray-400">💡 This could mean:</p>
+              <ul className="text-left space-y-1 text-gray-500">
                 <li>• No ad spend for the selected dates</li>
                 <li>• Device insights haven't processed yet</li>
                 <li>• Try a different date range or breakdown type</li>
