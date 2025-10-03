@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'All AI usage tracking data cleared successfully. Refresh your page twice or run the clearLocalStorageScript.',
-      clearLocalStorageScript: `Object.keys(localStorage).filter(k => k.includes("usage") || k.includes("Generation") || k.includes("creative") || k.includes("consultant") || k.includes("msg_count") || k.includes("method_used") || k.includes("recommendationsViewed") || k.includes("completedItems")).forEach(k => localStorage.removeItem(k)); window.location.reload();`,
+      clearLocalStorageScript: `Object.keys(localStorage).filter(k => k.includes("usage") || k.includes("Generation") || k.includes("creative") || k.includes("consultant") || k.includes("msg_count") || k.includes("method_used") || k.includes("recommendationsViewed") || k.includes("completedItems") || k.includes("acknowledgedAlerts")).forEach(k => localStorage.removeItem(k)); window.location.reload();`,
       instructions: 'After running this endpoint, you MUST: 1) Clear localStorage using the script above, OR 2) Refresh the page twice to ensure all state is cleared.',
       ...results
     })

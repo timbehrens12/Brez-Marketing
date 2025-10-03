@@ -1656,7 +1656,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Marketing Assistant</span>
-                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-gray-400' : 'text-[#FF2A2A]'}`}>
+                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-green-400' : 'text-[#FF2A2A]'}`}>
                   {optimizationsUsed}/{optimizationsTotal} used this week
                 </span>
               </div>
