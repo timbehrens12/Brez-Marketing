@@ -119,7 +119,7 @@ Format as JSON with these sections: grade, insights, issues, optimizations, budg
 
     // Get AI analysis
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-nano", // Cheapest GPT-5 - campaign metrics analysis
+      model: "gpt-4o-mini", // GPT-4o-mini - campaign metrics analysis
       messages: [
         {
           role: "system",

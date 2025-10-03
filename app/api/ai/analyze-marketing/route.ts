@@ -206,7 +206,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
           content: prompt
         }
       ],
-      model: 'gpt-5-nano', // GPT-5 Nano - fast marketing data analysis
+      model: 'gpt-4o-mini', // GPT-4o-mini - fast marketing data analysis
       temperature: 0.3, // Lower for faster, more focused responses
       max_completion_tokens: 4000 // Increased to prevent cutoff
     }, {
