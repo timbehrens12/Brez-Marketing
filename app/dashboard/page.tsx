@@ -282,6 +282,11 @@ export default function DashboardPage() {
     }
   }, [])
   
+  // Sync isActionCenterLoading with isAgencyWidgetsLoading (they should be the same)
+  useEffect(() => {
+    setIsActionCenterLoading(isAgencyWidgetsLoading)
+  }, [isAgencyWidgetsLoading])
+  
   // Set loading overlay state - wait for both action center initialization AND widget loading
   useEffect(() => {
     const shouldShowOverlay = (isActionCenterLoading || isAgencyWidgetsLoading) && !hasInitiallyLoaded && activeTab === "agency"
