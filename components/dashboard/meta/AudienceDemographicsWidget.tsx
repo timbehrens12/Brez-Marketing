@@ -287,6 +287,7 @@ export function AudienceDemographicsWidget({
                     tickLine={false}
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     tickFormatter={(value) => value.toLocaleString()}
+                    domain={[0, 'dataMax']}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar 
@@ -301,6 +302,12 @@ export function AudienceDemographicsWidget({
             {/* Clean Data Table */}
             <div className="space-y-2 pb-12">
               <div className="text-xs font-medium text-gray-400 mb-2">Performance Breakdown</div>
+              {/* Table Headers */}
+              <div className="flex items-center justify-between py-2 px-3 border-b border-gray-800/50">
+                <div className="text-xs font-medium text-gray-500">{BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label || 'Segment'}</div>
+                <div className="text-xs font-medium text-gray-500">Impressions</div>
+              </div>
+              {/* Table Rows */}
               {data.slice(0, 8).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">
                   <div className="flex items-center gap-3">

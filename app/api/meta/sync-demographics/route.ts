@@ -5,6 +5,10 @@ import { auth } from '@clerk/nextjs'
 // Set maximum duration for Meta demographics sync (5 minutes)
 export const maxDuration = 300
 
+// In-memory rate limiting (prevents multiple simultaneous requests)
+const syncInProgress = new Map<string, number>();
+const RATE_LIMIT_DURATION = 10 * 60 * 1000; // 10 minutes (demographics sync is expensive)
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()
@@ -18,6 +22,29 @@ export async function POST(request: NextRequest) {
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
+
+    // 🚨 SERVER-SIDE RATE LIMITING: Prevent concurrent sync requests
+    const rateLimitKey = `${userId}_${brandId}`;
+    const lastSyncTime = syncInProgress.get(rateLimitKey) || 0;
+    const now = Date.now();
+    
+    if (lastSyncTime && (now - lastSyncTime) < RATE_LIMIT_DURATION) {
+      const remainingTime = Math.ceil((RATE_LIMIT_DURATION - (now - lastSyncTime)) / 1000);
+      console.log(`[Meta Demographics Sync] ⏱️ Rate limited - ${remainingTime}s remaining for brandId=${brandId}`);
+      
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        message: `Using cached demographic data - sync available in ${Math.ceil(remainingTime / 60)} minutes`,
+        remainingTime,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Set the rate limit timestamp
+    syncInProgress.set(rateLimitKey, now);
+    
+    console.log(`[Meta Demographics Sync] 🔄 Starting demographics sync for brandId=${brandId}`);
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -124,9 +151,22 @@ export async function POST(request: NextRequest) {
         dateRanges: storedDemographics?.map(d => `${d.date_range_start} to ${d.date_range_end}`).slice(0, 5),
         sample: storedDemographics?.slice(0, 3)
       })
+      
+      // Clean up old rate limit entries (keep memory clean)
+      const cleanupThreshold = now - (RATE_LIMIT_DURATION * 2);
+      for (const [key, timestamp] of syncInProgress.entries()) {
+        if (timestamp < cleanupThreshold) {
+          syncInProgress.delete(key);
+        }
+      }
 
     } catch (error) {
       console.error('Error in real demographic sync:', error)
+      
+      // Clear rate limit on inner error so user can retry sooner
+      const rateLimitKey = `${userId}_${brandId}`;
+      syncInProgress.delete(rateLimitKey);
+      
       return NextResponse.json({ 
         error: 'Failed to sync demographic data', 
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -141,6 +181,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error triggering Meta demographic sync:', error)
+    
+    // Clear rate limit on outer error so user can retry sooner
+    try {
+      const { userId } = auth();
+      const body = await request.json();
+      const { brandId } = body;
+      if (userId && brandId) {
+        const rateLimitKey = `${userId}_${brandId}`;
+        syncInProgress.delete(rateLimitKey);
+      }
+    } catch {}
+    
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 })
