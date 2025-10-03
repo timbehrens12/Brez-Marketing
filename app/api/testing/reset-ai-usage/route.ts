@@ -181,9 +181,26 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'All AI usage tracking data cleared successfully. Refresh your page twice or run the clearLocalStorageScript.',
-      clearLocalStorageScript: `Object.keys(localStorage).filter(k => k.includes("usage") || k.includes("Generation") || k.includes("creative") || k.includes("consultant") || k.includes("msg_count") || k.includes("method_used") || k.includes("recommendationsViewed") || k.includes("completedItems") || k.includes("acknowledgedAlerts")).forEach(k => localStorage.removeItem(k)); window.location.reload();`,
-      instructions: 'After running this endpoint, you MUST: 1) Clear localStorage using the script above, OR 2) Refresh the page twice to ensure all state is cleared.',
+      message: 'All AI usage tracking data cleared successfully. Run the clearLocalStorageScript in your browser console, then refresh the Marketing Assistant page.',
+      clearLocalStorageScript: `
+// Clear all AI usage related localStorage
+Object.keys(localStorage).filter(k => 
+  k.includes("usage") || 
+  k.includes("Generation") || 
+  k.includes("creative") || 
+  k.includes("consultant") || 
+  k.includes("msg_count") || 
+  k.includes("method_used") || 
+  k.includes("recommendationsViewed") || 
+  k.includes("completedItems") || 
+  k.includes("acknowledgedAlerts")
+).forEach(k => {
+  console.log("🧹 Clearing:", k);
+  localStorage.removeItem(k);
+});
+console.log("✅ localStorage cleared! Now refresh the Marketing Assistant page.");
+      `.trim(),
+      instructions: 'STEPS TO SEE FRESH STATE:\n1. Copy the clearLocalStorageScript above\n2. Open browser console (F12)\n3. Paste and run the script\n4. Navigate to the Marketing Assistant page and refresh',
       ...results
     })
 
