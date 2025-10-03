@@ -210,7 +210,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       temperature: 0.3, // Lower for more focused, consistent reports
       max_completion_tokens: 4000 // Increased to prevent cutoff
     }, {
-      timeout: 25000 // 25 second timeout on OpenAI call
+      timeout: 120000 // 2 minute timeout for comprehensive reports
     })
     
     const analysis = result.choices[0].message.content
