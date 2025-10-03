@@ -1238,46 +1238,58 @@ export async function GET(request: NextRequest) {
                  console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                  
                  if (adSetsData.data) {
-                   // Log all ad sets before filtering
-                   console.log(`[Meta Campaigns] All ad sets for campaign ${campaign.campaign_id}:`, 
-                     adSetsData.data.map((adSet: any) => ({
-                       id: adSet.id,
-                       name: adSet.name,
-                       status: adSet.status,
-                       daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
-                       lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
-                     }))
-                   );
+                   // 🎯 CRITICAL FIX: Check campaign-level status first
+                   // If campaign is OFF at campaign level, budget should be $0 even if ad sets are active
+                   const campaignStatus = (campaign.status || '').toUpperCase();
+                   const isCampaignActive = campaignStatus === 'ACTIVE';
                    
-                   // Filter for active ad sets only and calculate total budget
-                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
-                   console.log(`[Meta Campaigns] Active ad sets for campaign ${campaign.campaign_id}:`, 
-                     activeAdSets.map((adSet: any) => ({
-                       id: adSet.id,
-                       name: adSet.name,
-                       status: adSet.status,
-                       daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
-                       lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
-                     }))
-                   );
-                   
-                   // 🎯 FIXED: For Meta API data, use proper budget fields
-                   adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
-                     const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
-                     const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
-                     return total + Math.max(dailyBudget, lifetimeBudget);
-                   }, 0);
-                   
-                   // Determine budget type
-                   const hasDailyBudgets = activeAdSets.some((adSet: any) => adSet.daily_budget);
-                   const hasLifetimeBudgets = activeAdSets.some((adSet: any) => adSet.lifetime_budget);
-                   adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
-                   
-                   console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Active adsets budget calculation:`, {
-                     activeAdSetsCount: activeAdSets.length,
-                     totalBudget: adsetBudgetTotal,
-                     budgetType: adsetBudgetType
-                   });
+                   if (!isCampaignActive) {
+                     console.log(`[Meta Campaigns] ⚠️ Campaign ${campaign.campaign_id} is ${campaignStatus} - setting budget to $0 even though ad sets may be active`);
+                     adsetBudgetTotal = 0;
+                     adsetBudgetType = 'daily';
+                   } else {
+                     // Campaign is active at campaign level, now check ad sets
+                     // Log all ad sets before filtering
+                     console.log(`[Meta Campaigns] All ad sets for campaign ${campaign.campaign_id}:`, 
+                       adSetsData.data.map((adSet: any) => ({
+                         id: adSet.id,
+                         name: adSet.name,
+                         status: adSet.status,
+                         daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
+                         lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
+                       }))
+                     );
+                     
+                     // Filter for active ad sets only and calculate total budget
+                     const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                     console.log(`[Meta Campaigns] Active ad sets for campaign ${campaign.campaign_id}:`, 
+                       activeAdSets.map((adSet: any) => ({
+                         id: adSet.id,
+                         name: adSet.name,
+                         status: adSet.status,
+                         daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
+                         lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
+                       }))
+                     );
+                     
+                     // 🎯 FIXED: For Meta API data, use proper budget fields
+                     adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
+                       const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
+                       const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
+                       return total + Math.max(dailyBudget, lifetimeBudget);
+                     }, 0);
+                     
+                     // Determine budget type
+                     const hasDailyBudgets = activeAdSets.some((adSet: any) => adSet.daily_budget);
+                     const hasLifetimeBudgets = activeAdSets.some((adSet: any) => adSet.lifetime_budget);
+                     adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
+                     
+                     console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Active adsets budget calculation:`, {
+                       activeAdSetsCount: activeAdSets.length,
+                       totalBudget: adsetBudgetTotal,
+                       budgetType: adsetBudgetType
+                     });
+                   }
                    
                    fetchedFromMetaAPI = true;
                    
