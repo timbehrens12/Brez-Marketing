@@ -1795,7 +1795,7 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
     })
 
     const openaiPromise = openai.chat.completions.create({
-      model: 'gpt-5-mini', // GPT-5 Mini - strategic marketing consultant chat
+      model: 'gpt-4o-mini', // GPT-4o-mini - fast and reliable for chat
       messages: [
         {
           role: 'system',
@@ -1806,9 +1806,8 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
           content: prompt
         }
       ],
-      max_completion_tokens: 1200
-      // Note: GPT-5 models only support temperature=1 (default), so we don't specify it
-      // presence_penalty and frequency_penalty also not supported in GPT-5
+      max_completion_tokens: 1200,
+      temperature: 0.7
     })
 
     const response = await Promise.race([openaiPromise, timeoutPromise])
