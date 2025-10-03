@@ -1118,9 +1118,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
 
       setCampaignOptimizationAvailability(newAvailability)
+      return newAvailability // Return the data for immediate use
 
     } catch (error) {
-
+      return {} // Return empty object on error
     }
   }, [userId, brands, connections, getSupabaseClient])
 
@@ -2098,7 +2099,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     
     try {
       // Load campaign optimization availability first so it's available for AI synopsis
-      await loadCampaignOptimizationAvailability()
+      const freshCampaignOptAvailability = await loadCampaignOptimizationAvailability()
+      console.log('[Brand Health] Campaign optimization availability loaded:', freshCampaignOptAvailability)
       
       const supabase = await getSupabaseClient()
       
@@ -2432,9 +2434,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             
             if (forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0) {
               console.log(`[Brand Health] ${brand.name} - Calling AI synopsis API...`);
-              // Check Marketing Assistant availability from campaign optimization data
-              const marketingAssistantAvailable = campaignOptimizationAvailability[brand.id]?.optimizationAvailable || false;
-              console.log(`[Brand Health] ${brand.name} - Marketing Assistant available:`, marketingAssistantAvailable, campaignOptimizationAvailability[brand.id]);
+              // Check Marketing Assistant availability from fresh data
+              const marketingAssistantAvailable = freshCampaignOptAvailability?.[brand.id]?.optimizationAvailable || false;
+              console.log(`[Brand Health] ${brand.name} - Marketing Assistant available:`, marketingAssistantAvailable, freshCampaignOptAvailability?.[brand.id]);
               
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
@@ -2483,7 +2485,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           } catch (error) {
             console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Use simple overview without AI
-            const marketingAssistantAvailable = campaignOptimizationAvailability[brand.id]?.optimizationAvailable || false;
+            const marketingAssistantAvailable = freshCampaignOptAvailability?.[brand.id]?.optimizationAvailable || false;
             
             synopsis = `Shopify sales are $${totalSales.toFixed(2)} from ${totalOrders.length} orders today. Meta ad spend: $${totalSpend.toFixed(2)} with ${avgROAS.toFixed(2)}x ROAS, ${totalConversions} conversions from ${totalImpressions.toLocaleString()} impressions and ${totalClicks.toLocaleString()} clicks.`
             
