@@ -549,20 +549,8 @@ export default function BrandReportPage() {
       const currentMonthKey = format(now, 'yyyy-MM')
       const today = format(now, 'yyyy-MM-dd')
       
-      // Get the current date range we're looking at
-      const currentDateRange = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : null
-      
-      // Check for monthly reports for the same period we're viewing
-      const hasMonthlyReportForPeriod = reports.some((report: any) => {
-        // Access the database record through the data property
-        const dbReport = report.data || report
-
-        if (dbReport.period_name !== 'last-month') return false
-        // Check if report covers the same date range we're looking at
-        return dbReport.date_range_from === currentDateRange
-      })
-      
-      // Also check for monthly reports generated this month (for rate limiting)
+      // Check for monthly reports generated this month (for rate limiting)
+      // This should check for ANY monthly report created this month, regardless of which period is currently selected
       const hasMonthlyReportThisMonth = reports.some((report: any) => {
         const dbReport = report.data || report
         if (dbReport.period_name !== 'last-month') return false
@@ -579,8 +567,7 @@ export default function BrandReportPage() {
       })
       
       // Update state to reflect database state
-      // Use either period-specific check OR month-specific check for monthly reports
-      setHasMonthlyReportThisMonth(hasMonthlyReportForPeriod || hasMonthlyReportThisMonth)
+      setHasMonthlyReportThisMonth(hasMonthlyReportThisMonth)
       setHasDailyReportToday(hasDailyReportToday)
       
       // Update localStorage to reflect database state
@@ -2675,9 +2662,9 @@ export default function BrandReportPage() {
   useEffect(() => {
 
     
-    // Reset state when brand changes
-    setHasMonthlyReportThisMonth(false)
-    setHasDailyReportToday(false)
+    // DON'T reset hasMonthlyReportThisMonth/hasDailyReportToday here
+    // Let them be updated by loadDailyReports -> checkReportAvailability
+    // Resetting causes the MONTHLY button to show "Unavailable" briefly on load
       
     if (selectedBrandId && dateRange.from && dateRange.to && user?.id && mounted) {
 
