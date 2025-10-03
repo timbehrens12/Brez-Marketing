@@ -113,6 +113,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check niche-specific cooldowns (7-day cooldown) using client's timezone
+    console.log(`🔍 [Niche Cooldown] Checking niches:`, niches)
+    console.log(`🔍 [Niche Cooldown] Cooldown threshold: ${new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()}`)
+    
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
       .select('*')
@@ -125,9 +128,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to check niche cooldowns' }, { status: 500 })
     }
 
+    console.log(`🔍 [Niche Cooldown] Found cooldown records:`, nicheUsageData)
+
     // Check if any selected niches are on cooldown
     const cooldownNiches = nicheUsageData || []
     if (cooldownNiches.length > 0) {
+      console.error(`❌ [Niche Cooldown] BLOCKING - ${cooldownNiches.length} niches on cooldown`)
       // Get niche names for better error message
       const { data: nicheNames } = await supabase
         .from('lead_niches')
