@@ -206,8 +206,8 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
           content: prompt
         }
       ],
-      model: 'gpt-5-nano', // GPT-5 Nano - fast marketing data analysis
-      // Note: GPT-5-nano only supports temperature=1 (default), so we don't specify it
+      model: 'gpt-4o-mini', // GPT-4o-mini - fast and reliable for report generation
+      temperature: 0.3, // Lower for more focused, consistent reports
       max_completion_tokens: 4000 // Increased to prevent cutoff
     }, {
       timeout: 25000 // 25 second timeout on OpenAI call
