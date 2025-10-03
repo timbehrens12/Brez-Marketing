@@ -936,11 +936,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   }, [userId, brands, connections, getSupabaseClient])
 
   // Load campaign optimization availability
-  const loadCampaignOptimizationAvailability = useCallback(async (freshConnections?: any[]) => {
-    if (!userId || !brands) return
-    
-    // Use fresh connections if provided, otherwise fall back to state
+  const loadCampaignOptimizationAvailability = useCallback(async (freshConnections?: any[], freshBrands?: any[]) => {
+    // Use fresh data if provided, otherwise fall back to state
+    const brandsToUse = freshBrands || brands
     const connectionsToUse = freshConnections || connections
+    
+    if (!userId || !brandsToUse) return
 
 
 
@@ -952,7 +953,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       )
       const newAvailability: typeof campaignOptimizationAvailability = {}
 
-      for (const brand of brands) {
+      for (const brand of brandsToUse) {
 
         
         // Check if brand has required platforms (Meta for campaign optimization)
@@ -2144,9 +2145,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         .eq('status', 'active')
         .in('platform_type', ['meta', 'google', 'tiktok', 'shopify']) // Include Shopify for logos/context
       
-      // Load campaign optimization availability with fresh connections AFTER we have them
-      const freshCampaignOptAvailability = await loadCampaignOptimizationAvailability(allConnections || [])
-      console.log('[Brand Health] Campaign optimization availability loaded (with fresh connections):', freshCampaignOptAvailability)
+      // Load campaign optimization availability with fresh data AFTER we have them
+      const freshCampaignOptAvailability = await loadCampaignOptimizationAvailability(allConnections || [], brands)
+      console.log('[Brand Health] Campaign optimization availability loaded (with fresh data):', freshCampaignOptAvailability)
 
       // Filter brands to only those with ad platforms connected (but include shopify data)
       const brandsWithAdPlatforms = brands.filter(brand => 
