@@ -802,8 +802,10 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       twitter_handle: null
     }
     
+    console.log(`🔑 [Enrichment] OpenAI API Key present: ${!!process.env.OPENAI_API_KEY}, Website: ${!!website}`)
+    
     if (website && process.env.OPENAI_API_KEY) {
-      // console.log(`Enriching data for ${name} using website: ${website}`)
+      console.log(`🚀 [Enrichment] Starting enrichment for ${name} using website: ${website}`)
       try {
         // Add timeout wrapper for AI enrichment (8 seconds max for better results)
         enrichedData = await Promise.race([
@@ -812,6 +814,8 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
             setTimeout(() => reject(new Error('AI enrichment timeout')), 8000)
           )
         ]) as any
+        
+        console.log(`✅ [Enrichment] Successfully enriched ${name}:`, enrichedData)
         
         // Validate enriched data
         if (!enrichedData || typeof enrichedData !== 'object') {
@@ -827,14 +831,20 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
         }
       } catch (enrichmentError: any) {
         // Handle specific enrichment errors
+        console.error(`❌ [Enrichment] Error enriching ${name}:`, {
+          message: enrichmentError.message,
+          code: enrichmentError.code,
+          type: enrichmentError.type
+        })
+        
         if (enrichmentError.message?.includes('504')) {
-          // console.log(`Server timeout (504) during enrichment for ${name}, using basic data`)
+          console.log(`⚠️ [Enrichment] Server timeout (504) during enrichment for ${name}, using basic data`)
         } else if (enrichmentError.message?.includes('timeout')) {
-          // console.log(`AI enrichment timeout for ${name}, using basic data`)
+          console.log(`⚠️ [Enrichment] AI enrichment timeout for ${name}, using basic data`)
         } else if (enrichmentError.message?.includes('fetch failed')) {
-          // console.log(`Network error during enrichment for ${name}, using basic data`)
+          console.log(`⚠️ [Enrichment] Network error during enrichment for ${name}, using basic data`)
         } else {
-          // console.log(`AI enrichment failed for ${name}: ${enrichmentError.message || 'Unknown error'}, using basic data`)
+          console.log(`⚠️ [Enrichment] AI enrichment failed for ${name}: ${enrichmentError.message || 'Unknown error'}, using basic data`)
       }
         
         // Reset to default values on any error
@@ -940,46 +950,65 @@ IMPORTANT:
 - Look for variations like "Follow us on", "Connect with us", social media icons, etc.
 `
 
-    // console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
+    console.log(`🔍 [GPT-5 Enrichment] Starting enrichment for ${businessName}...`)
+    console.log(`🔍 [GPT-5 Enrichment] Model: gpt-5-mini, Website length: ${websiteContent.length} chars`)
+    
+    try {
       const response = await openai.chat.completions.create({
         model: "gpt-5-mini", // GPT-5 Mini for quality enrichment
         messages: [{ role: "user", content: prompt }],
         // Note: GPT-5 only supports temperature=1 (default), so we don't specify it
         max_completion_tokens: 500
       })
+      
+      console.log(`✅ [GPT-5 Enrichment] API call successful for ${businessName}`)
 
-    // Note: AI usage tracking is done in the main POST function once per generation batch
+      // Note: AI usage tracking is done in the main POST function once per generation batch
 
-    const result = response.choices[0]?.message?.content?.trim()
-    
-    if (result) {
-      try {
-        // Clean the response by removing markdown code blocks if present
-        let cleanedResult = result
-        if (result.includes('```json')) {
-          cleanedResult = result.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim()
-        } else if (result.includes('```')) {
-          cleanedResult = result.replace(/```\s*/g, '').trim()
+      const result = response.choices[0]?.message?.content?.trim()
+      console.log(`📝 [GPT-5 Enrichment] Raw response for ${businessName}:`, result?.substring(0, 200))
+      
+      if (result) {
+        try {
+          // Clean the response by removing markdown code blocks if present
+          let cleanedResult = result
+          if (result.includes('```json')) {
+            cleanedResult = result.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim()
+          } else if (result.includes('```')) {
+            cleanedResult = result.replace(/```\s*/g, '').trim()
+          }
+          
+          console.log(`🧹 [GPT-5 Enrichment] Cleaned result for ${businessName}:`, cleanedResult.substring(0, 200))
+          
+          const extractedData = JSON.parse(cleanedResult)
+          console.log(`🎯 [GPT-5 Enrichment] Extracted data for ${businessName}:`, extractedData)
+          
+          // Process and validate social media URLs
+          const processedData = {
+            owner_name: extractedData.owner_name,
+            email: extractedData.email,
+            instagram_handle: processSocialMediaUrl('instagram', extractedData.instagram_handle, businessName),
+            facebook_page: processSocialMediaUrl('facebook', extractedData.facebook_page, businessName),
+            linkedin_profile: processSocialMediaUrl('linkedin', extractedData.linkedin_profile, businessName),
+            twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName)
+          }
+          
+          console.log(`✅ [GPT-5 Enrichment] Final processed data for ${businessName}:`, processedData)
+          return processedData
+        } catch (parseError) {
+          console.error(`❌ [GPT-5 Enrichment] JSON parse error for ${businessName}:`, parseError)
+          console.error(`❌ [GPT-5 Enrichment] Failed to parse:`, result)
         }
-        
-        const extractedData = JSON.parse(cleanedResult)
-        // console.log(`AI extracted data for ${businessName}:`, extractedData)
-        
-        // Process and validate social media URLs
-        const processedData = {
-          owner_name: extractedData.owner_name,
-          email: extractedData.email,
-          instagram_handle: processSocialMediaUrl('instagram', extractedData.instagram_handle, businessName),
-          facebook_page: processSocialMediaUrl('facebook', extractedData.facebook_page, businessName),
-          linkedin_profile: processSocialMediaUrl('linkedin', extractedData.linkedin_profile, businessName),
-          twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName)
-        }
-        
-        // console.log(`Processed social media data for ${businessName}:`, processedData)
-        return processedData
-      } catch (parseError) {
-        // console.log(`Error parsing AI response for ${businessName}, using basic data`)
+      } else {
+        console.error(`❌ [GPT-5 Enrichment] Empty response for ${businessName}`)
       }
+    } catch (apiError: any) {
+      console.error(`❌ [GPT-5 Enrichment] API Error for ${businessName}:`, {
+        message: apiError.message,
+        status: apiError.status,
+        code: apiError.code,
+        type: apiError.type
+      })
     }
 
   } catch (error: any) {
