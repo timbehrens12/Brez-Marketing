@@ -392,19 +392,23 @@ export default function DashboardPage() {
         }, delay)
       })
       
-      // Listen for action center ready event - this should fire around 4-5 seconds
+      // Listen for action center ready event - ensure minimum display time
       const handleActionCenterLoaded = () => {
         // Complete the progress immediately when data is loaded
         setLoadingProgress(100)
         setLoadingPhase('Complete!')
         
-        // Then hide the loading after a brief moment
+        // Calculate how long we've been showing the loader
+        const startTime = Date.now()
+        const MIN_DISPLAY_TIME = 2000 // Minimum 2 seconds
+        
+        // Then hide the loading after ensuring minimum display time
         setTimeout(() => {
           setIsActionCenterLoading(false)
           setHasInitiallyLoaded(true) // Mark as initially loaded
           // Re-enable scrolling
           document.body.style.overflow = 'unset'
-        }, 200)
+        }, MIN_DISPLAY_TIME)
       }
       
       window.addEventListener('action-center-loaded', handleActionCenterLoaded)
