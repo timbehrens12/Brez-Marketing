@@ -34,33 +34,38 @@ export async function POST(req: NextRequest) {
       }
       
       // Create a specialized prompt for brand synopsis
+      const hasShopify = brandData.connections.includes('shopify');
+      const hasMeta = brandData.connections.includes('meta');
+      
       const synopsisPrompt = `Generate a concise, actionable brand performance synopsis for ${brandData.name}. 
 
-IMPORTANT: This brand has ${brandData.connections.length > 0 ? brandData.connections.join(' and ') : 'no connected platforms'}. Analyze data from ALL connected platforms.
+CRITICAL REQUIREMENTS:
+1. This brand has BOTH Shopify AND Meta connected - you MUST mention BOTH platforms in your response
+2. Even if data is $0, explicitly state it (e.g., "Shopify: $0 in sales" or "Meta: No ad spend yet")
+3. Never ignore a connected platform, even with zero data
 
-Current Performance Across All Platforms:
-- ROAS: ${brandData.roas ? brandData.roas.toFixed(2) : 'No data'}
-- ROAS Change: ${brandData.roasChange ? (brandData.roasChange > 0 ? '+' : '') + brandData.roasChange.toFixed(1) + '%' : 'No change data'}
-- Ad Spend (Meta): $${brandData.spend ? brandData.spend.toLocaleString() : '0'}
-- Sales Revenue (Shopify): $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'}
-- Sales Change: ${brandData.salesChange ? (brandData.salesChange > 0 ? '+' : '') + brandData.salesChange.toFixed(1) + '%' : 'No change data'}
+Connected Platforms & Data:
+${hasMeta ? `- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS, ${brandData.conversions || 0} conversions` : ''}
+${hasShopify ? `- Shopify: $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'} in sales${brandData.shopifyOrders ? `, ${brandData.shopifyOrders} orders` : ', 0 orders'}` : ''}
+- ROAS Change: ${brandData.roasChange ? (brandData.roasChange > 0 ? '+' : '') + brandData.roasChange.toFixed(1) + '%' : 'N/A'}
+- Sales Change: ${brandData.salesChange ? (brandData.salesChange > 0 ? '+' : '') + brandData.salesChange.toFixed(1) + '%' : 'N/A'}
 - Status: ${brandData.status}
-- Connected Platforms: ${brandData.connections.length > 0 ? brandData.connections.join(', ') : 'None'}
-- Has Performance Data: ${brandData.hasData ? 'Yes' : 'No'}
 
-Generate a 2-3 sentence synopsis that:
-1. Mentions performance from EACH connected platform (e.g., "Meta ads spent $X" AND "Shopify generated $Y in sales")
-2. Highlights ROAS and key metrics from all sources
-3. Provides a brief actionable recommendation
+REQUIRED FORMAT (2-3 sentences):
+- First sentence: State performance from BOTH Meta AND Shopify with actual numbers
+- Second sentence: Highlight trends or concerns (even if it's "no data yet")
+- Third sentence: One actionable recommendation
 
-Keep it conversational, specific to the numbers, and ensure you reference ALL connected platforms in your analysis. Avoid generic statements.`;
+Example for zero data: "Meta ads show no spend yet, while Shopify has generated $0 in sales with no orders. This indicates the brand is in setup phase. Recommendation: Launch initial test campaigns to begin gathering performance data."
+
+Write the synopsis now, ensuring you mention BOTH platforms:`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5-nano", // Cheapest GPT-5 - perfect for simple summaries
         messages: [
           { 
             role: "system", 
-            content: "You are a marketing performance analyst. Generate concise, data-driven brand performance summaries that cover ALL connected platforms (Shopify sales, Meta ads, etc.). Always mention performance from each platform explicitly. Be specific about numbers and actionable in recommendations. Keep responses under 75 words." 
+            content: "You are a marketing performance analyst. You MUST mention ALL connected platforms in every response, even if they have zero data. Never skip mentioning a platform. If Shopify is connected, say 'Shopify: $X'. If Meta is connected, say 'Meta: $X'. Be explicit about every platform's performance." 
           },
           { role: "user", content: synopsisPrompt }
         ],
