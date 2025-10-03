@@ -94,8 +94,13 @@ export async function POST(request: NextRequest) {
     const currentWeeklyUsage = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
     const leadsGeneratedThisWeek = usageData?.reduce((sum, record) => sum + (record.leads_generated || 0), 0) || 0
     
+    console.log(`🔢 [Rate Limit Check] Weekly usage: ${currentWeeklyUsage} / ${WEEKLY_GENERATION_LIMIT}`)
+    console.log(`🔢 [Rate Limit Check] Leads generated this week: ${leadsGeneratedThisWeek}`)
+    console.log(`🔢 [Rate Limit Check] Usage data records:`, usageData)
+    
     // Check if user has exceeded weekly limit
     if (currentWeeklyUsage >= WEEKLY_GENERATION_LIMIT) {
+      console.error(`❌ [Rate Limit] BLOCKING - ${currentWeeklyUsage} >= ${WEEKLY_GENERATION_LIMIT}`)
       return NextResponse.json({ 
         error: `Weekly limit reached. You've used ${currentWeeklyUsage} of ${WEEKLY_GENERATION_LIMIT} generations this week. Resets Sunday night at midnight (Monday 12:00 AM).`,
         usage: {
