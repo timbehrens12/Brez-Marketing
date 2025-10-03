@@ -1441,7 +1441,14 @@ export default function ActionCenterPage() {
           } catch (error) {
             console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Use simple overview without AI
+            const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
+            const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+            
             synopsis = `Shopify sales are $${todaySales.toFixed(2)} from ${todayOrders.length} orders today. Meta ad spend: $${todaySpend.toFixed(2)} with ${todayROAS.toFixed(2)}x ROAS, ${todayConversions} conversions from ${todayImpressions.toLocaleString()} impressions and ${todayClicks.toLocaleString()} clicks.`
+            
+            if (marketingAssistantAvailable) {
+              synopsis += ` Campaign Optimizer is available - run it for personalized optimization recommendations.`
+            }
           }
         }
 

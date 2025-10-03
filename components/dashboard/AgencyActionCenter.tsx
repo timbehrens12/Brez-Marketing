@@ -2467,7 +2467,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           } catch (error) {
             console.error(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Use simple overview without AI
+            const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
+            const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+            
             synopsis = `Shopify sales are $${totalSales.toFixed(2)} from ${totalOrders.length} orders today. Meta ad spend: $${totalSpend.toFixed(2)} with ${avgROAS.toFixed(2)}x ROAS, ${totalConversions} conversions from ${totalImpressions.toLocaleString()} impressions and ${totalClicks.toLocaleString()} clicks.`
+            
+            if (marketingAssistantAvailable) {
+              synopsis += ` Campaign Optimizer is available - run it for personalized optimization recommendations.`
+            }
           }
         }
 
