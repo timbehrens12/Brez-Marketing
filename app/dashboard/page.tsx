@@ -371,49 +371,57 @@ export default function DashboardPage() {
       // Prevent scrolling during loading
       document.body.style.overflow = 'hidden'
       
-      // Evenly distributed loading over 16 seconds total
+      // Track start time for minimum display duration
+      const loadStartTime = Date.now()
+      const MIN_DISPLAY_TIME = 3000 // Minimum 3 seconds
+      
+      // Store all timeout IDs so we can clear them if data loads early
+      const timeoutIds: NodeJS.Timeout[] = []
+      
+      // Faster, more realistic loading over 3 seconds
       const phases = [
-        { progress: 10, phase: 'Connecting to workspace...', delay: 1600 },
-        { progress: 20, phase: 'Loading workspace data...', delay: 3200 },
-        { progress: 30, phase: 'Fetching brand configurations...', delay: 4800 },
-        { progress: 40, phase: 'Generating action items...', delay: 6400 },
-        { progress: 50, phase: 'Processing automation tools...', delay: 8000 },
-        { progress: 60, phase: 'Analyzing brand performance...', delay: 9600 },
-        { progress: 70, phase: 'Compiling reports...', delay: 11200 },
-        { progress: 80, phase: 'Finalizing setup...', delay: 12800 },
-        { progress: 90, phase: 'Preparing dashboard...', delay: 14400 },
-        { progress: 95, phase: 'Almost ready...', delay: 16000 }
+        { progress: 20, phase: 'Connecting to workspace...', delay: 400 },
+        { progress: 40, phase: 'Loading workspace data...', delay: 800 },
+        { progress: 60, phase: 'Fetching brand configurations...', delay: 1200 },
+        { progress: 80, phase: 'Analyzing brand performance...', delay: 1600 },
+        { progress: 90, phase: 'Preparing dashboard...', delay: 2000 }
       ]
       
       phases.forEach(({ progress, phase, delay }) => {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           setLoadingProgress(progress)
           setLoadingPhase(phase)
         }, delay)
+        timeoutIds.push(timeoutId)
       })
       
       // Listen for action center ready event - ensure minimum display time
       const handleActionCenterLoaded = () => {
+        // Clear any pending phase timeouts since data is ready
+        timeoutIds.forEach(id => clearTimeout(id))
+        
+        // Calculate how long we've been showing the loader
+        const elapsedTime = Date.now() - loadStartTime
+        const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
+        
         // Complete the progress immediately when data is loaded
         setLoadingProgress(100)
         setLoadingPhase('Complete!')
         
-        // Calculate how long we've been showing the loader
-        const startTime = Date.now()
-        const MIN_DISPLAY_TIME = 2000 // Minimum 2 seconds
-        
-        // Then hide the loading after ensuring minimum display time
+        // Wait for minimum display time before hiding
         setTimeout(() => {
           setIsActionCenterLoading(false)
           setHasInitiallyLoaded(true) // Mark as initially loaded
           // Re-enable scrolling
           document.body.style.overflow = 'unset'
-        }, MIN_DISPLAY_TIME)
+        }, remainingTime)
       }
       
       window.addEventListener('action-center-loaded', handleActionCenterLoaded)
       
       return () => {
+        // Clean up all timeouts
+        timeoutIds.forEach(id => clearTimeout(id))
         window.removeEventListener('action-center-loaded', handleActionCenterLoaded)
         // Re-enable scrolling if component unmounts during loading
         document.body.style.overflow = 'unset'
