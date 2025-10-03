@@ -172,6 +172,38 @@ export class AIUsageService {
     }
   }
 
+  async logUsage(params: {
+    userId: string
+    brandId?: string | null
+    endpoint: string
+    metadata?: any
+  }): Promise<boolean> {
+    try {
+      const now = new Date()
+
+      // Insert into ai_usage_logs table
+      const { error: logError } = await this.supabase
+        .from('ai_usage_logs')
+        .insert({
+          brand_id: params.brandId || null,
+          user_id: params.userId,
+          endpoint: params.endpoint,
+          metadata: params.metadata || {},
+          created_at: now.toISOString()
+        })
+
+      if (logError) {
+        console.error('Error logging AI usage:', logError)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error in logUsage:', error)
+      return true // Don't fail the main functionality
+    }
+  }
+
   async recordUsage(
     brandId: string,
     userId: string,
