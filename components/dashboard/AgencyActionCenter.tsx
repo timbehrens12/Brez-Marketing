@@ -2097,6 +2097,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     setIsLoadingBrandHealth(true)
     
     try {
+      // Load campaign optimization availability first so it's available for AI synopsis
+      await loadCampaignOptimizationAvailability()
+      
       const supabase = await getSupabaseClient()
       
       // Step 1: Get all brands (owned + shared) with at least 1 ad platform connected
