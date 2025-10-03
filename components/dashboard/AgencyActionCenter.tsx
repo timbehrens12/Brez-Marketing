@@ -2415,7 +2415,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           // Generate AI synopsis instead of hardcoded text
           try {
+            console.log(`[Brand Health] ${brand.name} - Synopsis check:`, {
+              forceRefresh,
+              totalSpend,
+              totalMetaLength: totalMeta.length,
+              totalSales,
+              totalOrdersLength: totalOrders.length,
+              willCallAI: forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0
+            });
+            
             if (forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0) {
+              console.log(`[Brand Health] ${brand.name} - Calling AI synopsis API...`);
               // Check Marketing Assistant availability from tool usage data
               const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
               const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
