@@ -523,7 +523,7 @@ export async function POST(request: NextRequest) {
         promptLength: prompt.length,
         responseLength: response.length,
         marketingGoal,
-        hasDateRange: !!customDateRange,
+        hasDateRange: !!effectiveDateRange,
         timestamp: new Date().toISOString()
       }
     })

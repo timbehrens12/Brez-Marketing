@@ -2304,15 +2304,21 @@ export default function LeadGeneratorPage() {
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
                       variant="outline"
-                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50 whitespace-nowrap"
+                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50"
                     >
                       {isSendingToOutreach ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin flex-shrink-0" />
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin flex-shrink-0" />
+                          <span className="hidden md:inline">Sending...</span>
+                          <span className="md:hidden">...</span>
+                        </>
                       ) : (
-                        <Send className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <>
+                          <Send className="h-4 w-4 flex-shrink-0" />
+                          <span className="hidden md:inline ml-2">Send to Outreach ({selectedLeads.length})</span>
+                          <span className="md:hidden ml-2">({selectedLeads.length})</span>
+                        </>
                       )}
-                      <span className="hidden sm:inline">{isSendingToOutreach ? 'Sending...' : `Send to Outreach (${selectedLeads.length})`}</span>
-                      <span className="sm:hidden">Send ({selectedLeads.length})</span>
                     </Button>
                   </div>
                 </div>
