@@ -2406,6 +2406,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           } else if (roasChange < -20 && totalSpend > 0) {
             status = 'warning'
             alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
+          } else if (totalSpend === 0 && totalMeta.length === 0 && totalSales > 0) {
+            // Shopify-only brand with sales but no ads running
+            status = 'info'
           }
 
           if (salesChange < -30 && shopifyData?.length) {
@@ -2428,6 +2431,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               console.log(`[Brand Health] ${brand.name} - Calling AI synopsis API...`);
               // Check Marketing Assistant availability from campaign optimization data
               const marketingAssistantAvailable = campaignOptimizationAvailability[brand.id]?.optimizationAvailable || false;
+              console.log(`[Brand Health] ${brand.name} - Marketing Assistant available:`, marketingAssistantAvailable, campaignOptimizationAvailability[brand.id]);
               
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
