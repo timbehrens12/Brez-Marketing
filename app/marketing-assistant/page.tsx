@@ -449,6 +449,12 @@ export default function MarketingAssistantPage() {
   const loadBudgetAllocations = async () => {
     if (!selectedBrandId) return
     
+    // Only load if there are recommendations - budget allocations are part of the weekly recommendation cycle
+    if (optimizationCards.length === 0) {
+      setBudgetAllocations([])
+      return
+    }
+    
     try {
       // Backend always uses last 7 days - pass platform and status filters
       const timestamp = Date.now()
@@ -473,6 +479,12 @@ export default function MarketingAssistantPage() {
 
   const loadAudienceExpansions = async () => {
     if (!selectedBrandId) return
+    
+    // Only load if there are recommendations - audience expansions are part of the weekly recommendation cycle
+    if (optimizationCards.length === 0) {
+      setAudienceExpansions([])
+      return
+    }
     
     try {
       const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
