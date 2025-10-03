@@ -2256,14 +2256,14 @@ export default function LeadGeneratorPage() {
           {/* Generated Leads Panel */}
           <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl xl:col-span-3 flex flex-col">
             <CardHeader>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-gray-400" />
-                  <h2 className="text-lg font-semibold text-gray-400">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Building2 className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                  <h2 className="text-lg font-semibold text-gray-400 truncate">
                     Generated Leads ({filteredLeads.length}{leads.length !== filteredLeads.length && ` of ${leads.length}`})
                   </h2>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2 flex-wrap">
                     <Button
                       onClick={openFiltersPanel}
                       variant="outline"
