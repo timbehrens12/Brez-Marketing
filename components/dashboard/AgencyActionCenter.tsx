@@ -2555,13 +2555,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       setBrandHealthData(results)
       
     } catch (error) {
-
+      console.error('[Brand Health] Error loading data:', error)
       setBrandHealthData([])
     } finally {
       setIsLoadingBrandHealth(false)
       brandHealthLoadingRef.current = false // Reset loading guard
     }
-  }, [userId, getSupabaseClient, dateRange])
+  }, [userId, getSupabaseClient, dateRange, loadCampaignOptimizationAvailability, campaignOptimizationAvailability])
 
   // Load localStorage data
   useEffect(() => {
