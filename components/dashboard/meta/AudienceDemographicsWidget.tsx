@@ -316,13 +316,19 @@ export function AudienceDemographicsWidget({
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400 mb-2">No {BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label.toLowerCase()} data available</p>
-            <div className="text-sm text-gray-500 max-w-md mx-auto space-y-1">
-                <p>No breakdown data available for this date range and breakdown type.</p>
-              <div className="text-xs text-blue-400 mt-3 bg-blue-950/20 p-2 rounded border border-blue-800/30">
-                <p className="font-medium">💡 Try a different breakdown type or date range</p>
-              </div>
+          <div className="text-center py-12">
+            <div className="mb-3">
+              <div className="text-gray-600 text-5xl mb-2">📊</div>
+            </div>
+            <p className="text-gray-300 font-medium mb-1">No {BREAKDOWN_TYPES.find(t => t.value === selectedBreakdown)?.label.toLowerCase()} data found</p>
+            <p className="text-sm text-gray-500 mb-4">No ad performance data available for this date range</p>
+            <div className="text-xs text-blue-400/80 bg-blue-950/20 p-3 rounded-lg border border-blue-800/30 max-w-sm mx-auto">
+              <p className="font-medium mb-1">💡 This could mean:</p>
+              <ul className="text-left space-y-1 text-blue-300/70">
+                <li>• No ad spend for the selected dates</li>
+                <li>• Ads haven't finished processing yet</li>
+                <li>• Try a different date range or breakdown type</li>
+              </ul>
             </div>
           </div>
         )}
