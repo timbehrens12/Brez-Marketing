@@ -304,27 +304,20 @@ export default function DashboardPage() {
     })
     
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
-      console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
-      // Calculate how long we've been showing the loader
-      const MIN_DISPLAY_TIME = 8000 // Must match the interval timer above
       const elapsedTime = loadingStartTime > 0 ? Date.now() - loadingStartTime : 0
-      const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
+      console.log('[Dashboard] ✅ Both loading states false - completing loading screen (elapsed:', elapsedTime, 'ms)')
       
-      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing (elapsed:', elapsedTime, 'ms, startTime:', loadingStartTime, ')')
+      // Complete immediately since exponential progress handles the timing
+      // Complete the loading progress
+      setLoadingProgress(100)
+      setLoadingPhase('Complete!')
       
-      // Wait for minimum display time, then complete
+      // Brief moment to show 100% completion, then hide
       setTimeout(() => {
-        // Complete the loading progress
-        setLoadingProgress(100)
-        setLoadingPhase('Complete!')
-        
-        // Brief moment to show 100% completion, then hide
-        setTimeout(() => {
-          setHasInitiallyLoaded(true)
-          // Re-enable scrolling
-          document.body.style.overflow = 'unset'
-        }, 400)
-      }, remainingTime)
+        setHasInitiallyLoaded(true)
+        // Re-enable scrolling
+        document.body.style.overflow = 'unset'
+      }, 300)
     }
   }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab, loadingStartTime])
   
@@ -404,17 +397,17 @@ export default function DashboardPage() {
       // Prevent scrolling during loading
       document.body.style.overflow = 'hidden'
       
-      // Use smooth interval-based progress that spreads evenly over minimum display time
-      const MIN_DISPLAY_TIME = 8000 // 8 seconds - match data loading time
-      const UPDATE_INTERVAL = 200 // Update every 200ms for slower, more visible progression
-      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL // 40 updates
+      // Use smooth interval-based progress that continues until data loads
+      // Don't cap at 95% - keep progressing slowly to avoid appearing stuck
+      const UPDATE_INTERVAL = 300 // Update every 300ms for visible but steady progression
       
       const loadingPhases = [
-        { phase: 'Connecting to workspace...', progressThreshold: 15 },
-        { phase: 'Loading workspace data...', progressThreshold: 30 },
-        { phase: 'Fetching brand configurations...', progressThreshold: 50 },
-        { phase: 'Analyzing brand performance...', progressThreshold: 70 },
-        { phase: 'Preparing dashboard...', progressThreshold: 85 }
+        { phase: 'Connecting to workspace...', progressThreshold: 10 },
+        { phase: 'Loading workspace data...', progressThreshold: 25 },
+        { phase: 'Fetching brand configurations...', progressThreshold: 40 },
+        { phase: 'Analyzing brand performance...', progressThreshold: 60 },
+        { phase: 'Processing data insights...', progressThreshold: 75 },
+        { phase: 'Finalizing dashboard...', progressThreshold: 85 }
       ]
       
       let currentUpdate = 0
@@ -428,9 +421,14 @@ export default function DashboardPage() {
         }
         
         currentUpdate++
-        const progressPercent = Math.round(Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95)) // Round to integer, max 95% until complete
         
-        setLoadingProgress(progressPercent)
+        // Slow exponential growth: fast at first, then slows down
+        // This makes it feel like progress without hitting 100% too soon
+        // Formula: progress = 95 * (1 - e^(-update/15))
+        // This reaches ~63% at update 15, ~86% at update 30, ~95% at update 45
+        const progressPercent = Math.round(95 * (1 - Math.exp(-currentUpdate / 15)))
+        
+        setLoadingProgress(Math.min(95, progressPercent))
         
         // Update phase based on progress
         if (currentPhaseIndex < loadingPhases.length - 1 && 
@@ -439,10 +437,10 @@ export default function DashboardPage() {
           setLoadingPhase(loadingPhases[currentPhaseIndex].phase)
         }
         
-        // Stop at 95% and wait for actual loading to complete
-        if (currentUpdate >= TOTAL_UPDATES) {
-          clearInterval(progressInterval)
-          console.log('[Dashboard] ⏱️ Progress reached 95% at:', Date.now())
+        // Cap at 95% and wait for actual loading to complete
+        if (progressPercent >= 95) {
+          // Don't clear interval - keep it running to maintain illusion of progress
+          // but stop updating (already at 95%)
         }
       }, UPDATE_INTERVAL)
       
