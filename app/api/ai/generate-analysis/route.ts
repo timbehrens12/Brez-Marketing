@@ -44,19 +44,17 @@ export async function POST(req: NextRequest) {
 
 DATA:
 - Shopify: $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'} in sales, ${brandData.shopifyOrders || 0} orders
-- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS
+- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS, ${brandData.conversions || 0} conversions, ${brandData.impressions || 0} impressions, ${brandData.clicks || 0} clicks
 - Marketing Assistant: ${marketingAssistantAvailable ? 'AVAILABLE' : 'Not available (used this week)'}
 
 REQUIRED FORMAT:
-Sentence 1: "Shopify sales are $[amount] from [X] orders today, while Meta ad spend is $[amount]."
+Sentence 1: "Shopify sales are $[amount] from [X] orders today. Meta ad spend: $[amount] with [X]x ROAS, [X] conversions from [X] impressions and [X] clicks."
 Sentence 2: Brief trend observation (e.g., "Strong organic growth" or "No paid ads running yet")
 Sentence 3 (ONLY if Marketing Assistant AVAILABLE): "Campaign Optimizer is available - run it for personalized optimization recommendations."
 
 DO NOT:
-- Include percentage comparisons
-- Include ROAS, impressions, clicks, or technical metrics
+- Include percentage comparisons (like "0.0% vs previous")
 - Give specific campaign advice
-- Mention conversions
 
 Write the overview now:`;
 
@@ -65,12 +63,12 @@ Write the overview now:`;
         messages: [
           { 
             role: "system", 
-            content: "You are a marketing performance analyst. Write EXACTLY 2-3 sentences. First sentence: explicitly state 'Shopify sales are $X from Y orders' AND 'Meta ad spend is $X'. Second sentence: note the trend. Third sentence (ONLY if Marketing Assistant is available): say 'Campaign Optimizer is available - run it for personalized optimization recommendations.' DO NOT include percentage comparisons or technical metrics." 
+            content: "You are a marketing performance analyst. Write EXACTLY 2-3 sentences. First sentence: state Shopify sales/orders AND Meta ad spend/ROAS/conversions/impressions/clicks. Second sentence: note the trend. Third sentence (ONLY if Marketing Assistant is available): say 'Campaign Optimizer is available - run it for personalized optimization recommendations.' DO NOT include percentage comparisons." 
           },
           { role: "user", content: synopsisPrompt }
         ],
         temperature: 0.7, // Higher temp for more natural language
-        max_tokens: 150, // Concise 2-3 sentence overview
+        max_tokens: 200, // Enough for metrics + overview
       });
 
       const analysis = response.choices[0]?.message?.content || "Performance analysis unavailable";
