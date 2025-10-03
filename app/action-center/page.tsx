@@ -1388,6 +1388,10 @@ export default function ActionCenterPage() {
           // Generate AI synopsis instead of hardcoded text
           try {
             if (forceRefresh || todaySpend > 0 || todayMeta.length > 0 || todaySales > 0 || todayOrders.length > 0) {
+              // Check Marketing Assistant availability from tool usage data
+              const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
+              const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+              
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
                 name: brand.name,
@@ -1408,7 +1412,9 @@ export default function ActionCenterPage() {
                 shopifyOrders: todayOrders.length,
                 shopifyOrdersYesterday: yesterdayOrders.length,
                 avgOrderValue: todayOrders.length > 0 ? todaySales / todayOrders.length : 0,
-                hasShopifyData: (shopifyData?.length || 0) > 0
+                hasShopifyData: (shopifyData?.length || 0) > 0,
+                // Marketing Assistant availability
+                marketingAssistantAvailable: marketingAssistantAvailable
               }
 
               // console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)

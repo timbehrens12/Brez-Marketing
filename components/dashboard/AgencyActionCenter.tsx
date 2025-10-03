@@ -2416,6 +2416,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Generate AI synopsis instead of hardcoded text
           try {
             if (forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0) {
+              // Check Marketing Assistant availability from tool usage data
+              const marketingAssistantTool = toolUsageMap.get('campaign-optimization');
+              const marketingAssistantAvailable = marketingAssistantTool ? marketingAssistantTool.isAvailable : false;
+              
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
                 name: brand.name,
@@ -2436,7 +2440,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 shopifyOrders: totalOrders.length,
                 shopifyOrdersYesterday: 0, // Not applicable for date range
                 avgOrderValue: totalOrders.length > 0 ? totalSales / totalOrders.length : 0,
-                hasShopifyData: (shopifyData?.length || 0) > 0
+                hasShopifyData: (shopifyData?.length || 0) > 0,
+                // Marketing Assistant availability
+                marketingAssistantAvailable: marketingAssistantAvailable
               }
 
               

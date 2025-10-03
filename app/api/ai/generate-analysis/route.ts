@@ -33,16 +33,21 @@ export async function POST(req: NextRequest) {
         });
       }
       
+      // Check Marketing Assistant availability
+      const marketingAssistantAvailable = brandData.marketingAssistantAvailable || false;
+      
       // Create a specialized prompt for brand synopsis
       const hasShopify = brandData.connections.includes('shopify');
       const hasMeta = brandData.connections.includes('meta');
       
-      const synopsisPrompt = `Generate a concise, actionable brand performance synopsis for ${brandData.name}. 
+      const synopsisPrompt = `Generate a concise performance overview for ${brandData.name}. 
 
 CRITICAL REQUIREMENTS:
 1. This brand has BOTH Shopify AND Meta connected - you MUST mention BOTH platforms in your response
 2. Even if data is $0, explicitly state it (e.g., "Shopify: $0 in sales" or "Meta: No ad spend yet")
 3. Never ignore a connected platform, even with zero data
+4. DO NOT give specific campaign recommendations - only provide performance overview
+5. If Marketing Assistant is available, mention it as the next step for optimization
 
 Connected Platforms & Data:
 ${hasMeta ? `- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS, ${brandData.conversions || 0} conversions` : ''}
@@ -50,26 +55,28 @@ ${hasShopify ? `- Shopify: $${brandData.revenue ? brandData.revenue.toLocaleStri
 - ROAS Change: ${brandData.roasChange ? (brandData.roasChange > 0 ? '+' : '') + brandData.roasChange.toFixed(1) + '%' : 'N/A'}
 - Sales Change: ${brandData.salesChange ? (brandData.salesChange > 0 ? '+' : '') + brandData.salesChange.toFixed(1) + '%' : 'N/A'}
 - Status: ${brandData.status}
+- Marketing Assistant: ${marketingAssistantAvailable ? 'Available' : 'Used this week'}
 
 REQUIRED FORMAT (2-3 sentences):
 - First sentence: State performance from BOTH Meta AND Shopify with actual numbers
-- Second sentence: Highlight trends or concerns (even if it's "no data yet")
-- Third sentence: One actionable recommendation
+- Second sentence: Highlight trends or performance status
+- Third sentence: ${marketingAssistantAvailable ? 'Suggest running Campaign Optimizer (Marketing Assistant) for personalized recommendations' : 'Note that performance overview only, detailed recommendations available weekly'}
 
-Example for zero data: "Meta ads show no spend yet, while Shopify has generated $0 in sales with no orders. This indicates the brand is in setup phase. Recommendation: Launch initial test campaigns to begin gathering performance data."
+Example: "Meta ads generated $0 in spend while Shopify recorded $600 in sales from 2 orders today. Sales are performing above average with strong organic growth. Run Campaign Optimizer for AI-powered recommendations to scale with paid ads."
 
 Write the synopsis now, ensuring you mention BOTH platforms:`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5-mini", // Fast, cost-effective GPT-5 for summaries
+        model: "gpt-4o-mini", // Cost-effective model for simple summaries
         messages: [
           { 
             role: "system", 
-            content: "You are a marketing performance analyst. You MUST mention ALL connected platforms in every response, even if they have zero data. Never skip mentioning a platform. If Shopify is connected, say 'Shopify: $X'. If Meta is connected, say 'Meta: $X'. Be explicit about every platform's performance." 
+            content: "You are a marketing performance analyst providing brief performance overviews. You MUST mention ALL connected platforms in every response, even if they have zero data. DO NOT give specific campaign recommendations - that's what Campaign Optimizer (Marketing Assistant) is for. Only provide performance overview and suggest using Campaign Optimizer if available." 
           },
           { role: "user", content: synopsisPrompt }
         ],
-        max_completion_tokens: 200, // GPT-5 uses max_completion_tokens
+        temperature: 0.3, // Lower temperature for more consistent, factual responses
+        max_tokens: 200, // Enough for a concise 2-3 sentence overview
       });
 
       const analysis = response.choices[0]?.message?.content || "Performance analysis unavailable";
@@ -98,12 +105,13 @@ If any data appears suspicious or all zeros, acknowledge this but still provide 
 
     // Generate analysis using OpenAI
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini", // Legacy unused code path - fast, cost-effective GPT-5
+      model: "gpt-4o-mini", // Legacy unused code path - cost-effective model
       messages: [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage }
       ],
-      max_completion_tokens: 1500, // GPT-5 uses max_completion_tokens
+      temperature: 0.7, // Slightly creative but still factual
+      max_tokens: 1500, // Allow for a detailed response
     });
 
     // Extract and return the generated analysis
