@@ -306,7 +306,7 @@ export default function DashboardPage() {
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
       console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
       // Calculate how long we've been showing the loader
-      const MIN_DISPLAY_TIME = 4000 // Must match the interval timer above
+      const MIN_DISPLAY_TIME = 5000 // Must match the interval timer above (5 seconds)
       const elapsedTime = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
       
@@ -406,9 +406,9 @@ export default function DashboardPage() {
       document.body.style.overflow = 'hidden'
       
       // Use smooth interval-based progress that spreads evenly over minimum display time
-      const MIN_DISPLAY_TIME = 4000 // 4 seconds minimum
-      const UPDATE_INTERVAL = 100 // Update every 100ms for smooth but not too fast animation
-      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL
+      const MIN_DISPLAY_TIME = 5000 // 5 seconds minimum for smooth experience
+      const UPDATE_INTERVAL = 150 // Update every 150ms - slower for more visible progression
+      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL // ~33 updates
       
       const loadingPhases = [
         { phase: 'Connecting to workspace...', progressThreshold: 15 },
@@ -423,7 +423,8 @@ export default function DashboardPage() {
       
       const progressInterval = setInterval(() => {
         currentUpdate++
-        const progressPercent = Math.round(Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95)) // Round to integer, max 95% until complete
+        // Spread progress evenly: each update adds ~2.88% (95 / 33 updates)
+        const progressPercent = Math.min(95, Math.round((currentUpdate / TOTAL_UPDATES) * 95))
         
         setLoadingProgress(progressPercent)
         
