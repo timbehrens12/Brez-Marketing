@@ -5,6 +5,10 @@ import { fetchMetaAdSets } from '@/lib/services/meta-service';
 
 export const dynamic = 'force-dynamic';
 
+// In-memory rate limiting (prevents multiple simultaneous requests)
+const refreshInProgress = new Map<string, number>();
+const RATE_LIMIT_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Single endpoint to refresh ALL ad set data from Meta API
  * This is called ONCE on page load to fetch:
@@ -36,6 +40,27 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // 🚨 SERVER-SIDE RATE LIMITING: Prevent concurrent refresh requests
+    const rateLimitKey = `${userId}_${brandId}`;
+    const lastRefreshTime = refreshInProgress.get(rateLimitKey) || 0;
+    const now = Date.now();
+    
+    if (lastRefreshTime && (now - lastRefreshTime) < RATE_LIMIT_DURATION) {
+      const remainingTime = Math.ceil((RATE_LIMIT_DURATION - (now - lastRefreshTime)) / 1000);
+      console.log(`[AdSet Refresh] ⏱️ Rate limited - ${remainingTime}s remaining for brandId=${brandId}`);
+      
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        message: `Using cached data - refresh available in ${remainingTime} seconds`,
+        remainingTime,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Set the rate limit timestamp
+    refreshInProgress.set(rateLimitKey, now);
     
     console.log(`[AdSet Refresh] 🔄 Starting centralized ad set refresh for brandId=${brandId}`);
     
@@ -121,6 +146,14 @@ export async function POST(req: NextRequest) {
     
     console.log(`[AdSet Refresh] 🎉 Completed! Synced ${totalAdSets} ad sets across ${campaigns.length} campaigns`);
     
+    // Clean up old rate limit entries (keep memory clean)
+    const cleanupThreshold = now - (RATE_LIMIT_DURATION * 2); // 10 minutes old
+    for (const [key, timestamp] of refreshInProgress.entries()) {
+      if (timestamp < cleanupThreshold) {
+        refreshInProgress.delete(key);
+      }
+    }
+    
     return NextResponse.json({
       success: true,
       message: `Successfully refreshed ad sets for ${campaigns.length} campaigns`,
@@ -132,6 +165,16 @@ export async function POST(req: NextRequest) {
     
   } catch (error: any) {
     console.error('[AdSet Refresh] Fatal error:', error);
+    
+    // Clear rate limit on error so user can retry sooner
+    const searchParams = req.nextUrl.searchParams;
+    const brandId = searchParams.get('brandId');
+    if (brandId) {
+      const { userId } = auth();
+      const rateLimitKey = `${userId}_${brandId}`;
+      refreshInProgress.delete(rateLimitKey);
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to refresh ad sets', 

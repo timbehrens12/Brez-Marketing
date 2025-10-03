@@ -115,8 +115,36 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   // 🔄 Centralized ad set refresh on initial load
   useEffect(() => {
     // ONE Meta API call to refresh all ad set data on page load
+    // 🚨 GLOBAL THROTTLE: Only refresh once per 5 minutes across ALL components
+    const globalThrottleKey = `adset_refresh_${brandId}`;
+    const lastRefreshTime = typeof window !== 'undefined' 
+      ? (window as any)[globalThrottleKey] 
+      : 0;
+    const now = Date.now();
+    const THROTTLE_DURATION = 5 * 60 * 1000; // 5 minutes
+    
     if (brandId && !hasInitialLoadRef.current) {
+      // Check if we've refreshed recently (global throttle)
+      if (lastRefreshTime && (now - lastRefreshTime) < THROTTLE_DURATION) {
+        const remainingTime = Math.ceil((THROTTLE_DURATION - (now - lastRefreshTime)) / 1000);
+        console.log(`[TotalMetaBudget] ⏱️ Ad set refresh throttled (${remainingTime}s remaining) - using cached data`);
+        
+        // Immediately notify that we're using cached data
+        window.dispatchEvent(new CustomEvent('adset-refresh-complete', {
+          detail: { brandId, timestamp: Date.now(), cached: true }
+        }));
+        
+        // Fetch from database (use cached ad set data)
+        fetchTotalBudget(false);
+        return;
+      }
+      
       console.log('[TotalMetaBudget] 🔄 Triggering centralized ad set refresh on page load');
+      
+      // Set global throttle timestamp BEFORE making the call
+      if (typeof window !== 'undefined') {
+        (window as any)[globalThrottleKey] = now;
+      }
       
       // Call the centralized refresh endpoint (ONE Meta API call for everything)
       fetch(`/api/meta/adsets/refresh?brandId=${brandId}`, {
@@ -140,6 +168,11 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
         })
         .catch(err => {
           console.error('[TotalMetaBudget] ⚠️ Ad set refresh failed, using cached data:', err);
+          
+          // Clear the throttle timestamp on failure so it can retry sooner
+          if (typeof window !== 'undefined') {
+            delete (window as any)[globalThrottleKey];
+          }
           
           // Notify failure too so components don't wait forever
           window.dispatchEvent(new CustomEvent('adset-refresh-complete', {
