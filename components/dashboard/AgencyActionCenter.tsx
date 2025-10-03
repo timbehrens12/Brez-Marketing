@@ -2415,7 +2415,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           // Generate AI synopsis instead of hardcoded text
           try {
-            if (forceRefresh || totalSpend > 0 || totalMeta.length > 0) {
+            if (forceRefresh || totalSpend > 0 || totalMeta.length > 0 || totalSales > 0 || totalOrders.length > 0) {
               const brandDataForAI = {
                 id: brand.id, // Required for AI usage tracking
                 name: brand.name,

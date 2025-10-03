@@ -1387,8 +1387,9 @@ export default function ActionCenterPage() {
 
           // Generate AI synopsis instead of hardcoded text
           try {
-            if (forceRefresh || todaySpend > 0 || todayMeta.length > 0) {
+            if (forceRefresh || todaySpend > 0 || todayMeta.length > 0 || todaySales > 0 || todayOrders.length > 0) {
               const brandDataForAI = {
+                id: brand.id, // Required for AI usage tracking
                 name: brand.name,
                 roas: todayROAS,
                 roasChange: roasChange,
