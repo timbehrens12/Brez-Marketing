@@ -12,7 +12,11 @@ const openai = new OpenAI({
 })
 
 // Usage limits for weekly system
-const WEEKLY_GENERATION_LIMIT = 1 // 1 generation per week for cost control
+// TODO: Make this dynamic based on subscription tier
+// Agency: 625 leads/week = 25 generations/week
+// Pro: 100 leads/week = 4 generations/week  
+// Free: 25 leads/week = 1 generation/week
+const WEEKLY_GENERATION_LIMIT = 100 // Temp: High limit for testing
 const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation 
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
 const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search
