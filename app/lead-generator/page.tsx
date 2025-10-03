@@ -1964,9 +1964,9 @@ export default function LeadGeneratorPage() {
                         {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
                         </AccordionTrigger>
                       <AccordionContent className="pb-4">
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                           {(categoryNiches as any[]).map((niche: any) => (
-                            <div key={niche.id} className="flex items-center space-x-2">
+                            <div key={niche.id} className="flex items-center space-x-2 min-w-0">
                               <Checkbox
                                 id={niche.id}
                                 checked={selectedNiches.includes(niche.id)}
@@ -1977,11 +1977,11 @@ export default function LeadGeneratorPage() {
                                     setSelectedNiches(prev => prev.filter(id => id !== niche.id))
                                   }
                                 }}
-                                className="border-[#444] data-[state=checked]:bg-gray-600"
+                                className="border-[#444] data-[state=checked]:bg-gray-600 flex-shrink-0"
                               />
                               <label 
                                 htmlFor={niche.id} 
-                                className="text-sm cursor-pointer text-gray-400"
+                                className="text-sm cursor-pointer text-gray-400 truncate"
                               >
                                 {niche.name}
                               </label>
@@ -2219,8 +2219,8 @@ export default function LeadGeneratorPage() {
                   </>
                 ) : (usageData?.remaining ?? 0) <= 0 ? (
                   <>
-                    <Clock className="h-4 w-4 mr-2" />
-                    Weekly Limit - resets mondays - {getCountdownToMondayMidnight()}
+                    <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">Weekly Limit - resets Mondays - {getCountdownToMondayMidnight()}</span>
                   </>
                 ) : (
                   <>
@@ -2256,22 +2256,22 @@ export default function LeadGeneratorPage() {
           {/* Generated Leads Panel */}
           <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl xl:col-span-3 flex flex-col">
             <CardHeader>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-gray-400" />
                   <h2 className="text-lg font-semibold text-gray-400">
                     Generated Leads ({filteredLeads.length}{leads.length !== filteredLeads.length && ` of ${leads.length}`})
                   </h2>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2">
                     <Button
                       onClick={openFiltersPanel}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white flex-shrink-0"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                     >
                       <Filter className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Filters</span>
+                      Filters
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials || 
                         filters.socialPlatforms.instagram || filters.socialPlatforms.facebook || 
                         filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter || 
@@ -2285,18 +2285,17 @@ export default function LeadGeneratorPage() {
                       onClick={() => setIsAddingManual(true)}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white flex-shrink-0"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Add Manual Lead</span>
-                      <span className="sm:hidden">Add</span>
+                      Add Manual Lead
                     </Button>
                     <Button
                       onClick={deleteSelectedLeads}
                       disabled={selectedLeads.length === 0}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50 flex-shrink-0"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
                     >
                         <TrendingUp className="h-4 w-4 mr-2" />
                       Delete ({selectedLeads.length})
@@ -2305,15 +2304,15 @@ export default function LeadGeneratorPage() {
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
                       variant="outline"
-                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50 flex-shrink-0 flex-1 sm:flex-initial"
+                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50 whitespace-nowrap"
                     >
                       {isSendingToOutreach ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin flex-shrink-0" />
                       ) : (
-                        <Send className="h-4 w-4 mr-2" />
+                        <Send className="h-4 w-4 mr-2 flex-shrink-0" />
                       )}
                       <span className="hidden sm:inline">{isSendingToOutreach ? 'Sending...' : `Send to Outreach (${selectedLeads.length})`}</span>
-                      <span className="sm:hidden">{isSendingToOutreach ? 'Sending...' : `Send (${selectedLeads.length})`}</span>
+                      <span className="sm:hidden">Send ({selectedLeads.length})</span>
                     </Button>
                   </div>
                 </div>
