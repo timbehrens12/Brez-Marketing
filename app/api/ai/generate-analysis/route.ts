@@ -40,43 +40,37 @@ export async function POST(req: NextRequest) {
       const hasShopify = brandData.connections.includes('shopify');
       const hasMeta = brandData.connections.includes('meta');
       
-      const synopsisPrompt = `Generate a concise performance overview for ${brandData.name}. 
+      const synopsisPrompt = `Write a 2-3 sentence performance overview for ${brandData.name}.
 
-CRITICAL REQUIREMENTS:
-1. This brand has BOTH Shopify AND Meta connected - you MUST mention BOTH platforms in your response
-2. Even if data is $0, explicitly state it (e.g., "Shopify: $0 in sales" or "Meta: No ad spend yet")
-3. Never ignore a connected platform, even with zero data
-4. DO NOT give specific campaign recommendations - only provide performance overview
-5. If Marketing Assistant is available, mention it as the next step for optimization
+DATA:
+- Shopify: $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'} in sales, ${brandData.shopifyOrders || 0} orders
+- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS
+- Marketing Assistant: ${marketingAssistantAvailable ? 'AVAILABLE' : 'Not available (used this week)'}
 
-Connected Platforms & Data:
-${hasMeta ? `- Meta Ads: $${brandData.spend ? brandData.spend.toLocaleString() : '0'} spend, ${brandData.roas ? brandData.roas.toFixed(2) : '0.00'}x ROAS, ${brandData.conversions || 0} conversions` : ''}
-${hasShopify ? `- Shopify: $${brandData.revenue ? brandData.revenue.toLocaleString() : '0'} in sales${brandData.shopifyOrders ? `, ${brandData.shopifyOrders} orders` : ', 0 orders'}` : ''}
-- ROAS Change: ${brandData.roasChange ? (brandData.roasChange > 0 ? '+' : '') + brandData.roasChange.toFixed(1) + '%' : 'N/A'}
-- Sales Change: ${brandData.salesChange ? (brandData.salesChange > 0 ? '+' : '') + brandData.salesChange.toFixed(1) + '%' : 'N/A'}
-- Status: ${brandData.status}
-- Marketing Assistant: ${marketingAssistantAvailable ? 'Available' : 'Used this week'}
+REQUIRED FORMAT:
+Sentence 1: "Shopify sales are $[amount] from [X] orders today, while Meta ad spend is $[amount]."
+Sentence 2: Brief trend observation (e.g., "Strong organic growth" or "No paid ads running yet")
+Sentence 3 (ONLY if Marketing Assistant AVAILABLE): "Campaign Optimizer is available - run it for personalized optimization recommendations."
 
-REQUIRED FORMAT (2-3 sentences):
-- First sentence: State performance from BOTH Meta AND Shopify with actual numbers
-- Second sentence: Highlight trends or performance status
-- Third sentence: ${marketingAssistantAvailable ? 'Suggest running Campaign Optimizer (Marketing Assistant) for personalized recommendations' : 'Note that performance overview only, detailed recommendations available weekly'}
+DO NOT:
+- Include percentage comparisons
+- Include ROAS, impressions, clicks, or technical metrics
+- Give specific campaign advice
+- Mention conversions
 
-Example: "Meta ads generated $0 in spend while Shopify recorded $600 in sales from 2 orders today. Sales are performing above average with strong organic growth. Run Campaign Optimizer for AI-powered recommendations to scale with paid ads."
-
-Write the synopsis now, ensuring you mention BOTH platforms:`;
+Write the overview now:`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini", // Cost-effective model for simple summaries
         messages: [
           { 
             role: "system", 
-            content: "You are a marketing performance analyst providing brief performance overviews. You MUST mention ALL connected platforms in every response, even if they have zero data. DO NOT give specific campaign recommendations - that's what Campaign Optimizer (Marketing Assistant) is for. Only provide performance overview and suggest using Campaign Optimizer if available." 
+            content: "You are a marketing performance analyst. Write EXACTLY 2-3 sentences. First sentence: explicitly state 'Shopify sales are $X from Y orders' AND 'Meta ad spend is $X'. Second sentence: note the trend. Third sentence (ONLY if Marketing Assistant is available): say 'Campaign Optimizer is available - run it for personalized optimization recommendations.' DO NOT include percentage comparisons or technical metrics." 
           },
           { role: "user", content: synopsisPrompt }
         ],
-        temperature: 0.3, // Lower temperature for more consistent, factual responses
-        max_tokens: 200, // Enough for a concise 2-3 sentence overview
+        temperature: 0.7, // Higher temp for more natural language
+        max_tokens: 150, // Concise 2-3 sentence overview
       });
 
       const analysis = response.choices[0]?.message?.content || "Performance analysis unavailable";
