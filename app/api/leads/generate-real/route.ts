@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     
     const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = validatedData
 
-    // Rate limiting - 2 requests per hour for lead generation
-    const rateLimitResponse = await checkRateLimit(userId, 'lead-generation', 2, 3600)
+    // Rate limiting - 100 requests per hour for testing (was 2)
+    const rateLimitResponse = await checkRateLimit(userId, 'lead-generation', 100, 3600)
     if (rateLimitResponse) return rateLimitResponse
 
     // Sanitize inputs
