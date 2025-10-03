@@ -197,25 +197,21 @@ export default function MarketingAssistantPage() {
       setLoading(true)
 
       try {
-        // Check if brand has any Meta campaigns (primary ad platform)
-        const response = await fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=meta`, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
+        // Check if brand has Meta platform connected (don't require spend data)
+        const response = await fetch(`/api/platforms/connections?brandId=${selectedBrandId}`)
 
         if (response.ok) {
           const data = await response.json()
-          // Check if there's actual data (spend > 0 or impressions > 0)
-          const hasData = data.metrics && (
-            data.metrics.spend > 0 || 
-            data.metrics.impressions > 0 || 
-            data.metrics.clicks > 0
+          // Check if there's any active Meta, Google, or TikTok connection
+          const hasAdPlatform = data.connections?.some((conn: any) => 
+            ['meta', 'google', 'tiktok'].includes(conn.platform_type) && 
+            conn.status === 'active'
           )
-          setHasAdPlatforms(hasData)
+          
+          setHasAdPlatforms(hasAdPlatform)
           
           // If brand has platforms, trigger data load
-          if (hasData) {
+          if (hasAdPlatform) {
             await loadDashboardData()
           } else {
             // No platforms - stop loading
@@ -223,7 +219,7 @@ export default function MarketingAssistantPage() {
             setLoading(false)
           }
         } else {
-          // No metrics = no campaigns = no ad platforms
+          // API error = no platforms
           setHasAdPlatforms(false)
           setIsLoadingPage(false)
           setLoading(false)
