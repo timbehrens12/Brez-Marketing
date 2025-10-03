@@ -2256,22 +2256,22 @@ export default function LeadGeneratorPage() {
           {/* Generated Leads Panel */}
           <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl xl:col-span-3 flex flex-col">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-gray-400" />
                   <h2 className="text-lg font-semibold text-gray-400">
                     Generated Leads ({filteredLeads.length}{leads.length !== filteredLeads.length && ` of ${leads.length}`})
                   </h2>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={openFiltersPanel}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white flex-shrink-0"
                     >
                       <Filter className="h-4 w-4 mr-2" />
-                      Filters
+                      <span className="hidden sm:inline">Filters</span>
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials || 
                         filters.socialPlatforms.instagram || filters.socialPlatforms.facebook || 
                         filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter || 
@@ -2285,17 +2285,18 @@ export default function LeadGeneratorPage() {
                       onClick={() => setIsAddingManual(true)}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white flex-shrink-0"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Manual Lead
+                      <span className="hidden sm:inline">Add Manual Lead</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                     <Button
                       onClick={deleteSelectedLeads}
                       disabled={selectedLeads.length === 0}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50 flex-shrink-0"
                     >
                         <TrendingUp className="h-4 w-4 mr-2" />
                       Delete ({selectedLeads.length})
@@ -2304,14 +2305,15 @@ export default function LeadGeneratorPage() {
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0 || isSendingToOutreach}
                       variant="outline"
-                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50"
+                      className="bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#FF2A2A]/90 disabled:opacity-50 flex-shrink-0 flex-1 sm:flex-initial"
                     >
                       {isSendingToOutreach ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Send className="h-4 w-4 mr-2" />
                       )}
-                      {isSendingToOutreach ? 'Sending...' : `Send to Outreach (${selectedLeads.length})`}
+                      <span className="hidden sm:inline">{isSendingToOutreach ? 'Sending...' : `Send to Outreach (${selectedLeads.length})`}</span>
+                      <span className="sm:hidden">{isSendingToOutreach ? 'Sending...' : `Send (${selectedLeads.length})`}</span>
                     </Button>
                   </div>
                 </div>
