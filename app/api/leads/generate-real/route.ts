@@ -112,46 +112,10 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Check niche-specific cooldowns (7-day cooldown) using client's timezone
-    console.log(`🔍 [Niche Cooldown] Checking niches:`, niches)
-    console.log(`🔍 [Niche Cooldown] Cooldown threshold: ${new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()}`)
-    
-    const { data: nicheUsageData, error: nicheUsageError } = await supabase
-      .from('user_niche_usage')
-      .select('*')
-      .eq('user_id', userId)
-      .in('niche_id', niches)
-      .gte('last_used_at', new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString())
-
-    if (nicheUsageError) {
-      console.error('Error checking niche usage:', nicheUsageError)
-      return NextResponse.json({ error: 'Failed to check niche cooldowns' }, { status: 500 })
-    }
-
-    console.log(`🔍 [Niche Cooldown] Found cooldown records:`, nicheUsageData)
-
-    // Check if any selected niches are on cooldown
-    const cooldownNiches = nicheUsageData || []
-    if (cooldownNiches.length > 0) {
-      console.error(`❌ [Niche Cooldown] BLOCKING - ${cooldownNiches.length} niches on cooldown`)
-      // Get niche names for better error message
-      const { data: nicheNames } = await supabase
-        .from('lead_niches')
-        .select('id, name')
-        .in('id', cooldownNiches.map(n => n.niche_id))
-
-      const nicheNameMap = Object.fromEntries(nicheNames?.map(n => [n.id, n.name]) || [])
-      const cooldownNicheNames = cooldownNiches.map(n => nicheNameMap[n.niche_id] || 'Unknown')
-
-      return NextResponse.json({ 
-        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again in 7 days or select different niches.`,
-        cooldownNiches: cooldownNiches.map(n => ({
-          niche_id: n.niche_id,
-          niche_name: nicheNameMap[n.niche_id],
-          cooldownUntil: new Date(new Date(n.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()
-        }))
-      }, { status: 429 })
-    }
+    // NICHE COOLDOWN DISABLED - Weekly limit already prevents spam
+    // The weekly generation limit already prevents users from running too many searches
+    // No need for per-niche cooldowns on top of that
+    console.log(`✅ [Rate Limit] Niche cooldown check skipped (disabled - weekly limit sufficient)`)
 
     if (!process.env.GOOGLE_PLACES_API_KEY) {
       console.error('Google Places API key missing')
@@ -818,11 +782,11 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     if (website && process.env.OPENAI_API_KEY) {
       console.log(`🚀 [Enrichment] Starting enrichment for ${name} using website: ${website}`)
       try {
-        // Add timeout wrapper for AI enrichment (8 seconds max for better results)
+        // Add timeout wrapper for AI enrichment (15 seconds max - GPT-5 models need more time)
         enrichedData = await Promise.race([
           enrichWithAI(name, website, location.city, location.state),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI enrichment timeout')), 8000)
+            setTimeout(() => reject(new Error('AI enrichment timeout')), 15000)
           )
         ]) as any
         
@@ -961,14 +925,14 @@ IMPORTANT:
 - Look for variations like "Follow us on", "Connect with us", social media icons, etc.
 `
 
-    console.log(`🔍 [GPT-5 Enrichment] Starting enrichment for ${businessName}...`)
-    console.log(`🔍 [GPT-5 Enrichment] Model: gpt-5-mini, Website length: ${websiteContent.length} chars`)
+    console.log(`🔍 [AI Enrichment] Starting enrichment for ${businessName}...`)
+    console.log(`🔍 [AI Enrichment] Model: gpt-4o-mini, Website length: ${websiteContent.length} chars`)
     
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5-mini", // GPT-5 Mini for quality enrichment
+        model: "gpt-4o-mini", // GPT-4o-mini is faster and more reliable than GPT-5 for data extraction
         messages: [{ role: "user", content: prompt }],
-        // Note: GPT-5 only supports temperature=1 (default), so we don't specify it
+        temperature: 0.3, // Low temperature for consistent extraction
         max_completion_tokens: 500
       })
       
