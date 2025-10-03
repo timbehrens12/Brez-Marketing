@@ -291,11 +291,21 @@ export default function DashboardPage() {
   
   // Mark as initially loaded when both action center and widgets are done loading
   useEffect(() => {
+    console.log('[Dashboard] Loading check:', {
+      isActionCenterLoading,
+      isAgencyWidgetsLoading,
+      hasInitiallyLoaded,
+      activeTab
+    })
+    
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
+      console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
       // Calculate how long we've been showing the loader
       const MIN_DISPLAY_TIME = 3000 // Minimum 3 seconds
       const elapsedTime = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
+      
+      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing')
       
       // Wait for minimum display time, then complete
       setTimeout(() => {

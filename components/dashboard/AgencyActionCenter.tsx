@@ -292,6 +292,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Track overall loading state and notify parent
   useEffect(() => {
     const isOverallLoading = isLoadingConnections || isLoadingUserData || isLoadingBrandHealth || isRefreshing
+    console.log('[AgencyActionCenter] Loading states:', {
+      isLoadingConnections,
+      isLoadingUserData,
+      isLoadingBrandHealth,
+      isRefreshing,
+      isOverallLoading
+    })
     onLoadingStateChange?.(isOverallLoading)
   }, [isLoadingConnections, isLoadingUserData, isLoadingBrandHealth, isRefreshing, onLoadingStateChange])
 
