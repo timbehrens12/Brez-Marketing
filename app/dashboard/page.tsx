@@ -395,25 +395,34 @@ export default function DashboardPage() {
         timeoutIds.push(timeoutId)
       })
       
+      // Track if data has loaded
+      let dataLoaded = false
+      
       // Listen for action center ready event - ensure minimum display time
       const handleActionCenterLoaded = () => {
-        // Clear any pending phase timeouts since data is ready
-        timeoutIds.forEach(id => clearTimeout(id))
+        dataLoaded = true
         
         // Calculate how long we've been showing the loader
         const elapsedTime = Date.now() - loadStartTime
         const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
         
-        // Complete the progress immediately when data is loaded
-        setLoadingProgress(100)
-        setLoadingPhase('Complete!')
-        
-        // Wait for minimum display time before hiding
+        // Don't clear the phase timeouts - let them continue to show progress
+        // Only complete when minimum time has passed
         setTimeout(() => {
-          setIsActionCenterLoading(false)
-          setHasInitiallyLoaded(true) // Mark as initially loaded
-          // Re-enable scrolling
-          document.body.style.overflow = 'unset'
+          // Clear any pending phase timeouts since we're done
+          timeoutIds.forEach(id => clearTimeout(id))
+          
+          // Complete the progress
+          setLoadingProgress(100)
+          setLoadingPhase('Complete!')
+          
+          // Brief moment to show 100% completion
+          setTimeout(() => {
+            setIsActionCenterLoading(false)
+            setHasInitiallyLoaded(true) // Mark as initially loaded
+            // Re-enable scrolling
+            document.body.style.overflow = 'unset'
+          }, 300)
         }, remainingTime)
       }
       
