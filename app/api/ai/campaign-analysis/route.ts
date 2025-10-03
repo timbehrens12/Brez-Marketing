@@ -130,7 +130,7 @@ Format as JSON with these sections: grade, insights, issues, optimizations, budg
           content: analysisPrompt
         }
       ],
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
       temperature: 0.7
     })
 

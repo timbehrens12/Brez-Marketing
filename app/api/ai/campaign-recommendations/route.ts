@@ -1461,7 +1461,7 @@ Focus on the most impactful actions that address specific adset and ad performan
           content: prompt
         }
       ],
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
       temperature: 0.3
     })
 

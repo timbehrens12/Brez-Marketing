@@ -514,7 +514,7 @@ BRAND CONTEXT: Provide general marketing insights while acknowledging that indus
         }
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
       response_format: { type: 'json_object' }
     })
 

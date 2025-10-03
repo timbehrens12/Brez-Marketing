@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: `Generate a response to: "${cleanResponse}"` }
       ],
-      max_tokens: 200,
+      max_completion_tokens: 200,
       temperature: 0.7,
     })
 

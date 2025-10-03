@@ -153,7 +153,7 @@ export async function POST(request: Request) {
       ],
       model: 'gpt-5-mini', // GPT-5 Mini - client-facing comprehensive reports need premium quality
       temperature: 0.7,
-      max_tokens: 4000
+      max_completion_tokens: 4000
     })
     
     // Extract the generated text

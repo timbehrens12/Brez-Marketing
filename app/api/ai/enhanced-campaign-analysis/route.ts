@@ -471,7 +471,7 @@ Respond in JSON format:
           content: prompt
         }
       ],
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       temperature: 0.3
     })
 

@@ -1806,7 +1806,7 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
           content: prompt
         }
       ],
-      max_tokens: 1200,
+      max_completion_tokens: 1200,
       temperature: 0.7,
       presence_penalty: 0.1,
       frequency_penalty: 0.1
