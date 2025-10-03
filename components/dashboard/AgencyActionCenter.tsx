@@ -936,8 +936,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   }, [userId, brands, connections, getSupabaseClient])
 
   // Load campaign optimization availability
-  const loadCampaignOptimizationAvailability = useCallback(async () => {
+  const loadCampaignOptimizationAvailability = useCallback(async (freshConnections?: any[]) => {
     if (!userId || !brands) return
+    
+    // Use fresh connections if provided, otherwise fall back to state
+    const connectionsToUse = freshConnections || connections
 
 
 
@@ -953,7 +956,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         
         // Check if brand has required platforms (Meta for campaign optimization)
-        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        const brandConnections = connectionsToUse.filter(conn => conn.brand_id === brand.id)
         const hasRequiredPlatforms = brandConnections.some(conn => conn.platform_type === 'meta')
 
 
@@ -2098,10 +2101,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     setIsLoadingBrandHealth(true)
     
     try {
-      // Load campaign optimization availability first so it's available for AI synopsis
-      const freshCampaignOptAvailability = await loadCampaignOptimizationAvailability()
-      console.log('[Brand Health] Campaign optimization availability loaded:', freshCampaignOptAvailability)
-      
       const supabase = await getSupabaseClient()
       
       // Step 1: Get all brands (owned + shared) with at least 1 ad platform connected
@@ -2144,6 +2143,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         .in('brand_id', brands.map(b => b.id))
         .eq('status', 'active')
         .in('platform_type', ['meta', 'google', 'tiktok', 'shopify']) // Include Shopify for logos/context
+      
+      // Load campaign optimization availability with fresh connections AFTER we have them
+      const freshCampaignOptAvailability = await loadCampaignOptimizationAvailability(allConnections || [])
+      console.log('[Brand Health] Campaign optimization availability loaded (with fresh connections):', freshCampaignOptAvailability)
 
       // Filter brands to only those with ad platforms connected (but include shopify data)
       const brandsWithAdPlatforms = brands.filter(brand => 
