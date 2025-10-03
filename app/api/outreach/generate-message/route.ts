@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    const { lead, messageType, brandInfo, campaign_context, ai_instructions } = requestBody
+    const { lead, messageType, brandInfo, campaign_context, ai_instructions, brandId } = requestBody
 
     if (!lead || !messageType) {
       console.log('❌ Missing required fields:', { lead: !!lead, messageType })
