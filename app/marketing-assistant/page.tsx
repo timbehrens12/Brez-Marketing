@@ -369,9 +369,14 @@ export default function MarketingAssistantPage() {
     setIsRefreshingData(false)
     
     try {
+      // First load recommendations to check if any exist
+      await loadOptimizationRecommendations()
+      
+      // Always load KPI metrics
+      await loadKPIMetrics()
+      
+      // Load the rest in parallel (these will show empty states if no recommendations)
       await Promise.all([
-        loadKPIMetrics(),
-        loadOptimizationRecommendations(),
         loadBudgetAllocations(),
         loadAudienceExpansions(),
         loadAlerts(),
