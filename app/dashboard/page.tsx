@@ -249,7 +249,7 @@ export default function DashboardPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(true)
   const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(true)
-  const [loadingStartTime, setLoadingStartTime] = useState<number>(Date.now())
+  const [loadingStartTime, setLoadingStartTime] = useState<number>(0) // Will be set when loading actually starts
   
   // Sidebar state management - tracks sidebar width for loading overlay positioning
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -306,7 +306,7 @@ export default function DashboardPage() {
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
       console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
       // Calculate how long we've been showing the loader
-      const MIN_DISPLAY_TIME = 3500 // Must match the interval timer above
+      const MIN_DISPLAY_TIME = 4000 // Must match the interval timer above
       const elapsedTime = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
       
@@ -406,8 +406,8 @@ export default function DashboardPage() {
       document.body.style.overflow = 'hidden'
       
       // Use smooth interval-based progress that spreads evenly over minimum display time
-      const MIN_DISPLAY_TIME = 3500 // 3.5 seconds minimum
-      const UPDATE_INTERVAL = 50 // Update every 50ms for smooth animation
+      const MIN_DISPLAY_TIME = 4000 // 4 seconds minimum
+      const UPDATE_INTERVAL = 100 // Update every 100ms for smooth but not too fast animation
       const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL
       
       const loadingPhases = [
@@ -423,7 +423,7 @@ export default function DashboardPage() {
       
       const progressInterval = setInterval(() => {
         currentUpdate++
-        const progressPercent = Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95) // Max 95% until complete
+        const progressPercent = Math.round(Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95)) // Round to integer, max 95% until complete
         
         setLoadingProgress(progressPercent)
         
