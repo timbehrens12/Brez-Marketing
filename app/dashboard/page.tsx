@@ -306,11 +306,11 @@ export default function DashboardPage() {
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
       console.log('[Dashboard] ✅ Both loading states false - completing loading screen')
       // Calculate how long we've been showing the loader
-      const MIN_DISPLAY_TIME = 3000 // Minimum 3 seconds
+      const MIN_DISPLAY_TIME = 3500 // Must match the interval timer above
       const elapsedTime = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
       
-      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing')
+      console.log('[Dashboard] Waiting', remainingTime, 'ms before completing (elapsed:', elapsedTime, 'ms)')
       
       // Wait for minimum display time, then complete
       setTimeout(() => {
@@ -323,7 +323,7 @@ export default function DashboardPage() {
           setHasInitiallyLoaded(true)
           // Re-enable scrolling
           document.body.style.overflow = 'unset'
-        }, 500)
+        }, 400)
       }, remainingTime)
     }
   }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab, loadingStartTime])
@@ -405,38 +405,43 @@ export default function DashboardPage() {
       // Prevent scrolling during loading
       document.body.style.overflow = 'hidden'
       
-      // Store all timeout IDs so we can clear them if data loads early
-      const timeoutIds: NodeJS.Timeout[] = []
+      // Use smooth interval-based progress that spreads evenly over minimum display time
+      const MIN_DISPLAY_TIME = 3500 // 3.5 seconds minimum
+      const UPDATE_INTERVAL = 50 // Update every 50ms for smooth animation
+      const TOTAL_UPDATES = MIN_DISPLAY_TIME / UPDATE_INTERVAL
       
-      // Faster, more realistic loading over 3 seconds
-      const phases = [
-        { progress: 20, phase: 'Connecting to workspace...', delay: 400 },
-        { progress: 40, phase: 'Loading workspace data...', delay: 800 },
-        { progress: 60, phase: 'Fetching brand configurations...', delay: 1200 },
-        { progress: 80, phase: 'Analyzing brand performance...', delay: 1600 },
-        { progress: 90, phase: 'Preparing dashboard...', delay: 2000 }
+      const loadingPhases = [
+        { phase: 'Connecting to workspace...', progressThreshold: 15 },
+        { phase: 'Loading workspace data...', progressThreshold: 30 },
+        { phase: 'Fetching brand configurations...', progressThreshold: 50 },
+        { phase: 'Analyzing brand performance...', progressThreshold: 70 },
+        { phase: 'Preparing dashboard...', progressThreshold: 85 }
       ]
       
-      phases.forEach(({ progress, phase, delay }) => {
-        const timeoutId = setTimeout(() => {
-          setLoadingProgress(progress)
-          setLoadingPhase(phase)
-        }, delay)
-        timeoutIds.push(timeoutId)
-      })
+      let currentUpdate = 0
+      let currentPhaseIndex = 0
       
-      // Listen for action center ready event
-      const handleActionCenterLoaded = () => {
-        // Event received, but we'll wait for the loading state callback instead
-        // This ensures we wait for both data AND rendering to complete
-      }
-      
-      window.addEventListener('action-center-loaded', handleActionCenterLoaded)
+      const progressInterval = setInterval(() => {
+        currentUpdate++
+        const progressPercent = Math.min(95, (currentUpdate / TOTAL_UPDATES) * 95) // Max 95% until complete
+        
+        setLoadingProgress(progressPercent)
+        
+        // Update phase based on progress
+        if (currentPhaseIndex < loadingPhases.length - 1 && 
+            progressPercent >= loadingPhases[currentPhaseIndex + 1].progressThreshold) {
+          currentPhaseIndex++
+          setLoadingPhase(loadingPhases[currentPhaseIndex].phase)
+        }
+        
+        // Stop at 95% and wait for actual loading to complete
+        if (currentUpdate >= TOTAL_UPDATES) {
+          clearInterval(progressInterval)
+        }
+      }, UPDATE_INTERVAL)
       
       return () => {
-        // Clean up all timeouts
-        timeoutIds.forEach(id => clearTimeout(id))
-        window.removeEventListener('action-center-loaded', handleActionCenterLoaded)
+        clearInterval(progressInterval)
         // Re-enable scrolling if component unmounts during loading
         document.body.style.overflow = 'unset'
       }
