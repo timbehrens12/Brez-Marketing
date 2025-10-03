@@ -69,7 +69,7 @@ Write the synopsis now, ensuring you mention BOTH platforms:`;
           },
           { role: "user", content: synopsisPrompt }
         ],
-        temperature: 0.3, // Lower temperature for more consistent, factual responses
+        // GPT-5 Nano only supports default temperature of 1
         max_completion_tokens: 200, // Longer responses to cover all platforms
       });
 
@@ -104,7 +104,7 @@ If any data appears suspicious or all zeros, acknowledge this but still provide 
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage }
       ],
-      temperature: 0.7, // Slightly creative but still factual
+      // GPT-5 Nano only supports default temperature of 1
       max_completion_tokens: 1500, // Allow for a detailed response
     });
 
