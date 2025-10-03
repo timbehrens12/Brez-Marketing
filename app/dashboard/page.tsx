@@ -249,6 +249,7 @@ export default function DashboardPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(true)
   const [isAgencyWidgetsLoading, setIsAgencyWidgetsLoading] = useState(true)
+  const [loadingStartTime, setLoadingStartTime] = useState<number>(Date.now())
   
   // Sidebar state management - tracks sidebar width for loading overlay positioning
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -291,9 +292,26 @@ export default function DashboardPage() {
   // Mark as initially loaded when both action center and widgets are done loading
   useEffect(() => {
     if (!isActionCenterLoading && !isAgencyWidgetsLoading && !hasInitiallyLoaded && activeTab === "agency") {
-      setHasInitiallyLoaded(true)
+      // Calculate how long we've been showing the loader
+      const MIN_DISPLAY_TIME = 3000 // Minimum 3 seconds
+      const elapsedTime = Date.now() - loadingStartTime
+      const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
+      
+      // Wait for minimum display time, then complete
+      setTimeout(() => {
+        // Complete the loading progress
+        setLoadingProgress(100)
+        setLoadingPhase('Complete!')
+        
+        // Brief moment to show 100% completion, then hide
+        setTimeout(() => {
+          setHasInitiallyLoaded(true)
+          // Re-enable scrolling
+          document.body.style.overflow = 'unset'
+        }, 500)
+      }, remainingTime)
     }
-  }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab])
+  }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab, loadingStartTime])
   
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
   const pathname = usePathname()
@@ -367,13 +385,10 @@ export default function DashboardPage() {
       setIsActionCenterLoading(true)
       setLoadingProgress(0)
       setLoadingPhase('Initializing Dashboard')
+      setLoadingStartTime(Date.now()) // Reset start time
       
       // Prevent scrolling during loading
       document.body.style.overflow = 'hidden'
-      
-      // Track start time for minimum display duration
-      const loadStartTime = Date.now()
-      const MIN_DISPLAY_TIME = 3000 // Minimum 3 seconds
       
       // Store all timeout IDs so we can clear them if data loads early
       const timeoutIds: NodeJS.Timeout[] = []
@@ -395,35 +410,10 @@ export default function DashboardPage() {
         timeoutIds.push(timeoutId)
       })
       
-      // Track if data has loaded
-      let dataLoaded = false
-      
-      // Listen for action center ready event - ensure minimum display time
+      // Listen for action center ready event
       const handleActionCenterLoaded = () => {
-        dataLoaded = true
-        
-        // Calculate how long we've been showing the loader
-        const elapsedTime = Date.now() - loadStartTime
-        const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime)
-        
-        // Don't clear the phase timeouts - let them continue to show progress
-        // Only complete when minimum time has passed
-        setTimeout(() => {
-          // Clear any pending phase timeouts since we're done
-          timeoutIds.forEach(id => clearTimeout(id))
-          
-          // Complete the progress
-          setLoadingProgress(100)
-          setLoadingPhase('Complete!')
-          
-          // Brief moment to show 100% completion
-          setTimeout(() => {
-            setIsActionCenterLoading(false)
-            setHasInitiallyLoaded(true) // Mark as initially loaded
-            // Re-enable scrolling
-            document.body.style.overflow = 'unset'
-          }, 300)
-        }, remainingTime)
+        // Event received, but we'll wait for the loading state callback instead
+        // This ensures we wait for both data AND rendering to complete
       }
       
       window.addEventListener('action-center-loaded', handleActionCenterLoaded)
