@@ -198,6 +198,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Define agencyName early for use in both AI generation and fallback templates
+    const agencyName = ai_instructions?.agency_name || brandInfo?.name || 'Your Agency'
+    
     // 🔒 SECURITY: Check rate limits before proceeding
     const leadId = lead.id || `${lead.business_name}_${lead.email || lead.phone || 'unknown'}`
     const rateLimitCheck = await checkRateLimits(userId, leadId, messageType)
@@ -232,7 +235,6 @@ Business Type: ${lead.business_type || 'Unknown'}
 Revenue Estimate: ${lead.estimated_revenue ? `$${lead.estimated_revenue}` : 'Unknown'}
 `
 
-    const agencyName = ai_instructions?.agency_name || brandInfo?.name || 'Your Agency'
     const brandContext = `
 Agency Name: ${agencyName}
 Industry: Performance Marketing & Growth
