@@ -197,15 +197,16 @@ export default function MarketingAssistantPage() {
       setLoading(true)
 
       try {
-        // Check if brand has an active Meta connection (not just data with spend)
+        // Check if brand has Meta, Google, or TikTok connection (even if inactive)
+        // We check for connection history, not active status, because they might have
+        // disconnected today but still have data from last week to analyze
         const response = await fetch(`/api/platform-connections?brandId=${selectedBrandId}`)
 
         if (response.ok) {
           const data = await response.json()
-          // Check if brand has Meta, Google, or TikTok connected
+          // Check if brand has Meta, Google, or TikTok connection (regardless of status)
           const hasAdPlatform = data.connections?.some((conn: any) => 
-            ['meta', 'google', 'tiktok'].includes(conn.platform_type) && 
-            conn.status === 'active'
+            ['meta', 'google', 'tiktok'].includes(conn.platform_type)
           )
           setHasAdPlatforms(hasAdPlatform)
           
