@@ -157,7 +157,9 @@ async function checkRateLimits(userId: string, leadId?: string, messageType?: st
 }
 
 export async function POST(request: NextRequest) {
+  // For fallback templates, we need access to requestBody AND agencyName outside try block
   let requestBody: any = null
+  let agencyName = 'Your Agency' // Default value, will be updated after parsing request
   
   try {
     console.log('🤖 AI Generate message API called')
@@ -198,8 +200,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Define agencyName early for use in both AI generation and fallback templates
-    const agencyName = ai_instructions?.agency_name || brandInfo?.name || 'Your Agency'
+    // Update agencyName with actual value from request - accessible in both try and catch blocks
+    agencyName = ai_instructions?.agency_name || brandInfo?.name || 'Your Agency'
     
     // 🔒 SECURITY: Check rate limits before proceeding
     const leadId = lead.id || `${lead.business_name}_${lead.email || lead.phone || 'unknown'}`
