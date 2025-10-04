@@ -138,13 +138,13 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAIClient()
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini", // GPT-5 Mini - high-quality lead responses for conversion
+      model: "gpt-4o-mini", // GPT-4o-mini for fast, reliable responses
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Generate a response to: "${cleanResponse}"` }
       ],
-      max_completion_tokens: 200
-      // Note: GPT-5 models only support temperature=1 (default)
+      max_completion_tokens: 200,
+      temperature: 0.7
     })
 
     const smartResponse = completion.choices[0]?.message?.content?.trim()
