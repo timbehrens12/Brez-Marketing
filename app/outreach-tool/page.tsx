@@ -2083,7 +2083,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   }
 
   // Function to save outreach message to database
-  const saveOutreachMessage = async (campaignId: string, messageType: string, subject: string, content: string) => {
+  const saveOutreachMessage = async (campaignId: string, messageType: string, subject: string, content: string, campaignLeadId?: string) => {
     try {
       const supabase = await getSupabaseClient()
       const { error } = await supabase
@@ -2103,6 +2103,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         // Don't throw - just log, as this shouldn't block the workflow
       } else {
         // console.log('✅ Outreach message saved to database')
+        
+        // Auto-mark lead as contacted when message is saved
+        if (campaignLeadId) {
+          await updateCampaignLeadStatus(campaignLeadId, 'contacted', messageType)
+        }
       }
     } catch (error) {
       console.error('Error saving outreach message:', error)
@@ -5543,17 +5548,17 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </Button>
                   <Button
                         onClick={async () => {
-                          // Save the message to database before updating status
+                          // Save the message to database and auto-update status
                           if (generatedMessage && selectedCampaignLead?.campaign_id) {
                             await saveOutreachMessage(
                               selectedCampaignLead.campaign_id, 
                               messageType, 
                               messageSubject || '', 
-                              generatedMessage
+                              generatedMessage,
+                              selectedCampaignLead.id // Pass campaign_lead_id for auto-status update
                             )
                           }
                           
-                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                           setShowMessageComposer(false)
                           toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
                         }}
