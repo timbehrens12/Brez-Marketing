@@ -1831,7 +1831,6 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             .from('outreach_messages')
             .select('message_type, subject, content, sent_at')
             .eq('campaign_id', selectedCampaignLead.campaign_id)
-            .eq('direction', 'outbound')
             .order('sent_at', { ascending: false })
             .limit(3) // Get last 3 messages
           
@@ -2093,7 +2092,6 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           message_type: messageType,
           subject: subject || null,
           content: content,
-          direction: 'outbound',
           status: 'sent',
           sent_at: new Date().toISOString()
         })
@@ -5969,7 +5967,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             setIsRespondedMode(false)
           }
         }}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-3xl h-[95vh] max-h-[800px] shadow-2xl flex flex-col overflow-hidden p-0">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-7xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
@@ -6010,10 +6008,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.email!, 'Email', 'email-copy-smart')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
-                          title="Copy Email"
+                          className={`h-8 w-8 p-0 group transition-all duration-200 ${
+                            copiedField === 'email-copy-smart' 
+                              ? 'bg-green-500/20 border border-green-500/30' 
+                              : 'hover:bg-blue-500/20'
+                          }`}
+                          title={copiedField === 'email-copy-smart' ? 'Copied!' : 'Copy Email'}
                         >
-                          <Mail className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'email-copy-smart' ? 'animate-pulse' : ''}`} />
+                          {copiedField === 'email-copy-smart' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
+                          ) : (
+                            <Mail className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          )}
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.phone && (
@@ -6021,10 +6027,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.phone!, 'Phone', 'phone-copy-smart')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
-                          title="Copy Phone"
+                          className={`h-8 w-8 p-0 group transition-all duration-200 ${
+                            copiedField === 'phone-copy-smart' 
+                              ? 'bg-green-500/20 border border-green-500/30' 
+                              : 'hover:bg-gray-500/20'
+                          }`}
+                          title={copiedField === 'phone-copy-smart' ? 'Copied!' : 'Copy Phone'}
                         >
-                          <Phone className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'phone-copy-smart' ? 'animate-pulse' : ''}`} />
+                          {copiedField === 'phone-copy-smart' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
+                          ) : (
+                            <Phone className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          )}
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.linkedin_profile && (
@@ -6111,33 +6125,34 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               </DialogDescription>
             </DialogHeader>
             
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Bulk Progress Bar (only show when in bulk mode) */}
-              {respondedQueue.length > 0 && (
-                <div className="px-6 py-4 border-b border-[#333]">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Smart Response Progress
-                      </span>
-                      <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
-                        {currentRespondedIndex + 1} / {respondedQueue.length}
-                      </span>
-                    </div>
-                    <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
-                        style={{ 
-                          width: `${((currentRespondedIndex + 1) / respondedQueue.length) * 100}%` 
-                        }}
-                      ></div>
-                    </div>
+            {/* Bulk Progress Bar (only show when in bulk mode) */}
+            {respondedQueue.length > 0 && (
+              <div className="px-6 py-4 border-b border-[#333]">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300 font-medium text-sm">
+                      Smart Response Progress
+                    </span>
+                    <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
+                      {currentRespondedIndex + 1} / {respondedQueue.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
+                      style={{ 
+                        width: `${((currentRespondedIndex + 1) / respondedQueue.length) * 100}%` 
+                      }}
+                    ></div>
                   </div>
                 </div>
-              )}
-              
-              <div className="space-y-6 p-6">
+              </div>
+            )}
+            
+            {/* Two-Column Layout */}
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-0">
+              {/* LEFT COLUMN - Input Section */}
+              <div className="overflow-y-auto border-r border-[#333] p-6 space-y-6">
               {/* AI Information Banner */}
               <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
                 <div className="flex items-start gap-3">
@@ -6252,11 +6267,63 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 )}
               </Button>
 
-              {/* Generated Response */}
-              {generatedSmartResponse && (
-                <div className="space-y-4">
-                  <div className="border-t border-[#444] pt-6">
-                    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4 mb-4">
+              {/* Security Notice & Rate Limit */}
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-gray-300 mb-2">
+                      <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
+                    </div>
+                    {smartResponsesRemaining !== null && (
+                      <div className="text-xs text-gray-500">
+                        {smartResponsesRemaining} smart responses remaining today
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              </div>
+              
+              {/* RIGHT COLUMN - Response Display */}
+              <div className="overflow-y-auto p-6 bg-gradient-to-br from-[#1A1A1A]/50 to-[#2A2A2A]/50">
+                {!generatedSmartResponse && !isGeneratingSmartResponse && (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center space-y-4 max-w-md">
+                      <div className="p-4 bg-gradient-to-r from-gray-600/20 to-gray-700/20 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
+                        <MessageCircle className="h-10 w-10 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                          Your AI Response Will Appear Here
+                        </h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">
+                          Fill in the details on the left and click "Generate Smart Response with AI" to create a personalized, strategic follow-up message.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {isGeneratingSmartResponse && (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center space-y-4">
+                      <Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                          AI is Crafting Your Response...
+                        </h3>
+                        <p className="text-gray-400 text-sm">
+                          Analyzing context and generating strategic reply
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {generatedSmartResponse && (
+                  <div className="space-y-4 h-full flex flex-col">
+                    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle className="h-5 w-5 text-gray-300" />
                         <span className="text-gray-300 font-medium">Smart Response Generated Successfully</span>
@@ -6264,57 +6331,41 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <p className="text-sm text-gray-400">AI-crafted response optimized for engagement and conversion</p>
                     </div>
                     
-                    <Label className="text-lg font-semibold text-white mb-3 block">
-                      Your AI-Generated Response:
-                    </Label>
-                    <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 shadow-lg">
-                      <div className="text-gray-300 whitespace-pre-wrap leading-relaxed bg-[#1A1A1A] rounded-lg p-4 border border-[#333]">
-                        {generatedSmartResponse}
+                    <div className="flex-1 flex flex-col">
+                      <Label className="text-lg font-semibold text-white mb-3">
+                        Your AI-Generated Response:
+                      </Label>
+                      <div className="flex-1 bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 shadow-lg overflow-y-auto">
+                        <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                          {generatedSmartResponse}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={() => {
-                        copyToClipboard(generatedSmartResponse, 'Smart Response')
-                        setSmartResponseCopied(true)
-                        setTimeout(() => setSmartResponseCopied(false), 2000)
-                      }}
-                      className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200"
-                    >
-                      {smartResponseCopied ? (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2 text-gray-200" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy Response
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-                {/* Security Notice & Rate Limit */}
-                <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-sm text-gray-300 mb-2">
-                        <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
-                  </div>
-                  {smartResponsesRemaining !== null && (
-                        <div className="text-xs text-gray-500">
-                      {smartResponsesRemaining} smart responses remaining today
-                    </div>
-                  )}
+                    
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => {
+                          copyToClipboard(generatedSmartResponse, 'Smart Response')
+                          setSmartResponseCopied(true)
+                          setTimeout(() => setSmartResponseCopied(false), 2000)
+                        }}
+                        className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200"
+                      >
+                        {smartResponseCopied ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2 text-gray-200" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy Response
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             
