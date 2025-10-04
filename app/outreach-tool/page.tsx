@@ -5225,6 +5225,107 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </div>
               </div>
 
+              {/* Method Switcher (Always Visible) */}
+              <div className="bg-gradient-to-r from-[#2A2A2A]/50 to-[#3A3A3A]/50 border border-[#444]/50 rounded-xl p-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-sm text-gray-400 flex-shrink-0">Outreach Method:</span>
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedCampaignLead?.lead?.email && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('email')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'email' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <Mail className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm">Email</span>
+                      </Button>
+                    )}
+                    {selectedCampaignLead?.lead?.phone && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('phone')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'phone' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <Phone className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm">Phone</span>
+                      </Button>
+                    )}
+                    {selectedCampaignLead?.lead?.linkedin_profile && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('linkedin')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'linkedin' ? 'bg-blue-600/20 text-blue-600 border border-blue-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <Linkedin className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm">LinkedIn</span>
+                      </Button>
+                    )}
+                    {selectedCampaignLead?.lead?.instagram_handle && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('instagram')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'instagram' ? 'bg-pink-500/20 text-pink-500 border border-pink-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <Instagram className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm">Instagram</span>
+                      </Button>
+                    )}
+                    {selectedCampaignLead?.lead?.facebook_page && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('facebook')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'facebook' ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <Facebook className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm">Facebook</span>
+                      </Button>
+                    )}
+                    {selectedCampaignLead?.lead?.twitter_handle && (
+                      <Button
+                        onClick={() => {
+                          setMessageType('x')
+                          setGeneratedMessage(null)
+                          setGeneratedSubject(null)
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 transition-all ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-300/20 text-gray-300 border border-gray-300/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span className="text-xs sm:text-sm">X/Twitter</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {messageType === 'phone' ? (
                 // Enhanced Call Script Display
                 <div className="space-y-6">
