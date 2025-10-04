@@ -179,6 +179,7 @@ export default function OutreachToolPage() {
   const [messageSubject, setMessageSubject] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showMessageComposer, setShowMessageComposer] = useState(false)
+  const [methodUsageTimestamp, setMethodUsageTimestamp] = useState(Date.now()) // Force re-render when methods are used
   const [showOutreachOptions, setShowOutreachOptions] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
@@ -1972,6 +1973,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         // Also track total count for backwards compatibility
         const currentCount = parseInt(localStorage.getItem(`msg_count_${lead.business_name}_${today}`) || '0')
         localStorage.setItem(`msg_count_${lead.business_name}_${today}`, (currentCount + 1).toString())
+        
+        // Force re-render of method switcher to update "used" state immediately
+        setMethodUsageTimestamp(Date.now())
       }
       
       if (data.ai_generated) {
@@ -5145,7 +5149,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
               {/* Method Switcher (Only show after first generation) */}
               {generatedMessage && (
-              <div className="bg-gradient-to-r from-[#2A2A2A]/50 to-[#3A3A3A]/50 border border-[#444]/50 rounded-xl p-4">
+              <div key={methodUsageTimestamp} className="bg-gradient-to-r from-[#2A2A2A]/50 to-[#3A3A3A]/50 border border-[#444]/50 rounded-xl p-4">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-sm text-gray-400 flex-shrink-0">Switch Outreach Method:</span>
                   <div className="flex gap-2 flex-wrap">
@@ -5174,7 +5178,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <Mail className="h-4 w-4" />
                           <span className="text-xs sm:text-sm">Email{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
@@ -5206,7 +5210,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <Phone className="h-4 w-4" />
                           <span className="text-xs sm:text-sm">Phone{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
@@ -5238,7 +5242,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <Linkedin className="h-4 w-4" />
                           <span className="text-xs sm:text-sm">LinkedIn{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
@@ -5270,7 +5274,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <Instagram className="h-4 w-4" />
                           <span className="text-xs sm:text-sm">Instagram{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
@@ -5302,7 +5306,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <Facebook className="h-4 w-4" />
                           <span className="text-xs sm:text-sm">Facebook{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
@@ -5335,7 +5339,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-gray-600/20 border border-gray-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                         >
                           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
