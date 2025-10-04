@@ -2324,15 +2324,15 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   const getOutreachMethodIcon = (method: string, size: string = "h-3 w-3") => {
     switch (method) {
       case 'email':
-        return <Mail className={`${size} text-blue-400`} />
+        return <Mail className={`${size} text-gray-400`} />
       case 'phone':
         return <Phone className={`${size} text-gray-400`} />
       case 'linkedin':
-        return <Linkedin className={`${size} text-blue-600`} />
+        return <Linkedin className={`${size} text-gray-400`} />
       case 'instagram':
-        return <Instagram className={`${size} text-pink-500`} />
+        return <Instagram className={`${size} text-gray-400`} />
       case 'facebook':
-        return <Facebook className={`${size} text-blue-500`} />
+        return <Facebook className={`${size} text-gray-400`} />
       case 'twitter':
       case 'x':
         return (
@@ -3566,7 +3566,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
+                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`Instagram: ${campaignLead.lead.instagram_handle}`}
                                   style={{ marginLeft: '0px' }}
@@ -3579,7 +3579,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
+                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`Facebook: ${campaignLead.lead.facebook_page}`}
                                       style={{ marginLeft: campaignLead.lead.instagram_handle ? '-6px' : '0px' }}
@@ -3592,7 +3592,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
+                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
                                       style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page) ? '-6px' : '0px' }}
@@ -4235,7 +4235,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           {copiedField === 'email-copy' ? (
                             <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
                           ) : (
-                            <Mail className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
+                            <Mail className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                           )}
                         </Button>
                       )}
@@ -4268,10 +4268,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-600/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
+                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
@@ -4285,7 +4285,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
+                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -4298,10 +4298,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
+                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
@@ -4353,10 +4353,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('email')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
-                      className={`flex items-center gap-2 ${messageType === 'email' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      className={`flex items-center gap-2 ${messageType === 'email' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                     >
                       <Mail className="h-4 w-4" />
                       <span className="hidden sm:inline">Email</span>
@@ -4368,6 +4369,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('phone')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
@@ -4383,10 +4385,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('linkedin')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
-                      className={`flex items-center gap-2 ${messageType === 'linkedin' ? 'bg-blue-600/20 text-blue-600 border border-blue-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      className={`flex items-center gap-2 ${messageType === 'linkedin' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                     >
                       <Linkedin className="h-4 w-4" />
                       <span className="hidden sm:inline">LinkedIn</span>
@@ -4398,10 +4401,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('instagram')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
-                      className={`flex items-center gap-2 ${messageType === 'instagram' ? 'bg-pink-500/20 text-pink-500 border border-pink-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      className={`flex items-center gap-2 ${messageType === 'instagram' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                     >
                       <Instagram className="h-4 w-4" />
                       <span className="hidden sm:inline">Instagram</span>
@@ -4413,10 +4417,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('facebook')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
-                      className={`flex items-center gap-2 ${messageType === 'facebook' ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      className={`flex items-center gap-2 ${messageType === 'facebook' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                     >
                       <Facebook className="h-4 w-4" />
                       <span className="hidden sm:inline">Facebook</span>
@@ -4428,10 +4433,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setMessageType('x')
                         setGeneratedMessage(null)
                         setGeneratedSubject(null)
+                        setTimeout(() => generateMessage(), 100)
                       }}
                       variant="ghost"
                       size="sm"
-                      className={`flex items-center gap-2 ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-300/20 text-gray-300 border border-gray-300/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                      className={`flex items-center gap-2 ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                     >
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -5105,10 +5111,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.email!, 'Email', 'email-copy-single')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Copy Email"
                         >
-                          <Mail className={`h-4 w-4 text-blue-400 group-hover:text-blue-300 ${copiedField === 'email-copy-single' ? 'animate-pulse' : ''}`} />
+                          <Mail className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'email-copy-single' ? 'animate-pulse' : ''}`} />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.phone && (
@@ -5132,10 +5138,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-600/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
+                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
@@ -5149,7 +5155,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
+                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -5162,10 +5168,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
+                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
@@ -5232,14 +5238,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="flex gap-2 flex-wrap">
                     {selectedCampaignLead?.lead?.email && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('email')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'email' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        className={`flex items-center gap-2 transition-all ${messageType === 'email' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                       >
                         <Mail className="h-4 w-4" />
                         <span className="text-xs sm:text-sm">Email</span>
@@ -5247,10 +5255,12 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     )}
                     {selectedCampaignLead?.lead?.phone && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('phone')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
@@ -5262,14 +5272,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     )}
                     {selectedCampaignLead?.lead?.linkedin_profile && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('linkedin')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'linkedin' ? 'bg-blue-600/20 text-blue-600 border border-blue-600/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        className={`flex items-center gap-2 transition-all ${messageType === 'linkedin' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                       >
                         <Linkedin className="h-4 w-4" />
                         <span className="text-xs sm:text-sm">LinkedIn</span>
@@ -5277,14 +5289,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     )}
                     {selectedCampaignLead?.lead?.instagram_handle && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('instagram')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'instagram' ? 'bg-pink-500/20 text-pink-500 border border-pink-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        className={`flex items-center gap-2 transition-all ${messageType === 'instagram' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                       >
                         <Instagram className="h-4 w-4" />
                         <span className="text-xs sm:text-sm">Instagram</span>
@@ -5292,14 +5306,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     )}
                     {selectedCampaignLead?.lead?.facebook_page && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('facebook')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'facebook' ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        className={`flex items-center gap-2 transition-all ${messageType === 'facebook' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                       >
                         <Facebook className="h-4 w-4" />
                         <span className="text-xs sm:text-sm">Facebook</span>
@@ -5307,14 +5323,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     )}
                     {selectedCampaignLead?.lead?.twitter_handle && (
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           setMessageType('x')
                           setGeneratedMessage(null)
                           setGeneratedSubject(null)
+                          // Auto-generate message after switching
+                          setTimeout(() => generateMessage(), 100)
                         }}
                         variant="ghost"
                         size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-300/20 text-gray-300 border border-gray-300/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        className={`flex items-center gap-2 transition-all ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
                       >
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -5439,7 +5457,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4 shadow-lg">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg">
-                            <Mail className="h-5 w-5 text-blue-400" />
+                            <Mail className="h-5 w-5 text-gray-400" />
                           </div>
                           <p className="text-gray-300 font-medium">{messageSubject}</p>
                         </div>
@@ -5976,10 +5994,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.email!, 'Email', 'email-copy-smart')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Copy Email"
                         >
-                          <Mail className={`h-4 w-4 text-blue-400 group-hover:text-blue-300 ${copiedField === 'email-copy-smart' ? 'animate-pulse' : ''}`} />
+                          <Mail className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'email-copy-smart' ? 'animate-pulse' : ''}`} />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.phone && (
@@ -6003,10 +6021,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-600/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
+                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
@@ -6020,7 +6038,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
+                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -6033,10 +6051,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
+                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
