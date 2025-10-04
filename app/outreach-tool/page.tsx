@@ -5137,7 +5137,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'email'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
@@ -5154,7 +5156,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'phone'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
@@ -5171,7 +5175,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'linkedin'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
@@ -5188,7 +5194,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'instagram'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
@@ -5205,7 +5213,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'facebook'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
@@ -5222,7 +5232,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           setGeneratedMessage(null)
                           setMessageSubject(null)
                           // Auto-generate message after switching
-                          setTimeout(() => generateMessage(), 100)
+                          if (selectedCampaignLead?.lead) {
+                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'x'), 100)
+                          }
                         }}
                         variant="ghost"
                         size="sm"
