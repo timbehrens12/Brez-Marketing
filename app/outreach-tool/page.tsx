@@ -2326,7 +2326,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       case 'email':
         return <Mail className={`${size} text-blue-400`} />
       case 'phone':
-        return <Phone className={`${size} text-green-400`} />
+        return <Phone className={`${size} text-gray-400`} />
       case 'linkedin':
         return <Linkedin className={`${size} text-blue-600`} />
       case 'instagram':
@@ -4247,14 +4247,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className={`h-8 w-8 p-0 group transition-all duration-200 ${
                             copiedField === 'phone-copy' 
                               ? 'bg-green-500/20 border border-green-500/30' 
-                              : 'hover:bg-green-500/20'
+                              : 'hover:bg-gray-500/20'
                           }`}
                           title={copiedField === 'phone-copy' ? 'Copied!' : 'Copy Phone'}
                         >
                           {copiedField === 'phone-copy' ? (
                             <CheckCircle2 className="h-4 w-4 text-green-400 animate-bounce" />
                           ) : (
-                            <Phone className="h-4 w-4 text-green-400 group-hover:text-green-300" />
+                            <Phone className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
                           )}
                         </Button>
                       )}
@@ -5015,10 +5015,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.phone!, 'Phone', 'phone-copy-single')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-green-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Copy Phone"
                         >
-                          <Phone className={`h-4 w-4 text-green-400 group-hover:text-green-300 ${copiedField === 'phone-copy-single' ? 'animate-pulse' : ''}`} />
+                          <Phone className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'phone-copy-single' ? 'animate-pulse' : ''}`} />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.linkedin_profile && (
@@ -5129,8 +5129,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-8 shadow-xl">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg">
-                        <Phone className="h-6 w-6 text-green-400" />
+                      <div className="p-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-lg">
+                        <Phone className="h-6 w-6 text-gray-400" />
                       </div>
                       <h3 className="text-2xl font-bold text-white">AI Cold Call Script</h3>
                     </div>
@@ -5785,10 +5785,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           onClick={() => copyToClipboard(selectedCampaignLead.lead?.phone!, 'Phone', 'phone-copy-smart')}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:bg-green-500/20 group"
+                          className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Copy Phone"
                         >
-                          <Phone className={`h-4 w-4 text-green-400 group-hover:text-green-300 ${copiedField === 'phone-copy-smart' ? 'animate-pulse' : ''}`} />
+                          <Phone className={`h-4 w-4 text-gray-400 group-hover:text-gray-300 ${copiedField === 'phone-copy-smart' ? 'animate-pulse' : ''}`} />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.linkedin_profile && (
