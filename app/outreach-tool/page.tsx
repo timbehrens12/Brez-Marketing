@@ -3733,19 +3733,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   <XCircle className="h-3 w-3" />
                                   <span className="text-xs">Rejected</span>
                                 </div>
-                              ) : campaignLead.status === 'pending' ? (
+                              ) : (campaignLead.status === 'pending' || (campaignLead.status === 'contacted' && methodsUsed.length < outreachMethods.length)) ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                                   onClick={() => {
-                                    // Only open outreach for pending leads
-                                    if (campaignLead.status === 'pending') {
-                                      setSelectedCampaignLead(campaignLead)
-                                      setIsFollowUpMode(false) // Not follow-up mode
-                                      setShowContractGenerator(false) // Clear contract state
-                                      setShowOutreachOptions(true)
-                                    }
+                                    setSelectedCampaignLead(campaignLead)
+                                    setIsFollowUpMode(false) // Not follow-up mode
+                                    setShowContractGenerator(false) // Clear contract state
+                                    setShowOutreachOptions(true)
                                   }}
                                   disabled={outreachMethods.length === 0}
                                   title={`${methodsUsed.length} of ${outreachMethods.length} methods used today`}
@@ -3755,7 +3752,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
                                 </Button>
                               ) : (
-                                // For 'contacted' status - show follow-up option only after 3+ days
+                                // For 'contacted' status with all methods used - show follow-up option only after 3+ days
                                 (() => {
                                   // Check if enough time has passed for follow-up
                                   if (!campaignLead.last_contacted_at) return null;
