@@ -2857,77 +2857,77 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
         {/* Clean Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 min-w-0">
-          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-white">{stats.totalLeads}</div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-300">Total Leads</div>
-                    <div className="text-xs text-gray-500">In pipeline</div>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">{stats.totalLeads}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">Total Leads</div>
+                    <div className="text-xs text-gray-500 truncate">In pipeline</div>
                   </div>
                 </div>
-                <Users className="h-6 w-6 text-gray-400" />
+                <Users className="h-6 w-6 text-gray-400 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-white">{stats.pending}</div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-300">Pending</div>
-                    <div className="text-xs text-gray-500">Need outreach</div>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">{stats.pending}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">Pending</div>
+                    <div className="text-xs text-gray-500 truncate">Need outreach</div>
                   </div>
                 </div>
-                <CircleDot className="h-6 w-6 text-gray-400" />
+                <CircleDot className="h-6 w-6 text-gray-400 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-white">{stats.contacted}</div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-300">Contacted</div>
-                    <div className="text-xs text-gray-500">{stats.responseRate}% response</div>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">{stats.contacted}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">Contacted</div>
+                    <div className="text-xs text-gray-500 truncate">{stats.responseRate}% response</div>
                   </div>
                 </div>
-                <MessageCircle className="h-6 w-6 text-gray-400" />
+                <MessageCircle className="h-6 w-6 text-gray-400 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-white">{stats.responded}</div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-300">Responded</div>
-                    <div className="text-xs text-gray-500">Active conversations</div>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">{stats.responded}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">Responded</div>
+                    <div className="text-xs text-gray-500 truncate">Active conversations</div>
                   </div>
                 </div>
-                <MessageSquare className="h-6 w-6 text-gray-400" />
+                <MessageSquare className="h-6 w-6 text-gray-400 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-white">{stats.qualified}</div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-300">Qualified</div>
-                    <div className="text-xs text-gray-500">Ready to close</div>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">{stats.qualified}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">Qualified</div>
+                    <div className="text-xs text-gray-500 truncate">Ready to close</div>
                   </div>
                 </div>
-                <Star className="h-6 w-6 text-gray-400" />
+                <Star className="h-6 w-6 text-gray-400 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -3845,18 +3845,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           <div className="xl:col-span-1 flex flex-col min-h-0 min-w-0">
             <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl h-full flex flex-col min-w-0">
               <CardHeader className="flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-gray-400" />
-                    <CardTitle className="text-white">Outreach Tasks</CardTitle>
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <CheckSquare className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <CardTitle className="text-white truncate">Outreach Tasks</CardTitle>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-[#2A2A2A] text-gray-300">
-                      {todos.length - completedTodos.size}/{todos.length}
-                    </Badge>
-                  </div>
+                  <Badge variant="secondary" className="bg-[#2A2A2A] text-gray-300 flex-shrink-0 whitespace-nowrap">
+                    {todos.length - completedTodos.size}/{todos.length}
+                  </Badge>
                 </div>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-gray-400 truncate">
                   Your personalized outreach task list
                 </CardDescription>
               </CardHeader>
