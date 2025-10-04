@@ -24,7 +24,7 @@ import {
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
   Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-    CheckSquare, Square, Brain, ArrowRight, X, FileText, Building,
+    CheckSquare, Square, Brain, ArrowRight, ArrowLeft, X, FileText, Building,
     Eye, RotateCcw, Download
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -179,6 +179,8 @@ export default function OutreachToolPage() {
   const [messageSubject, setMessageSubject] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showMessageComposer, setShowMessageComposer] = useState(false)
+  const [messageMarkedAsSent, setMessageMarkedAsSent] = useState(false) // Track if user marked message as sent
+  const [showCloseWarning, setShowCloseWarning] = useState(false) // Show warning when closing without marking as sent
   const [methodUsageTimestamp, setMethodUsageTimestamp] = useState(Date.now()) // Force re-render when methods are used
   const [showOutreachOptions, setShowOutreachOptions] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -4957,7 +4959,20 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         </Dialog>
 
         {/* Premium Message Composer Dialog */}
-        <Dialog open={showMessageComposer} onOpenChange={setShowMessageComposer}>
+        <Dialog open={showMessageComposer} onOpenChange={(open) => {
+          if (!open && generatedMessage && !messageMarkedAsSent) {
+            // User is trying to close with a generated message that wasn't marked as sent
+            setShowCloseWarning(true)
+          } else {
+            setShowMessageComposer(open)
+            if (!open) {
+              // Reset state when closing
+              setMessageMarkedAsSent(false)
+              setGeneratedMessage('')
+              setMessageSubject('')
+            }
+          }
+        }}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
@@ -5429,6 +5444,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <Button
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
+                          setMessageMarkedAsSent(true) // Mark as sent before closing
                           setShowMessageComposer(false)
                           
                           // Handle bulk mode navigation
@@ -5557,6 +5573,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             )
                           }
                           
+                          setMessageMarkedAsSent(true) // Mark as sent before closing
                           setShowMessageComposer(false)
                           toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
                         }}
@@ -7465,8 +7482,60 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           </DialogContent>
         </Dialog>
 
-
-
+        {/* Warning Dialog - Closing without marking as sent */}
+        <Dialog open={showCloseWarning} onOpenChange={setShowCloseWarning}>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-md shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+                Close Without Marking as Sent?
+              </DialogTitle>
+              <DialogDescription className="text-gray-300 mt-4">
+                <div className="space-y-4">
+                  <p className="text-gray-300 leading-relaxed">
+                    You have a generated message that hasn't been marked as sent. If you close now, <span className="font-semibold text-white">the lead's status will NOT be updated to "Contacted"</span> and you won't be able to track this outreach.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-600/30 rounded-lg p-4">
+                    <p className="text-sm text-gray-300">
+                      <span className="font-medium text-yellow-400">Recommendation:</span> Click "Mark as Sent" to properly track this outreach and update the lead's status.
+                    </p>
+                  </div>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={() => {
+                  setShowCloseWarning(false)
+                  // Don't close the message composer - let them go back
+                }}
+                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Go Back & Mark as Sent
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  setShowCloseWarning(false)
+                  setShowMessageComposer(false)
+                  setMessageMarkedAsSent(false)
+                  setGeneratedMessage('')
+                  setMessageSubject('')
+                  toast.info('Message closed without updating lead status')
+                }}
+                variant="outline"
+                className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
+              >
+                Close Anyway
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
                     </div>
       </div>
