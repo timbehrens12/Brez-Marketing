@@ -5130,122 +5130,201 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-sm text-gray-400 flex-shrink-0">Switch Outreach Method:</span>
                   <div className="flex gap-2 flex-wrap">
-                    {selectedCampaignLead?.lead?.email && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('email')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'email'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'email' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <Mail className="h-4 w-4" />
-                        <span className="text-xs sm:text-sm">Email</span>
-                      </Button>
-                    )}
-                    {selectedCampaignLead?.lead?.phone && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('phone')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'phone'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'phone' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <Phone className="h-4 w-4" />
-                        <span className="text-xs sm:text-sm">Phone</span>
-                      </Button>
-                    )}
-                    {selectedCampaignLead?.lead?.linkedin_profile && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('linkedin')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'linkedin'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'linkedin' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <Linkedin className="h-4 w-4" />
-                        <span className="text-xs sm:text-sm">LinkedIn</span>
-                      </Button>
-                    )}
-                    {selectedCampaignLead?.lead?.instagram_handle && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('instagram')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'instagram'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'instagram' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <Instagram className="h-4 w-4" />
-                        <span className="text-xs sm:text-sm">Instagram</span>
-                      </Button>
-                    )}
-                    {selectedCampaignLead?.lead?.facebook_page && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('facebook')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'facebook'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'facebook' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <Facebook className="h-4 w-4" />
-                        <span className="text-xs sm:text-sm">Facebook</span>
-                      </Button>
-                    )}
-                    {selectedCampaignLead?.lead?.twitter_handle && (
-                      <Button
-                        onClick={async () => {
-                          setMessageType('x')
-                          setGeneratedMessage(null)
-                          setMessageSubject(null)
-                          // Auto-generate message after switching
-                          if (selectedCampaignLead?.lead) {
-                            setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'x'), 100)
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 transition-all ${messageType === 'x' || messageType === 'twitter' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
-                      >
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                        <span className="text-xs sm:text-sm">X/Twitter</span>
-                      </Button>
-                    )}
+                    {selectedCampaignLead?.lead?.email && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_email_${today}`))
+                      const isCurrentMethod = messageType === 'email'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('📧 Email message already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('email')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'email'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <Mail className="h-4 w-4" />
+                          <span className="text-xs sm:text-sm">Email{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
+                    {selectedCampaignLead?.lead?.phone && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_phone_${today}`))
+                      const isCurrentMethod = messageType === 'phone'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('📞 Phone script already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('phone')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'phone'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <Phone className="h-4 w-4" />
+                          <span className="text-xs sm:text-sm">Phone{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
+                    {selectedCampaignLead?.lead?.linkedin_profile && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_linkedin_${today}`))
+                      const isCurrentMethod = messageType === 'linkedin'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('💼 LinkedIn message already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('linkedin')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'linkedin'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <Linkedin className="h-4 w-4" />
+                          <span className="text-xs sm:text-sm">LinkedIn{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
+                    {selectedCampaignLead?.lead?.instagram_handle && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_instagram_${today}`))
+                      const isCurrentMethod = messageType === 'instagram'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('📸 Instagram message already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('instagram')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'instagram'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <Instagram className="h-4 w-4" />
+                          <span className="text-xs sm:text-sm">Instagram{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
+                    {selectedCampaignLead?.lead?.facebook_page && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_facebook_${today}`))
+                      const isCurrentMethod = messageType === 'facebook'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('👥 Facebook message already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('facebook')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'facebook'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <Facebook className="h-4 w-4" />
+                          <span className="text-xs sm:text-sm">Facebook{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
+                    {selectedCampaignLead?.lead?.twitter_handle && (() => {
+                      const today = new Date().toDateString()
+                      const isUsed = !!(selectedCampaignLead.lead?.business_name && 
+                        (localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_x_${today}`) ||
+                         localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_twitter_${today}`)))
+                      const isCurrentMethod = messageType === 'x' || messageType === 'twitter'
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (isUsed && !isCurrentMethod) {
+                              toast.error('🐦 X/Twitter message already generated for this lead today. Try a different method.')
+                              return
+                            }
+                            setMessageType('x')
+                            if (!isCurrentMethod) {
+                              setGeneratedMessage(null)
+                              setMessageSubject(null)
+                              // Auto-generate message after switching
+                              if (selectedCampaignLead?.lead) {
+                                setTimeout(() => generatePersonalizedMessage(selectedCampaignLead.lead, 'x'), 100)
+                              }
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 transition-all ${isCurrentMethod ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : isUsed ? 'text-gray-500 hover:bg-red-500/10 border border-red-500/30' : 'text-gray-400 hover:bg-gray-500/20'}`}
+                        >
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                          <span className="text-xs sm:text-sm">X/Twitter{isUsed && !isCurrentMethod ? ' ✓' : ''}</span>
+                        </Button>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>
@@ -5363,7 +5442,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <Label className="text-gray-300 font-medium text-lg">Subject Line</Label>
                       <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4 shadow-lg">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg">
+                          <div className="p-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-lg">
                             <Mail className="h-5 w-5 text-gray-400" />
                           </div>
                           <p className="text-gray-300 font-medium">{messageSubject}</p>
