@@ -3767,6 +3767,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                           setSelectedCampaignLead(campaignLead)
                                           setIsFollowUpMode(false) // Not follow-up mode
                                           setShowContractGenerator(false) // Clear contract state
+                                          setMethodUsageTimestamp(Date.now()) // Force method switcher to check usage
                                           setShowOutreachOptions(true)
                                         }}
                                         disabled={outreachMethods.length === 0}
@@ -3808,6 +3809,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                         setSelectedCampaignLead(campaignLead)
                                         setIsFollowUpMode(true)
                                         setShowContractGenerator(false) // Clear contract state
+                                        setMethodUsageTimestamp(Date.now()) // Force method switcher to check usage
                                         setShowOutreachOptions(true)
                                       }}
                                     >
