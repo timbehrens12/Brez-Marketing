@@ -24,7 +24,7 @@ import {
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
   Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-    CheckSquare, Square, Brain, ArrowRight, ArrowLeft, X, FileText, Building,
+    CheckSquare, Square, Brain, ArrowRight, X, FileText, Building,
     Eye, RotateCcw, Download
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -177,12 +177,12 @@ export default function OutreachToolPage() {
   const [messageType, setMessageType] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
   const [messageSubject, setMessageSubject] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showMessageComposer, setShowMessageComposer] = useState(false)
-  const [messageMarkedAsSent, setMessageMarkedAsSent] = useState(false) // Track if user marked message as sent
-  const [showCloseWarning, setShowCloseWarning] = useState(false) // Show warning when closing without marking as sent
-  const [methodUsageTimestamp, setMethodUsageTimestamp] = useState(Date.now()) // Force re-render when methods are used
-  const [showOutreachOptions, setShowOutreachOptions] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [showMessageComposer, setShowMessageComposer] = useState(false)
+    const [messageMarkedAsContacted, setMessageMarkedAsContacted] = useState(false) // Track if user marked message as contacted
+    const [showCloseWarning, setShowCloseWarning] = useState(false) // Show warning when closing without marking as contacted
+    const [methodUsageTimestamp, setMethodUsageTimestamp] = useState(Date.now()) // Force re-render when methods are used
+    const [showOutreachOptions, setShowOutreachOptions] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
   const [isSelectAll, setIsSelectAll] = useState(false)
@@ -4958,21 +4958,21 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           </DialogContent>
         </Dialog>
 
-        {/* Premium Message Composer Dialog */}
-        <Dialog open={showMessageComposer} onOpenChange={(open) => {
-          if (!open && generatedMessage && !messageMarkedAsSent) {
-            // User is trying to close with a generated message that wasn't marked as sent
-            setShowCloseWarning(true)
-          } else {
-            setShowMessageComposer(open)
-            if (!open) {
-              // Reset state when closing
-              setMessageMarkedAsSent(false)
-              setGeneratedMessage('')
-              setMessageSubject('')
+          {/* Premium Message Composer Dialog */}
+          <Dialog open={showMessageComposer} onOpenChange={(open) => {
+            if (!open && generatedMessage && !messageMarkedAsContacted) {
+              // User is trying to close with a generated message that wasn't marked as contacted
+              setShowCloseWarning(true)
+            } else {
+              setShowMessageComposer(open)
+              if (!open) {
+                // Reset state when closing
+                setMessageMarkedAsContacted(false)
+                setGeneratedMessage('')
+                setMessageSubject('')
+              }
             }
-          }
-        }}>
+          }}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
@@ -5377,11 +5377,76 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 // Enhanced Call Script Display
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-8 shadow-xl">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-lg">
-                        <Phone className="h-6 w-6 text-gray-400" />
+                    <div className="flex items-center justify-between mb-6 gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-lg">
+                          <Phone className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white">AI Cold Call Script</h3>
                       </div>
-                      <h3 className="text-2xl font-bold text-white">AI Cold Call Script</h3>
+                      {generatedMessage && (
+                        <div className="flex gap-3">
+                          <Button
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedMessage)
+                              setJustCopied(true)
+                              setTimeout(() => setJustCopied(false), 2000)
+                              toast.success('✅ Call script copied! Ready to make your call.')
+                            }}
+                            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            {justCopied ? 'Copied!' : 'Copy'}
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setMessageMarkedAsContacted(true)
+                              updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
+                              setShowMessageComposer(false)
+                              
+                              // Handle bulk mode navigation
+                              if (pendingOutreachQueue.length > 0) {
+                                if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                                  // Move to next lead in queue
+                                  const newIndex = currentQueueIndex + 1
+                                  setCurrentQueueIndex(newIndex)
+                                  setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                                  setShowOutreachOptions(true)
+                                  toast.success('Lead marked as contacted! Moving to next lead...')
+                                } else {
+                                  // Reached end of queue
+                                  setShowOutreachOptions(false)
+                                  setPendingOutreachQueue([])
+                                  setCurrentQueueIndex(0)
+                                  toast.success('Lead marked as contacted! All pending leads processed!')
+                                }
+                              } else if (contactedFollowUpQueue.length > 0) {
+                                if (currentFollowUpIndex < contactedFollowUpQueue.length - 1) {
+                                  const newIndex = currentFollowUpIndex + 1
+                                  setCurrentFollowUpIndex(newIndex)
+                                  setSelectedCampaignLead(contactedFollowUpQueue[newIndex])
+                                  setShowOutreachOptions(true)
+                                  toast.success('Follow-up marked as sent! Moving to next lead...')
+                                } else {
+                                  setShowOutreachOptions(false)
+                                  setContactedFollowUpQueue([])
+                                  setCurrentFollowUpIndex(0)
+                                  toast.success('Follow-up marked as sent! All follow-ups processed!')
+                                }
+                              } else {
+                                toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
+                              }
+                            }}
+                            className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            {isFollowUpMode 
+                              ? (contactedFollowUpQueue.length > 0 ? 'Mark Sent & Next' : 'Mark as Contacted')
+                              : (pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted')
+                            }
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm bg-[#1A1A1A] rounded-lg p-6 border border-[#333]">
                       {isGeneratingMessage ? (
@@ -5427,57 +5492,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       )}
                   </div>
                   </div>
-                  {generatedMessage && (
-                    <div className="flex gap-4">
-                  <Button
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedMessage)
-                          setJustCopied(true)
-                          setTimeout(() => setJustCopied(false), 2000)
-                          toast.success('✅ Call script copied! Ready to make your call.')
-                      }}
-                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                    >
-                        <Copy className="h-5 w-5 mr-2" />
-                      {justCopied ? 'Copied!' : 'Copy Script'}
-                  </Button>
-                      <Button
-                        onClick={() => {
-                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
-                          setMessageMarkedAsSent(true) // Mark as sent before closing
-                          setShowMessageComposer(false)
-                          
-                          // Handle bulk mode navigation
-                          if (pendingOutreachQueue.length > 0) {
-                            if (currentQueueIndex < pendingOutreachQueue.length - 1) {
-                              // Move to next lead in queue
-                              const newIndex = currentQueueIndex + 1
-                              setCurrentQueueIndex(newIndex)
-                              setSelectedCampaignLead(pendingOutreachQueue[newIndex])
-                              setShowOutreachOptions(true)
-                              toast.success('Lead marked as contacted! Moving to next lead...')
-                            } else {
-                              // Reached end of queue
-                              setShowOutreachOptions(false)
-                              setPendingOutreachQueue([])
-                              setCurrentQueueIndex(0)
-                              toast.success('Lead marked as contacted! All pending leads processed!')
-                            }
-                          } else {
-                          toast.success('Lead marked as contacted!')
-                          }
-                        }}
-                        className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                      >
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        {isFollowUpMode 
-                          ? (contactedFollowUpQueue.length > 0 ? 'Mark Sent & Next' : 'Mark as Sent')
-                          : (pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted')
-                        }
-                      </Button>
-                    </div>
-                )}
-              </div>
+                </div>
               ) : (
                 // Enhanced Message Display
                 <div className="space-y-6">
@@ -5562,6 +5577,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </Button>
                   <Button
                         onClick={async () => {
+                          setMessageMarkedAsContacted(true)
                           // Save the message to database and auto-update status
                           if (generatedMessage && selectedCampaignLead?.campaign_id) {
                             await saveOutreachMessage(
@@ -5573,14 +5589,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             )
                           }
                           
-                          setMessageMarkedAsSent(true) // Mark as sent before closing
                           setShowMessageComposer(false)
                           toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
                         }}
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
                         <Send className="h-5 w-5 mr-2" />
-                        {isFollowUpMode ? 'Mark Follow-up Sent' : 'Mark as Sent'}
+                        {isFollowUpMode ? 'Mark Follow-up Sent' : 'Mark as Contacted'}
                     </Button>
                     </div>
                   )}
@@ -5705,6 +5720,61 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </div>
                   </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Warning Dialog - Closing without marking as contacted */}
+        <Dialog open={showCloseWarning} onOpenChange={setShowCloseWarning}>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-md shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+                Close Without Marking as Contacted?
+              </DialogTitle>
+              <DialogDescription className="text-gray-300 mt-4">
+                <div className="space-y-4">
+                  <p className="text-gray-300 leading-relaxed">
+                    You have a generated message that hasn't been marked as contacted. If you close now, <span className="font-semibold text-white">the lead's status will NOT be updated to "Contacted"</span> and you won't be able to track this outreach.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-600/30 rounded-lg p-4">
+                    <p className="text-sm text-gray-300">
+                      <span className="font-medium text-yellow-400">Recommendation:</span> Click "Mark as Contacted" to properly track this outreach and update the lead's status.
+                    </p>
+                  </div>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={() => {
+                  setShowCloseWarning(false)
+                  // Don't close the message composer - let them go back
+                }}
+                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
+              >
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Go Back & Mark as Contacted
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  setShowCloseWarning(false)
+                  setShowMessageComposer(false)
+                  setMessageMarkedAsContacted(false)
+                  setGeneratedMessage('')
+                  setMessageSubject('')
+                  toast.info('Message closed without updating lead status')
+                }}
+                variant="outline"
+                className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
+              >
+                Close Anyway
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -7482,60 +7552,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           </DialogContent>
         </Dialog>
 
-        {/* Warning Dialog - Closing without marking as sent */}
-        <Dialog open={showCloseWarning} onOpenChange={setShowCloseWarning}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-md shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-white" />
-                </div>
-                Close Without Marking as Sent?
-              </DialogTitle>
-              <DialogDescription className="text-gray-300 mt-4">
-                <div className="space-y-4">
-                  <p className="text-gray-300 leading-relaxed">
-                    You have a generated message that hasn't been marked as sent. If you close now, <span className="font-semibold text-white">the lead's status will NOT be updated to "Contacted"</span> and you won't be able to track this outreach.
-                  </p>
-                  
-                  <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-600/30 rounded-lg p-4">
-                    <p className="text-sm text-gray-300">
-                      <span className="font-medium text-yellow-400">Recommendation:</span> Click "Mark as Sent" to properly track this outreach and update the lead's status.
-                    </p>
-                  </div>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="flex gap-3 mt-6">
-              <Button
-                onClick={() => {
-                  setShowCloseWarning(false)
-                  // Don't close the message composer - let them go back
-                }}
-                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Go Back & Mark as Sent
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  setShowCloseWarning(false)
-                  setShowMessageComposer(false)
-                  setMessageMarkedAsSent(false)
-                  setGeneratedMessage('')
-                  setMessageSubject('')
-                  toast.info('Message closed without updating lead status')
-                }}
-                variant="outline"
-                className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
-              >
-                Close Anyway
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+
+
 
                     </div>
       </div>
