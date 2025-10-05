@@ -468,15 +468,15 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          max_completion_tokens: 600, // Reduced for faster response
+          max_completion_tokens: 600,
           temperature: 0.7,
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout')), 8000) // Much shorter timeout
+          setTimeout(() => reject(new Error('OpenAI request timeout')), 25000) // Increased to 25 seconds for reliability
         )
       ]),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Server timeout protection')), 9000) // Absolute safety timeout
+        setTimeout(() => reject(new Error('Server timeout protection')), 27000) // Increased to 27 seconds
       )
     ]) as any
 

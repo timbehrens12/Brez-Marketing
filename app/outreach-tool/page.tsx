@@ -188,6 +188,7 @@ export default function OutreachToolPage() {
   const [isSelectAll, setIsSelectAll] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [justCopied, setJustCopied] = useState(false)
+  const [justMarkedAsContacted, setJustMarkedAsContacted] = useState(false)
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false)
   const [selectedScoreBreakdown, setSelectedScoreBreakdown] = useState<any>(null)
   const [showScoreManager, setShowScoreManager] = useState(false)
@@ -5436,10 +5437,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <Button
                             onClick={async () => {
                               setMessageMarkedAsContacted(true)
+                              setJustMarkedAsContacted(true)
                               await updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                               // Force reload campaign leads to ensure UI is in sync with database
                               await loadCampaignLeads()
-                              toast.success('✅ Lead marked as contacted! Status updated.')
+                              toast.success(`✅ ${messageType === 'phone' ? 'Phone' : messageType.charAt(0).toUpperCase() + messageType.slice(1)} outreach marked as contacted!`)
+                              // Reset confirmation animation after 2 seconds
+                              setTimeout(() => setJustMarkedAsContacted(false), 2000)
                               
                               // Handle bulk mode navigation
                               if (pendingOutreachQueue.length > 0) {
@@ -5474,13 +5478,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                 toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
                               }
                             }}
-                            className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200"
+                            className={`font-medium px-4 py-2 rounded-lg transition-all duration-200 ${
+                              justMarkedAsContacted 
+                                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white'
+                            }`}
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            {isFollowUpMode 
-                              ? (contactedFollowUpQueue.length > 0 ? 'Mark Sent & Next' : 'Mark as Contacted')
-                              : (pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted')
-                            }
+                            <CheckCircle className={`h-4 w-4 mr-2 ${justMarkedAsContacted ? 'animate-bounce' : ''}`} />
+                            {justMarkedAsContacted ? '✓ Contacted!' : (
+                              isFollowUpMode 
+                                ? (contactedFollowUpQueue.length > 0 ? 'Mark Sent & Next' : 'Mark as Contacted')
+                                : (pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted')
+                            )}
                           </Button>
                         </div>
                       )}
@@ -5571,6 +5580,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <Button
                             onClick={async () => {
                               setMessageMarkedAsContacted(true)
+                              setJustMarkedAsContacted(true)
                               // Save the message to database and auto-update status
                               if (generatedMessage && selectedCampaignLead?.campaign_id) {
                                 await saveOutreachMessage(
@@ -5583,12 +5593,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               }
                               // Force reload campaign leads to ensure UI is in sync with database
                               await loadCampaignLeads()
-                              toast.success('✅ Lead marked as contacted! Status updated.')
+                              toast.success(`✅ ${messageType === 'email' ? 'Email' : messageType.charAt(0).toUpperCase() + messageType.slice(1)} outreach marked as contacted!`)
+                              // Reset confirmation animation after 2 seconds
+                              setTimeout(() => setJustMarkedAsContacted(false), 2000)
                             }}
-                            className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200"
+                            className={`font-medium px-4 py-2 rounded-lg transition-all duration-200 ${
+                              justMarkedAsContacted 
+                                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white'
+                            }`}
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Mark as Contacted
+                            <CheckCircle className={`h-4 w-4 mr-2 ${justMarkedAsContacted ? 'animate-bounce' : ''}`} />
+                            {justMarkedAsContacted ? '✓ Contacted!' : 'Mark as Contacted'}
                           </Button>
                         </div>
                       )}
