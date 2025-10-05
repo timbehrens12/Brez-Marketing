@@ -382,7 +382,13 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
-      const response = await fetch('/api/outreach/usage')
+      // Send user's timezone to API for accurate daily reset calculation
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const response = await fetch('/api/outreach/usage', {
+        headers: {
+          'x-user-timezone': userTimezone
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setMessageUsage(data.usage)
@@ -2090,6 +2096,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       const { error } = await supabase
         .from('outreach_messages')
         .insert({
+          user_id: userId, // Required field
           campaign_id: campaignId,
           message_type: messageType,
           subject: subject || null,

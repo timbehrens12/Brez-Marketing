@@ -29,8 +29,11 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     
-    // Calculate start of current day (midnight) for proper daily reset
-    const startOfToday = new Date(now)
+    // Get user's timezone from request header or default to UTC
+    const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago' // Default to Central Time
+    
+    // Calculate start of current day (midnight) in user's local timezone
+    const startOfToday = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
     startOfToday.setHours(0, 0, 0, 0)
 
     // Get hourly usage (rolling 1 hour)
