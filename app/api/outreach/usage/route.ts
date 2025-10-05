@@ -42,22 +42,18 @@ export async function GET(request: NextRequest) {
       .gte('created_at', oneHourAgo.toISOString())
 
     // Get daily usage using timezone-aware filtering
+    // Calculate start of today in user's timezone
+    const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const startOfTodayInUserTz = new Date(todayInUserTz)
+    startOfTodayInUserTz.setHours(0, 0, 0, 0)
+    
+    // Get all records from start of today onwards (in user's timezone)
     const { data: allUsageData, error: dailyError } = await supabase
       .from('ai_usage_logs')
       .select('*')
       .eq('user_id', userId)
       .eq('endpoint', 'outreach_messages')
-      .gte('created_at', now.toISOString())
-      .then(async (allData) => {
-        if (allData.error) return allData
-        // Filter in JavaScript by converting each timestamp to user's timezone
-        const filtered = allData.data?.filter(row => {
-          const rowDate = new Date(row.created_at).toLocaleDateString('en-US', { timeZone: userTimezone })
-          const todayDate = now.toLocaleDateString('en-US', { timeZone: userTimezone })
-          return rowDate === todayDate
-        }) || []
-        return { data: filtered, error: null }
-      })
+      .gte('created_at', startOfTodayInUserTz.toISOString())
     
     const dailyUsage = allUsageData
 
@@ -79,7 +75,9 @@ export async function GET(request: NextRequest) {
       dailyCost,
       hourlyUsageLength: hourlyUsage?.length,
       dailyUsageLength: dailyUsage?.length,
-      todayDate: now.toLocaleDateString('en-US', { timeZone: userTimezone })
+      todayDate: now.toLocaleDateString('en-US', { timeZone: userTimezone }),
+      startOfTodayInUserTz: startOfTodayInUserTz.toISOString(),
+      now: now.toISOString()
     })
 
     // Calculate next reset times
