@@ -24,7 +24,8 @@ const SECURITY_LIMITS = {
 // Track message generation usage
 async function trackUsage(userId: string, leadId: string, messageType: string, cost: number = 0.02) {
   try {
-    const { error } = await supabase
+    console.log('📊 Attempting to track usage:', { userId, leadId, messageType, cost })
+    const { data, error } = await supabase
       .from('outreach_message_usage')
       .insert({
         user_id: userId,
@@ -33,12 +34,17 @@ async function trackUsage(userId: string, leadId: string, messageType: string, c
         generated_at: new Date().toISOString(),
         estimated_cost: cost
       })
+      .select()
     
     if (error) {
       console.error('❌ Failed to track usage:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
+    } else {
+      console.log('✅ Usage tracked successfully:', data)
     }
   } catch (error) {
     console.error('❌ Error tracking usage:', error)
+    console.error('Caught exception:', error)
   }
 }
 
