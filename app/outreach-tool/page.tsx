@@ -1989,8 +1989,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       if (data.ai_generated) {
         toast.success('✨ Personalized message generated successfully!')
         
-        // Refresh usage after generating a message
-        loadMessageUsage()
+        // Refresh usage after generating a message (with small delay to ensure DB is updated)
+        setTimeout(async () => {
+          await loadMessageUsage()
+        }, 500)
         
         // Show usage info if available
         if (data.usage?.messagesRemaining) {
@@ -4205,7 +4207,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             setIsFollowUpMode(false)
           }
         }}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
