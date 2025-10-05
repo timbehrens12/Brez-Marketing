@@ -4768,29 +4768,31 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
                     }`}
                 >
-                    <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-gradient-to-r from-gray-600/30 to-gray-700/30 rounded-lg group-hover:from-gray-600/40 group-hover:to-gray-700/40 transition-all duration-200">
+                    <div className="flex items-center justify-between w-full gap-3 min-w-0">
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className="p-2 bg-gradient-to-r from-gray-600/30 to-gray-700/30 rounded-lg group-hover:from-gray-600/40 group-hover:to-gray-700/40 transition-all duration-200 flex-shrink-0">
                             <method.icon className="h-6 w-6" />
                           </div>
-                        <div className="text-left">
-                            <div className="font-semibold text-lg">{methodLabel}</div>
-                            <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
+                        <div className="text-left min-w-0 flex-1">
+                            <div className="font-semibold text-lg truncate">{methodLabel}</div>
+                            <div className="text-sm text-gray-400 mt-1 truncate">{recommendation}</div>
                         </div>
                       </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           {methodUsedToday && (
-                            <div className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400 px-2 py-1 rounded flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3" />
-                              Used Today
+                            <div className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400 px-2 py-1 rounded flex items-center gap-1 whitespace-nowrap">
+                              <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                              <span className="hidden sm:inline">Used Today</span>
+                              <span className="sm:hidden">Used</span>
                             </div>
                           )}
                           {!methodUsedToday && messageUsage?.daily.remaining === 0 && (
-                            <div className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-gray-300 px-2 py-1 rounded">
-                              Daily Limit Reached
+                            <div className="text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-gray-300 px-2 py-1 rounded whitespace-nowrap">
+                              <span className="hidden sm:inline">Daily Limit Reached</span>
+                              <span className="sm:hidden">Limit</span>
                             </div>
                           )}
-                          <ChevronRight className={`h-5 w-5 transition-colors ${
+                          <ChevronRight className={`h-5 w-5 flex-shrink-0 transition-colors ${
                             methodUsedToday ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'
                           }`} />
                         </div>
