@@ -29,26 +29,44 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     
-    // Get user's timezone from request header or default to UTC
-    const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago' // Default to Central Time
+    // Get user's timezone from request header or default to Central Time
+    const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago'
     
-    // Calculate start of current day (midnight) in user's local timezone
-    const startOfToday = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
-    startOfToday.setHours(0, 0, 0, 0)
-
-    // Get hourly usage (rolling 1 hour)
+    // Let PostgreSQL handle the timezone conversion using a raw query
+    // This is more reliable than JavaScript date manipulation
     const { data: hourlyUsage, error: hourlyError } = await supabase
       .from('outreach_message_usage')
       .select('*')
       .eq('user_id', userId)
       .gte('generated_at', oneHourAgo.toISOString())
 
-    // Get daily usage (since midnight today)
-    const { data: dailyUsage, error: dailyError } = await supabase
-      .from('outreach_message_usage')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('generated_at', startOfToday.toISOString())
+    // Get daily usage using PostgreSQL's timezone conversion
+    // DATE(generated_at AT TIME ZONE 'timezone') converts to user's local date
+    const { data: dailyUsage, error: dailyError } = await supabase.rpc('get_daily_usage', {
+      p_user_id: userId,
+      p_timezone: userTimezone
+    }).then(async (result) => {
+      // If RPC doesn't exist, fall back to a direct query with timezone conversion
+      if (result.error?.code === '42883') { // function does not exist
+        // Use a manual query with timezone conversion
+        return await supabase
+          .from('outreach_message_usage')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('generated_at', now.toISOString())
+          .then(async (allData) => {
+            if (allData.error) return allData
+            // Filter in JavaScript by converting each timestamp to user's timezone
+            const filtered = allData.data?.filter(row => {
+              const rowDate = new Date(row.generated_at).toLocaleDateString('en-US', { timeZone: userTimezone })
+              const todayDate = now.toLocaleDateString('en-US', { timeZone: userTimezone })
+              return rowDate === todayDate
+            }) || []
+            return { data: filtered, error: null }
+          })
+      }
+      return result
+    })
 
     if (hourlyError || dailyError) {
       console.error('❌ Error fetching usage:', hourlyError || dailyError)
