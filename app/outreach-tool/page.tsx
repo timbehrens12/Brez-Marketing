@@ -2089,16 +2089,32 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     }
   }
 
+  // Map frontend message types to database-compatible values
+  const mapMessageTypeToDb = (type: string): string => {
+    const mapping: Record<string, string> = {
+      'email': 'email',
+      'phone': 'cold_call_script',
+      'linkedin': 'linkedin_dm',
+      'instagram': 'instagram_dm',
+      'facebook': 'facebook_dm',
+      'twitter': 'facebook_dm', // Twitter/X uses same format as Facebook DM
+      'x': 'facebook_dm'
+    }
+    return mapping[type] || type
+  }
+
   // Function to save outreach message to database
   const saveOutreachMessage = async (campaignId: string, messageType: string, subject: string, content: string, campaignLeadId?: string) => {
     try {
       const supabase = await getSupabaseClient()
+      const dbMessageType = mapMessageTypeToDb(messageType)
+      
       const { error } = await supabase
         .from('outreach_messages')
         .insert({
           user_id: userId, // Required field
           campaign_id: campaignId,
-          message_type: messageType,
+          message_type: dbMessageType, // Use mapped value
           subject: subject || null,
           content: content,
           status: 'sent',
