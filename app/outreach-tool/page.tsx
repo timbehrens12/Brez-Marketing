@@ -5411,10 +5411,12 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             {justCopied ? 'Copied!' : 'Copy'}
                           </Button>
                           <Button
-                            onClick={() => {
+                            onClick={async () => {
                               setMessageMarkedAsContacted(true)
-                              updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
-                              toast.success('✅ Lead marked as contacted! You can now switch methods or close.')
+                              await updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
+                              // Force reload campaign leads to ensure UI is in sync with database
+                              await loadCampaignLeads()
+                              toast.success('✅ Lead marked as contacted! Status updated.')
                               
                               // Handle bulk mode navigation
                               if (pendingOutreachQueue.length > 0) {
@@ -5556,7 +5558,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   selectedCampaignLead.id // Pass campaign_lead_id for auto-status update
                                 )
                               }
-                              toast.success('✅ Lead marked as contacted! You can now switch methods or close.')
+                              // Force reload campaign leads to ensure UI is in sync with database
+                              await loadCampaignLeads()
+                              toast.success('✅ Lead marked as contacted! Status updated.')
                             }}
                             className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200"
                           >
