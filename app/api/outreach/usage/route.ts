@@ -71,6 +71,16 @@ export async function GET(request: NextRequest) {
     const hourlyCount = hourlyUsage?.length || 0
     const dailyCount = dailyUsage?.length || 0
     const dailyCost = dailyUsage?.reduce((sum, usage) => sum + (usage.estimated_cost || 0.02), 0) || 0
+    
+    console.log('📊 Usage API Debug:', {
+      userTimezone,
+      hourlyCount,
+      dailyCount,
+      dailyCost,
+      hourlyUsageLength: hourlyUsage?.length,
+      dailyUsageLength: dailyUsage?.length,
+      todayDate: now.toLocaleDateString('en-US', { timeZone: userTimezone })
+    })
 
     // Calculate next reset times
     const nextHourReset = new Date(Math.ceil(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000))

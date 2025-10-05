@@ -79,6 +79,7 @@ interface CampaignLead {
   lead?: Lead
   campaign?: OutreachCampaign
   outreach_method?: 'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'
+  outreach_methods_used?: Array<{ method: string; contacted_at: string }>
   dm_sent?: number
   dm_responded?: number
   email_sent?: number
@@ -2181,6 +2182,26 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         // Store outreach method if provided and status is contacted
         if (outreachMethod && newStatus === 'contacted') {
           updateData.outreach_method = outreachMethod
+          
+          // Also append this method to outreach_methods_used array with timestamp
+          // First, fetch current methods to append to them
+          const { data: currentLead } = await supabase
+            .from('outreach_campaign_leads')
+            .select('outreach_methods_used')
+            .eq('id', campaignLeadId)
+            .single()
+          
+          const currentMethods = (currentLead?.outreach_methods_used as any[]) || []
+          const methodEntry = {
+            method: outreachMethod,
+            contacted_at: new Date().toISOString()
+          }
+          
+          // Only add if this method isn't already in the array (prevent duplicates)
+          const methodExists = currentMethods.some((m: any) => m.method === outreachMethod)
+          if (!methodExists) {
+            updateData.outreach_methods_used = [...currentMethods, methodEntry]
+          }
         }
         
         // console.log('📤 Sending update data:', updateData)
@@ -2204,17 +2225,33 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         // console.log('✅ Update successful:', data)
       
         // Update state locally instead of reloading to prevent page jump
-        setCampaignLeads(prev => prev.map(cl => 
-          cl.id === campaignLeadId 
-            ? { 
-                ...cl, 
-                status: newStatus as any, 
-                last_contacted_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                ...(outreachMethod && newStatus === 'contacted' ? { outreach_method: outreachMethod as any } : {})
+        setCampaignLeads(prev => prev.map(cl => {
+          if (cl.id === campaignLeadId) {
+            const updated: CampaignLead = {
+              ...cl,
+              status: newStatus as any,
+              last_contacted_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+            
+            if (outreachMethod && newStatus === 'contacted') {
+              updated.outreach_method = outreachMethod as any
+              
+              // Update outreach_methods_used array
+              const currentMethods = cl.outreach_methods_used || []
+              const methodExists = currentMethods.some((m: any) => m.method === outreachMethod)
+              if (!methodExists) {
+                updated.outreach_methods_used = [
+                  ...currentMethods,
+                  { method: outreachMethod, contacted_at: new Date().toISOString() }
+                ]
               }
-            : cl
-        ))
+            }
+            
+            return updated
+          }
+          return cl
+        }))
       toast.success('Status updated successfully!')
       }
     } catch (error) {
@@ -3672,28 +3709,47 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                 }
                               </div>
                               
-                              {/* Platform Icons - Only show if lead was actually contacted */}
-                              <div className="flex items-center relative max-w-[80px]">
+                              {/* Platform Icons - Show all methods used with timestamps */}
+                              <div className="flex items-center relative max-w-[120px]">
                                 {(() => {
-                                  // Only show method icon if the lead has been contacted
+                                  // Only show method icons if the lead has been contacted
                                   if (!campaignLead.last_contacted_at) {
                                     return <span className="text-gray-500 text-xs">No contact made</span>
                                   }
 
-                                  // Show the most recent outreach method from the database
-                                  // Note: The database only tracks ONE method (the most recent one)
-                                  if (!campaignLead.outreach_method) {
-                                    return <span className="text-gray-500 text-xs">Method unknown</span>
+                                  // Show all methods used from the outreach_methods_used array
+                                  const methodsUsed = campaignLead.outreach_methods_used || []
+                                  
+                                  if (methodsUsed.length === 0) {
+                                    // Fallback to single outreach_method field if array is empty
+                                    if (!campaignLead.outreach_method) {
+                                      return <span className="text-gray-500 text-xs">Method unknown</span>
+                                    }
+                                    
+                                    return (
+                                      <div
+                                        className="relative z-10 p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] hover:z-20 transition-all duration-200"
+                                        title={`${campaignLead.outreach_method.charAt(0).toUpperCase() + campaignLead.outreach_method.slice(1)} outreach`}
+                                      >
+                                        {getOutreachMethodIcon(campaignLead.outreach_method, "h-3 w-3")}
+                                      </div>
+                                    )
                                   }
                                   
-                                  return (
-                                    <div
-                                      className="relative z-10 p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] hover:z-20 transition-all duration-200"
-                                      title={`${campaignLead.outreach_method.charAt(0).toUpperCase() + campaignLead.outreach_method.slice(1)} outreach (most recent)`}
-                                    >
-                                      {getOutreachMethodIcon(campaignLead.outreach_method, "h-3 w-3")}
-                                    </div>
-                                  )
+                                  // Display all methods with hover showing time
+                                  return methodsUsed.map((methodData: any, index: number) => {
+                                    const timeAgo = formatTimeAgo(methodData.contacted_at)
+                                    return (
+                                      <div
+                                        key={`${methodData.method}-${index}`}
+                                        className="relative z-10 p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] hover:z-20 transition-all duration-200"
+                                        title={`${methodData.method.charAt(0).toUpperCase() + methodData.method.slice(1)} - ${timeAgo}`}
+                                        style={{ marginLeft: index > 0 ? '-6px' : '0px' }}
+                                      >
+                                        {getOutreachMethodIcon(methodData.method, "h-3 w-3")}
+                                      </div>
+                                    )
+                                  })
                                 })()}
                               </div>
                             </div>
