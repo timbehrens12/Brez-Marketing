@@ -3673,51 +3673,25 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               {/* Platform Icons - Only show if lead was actually contacted */}
                               <div className="flex items-center relative max-w-[80px]">
                                 {(() => {
-                                  // Only show method icons if the lead has been contacted
+                                  // Only show method icon if the lead has been contacted
                                   if (!campaignLead.last_contacted_at) {
                                     return <span className="text-gray-500 text-xs">No contact made</span>
                                   }
 
-                                  // Check which outreach methods have been used for this lead (last 7 days)
-                                  const usedMethods: string[] = []
-                                  
-                                  if (campaignLead.lead?.business_name) {
-                                    const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
-                                    
-                                    // Check last 7 days for any outreach
-                                    for (let i = 0; i < 7; i++) {
-                                      const checkDate = new Date()
-                                      checkDate.setDate(checkDate.getDate() - i)
-                                      const dateString = checkDate.toDateString()
-                                      
-                                      for (const method of methods) {
-                                        if (localStorage.getItem(`method_used_${campaignLead.lead.business_name}_${method}_${dateString}`) && 
-                                            !usedMethods.includes(method)) {
-                                          usedMethods.push(method)
-                                        }
-                                      }
-                                    }
-                                  }
-
-                                  // Also check the outreach_method field from the database
-                                  if (campaignLead.outreach_method && !usedMethods.includes(campaignLead.outreach_method)) {
-                                    usedMethods.push(campaignLead.outreach_method)
-                                  }
-                                  
-                                  if (usedMethods.length === 0) {
+                                  // Show the most recent outreach method from the database
+                                  // Note: The database only tracks ONE method (the most recent one)
+                                  if (!campaignLead.outreach_method) {
                                     return <span className="text-gray-500 text-xs">Method unknown</span>
                                   }
                                   
-                                  return usedMethods.map((method, index) => (
+                                  return (
                                     <div
-                                      key={method}
                                       className="relative z-10 p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] hover:z-20 transition-all duration-200"
-                                      title={`${method.charAt(0).toUpperCase() + method.slice(1)} outreach completed`}
-                                      style={{ marginLeft: index > 0 ? '-6px' : '0px' }}
+                                      title={`${campaignLead.outreach_method.charAt(0).toUpperCase() + campaignLead.outreach_method.slice(1)} outreach (most recent)`}
                                     >
-                                      {getOutreachMethodIcon(method, "h-3 w-3")}
+                                      {getOutreachMethodIcon(campaignLead.outreach_method, "h-3 w-3")}
                                     </div>
-                                  ))
+                                  )
                                 })()}
                               </div>
                             </div>
