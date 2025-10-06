@@ -3,7 +3,6 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { getMondayToMondayRange } from '@/lib/date-utils'
-import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -197,20 +196,6 @@ export async function GET(request: NextRequest) {
 
     // Generate new recommendations if none exist
     const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
-    
-    // Track usage in ai_usage_logs for centralized tracking
-    await aiUsageService.logUsage({
-      userId,
-      brandId: brandId,
-      endpoint: 'marketing_assistant_recommendations',
-      metadata: {
-        recommendationsCount: recommendations.length,
-        platforms: platforms,
-        dateRange: dateRange,
-        timestamp: new Date().toISOString()
-      }
-    })
-    console.log(`[Recommendations API] ✅ Logged usage to ai_usage_logs`)
     
     // Store recommendations in database
     // Set expiration to next Monday (when new recommendations should be generated)
@@ -1070,21 +1055,6 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
       })
       .eq('id', recommendation.id)
   }
-
-  // Track "mark as done" action in ai_usage_logs for analytics
-  await aiUsageService.logUsage({
-    userId,
-    brandId: brandId,
-    endpoint: 'marketing_assistant_mark_done',
-    metadata: {
-      campaignId: campaignId,
-      actionId: actionId,
-      actionDescription: actionDescription,
-      recommendationId: recommendation?.id || null,
-      timestamp: new Date().toISOString()
-    }
-  })
-  console.log(`[Recommendations API] ✅ Logged "mark as done" to ai_usage_logs`)
 
   return {
     success: true,
