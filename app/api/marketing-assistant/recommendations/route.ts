@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { getMondayToMondayRange } from '@/lib/date-utils'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -191,6 +192,7 @@ export async function GET(request: NextRequest) {
         platform: rec.platform
       }))
 
+      console.log(`[Recommendations API] Returning ${recommendations.length} cached recommendations (no AI usage tracked)`)
       return NextResponse.json({ recommendations })
     }
 
@@ -299,6 +301,20 @@ export async function GET(request: NextRequest) {
 
       console.log(`[Recommendations API] Returning ${recommendationsWithDbIds.length} recommendations with database IDs`)
       console.log(`[Recommendations API] Sample IDs:`, recommendationsWithDbIds.slice(0, 3).map(r => r.id))
+      
+      // Track AI usage for marketing_analysis feature
+      try {
+        await aiUsageService.recordUsage(brandId, userId, 'marketing_analysis', {
+          recommendationsGenerated: recommendationsWithDbIds.length,
+          dateRange: dateRange,
+          platforms: platforms
+        })
+        console.log(`[Recommendations API] ✅ Tracked AI usage for marketing_analysis`)
+      } catch (trackingError) {
+        console.error(`[Recommendations API] ⚠️ Failed to track AI usage:`, trackingError)
+        // Don't fail the request if tracking fails
+      }
+      
       return NextResponse.json({ recommendations: recommendationsWithDbIds })
     }
 
@@ -996,7 +1012,7 @@ export async function POST(request: NextRequest) {
 async function markActionAsDone(campaignId: string, actionId: string, brandId: string, userId: string) {
   // For dynamically generated recommendations, we'll create a generic action log entry
   // since these recommendations are generated on-the-fly from campaign data
-  console.log(`Marking action as done: campaignId=${campaignId}, actionId=${actionId}, brandId=${brandId}`)
+  console.log(`[Marketing Assistant] Marking action as done: campaignId=${campaignId}, actionId=${actionId}, brandId=${brandId}`)
   
   // Try to get the recommendation from database first
   const { data: recommendation } = await supabase
@@ -1054,6 +1070,20 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
         expires_at: new Date().toISOString() // Expire it immediately
       })
       .eq('id', recommendation.id)
+  }
+
+  // Track the action completion in user_usage_tracking for page-specific tracking
+  try {
+    await aiUsageService.recordUsage(brandId, userId, 'marketing_analysis', {
+      action: 'mark_done',
+      actionType: logEntry.action_type,
+      actionDescription: actionDescription,
+      campaignId: campaignId
+    })
+    console.log(`[Marketing Assistant] ✅ Tracked action completion in usage tracking`)
+  } catch (trackingError) {
+    console.error(`[Marketing Assistant] ⚠️ Failed to track action completion:`, trackingError)
+    // Don't fail the request if tracking fails
   }
 
   return {
