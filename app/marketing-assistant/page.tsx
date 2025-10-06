@@ -1096,7 +1096,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
             
             {/* Trends */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col h-[491px]">
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[450px] max-h-[450px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -1109,7 +1109,7 @@ export default function MarketingAssistantPage() {
               </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-hidden">
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-4">
                   {trends && (
                     <>
@@ -1296,6 +1296,54 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
+            {/* Quick Insights */}
+            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[450px] max-h-[450px]">
+              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <Sparkles className="w-5 h-5 text-gray-400" />
+                        </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Quick Insights</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Key performance highlights</p>
+                        </div>
+                      </div>
+              </CardHeader>
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-3">
+                  {quickInsights.map((insight, index) => (
+                    <div key={index} className="p-4 bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg hover:border-[#444] transition-all">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{insight.icon}</span>
+                          <div>
+                            <h4 className="text-white font-medium text-sm">{insight.label}</h4>
+                            <p className="text-gray-400 text-xs mt-0.5">{insight.value}</p>
+                          </div>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          insight.color === 'green' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                          insight.color === 'blue' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                          insight.color === 'purple' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                          insight.color === 'red' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                          'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        }`}>
+                          {insight.metric}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {quickInsights.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No AI analysis run yet</p>
+                      <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to generate insights</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
            </div>
          </div>
