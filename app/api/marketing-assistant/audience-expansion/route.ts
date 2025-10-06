@@ -34,51 +34,59 @@ export async function GET(request: NextRequest) {
     console.log(`🎯 AUDIENCE DEBUG: Status filter:`, status)
     console.log(`🎯 AUDIENCE DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
 
-    // First, get campaign metadata to filter by platform and status
+    // Get campaigns that have data in the date range (regardless of current status)
+    let allowedCampaignIds: string[] = []
     let campaignMetadata: any = {}
+    
     if (platforms.includes('meta')) {
-      console.log(`🎯 AUDIENCE DEBUG: Fetching Meta campaign metadata...`)
-      let metaCampaignsQuery = supabase
-        .from('meta_campaigns')
-        .select('campaign_id, campaign_name, status')
+      console.log(`🎯 AUDIENCE DEBUG: Fetching campaigns with data in date range...`)
+      
+      // Query for campaigns that have actual data in the date range
+      const { data: campaignsWithData } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select('campaign_id')
         .eq('brand_id', brandId)
+        .gte('date', sevenDaysAgo)
+        .lte('date', today)
       
-      // Apply status filter - be flexible with status matching
-      if (status === 'active') {
-        // Match ACTIVE or any status containing 'ACTIVE'
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
-      } else if (status === 'paused') {
-        // Match PAUSED or any status containing 'PAUSED'
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
-      }
-      // 'all' status - no filter
-      
-      const { data: metaCampaigns, error: metaError } = await metaCampaignsQuery
-      
-      console.log(`🎯 AUDIENCE DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
-      if (metaCampaigns && metaCampaigns.length > 0) {
-        console.log(`🎯 AUDIENCE DEBUG: Sample campaign:`, {
-          name: metaCampaigns[0].campaign_name,
-          status: metaCampaigns[0].status,
-          id: metaCampaigns[0].campaign_id?.slice(0, 8)
-        })
-      }
-      
-      if (metaError) {
-        console.error(`🎯 AUDIENCE DEBUG: Error fetching Meta campaigns:`, metaError)
+      if (campaignsWithData && campaignsWithData.length > 0) {
+        // Get unique campaign IDs
+        allowedCampaignIds = [...new Set(campaignsWithData.map(c => c.campaign_id))]
+        console.log(`🎯 AUDIENCE DEBUG: Found ${allowedCampaignIds.length} campaigns with data in date range`)
+        
+        // Now fetch campaign metadata for these campaigns
+        const { data: metaCampaigns, error: metaError } = await supabase
+          .from('meta_campaigns')
+          .select('campaign_id, campaign_name, status')
+          .eq('brand_id', brandId)
+          .in('campaign_id', allowedCampaignIds)
+        
+        console.log(`🎯 AUDIENCE DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
+        if (metaCampaigns && metaCampaigns.length > 0) {
+          console.log(`🎯 AUDIENCE DEBUG: Sample campaign:`, {
+            name: metaCampaigns[0].campaign_name,
+            status: metaCampaigns[0].status,
+            id: metaCampaigns[0].campaign_id?.slice(0, 8)
+          })
+        }
+        
+        if (metaError) {
+          console.error(`🎯 AUDIENCE DEBUG: Error fetching Meta campaigns:`, metaError)
+        } else {
+          console.log(`🎯 AUDIENCE DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
+          metaCampaigns?.forEach((c: any) => {
+            campaignMetadata[c.campaign_id] = {
+              name: c.campaign_name,
+              status: c.status,
+              platform: 'meta'
+            }
+          })
+        }
       } else {
-        console.log(`🎯 AUDIENCE DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
-        metaCampaigns?.forEach((c: any) => {
-          campaignMetadata[c.campaign_id] = {
-            name: c.campaign_name,
-            status: c.status,
-            platform: 'meta'
-          }
-        })
+        console.log(`🎯 AUDIENCE DEBUG: No campaigns found with data between ${sevenDaysAgo} and ${today}`)
       }
     }
     
-    const allowedCampaignIds = Object.keys(campaignMetadata)
     console.log(`🎯 AUDIENCE DEBUG: Allowed campaign IDs after filtering:`, allowedCampaignIds.length)
     
     if (allowedCampaignIds.length === 0) {

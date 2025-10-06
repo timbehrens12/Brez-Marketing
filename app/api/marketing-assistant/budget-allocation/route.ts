@@ -35,66 +35,63 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 BUDGET DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
     console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
-    // First, get campaign metadata to filter by platform and status
-    // For now, we only support Meta campaigns
+    // Get campaigns that have data in the date range (regardless of current status)
+    let allowedCampaignIds: string[] = []
     let campaignMetadata: any = {}
+    
     if (platforms.includes('meta')) {
-      console.log(`🔍 BUDGET DEBUG: Fetching Meta campaign metadata...`)
-      let statusFilter = status
+      console.log(`🔍 BUDGET DEBUG: Fetching campaigns with data in date range...`)
       
-      // Map UI status to Meta API statuses
-      if (status === 'active') {
-        statusFilter = 'ACTIVE'
-      } else if (status === 'paused') {
-        statusFilter = 'PAUSED'
-      }
+      // Query for campaigns that have actual data in the date range
+      const { data: campaignsWithData } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select('campaign_id')
+        .eq('brand_id', brandId)
+        .gte('date', sevenDaysAgo)
+        .lte('date', today)
       
-        let metaCampaignsQuery = supabase
+      if (campaignsWithData && campaignsWithData.length > 0) {
+        // Get unique campaign IDs
+        allowedCampaignIds = [...new Set(campaignsWithData.map(c => c.campaign_id))]
+        console.log(`🔍 BUDGET DEBUG: Found ${allowedCampaignIds.length} campaigns with data in date range`)
+        
+        // Now fetch campaign metadata for these campaigns
+        const { data: metaCampaigns, error: metaError } = await supabase
           .from('meta_campaigns')
           .select('campaign_id, campaign_name, status, budget, budget_type')
           .eq('brand_id', brandId)
-      
-      // Apply status filter - be flexible with status matching
-      if (status === 'active') {
-        // Match ACTIVE or any status containing 'ACTIVE'
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
-      } else if (status === 'paused') {
-        // Match PAUSED or any status containing 'PAUSED'
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
-      }
-      // 'all' status - no filter
-      
-      const { data: metaCampaigns, error: metaError } = await metaCampaignsQuery
-      
-      console.log(`🔍 BUDGET DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
-      if (metaCampaigns && metaCampaigns.length > 0) {
-        console.log(`🔍 BUDGET DEBUG: Sample campaign:`, {
-            name: metaCampaigns[0].campaign_name,
-            status: metaCampaigns[0].status,
-            budget: metaCampaigns[0].budget,
-            budget_type: metaCampaigns[0].budget_type,
-            id: metaCampaigns[0].campaign_id?.slice(0, 8)
+          .in('campaign_id', allowedCampaignIds)
+        
+        console.log(`🔍 BUDGET DEBUG: Query results - campaigns found:`, metaCampaigns?.length || 0)
+        if (metaCampaigns && metaCampaigns.length > 0) {
+          console.log(`🔍 BUDGET DEBUG: Sample campaign:`, {
+              name: metaCampaigns[0].campaign_name,
+              status: metaCampaigns[0].status,
+              budget: metaCampaigns[0].budget,
+              budget_type: metaCampaigns[0].budget_type,
+              id: metaCampaigns[0].campaign_id?.slice(0, 8)
+            })
+        }
+        
+        if (metaError) {
+          console.error(`🔍 BUDGET DEBUG: Error fetching Meta campaigns:`, metaError)
+        } else {
+          console.log(`🔍 BUDGET DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
+          metaCampaigns?.forEach((c: any) => {
+            campaignMetadata[c.campaign_id] = {
+              name: c.campaign_name,
+              status: c.status,
+              platform: 'meta',
+              budget: c.budget ? parseFloat(c.budget) : null,
+              budget_type: c.budget_type
+            }
           })
-      }
-      
-      if (metaError) {
-        console.error(`🔍 BUDGET DEBUG: Error fetching Meta campaigns:`, metaError)
+        }
       } else {
-        console.log(`🔍 BUDGET DEBUG: Found ${metaCampaigns?.length || 0} Meta campaigns matching filter`)
-        metaCampaigns?.forEach((c: any) => {
-          campaignMetadata[c.campaign_id] = {
-            name: c.campaign_name,
-            status: c.status,
-            platform: 'meta',
-            budget: c.budget ? parseFloat(c.budget) : null,
-            budget_type: c.budget_type
-          }
-        })
+        console.log(`🔍 BUDGET DEBUG: No campaigns found with data between ${sevenDaysAgo} and ${today}`)
       }
     }
     
-    // Get allowed campaign IDs based on filters
-    const allowedCampaignIds = Object.keys(campaignMetadata)
     console.log(`🔍 BUDGET DEBUG: Allowed campaign IDs after filtering:`, allowedCampaignIds.length)
     
     if (allowedCampaignIds.length === 0) {

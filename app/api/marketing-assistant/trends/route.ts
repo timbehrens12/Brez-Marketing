@@ -27,24 +27,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Get filtered campaign IDs
+    // Calculate date range first to use in campaign filtering
+    let endDateStr, startDateStr
+    if (fromDate && toDate) {
+      startDateStr = fromDate
+      endDateStr = toDate
+    } else {
+      // Use Monday-to-Monday window
+      const { startDate: mondayStart, endDate: mondayEnd } = getMondayToMondayRange()
+      startDateStr = mondayStart
+      endDateStr = mondayEnd
+      console.log(`[Trends API] Using Monday-to-Monday range: ${mondayStart} to ${mondayEnd}`)
+    }
+    
+    // Get campaigns that have data in the date range (regardless of current status)
     let allowedCampaignIds: string[] = []
     
     if (platforms.includes('meta')) {
-      let metaCampaignsQuery = supabase
-        .from('meta_campaigns')
+      // Query for campaigns that have actual data in the date range
+      const { data: campaignsWithData } = await supabase
+        .from('meta_campaign_daily_stats')
         .select('campaign_id')
         .eq('brand_id', brandId)
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
       
-      if (status === 'active') {
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
-      } else if (status === 'paused') {
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
-      }
-      
-      const { data: metaCampaigns } = await metaCampaignsQuery
-      if (metaCampaigns) {
-        allowedCampaignIds = metaCampaigns.map(c => c.campaign_id)
+      if (campaignsWithData && campaignsWithData.length > 0) {
+        // Get unique campaign IDs
+        allowedCampaignIds = [...new Set(campaignsWithData.map(c => c.campaign_id))]
+        console.log(`[Trends API] Found ${allowedCampaignIds.length} campaigns with data in date range`)
+      } else {
+        console.log(`[Trends API] No campaigns found with data between ${startDateStr} and ${endDateStr}`)
       }
     }
 
@@ -66,18 +79,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Calculate date range - use Monday-to-Monday weekly window
-    let endDate, startDate
-    if (fromDate && toDate) {
-      startDate = new Date(fromDate)
-      endDate = new Date(toDate)
-    } else {
-      // Use Monday-to-Monday window
-      const { startDate: mondayStart, endDate: mondayEnd } = getMondayToMondayRange()
-      startDate = new Date(mondayStart)
-      endDate = new Date(mondayEnd)
-      console.log(`[Trends API] Using Monday-to-Monday range: ${mondayStart} to ${mondayEnd}`)
-    }
+    // Convert string dates to Date objects for calculations
+    const startDate = new Date(startDateStr)
+    const endDate = new Date(endDateStr)
     
     // Get historical data for comparison (previous week)
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))
