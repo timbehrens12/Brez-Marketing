@@ -868,7 +868,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
 
         // Check daily report availability using same logic as brand report page
-        const today = new Date().toISOString().split('T')[0]
+        // Use LOCAL date, not UTC, to match user's timezone
+        const now = new Date()
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
         const brandSpecificDailyKey = `lastManualGeneration_${brand.id}`
         const brandLastDailyGeneration = localStorage.getItem(brandSpecificDailyKey)
         
@@ -896,11 +898,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                    databaseDailyReports.some((report: any) => {
                                      const snapshotTime = report.data?.snapshot_time || report.snapshotTime
                                      const isManual = snapshotTime === "manual" || snapshotTime === null
-                                     return isManual && report.createdAt.startsWith(today)
+                                     // Check if report was created today in LOCAL time
+                                     const reportDate = new Date(report.createdAt)
+                                     const reportLocalDate = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`
+                                     console.log(`[Brand Report Check] ${brand.name}: snapshotTime=${snapshotTime}, isManual=${isManual}, reportLocalDate=${reportLocalDate}, today=${today}, match=${isManual && reportLocalDate === today}`)
+                                     return isManual && reportLocalDate === today
                                    })
+          
+          console.log(`[Brand Report Availability] ${brand.name}: hasUsedDailyToday=${hasUsedDailyToday}, localStorage=${brandLastDailyGeneration}, dbReports=${databaseDailyReports.length}`)
 
           // Check monthly report availability - resets at midnight on the 1st of each month (LOCAL TIME)
-          const now = new Date()
           // Use local date, not UTC
           const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` // YYYY-MM format in local time
           const brandSpecificMonthlyKey = `lastMonthlyGeneration_${brand.id}`
