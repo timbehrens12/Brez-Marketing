@@ -368,12 +368,17 @@ export default function MarketingAssistantPage() {
       // Always load KPI metrics
       await loadKPIMetrics()
       
-      // Load the rest in parallel (these will show empty states if no recommendations)
+      // Load budget and audience AFTER recommendations are loaded (they depend on optimizationCards state)
+      // Load alerts and trends in parallel (they don't depend on recommendations)
       await Promise.all([
-        loadBudgetAllocations(),
-        loadAudienceExpansions(),
         loadAlerts(),
         loadTrends()
+      ])
+      
+      // Now load budget and audience (after recommendations are in state)
+      await Promise.all([
+        loadBudgetAllocations(),
+        loadAudienceExpansions()
       ])
     } catch (error) {
     } finally {

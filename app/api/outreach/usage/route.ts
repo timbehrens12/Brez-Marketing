@@ -90,9 +90,8 @@ export async function GET(request: NextRequest) {
     const nextHourReset = new Date(Math.ceil(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000))
     
     // Next daily reset is tomorrow at midnight in user's timezone
-    // Reuse todayInUserTz from above and add 1 day
-    const nextDayReset = new Date(todayInUserTz)
-    nextDayReset.setDate(nextDayReset.getDate() + 1)
+    const nextDayReset = new Date(localNow)
+    nextDayReset.setDate(localNow.getDate() + 1)
     nextDayReset.setHours(0, 0, 0, 0)
 
     return NextResponse.json({
