@@ -766,25 +766,14 @@ export default function MarketingAssistantPage() {
         {/* PREMIUM HEADER SECTION */}
         <div className="mb-6 space-y-4 max-w-[1920px] mx-auto animate-in fade-in slide-in-from-top-4 duration-700">
           
-          {/* Main Title Bar with Icon & Quick Actions */}
+          {/* Main Title Bar with Quick Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {/* Premium Icon with Glow */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
-                <div className="relative w-14 h-14 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/30 group-hover:border-[#FF2A2A]/50 transition-all duration-300">
-                  <Brain className="w-7 h-7 text-[#FF2A2A] group-hover:scale-110 transition-transform duration-300" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent tracking-tight">
+                AI Marketing Assistant
+              </h1>
+              <p className="text-sm text-gray-500 font-medium mt-0.5">Intelligent campaign optimization powered by machine learning</p>
           </div>
-        </div>
-              
-              {/* Title */}
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent tracking-tight">
-                  AI Marketing Assistant
-                </h1>
-                <p className="text-sm text-gray-500 font-medium mt-0.5">Intelligent campaign optimization powered by machine learning</p>
-      </div>
-        </div>
             
             {/* Update Button */}
             <div className="hidden lg:flex items-center gap-3">
@@ -1178,20 +1167,13 @@ export default function MarketingAssistantPage() {
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               <CardHeader className="border-b border-[#333]/60 pb-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                      <div className="relative w-12 h-12 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl flex items-center justify-center border border-[#FF2A2A]/30">
-                        <Sparkles className="w-6 h-6 text-[#FF2A2A]" />
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      AI Optimization Feed
+                    </h2>
+                    <p className="text-xs text-gray-500">Intelligent recommendations ranked by impact</p>
                           </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        AI Optimization Feed
-                      </h2>
-                      <p className="text-xs text-gray-500">Intelligent recommendations ranked by impact</p>
-                  </div>
-                        </div>
                   {filteredOptimizations.length > 0 && (
                     <Badge className="bg-white/10 text-white border-white/20 px-3 py-1">
                       {filteredOptimizations.length} Active
@@ -1341,17 +1323,9 @@ export default function MarketingAssistantPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                    <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center border border-blue-500/30">
-                      <BarChart3 className="w-5 h-5 text-blue-400" />
-                </div>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">Performance Trends</h3>
-                    <p className="text-xs text-gray-500">7-day comparison</p>
-              </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Performance Trends</h3>
+                  <p className="text-xs text-gray-500">7-day comparison</p>
                 </div>
               </CardHeader>
               
@@ -1366,16 +1340,16 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg flex items-center justify-center">
                               <DollarSign className="w-4 h-4 text-blue-400" />
-                               </div>
+              </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
-                               </div>
+                </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
                             {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
                              </div>
                                </div>
                         <div className="flex items-center gap-2 mb-2">
-                          {selectedPlatforms.includes('meta') && (
+                           {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
@@ -1384,12 +1358,12 @@ export default function MarketingAssistantPage() {
                                </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
-                                  <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
-                                  <div className="text-gray-400">100% of total</div>
+                                 <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          )}
+                           )}
                                </div>
                         <div className="text-2xl font-black text-white">${trends.spend.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs ${trends.spend.previous.toLocaleString()} last period</div>
@@ -1404,14 +1378,14 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-lg flex items-center justify-center">
                               <Activity className="w-4 h-4 text-green-400" />
-                         </div>
+                               </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                         </div>
+                               </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                       </div>
-                </div>
+                             </div>
+                         </div>
                         <div className="flex items-center gap-2 mb-2">
                            {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
@@ -1492,17 +1466,9 @@ export default function MarketingAssistantPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                    <div className="relative w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center border border-emerald-500/30">
-                      <Sparkles className="w-5 h-5 text-emerald-400" />
-                        </div>
-                </div>
                         <div>
-                    <h3 className="text-base font-bold text-white">Quick Insights</h3>
-                    <p className="text-xs text-gray-500">AI-powered analysis</p>
-                        </div>
+                  <h3 className="text-base font-bold text-white">Quick Insights</h3>
+                  <p className="text-xs text-gray-500">AI-powered analysis</p>
                       </div>
               </CardHeader>
               
