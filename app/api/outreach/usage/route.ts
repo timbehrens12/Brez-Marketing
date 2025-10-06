@@ -42,20 +42,27 @@ export async function GET(request: NextRequest) {
       .gte('created_at', oneHourAgo.toISOString())
 
     // Get daily usage using timezone-aware filtering
-    // Calculate start of today in user's timezone
-    const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
-    const startOfTodayInUserTz = new Date(todayInUserTz)
-    startOfTodayInUserTz.setHours(0, 0, 0, 0)
+    // Calculate today's date in user's timezone
+    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`
     
-    // Get all records from start of today onwards (in user's timezone)
+    console.log(`[Outreach Usage] Checking usage for ${localToday} in timezone ${userTimezone}`)
+    
+    // Get all usage records and filter by local date
     const { data: allUsageData, error: dailyError } = await supabase
       .from('ai_usage_logs')
       .select('*')
       .eq('user_id', userId)
       .eq('endpoint', 'outreach_messages')
-      .gte('created_at', startOfTodayInUserTz.toISOString())
+      .order('created_at', { ascending: false })
     
-    const dailyUsage = allUsageData
+    // Filter records that fall on today in user's local timezone
+    const dailyUsage = allUsageData?.filter(record => {
+      const recordDate = new Date(record.created_at)
+      const recordLocalDate = new Date(recordDate.toLocaleString('en-US', { timeZone: userTimezone }))
+      const recordDateStr = `${recordLocalDate.getFullYear()}-${String(recordLocalDate.getMonth() + 1).padStart(2, '0')}-${String(recordLocalDate.getDate()).padStart(2, '0')}`
+      return recordDateStr === localToday
+    }) || []
 
     if (hourlyError || dailyError) {
       console.error('❌ Error fetching usage:', hourlyError || dailyError)
@@ -65,18 +72,17 @@ export async function GET(request: NextRequest) {
     }
 
     const hourlyCount = hourlyUsage?.length || 0
-    const dailyCount = dailyUsage?.length || 0
-    const dailyCost = dailyUsage?.reduce((sum, usage) => sum + (usage.estimated_cost || 0.02), 0) || 0
+    const dailyCount = dailyUsage.length
+    const dailyCost = dailyUsage.reduce((sum, usage) => sum + (usage.estimated_cost || 0.02), 0) || 0
     
     console.log('📊 Usage API Debug:', {
       userTimezone,
       hourlyCount,
       dailyCount,
       dailyCost,
-      hourlyUsageLength: hourlyUsage?.length,
-      dailyUsageLength: dailyUsage?.length,
-      todayDate: now.toLocaleDateString('en-US', { timeZone: userTimezone }),
-      startOfTodayInUserTz: startOfTodayInUserTz.toISOString(),
+      totalRecords: allUsageData?.length,
+      todayRecords: dailyCount,
+      todayDate: localToday,
       now: now.toISOString()
     })
 
