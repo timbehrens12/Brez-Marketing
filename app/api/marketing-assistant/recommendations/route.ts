@@ -125,24 +125,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Get filtered campaign IDs
+    // Get campaigns that have data in the date range (regardless of current status)
     let allowedCampaignIds: string[] = []
     
     if (platforms.includes('meta')) {
-      let metaCampaignsQuery = supabase
-        .from('meta_campaigns')
+      // Query for campaigns that have actual data in the date range
+      const { data: campaignsWithData } = await supabase
+        .from('meta_campaign_daily_stats')
         .select('campaign_id')
         .eq('brand_id', brandId)
+        .gte('date', dateRange.from)
+        .lte('date', dateRange.to)
       
-      if (status === 'active') {
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
-      } else if (status === 'paused') {
-        metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
-      }
-      
-      const { data: metaCampaigns } = await metaCampaignsQuery
-      if (metaCampaigns) {
-        allowedCampaignIds.push(...metaCampaigns.map(c => c.campaign_id))
+      if (campaignsWithData && campaignsWithData.length > 0) {
+        // Get unique campaign IDs
+        allowedCampaignIds = [...new Set(campaignsWithData.map(c => c.campaign_id))]
+        console.log(`[Recommendations API] Found ${allowedCampaignIds.length} campaigns with data in date range`)
+      } else {
+        console.log(`[Recommendations API] No campaigns found with data between ${dateRange.from} and ${dateRange.to}`)
       }
     }
 
@@ -164,8 +164,12 @@ export async function GET(request: NextRequest) {
     if (allowedCampaignIds.length > 0) {
       recommendationsQuery = recommendationsQuery.in('campaign_id', allowedCampaignIds)
     } else if (platforms.includes('meta')) {
-      // If meta is selected but no campaigns match, return empty
-      return NextResponse.json({ recommendations: [] })
+      // If meta is selected but no campaigns have data in this date range
+      console.log(`[Recommendations API] No campaign data found in date range - returning empty with message`)
+      return NextResponse.json({ 
+        recommendations: [],
+        message: `No campaign data available between ${dateRange.from} and ${dateRange.to}. Your campaigns may be paused or no ads ran during this period.`
+      })
     }
     
     const { data: existingRecommendations } = await recommendationsQuery

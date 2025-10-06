@@ -34,7 +34,14 @@ export async function GET(request: NextRequest) {
 
     const metrics = await aggregateMetrics(brandId, fromDate, toDate, platforms, status)
     
-    return NextResponse.json({ metrics })
+    // Check if there's any data
+    const hasData = metrics.spend > 0 || metrics.impressions > 0 || metrics.clicks > 0
+    
+    return NextResponse.json({ 
+      metrics,
+      hasData,
+      message: hasData ? null : `No campaign data found between ${fromDate} and ${toDate}. Campaigns may be paused or no ads ran during this period.`
+    })
 
   } catch (error) {
     console.error('Error fetching metrics:', error)
@@ -49,24 +56,24 @@ async function aggregateMetrics(brandId: string, fromDate: string, toDate: strin
   let totalConversions = 0
   let totalRevenue = 0
 
-  // Get filtered campaign IDs based on status
+  // Get campaigns that have data in the date range (regardless of current status)
   let allowedCampaignIds: string[] = []
   
   if (platforms.includes('meta')) {
-    let metaCampaignsQuery = supabase
-      .from('meta_campaigns')
+    // Query for campaigns that have actual data in the date range
+    const { data: campaignsWithData } = await supabase
+      .from('meta_campaign_daily_stats')
       .select('campaign_id')
       .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
     
-    if (status === 'active') {
-      metaCampaignsQuery = metaCampaignsQuery.or('status.eq.ACTIVE,status.ilike.%ACTIVE%')
-    } else if (status === 'paused') {
-      metaCampaignsQuery = metaCampaignsQuery.or('status.eq.PAUSED,status.ilike.%PAUSED%')
-    }
-    
-    const { data: metaCampaigns } = await metaCampaignsQuery
-    if (metaCampaigns) {
-      allowedCampaignIds = metaCampaigns.map(c => c.campaign_id)
+    if (campaignsWithData && campaignsWithData.length > 0) {
+      // Get unique campaign IDs
+      allowedCampaignIds = [...new Set(campaignsWithData.map(c => c.campaign_id))]
+      console.log(`[Metrics API] Found ${allowedCampaignIds.length} campaigns with data in date range`)
+    } else {
+      console.log(`[Metrics API] No campaigns found with data between ${fromDate} and ${toDate}`)
     }
   }
 
