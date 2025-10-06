@@ -38,9 +38,9 @@ import {
   ArrowDownRight,
   PieChart,
   Users,
+  Sparkles,
   Globe,
   Brain,
-  Sparkles,
   Info,
   X,
   Clock,
@@ -145,7 +145,7 @@ export default function MarketingAssistantPage() {
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
-  const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [quickInsights, setQuickInsights] = useState<any[]>([])
   const [trends, setTrends] = useState<any>(null)
   const [budgetAllocations, setBudgetAllocations] = useState<any[]>([])
   const [audienceExpansions, setAudienceExpansions] = useState<any[]>([])
@@ -169,7 +169,6 @@ export default function MarketingAssistantPage() {
   const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(true)
 
   // Filter data based on selected platforms (client-side filtering for display only)
-  const filteredAlerts = alerts // Alerts are already platform-specific based on filtered metrics
   const filteredOptimizations = optimizationCards.filter(card => 
     selectedPlatforms.includes('meta') // All recommendations are from meta_campaigns for now
   )
@@ -338,7 +337,7 @@ export default function MarketingAssistantPage() {
       // Reload metrics, trends, alerts, budget, audience - but NOT recommendations (those stay cached)
       loadKPIMetrics()
       loadTrends()
-      loadAlerts()
+      loadQuickInsights()
       loadBudgetAllocations()
       loadAudienceExpansions()
     }
@@ -350,7 +349,7 @@ export default function MarketingAssistantPage() {
       // If force refresh, clear ALL state first
       if (forceRefresh) {
         setOptimizationCards([])
-        setAlerts([])
+        setQuickInsights([])
         setBudgetAllocations([])
         setAudienceExpansions([])
         setKpiMetrics(null)
@@ -369,9 +368,9 @@ export default function MarketingAssistantPage() {
       await loadKPIMetrics()
       
       // Load budget and audience AFTER recommendations are loaded (they depend on optimizationCards state)
-      // Load alerts and trends in parallel (they don't depend on recommendations)
+      // Load quick insights and trends in parallel (they don't depend on recommendations)
       await Promise.all([
-        loadAlerts(),
+        loadQuickInsights(),
         loadTrends()
       ])
       
@@ -492,187 +491,33 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadAlerts = async () => {
+  const loadQuickInsights = async () => {
     if (!selectedBrandId) return
 
     try {
       const timestamp = Date.now()
-      // Get both current metrics and trends for comparison (both use last 7 days) - pass filters
-      const [metricsResponse, trendsResponse] = await Promise.all([
-        fetch(`/api/marketing-assistant/metrics?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, { cache: 'no-store' }),
-        fetch(`/api/marketing-assistant/trends?brandId=${selectedBrandId}&days=7&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, { cache: 'no-store' })
-      ])
+      const response = await fetch(`/api/marketing-assistant/quick-insights?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
       
-      if (metricsResponse.ok && trendsResponse.ok) {
-        const metricsData = await metricsResponse.json()
-        const trendsData = await trendsResponse.json()
-        const metrics = metricsData.metrics
-        const trends = trendsData.trends
-        const generatedAlerts: AlertItem[] = []
-
-        // Only generate alerts if there's actual spend (i.e., we have data)
-        const hasData = metrics && metrics.spend > 0
-
-        if (hasData) {
-          // Low performance alerts
-          if (metrics.ctr < 2.0) {
-            generatedAlerts.push({
-              id: 'low-engagement',
-              type: 'warning',
-              title: 'Low Click-Through Rate',
-              description: `CTR of ${metrics.ctr.toFixed(2)}% is below 2% benchmark - creative refresh may improve performance`,
-              timestamp: new Date(),
-              acknowledged: false,
-              platform: 'all'
-            })
-          }
-
-          // High CPC alerts
-          if (metrics.cpc > 1.0) {
-            generatedAlerts.push({
-              id: 'high-cpc',
-              type: 'error',
-              title: 'High Cost Per Click',
-              description: `CPC of $${metrics.cpc.toFixed(2)} is above $1.00 - consider optimizing targeting or ad quality`,
-              timestamp: new Date(),
-              acknowledged: false,
-              platform: 'all'
-            })
-          }
-
-          // Low ROAS alerts
-          if (metrics.roas < 2.0 && metrics.spend > 1) {
-            generatedAlerts.push({
-              id: 'low-roas',
-              type: 'error',
-              title: 'Low Return on Ad Spend',
-              description: `ROAS of ${metrics.roas.toFixed(2)}x is below 2x target - review campaign effectiveness`,
-              timestamp: new Date(),
-              acknowledged: false,
-              platform: 'all'
-            })
-          }
-
-          // Revenue tracking alerts
-          if (metrics.spend > 1 && metrics.revenue === 0) {
-            generatedAlerts.push({
-              id: 'no-revenue-tracking',
-              type: 'warning',
-              title: 'Revenue Tracking Issue',
-              description: `Campaign has spend of $${metrics.spend.toFixed(2)} but no tracked revenue - verify conversion tracking`,
-              timestamp: new Date(),
-              acknowledged: false,
-              platform: 'all'
-            })
-          }
-        }
-
-        // Trend-based alerts with lower thresholds
-        if (trends?.spend && trends.spend.change > 20 && trends.spend.current > 5) {
-          generatedAlerts.push({
-            id: 'spend-increase',
-            type: 'info',
-            title: 'Ad Spend Increased',
-            description: `Spend increased ${trends.spend.change}% to $${trends.spend.current.toLocaleString()} - monitor performance closely`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        if (trends?.roas && trends.roas.change < -20 && trends.roas.current < 2.5) {
-          generatedAlerts.push({
-            id: 'roas-dropping',
-            type: 'error',
-            title: 'ROAS Declining',
-            description: `ROAS dropped ${Math.abs(trends.roas.change)}% to ${trends.roas.current.toFixed(2)}x - immediate optimization needed`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        if (trends?.revenue && trends.revenue.change < -15 && trends.revenue.current > 1000) {
-          generatedAlerts.push({
-            id: 'revenue-drop',
-            type: 'warning',
-            title: 'Revenue Decreasing',
-            description: `Revenue down ${Math.abs(trends.revenue.change)}% to $${trends.revenue.current.toLocaleString()} - investigate campaign performance`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        // Static threshold alerts
-        if (metrics.ctr < 1.0 && metrics.impressions > 1000) {
-          generatedAlerts.push({
-            id: 'low-ctr',
-            type: 'warning',
-            title: 'Poor Ad Engagement',
-            description: `CTR of ${metrics.ctr.toFixed(2)}% suggests ad fatigue - consider creative refresh`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        if (metrics.cpc > 3.0 && metrics.clicks > 50) {
-          generatedAlerts.push({
-            id: 'high-cpc-2',
-            type: 'error',
-            title: 'High Cost Per Click',
-            description: `CPC of $${metrics.cpc.toFixed(2)} is inefficient - optimize targeting or pause underperforming ads`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        // Opportunity alerts
-        if (trends?.revenue && trends.revenue.change > 25 && metrics.roas > 3.0) {
-          generatedAlerts.push({
-            id: 'scale-opportunity',
-            type: 'info',
-            title: 'Scaling Opportunity',
-            description: `Revenue up ${trends.revenue.change}% with ${metrics.roas.toFixed(2)}x ROAS - consider increasing budgets`,
-            timestamp: new Date(),
-            acknowledged: false,
-            platform: 'all'
-          })
-        }
-
-        // Load acknowledged alerts from localStorage and apply them
-        const acknowledgedIds = JSON.parse(localStorage.getItem(`acknowledgedAlerts_${selectedBrandId}`) || '[]')
-        const alertsWithAcknowledged = generatedAlerts.map(alert => ({
-          ...alert,
-          acknowledged: acknowledgedIds.includes(alert.id)
-        }))
-        
-        setAlerts(alertsWithAcknowledged)
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`[Marketing Assistant] Loaded ${data.insights?.length || 0} quick insights`)
+        setQuickInsights(data.insights || [])
       } else {
-        }
-      } catch (error) {
-      setAlerts([])
+        setQuickInsights([])
+      }
+    } catch (error) {
+      console.error('[Marketing Assistant] Error loading quick insights:', error)
+      setQuickInsights([])
     }
   }
 
 
-  const dismissAlert = (alertId: string) => {
-    setAlerts(prevAlerts => {
-      const updated = prevAlerts.map(alert => 
-        alert.id === alertId 
-          ? { ...alert, acknowledged: true } 
-          : alert
-      )
-      // Save acknowledged alerts to localStorage
-      const acknowledged = updated.filter(a => a.acknowledged).map(a => a.id)
-      if (selectedBrandId) {
-        localStorage.setItem(`acknowledgedAlerts_${selectedBrandId}`, JSON.stringify(acknowledged))
-      }
-      return updated
-    })
-  }
 
   const handleMarkAsDone = async (cardId: string, actionId: string) => {
     try {
@@ -1067,7 +912,6 @@ export default function MarketingAssistantPage() {
                       if (selectedBrandId) {
                         localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
                         localStorage.removeItem(`completedItems_${selectedBrandId}`)
-                        localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
                       }
                       
                       // Delete AI recommendations from database
@@ -1084,7 +928,6 @@ export default function MarketingAssistantPage() {
                         localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
                       }
                       setCompletedItems(new Set())
-                      setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
                       
                       // Reload ALL widgets with FORCE REFRESH
                       await loadDashboardData(true)
@@ -1657,67 +1500,49 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-            {/* Alerts */}
+            {/* Quick Insights */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[502px] max-h-[502px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
-                    <AlertTriangle className="w-5 h-5 text-gray-400" />
+                    <Sparkles className="w-5 h-5 text-gray-400" />
                         </div>
                   <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Alerts</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">{alerts.filter(a => !a.acknowledged).length} unread</p>
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Quick Insights</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Key performance highlights</p>
                         </div>
                       </div>
               </CardHeader>
               <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
-                  {alerts.map(alert => (
-                    <div key={alert.id} className={`p-3 bg-[#1A1A1A] border border-[#333] rounded-lg group hover:border-[#444] transition-colors ${alert.acknowledged ? 'opacity-50' : ''}`}>
-                      <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            alert.type === 'error' ? 'bg-[#FF2A2A]' :
-                            alert.type === 'warning' ? 'bg-[#FF2A2A]' :
-                            'bg-[#FF2A2A]'
-                          }`} />
-                          <h4 className={`text-white font-medium text-sm ${alert.acknowledged ? 'line-through' : ''}`}>{alert.title}</h4>
-                          {alert.platform && (
-                            <div className="flex-shrink-0 w-4 h-4 relative">
-                              {alert.platform === 'all' ? (
-                                <div className="flex gap-0.5">
-                                  <Image src="/meta-icon.png" alt="All" width={24} height={24} className="rounded" />
-                                </div>
-                              ) : (
-                        <Image 
-                                  src={`/${alert.platform}-icon.png`}
-                                  alt={alert.platform}
-                          width={16} 
-                          height={16} 
-                                  className="rounded"
-                                />
-                              )}
-                            </div>
-                          )}
-                            </div>
-                            <Button
-                          variant="ghost"
-                              size="sm"
-                          onClick={() => dismissAlert(alert.id)}
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10"
-                        >
-                          <CheckCircle className="h-3 w-3 text-gray-400" />
-                            </Button>
+                  {quickInsights.map((insight, index) => (
+                    <div key={index} className="p-4 bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg hover:border-[#444] transition-all">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{insight.icon}</span>
+                          <div>
+                            <h4 className="text-white font-medium text-sm">{insight.label}</h4>
+                            <p className="text-gray-400 text-xs mt-0.5">{insight.value}</p>
                           </div>
-                      <p className={`text-gray-400 text-xs mb-2 ${alert.acknowledged ? 'line-through' : ''}`}>{alert.description}</p>
-                      <p className="text-gray-500 text-xs">{alert.timestamp.toLocaleTimeString()}</p>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          insight.color === 'green' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                          insight.color === 'blue' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                          insight.color === 'purple' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                          insight.color === 'red' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                          'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        }`}>
+                          {insight.metric}
+                        </div>
+                      </div>
                     </div>
                   ))}
-                  {alerts.length === 0 && (
-                    <div className="text-center py-6 text-gray-400">
-                      <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">All systems running smoothly</p>
+                  {quickInsights.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No insights available yet</p>
+                      <p className="text-xs mt-1 opacity-70">Run some campaigns to see insights</p>
                     </div>
                   )}
                 </div>

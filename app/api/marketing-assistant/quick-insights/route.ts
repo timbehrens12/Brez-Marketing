@@ -1,0 +1,223 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
+import { createClient } from '@supabase/supabase-js'
+import { getMondayToMondayRange } from '@/lib/date-utils'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const brandId = searchParams.get('brandId')
+    
+    // Use Monday-to-Monday weekly window
+    const { startDate, endDate } = getMondayToMondayRange()
+    const fromDate = searchParams.get('from') || startDate
+    const toDate = searchParams.get('to') || endDate
+    
+    const platforms = searchParams.get('platforms')?.split(',') || ['meta']
+
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    }
+
+    const insights = await generateQuickInsights(brandId, fromDate, toDate, platforms)
+    
+    return NextResponse.json({ insights })
+
+  } catch (error) {
+    console.error('Error fetching quick insights:', error)
+    return NextResponse.json({ error: 'Failed to fetch quick insights' }, { status: 500 })
+  }
+}
+
+async function generateQuickInsights(brandId: string, fromDate: string, toDate: string, platforms: string[]) {
+  const insights = []
+
+  if (platforms.includes('meta')) {
+    // Get ad creative performance
+    const { data: adStats } = await supabase
+      .from('meta_ad_daily_stats')
+      .select('ad_id, ad_name, spend, revenue, impressions, clicks, ctr, roas')
+      .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+
+    // Aggregate by ad
+    const adPerformance = new Map()
+    adStats?.forEach(stat => {
+      if (!adPerformance.has(stat.ad_id)) {
+        adPerformance.set(stat.ad_id, {
+          ad_id: stat.ad_id,
+          ad_name: stat.ad_name || 'Unnamed Ad',
+          spend: 0,
+          revenue: 0,
+          impressions: 0,
+          clicks: 0
+        })
+      }
+      const ad = adPerformance.get(stat.ad_id)
+      ad.spend += Number(stat.spend) || 0
+      ad.revenue += Number(stat.revenue) || 0
+      ad.impressions += Number(stat.impressions) || 0
+      ad.clicks += Number(stat.clicks) || 0
+    })
+
+    // Find top performing ad by ROAS
+    let topCreative = null
+    let highestROAS = 0
+    adPerformance.forEach(ad => {
+      const roas = ad.spend > 0 ? ad.revenue / ad.spend : 0
+      if (roas > highestROAS && ad.spend > 10) { // At least $10 spend
+        highestROAS = roas
+        topCreative = ad
+      }
+    })
+
+    if (topCreative) {
+      insights.push({
+        type: 'top_creative',
+        label: 'Top Creative',
+        value: topCreative.ad_name.length > 40 ? topCreative.ad_name.substring(0, 40) + '...' : topCreative.ad_name,
+        metric: `${highestROAS.toFixed(2)}x ROAS`,
+        icon: '🎨',
+        color: 'green'
+      })
+    }
+
+    // Get demographic performance
+    const { data: demographics } = await supabase
+      .from('meta_demographics')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gte('date_range_start', fromDate)
+      .lte('date_range_end', toDate)
+
+    // Find best performing age/gender combo
+    const demoPerformance = new Map()
+    demographics?.forEach(demo => {
+      const key = `${demo.age || 'Unknown'}_${demo.gender || 'Unknown'}`
+      if (!demoPerformance.has(key)) {
+        demoPerformance.set(key, {
+          age: demo.age,
+          gender: demo.gender,
+          spend: 0,
+          conversions: 0,
+          impressions: 0
+        })
+      }
+      const d = demoPerformance.get(key)
+      d.spend += Number(demo.spend) || 0
+      d.conversions += Number(demo.conversions) || 0
+      d.impressions += Number(demo.impressions) || 0
+    })
+
+    let bestDemographic = null
+    let highestConversionRate = 0
+    demoPerformance.forEach(demo => {
+      const conversionRate = demo.impressions > 0 ? (demo.conversions / demo.impressions) * 100 : 0
+      if (conversionRate > highestConversionRate && demo.spend > 5) {
+        highestConversionRate = conversionRate
+        bestDemographic = demo
+      }
+    })
+
+    if (bestDemographic) {
+      const genderLabel = bestDemographic.gender === 'male' ? 'M' : bestDemographic.gender === 'female' ? 'F' : 'All'
+      insights.push({
+        type: 'best_demographic',
+        label: 'Top Demographic',
+        value: `${bestDemographic.age}, ${genderLabel}`,
+        metric: `${highestConversionRate.toFixed(2)}% CVR`,
+        icon: '👥',
+        color: 'blue'
+      })
+    }
+
+    // Get geographic performance
+    const { data: locations } = await supabase
+      .from('shopify_customers')
+      .select('province, city')
+      .eq('brand_id', brandId)
+
+    const locationCounts = new Map()
+    locations?.forEach(loc => {
+      const key = loc.province || loc.city || 'Unknown'
+      locationCounts.set(key, (locationCounts.get(key) || 0) + 1)
+    })
+
+    let topLocation = null
+    let maxCount = 0
+    locationCounts.forEach((count, location) => {
+      if (count > maxCount) {
+        maxCount = count
+        topLocation = location
+      }
+    })
+
+    if (topLocation && maxCount > 0) {
+      insights.push({
+        type: 'top_region',
+        label: 'Top Region',
+        value: topLocation,
+        metric: `${maxCount} customers`,
+        icon: '📍',
+        color: 'purple'
+      })
+    }
+
+    // Find wasted spend (high spend, low ROAS campaigns)
+    const { data: campaignStats } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('campaign_id, campaign_name, spend, revenue')
+      .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+
+    const campaignPerformance = new Map()
+    campaignStats?.forEach(stat => {
+      if (!campaignPerformance.has(stat.campaign_id)) {
+        campaignPerformance.set(stat.campaign_id, {
+          campaign_name: stat.campaign_name || 'Unnamed Campaign',
+          spend: 0,
+          revenue: 0
+        })
+      }
+      const camp = campaignPerformance.get(stat.campaign_id)
+      camp.spend += Number(stat.spend) || 0
+      camp.revenue += Number(stat.revenue) || 0
+    })
+
+    let worstCampaign = null
+    let lowestROAS = Infinity
+    campaignPerformance.forEach(camp => {
+      const roas = camp.spend > 0 ? camp.revenue / camp.spend : 0
+      if (roas < lowestROAS && camp.spend > 50 && roas < 1) { // At least $50 spend and ROAS < 1
+        lowestROAS = roas
+        worstCampaign = camp
+      }
+    })
+
+    if (worstCampaign) {
+      insights.push({
+        type: 'wasted_spend',
+        label: 'Wasted Spend Alert',
+        value: worstCampaign.campaign_name.length > 40 ? worstCampaign.campaign_name.substring(0, 40) + '...' : worstCampaign.campaign_name,
+        metric: `$${worstCampaign.spend.toFixed(2)} @ ${lowestROAS.toFixed(2)}x`,
+        icon: '⚠️',
+        color: 'red'
+      })
+    }
+  }
+
+  return insights
+}
+
