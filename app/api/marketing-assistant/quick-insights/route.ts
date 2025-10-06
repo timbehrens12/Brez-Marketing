@@ -79,18 +79,19 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
         ad.dates.push(stat.date)
       })
 
-      // Find ad with highest CTR (minimum $1 spend)
+      // Find ad with highest CTR (minimum $0.10 spend - very low threshold)
       let topAd = null
       let highestCTR = 0
       adPerformance.forEach(ad => {
         const ctr = ad.impressions > 0 ? (ad.clicks / ad.impressions) * 100 : 0
-        if (ctr > highestCTR && ad.spend >= 1) {
+        if (ctr > highestCTR && ad.spend >= 0.1) {
           highestCTR = ctr
           topAd = ad
         }
       })
 
       if (topAd) {
+        console.log(`[Quick Insights] ✅ Found top creative: ${topAd.ad_name} with ${highestCTR.toFixed(2)}% CTR`)
         insights.push({
           type: 'top_creative',
           label: 'Top Creative',
@@ -98,6 +99,8 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
           metric: `${highestCTR.toFixed(2)}% CTR`,
           icon: '🎨'
         })
+      } else {
+        console.log('[Quick Insights] ❌ No top creative found (no ads meet $0.10 spend threshold)')
       }
 
       // 2. CREATIVE FATIGUE - Check for declining engagement
@@ -157,13 +160,13 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
         d.clicks += Number(demo.clicks) || 0
       })
 
-      // Find demographic with highest CTR (minimum $0.50 spend)
+      // Find demographic with highest CTR (minimum $0.10 spend - very low threshold)
       let bestDemo = null
       let highestCTR = 0
       let bestValue = ''
       demoMap.forEach((demo, value) => {
         const ctr = demo.impressions > 0 ? (demo.clicks / demo.impressions) * 100 : 0
-        if (ctr > highestCTR && demo.spend >= 0.5) {
+        if (ctr > highestCTR && demo.spend >= 0.1) {
           highestCTR = ctr
           bestDemo = demo
           bestValue = value
@@ -180,6 +183,7 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
           displayValue = `${age}, ${gender}`
         }
         
+        console.log(`[Quick Insights] ✅ Found best demographic: ${displayValue} with ${highestCTR.toFixed(2)}% CTR`)
         insights.push({
           type: 'best_demographic',
           label: 'Best Demographic',
@@ -187,6 +191,8 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
           metric: `${highestCTR.toFixed(2)}% CTR`,
           icon: '👥'
         })
+      } else {
+        console.log('[Quick Insights] ❌ No best demographic found')
       }
     }
 
@@ -213,6 +219,7 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
       })
 
       if (topRegion && maxCount > 0) {
+        console.log(`[Quick Insights] ✅ Found top region: ${topRegion} with ${maxCount} orders`)
         insights.push({
           type: 'top_region',
           label: 'Top Region',
@@ -220,7 +227,11 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
           metric: `${maxCount} orders`,
           icon: '📍'
         })
+      } else {
+        console.log('[Quick Insights] ❌ No top region found (no Shopify customer data)')
       }
+    } else {
+      console.log('[Quick Insights] ❌ No Shopify customers found')
     }
   }
 
@@ -228,9 +239,12 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
   
   // If we have less than 3 insights, add fallback insights
   if (insights.length < 3 && adStats && adStats.length > 0) {
+    console.log(`[Quick Insights] 📊 Only ${insights.length} insights, adding fallbacks...`)
+    
     // Add a "Total Reach" insight if we're missing one
     const totalImpressions = adStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
     if (totalImpressions > 0 && !insights.find(i => i.type === 'total_reach')) {
+      console.log(`[Quick Insights] ✅ Adding fallback: Total Reach (${totalImpressions} impressions)`)
       insights.push({
         type: 'total_reach',
         label: 'Total Reach',
@@ -238,6 +252,36 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
         metric: 'impressions',
         icon: '👁️'
       })
+    }
+    
+    // Add total spend if still less than 3
+    if (insights.length < 3) {
+      const totalSpend = adStats.reduce((sum, s) => sum + (Number(s.spend) || 0), 0)
+      if (totalSpend > 0 && !insights.find(i => i.type === 'total_spend')) {
+        console.log(`[Quick Insights] ✅ Adding fallback: Total Spend ($${totalSpend.toFixed(2)})`)
+        insights.push({
+          type: 'total_spend',
+          label: 'Total Spend',
+          value: `$${totalSpend.toFixed(2)}`,
+          metric: 'last 30 days',
+          icon: '💰'
+        })
+      }
+    }
+    
+    // Add total clicks if still less than 3
+    if (insights.length < 3) {
+      const totalClicks = adStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0)
+      if (totalClicks > 0 && !insights.find(i => i.type === 'total_clicks')) {
+        console.log(`[Quick Insights] ✅ Adding fallback: Total Clicks (${totalClicks})`)
+        insights.push({
+          type: 'total_clicks',
+          label: 'Total Clicks',
+          value: totalClicks.toString(),
+          metric: 'last 30 days',
+          icon: '👆'
+        })
+      }
     }
   }
   
