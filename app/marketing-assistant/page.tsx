@@ -1200,6 +1200,29 @@ export default function MarketingAssistantPage() {
                           <div className="w-2 h-2 rounded-full bg-gray-600"></div>
                           <span className="text-xs text-gray-400">Creative refresh pending</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                          <span className="text-xs text-gray-400">Ad schedule optimization queued</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Performance Impact */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
+                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Performance Impact</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">CPM Reduction</span>
+                          <span className="text-xs font-bold text-green-400">-12%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">CTR Improvement</span>
+                          <span className="text-xs font-bold text-green-400">+8%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">Conv. Rate</span>
+                          <span className="text-xs font-bold text-green-400">+15%</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1467,9 +1490,28 @@ export default function MarketingAssistantPage() {
                       </div>
                     </div>
                     )}
+
+                    {/* Weekly Insights */}
+                    <div className="bg-gradient-to-r from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl p-3">
+                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Weekly Insights</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Avg CPC</span>
+                          <span className="text-white font-medium">$0.42</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Impressions</span>
+                          <span className="text-white font-medium">124.5K</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Clicks</span>
+                          <span className="text-white font-medium">3,842</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
                       <BarChart3 className="w-6 h-6 text-blue-400" />
                     </div>
@@ -1529,7 +1571,7 @@ export default function MarketingAssistantPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
                       <Sparkles className="w-6 h-6 text-emerald-400" />
                     </div>
