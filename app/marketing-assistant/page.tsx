@@ -1351,7 +1351,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* Performance Trends - Completely Redesigned */}
-            <Card className="relative bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1390,21 +1390,21 @@ export default function MarketingAssistantPage() {
                              </div>
                                </div>
                         <div className="flex items-center gap-2 mb-2">
-                           {selectedPlatforms.includes('meta') && (
+                          {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
-                              <Tooltip>
+                              <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
                                   <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="bg-[#0a0a0a] border-[#555] z-[9999]">
+                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
                                   <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                           )}
+                          )}
                                </div>
                         <div className="text-2xl font-black text-white">${trends.spend.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs ${trends.spend.previous.toLocaleString()} last period</div>
@@ -1430,13 +1430,13 @@ export default function MarketingAssistantPage() {
                         <div className="flex items-center gap-2 mb-2">
                            {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
-                              <Tooltip>
+                              <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
                                   <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="bg-[#0a0a0a] border-[#555] z-[9999]">
+                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
@@ -1467,22 +1467,22 @@ export default function MarketingAssistantPage() {
                              </div>
                          </div>
                         <div className="flex items-center gap-2 mb-2">
-                           {selectedPlatforms.includes('meta') && (
+                          {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
-                              <Tooltip>
+                              <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
                                   <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
-                </div>
+                                  </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="bg-[#0a0a0a] border-[#555] z-[9999]">
+                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: {trends.conversions.current.toLocaleString()}</div>
-                                 <div className="text-gray-400">100% of total</div>
+                                  <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                           )}
-              </div>
+                          )}
+                        </div>
                         <div className="text-2xl font-black text-white">{trends.conversions.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.conversions.previous.toLocaleString()} last period</div>
                 </div>
@@ -1502,7 +1502,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights - Completely Redesigned */}
-            <Card className="relative bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
               
