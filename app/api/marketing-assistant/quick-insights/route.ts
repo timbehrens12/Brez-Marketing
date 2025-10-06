@@ -45,17 +45,19 @@ export async function GET(request: NextRequest) {
 
 async function generateQuickInsights(brandId: string, fromDate: string, toDate: string, platforms: string[]) {
   const insights = []
+  let adStats: any[] = [] // Declare at function level
 
   if (platforms.includes('meta')) {
     // 1. TOP CREATIVE - Ad with best CTR
-    const { data: adStats } = await supabase
+    const { data } = await supabase
       .from('meta_ad_daily_stats')
       .select('ad_id, ad_name, spend, impressions, clicks, date')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
-    console.log(`[Quick Insights] Found ${adStats?.length || 0} ad stats records`)
+    adStats = data || []
+    console.log(`[Quick Insights] Found ${adStats.length} ad stats records`)
 
     if (adStats && adStats.length > 0) {
       // Aggregate by ad

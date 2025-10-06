@@ -55,12 +55,20 @@ async function calculateWeeklyProgress(brandId: string) {
   const totalRecommendations = recommendations?.length || 0
 
   // Count ALL implemented actions (not just this week)
-  const { data: completedActions } = await supabase
+  const { data: completedActions, error: completedError } = await supabase
     .from('ai_usage_tracking')
     .select('*')
     .eq('brand_id', brandId)
     .eq('feature_type', 'marketing_analysis')
     .eq('action_type', 'mark_as_done')
+
+  console.log(`[Weekly Progress] Found ${completedActions?.length || 0} completed actions for brand ${brandId}`)
+  if (completedError) {
+    console.error('[Weekly Progress] Error fetching completed actions:', completedError)
+  }
+  if (completedActions && completedActions.length > 0) {
+    console.log('[Weekly Progress] Sample completed action:', completedActions[0])
+  }
 
   const completedCount = completedActions?.length || 0
   const completionPercentage = totalRecommendations > 0 
