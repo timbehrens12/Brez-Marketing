@@ -18,10 +18,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
     
-    // Use Monday-to-Monday weekly window
-    const { startDate, endDate } = getMondayToMondayRange()
-    const fromDate = searchParams.get('from') || startDate
-    const toDate = searchParams.get('to') || endDate
+    // Use last 30 days of data for insights (more comprehensive)
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today)
+    thirtyDaysAgo.setDate(today.getDate() - 30)
+    const fromDate = searchParams.get('from') || thirtyDaysAgo.toISOString().split('T')[0]
+    const toDate = searchParams.get('to') || today.toISOString().split('T')[0]
     
     const platforms = searchParams.get('platforms')?.split(',') || ['meta']
 

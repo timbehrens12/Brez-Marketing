@@ -908,39 +908,36 @@ export default function MarketingAssistantPage() {
                       </div>
                     </div>
 
-                    {/* Week-over-Week Performance */}
+                    {/* Optimization Impact Score */}
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-4">
-                      <h4 className="text-white font-medium text-sm mb-3">Performance vs Last Week</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-white font-medium text-sm">Optimization Impact</h4>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="w-3.5 h-3.5 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs max-w-[200px]">How much implementing recommendations is improving your campaigns</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <div className="grid grid-cols-3 gap-3">
                         <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">ROAS</p>
-                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.roas.toFixed(2)}x</p>
-                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
-                            weeklyProgress.changes.roas >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            {weeklyProgress.changes.roas >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            <span>{Math.abs(weeklyProgress.changes.roas).toFixed(1)}%</span>
-                          </div>
+                          <p className="text-gray-400 text-xs mb-1">This Week</p>
+                          <p className="text-white text-lg font-bold">${weeklyProgress.thisWeek.spend.toFixed(0)}</p>
+                          <p className="text-gray-500 text-xs">Spend</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">CTR</p>
-                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.ctr.toFixed(2)}%</p>
-                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
-                            weeklyProgress.changes.ctr >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            {weeklyProgress.changes.ctr >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            <span>{Math.abs(weeklyProgress.changes.ctr).toFixed(1)}%</span>
-                          </div>
+                          <p className="text-gray-400 text-xs mb-1">Actions</p>
+                          <p className="text-white text-lg font-bold">{weeklyProgress.completedCount}</p>
+                          <p className="text-gray-500 text-xs">Completed</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">Revenue</p>
-                          <p className="text-white text-lg font-bold">${(weeklyProgress.thisWeek.revenue || 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
-                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
-                            weeklyProgress.changes.revenue >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            {weeklyProgress.changes.revenue >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            <span>{Math.abs(weeklyProgress.changes.revenue).toFixed(1)}%</span>
-                          </div>
+                          <p className="text-gray-400 text-xs mb-1">Efficiency</p>
+                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.roas > 0 ? `${weeklyProgress.thisWeek.roas.toFixed(1)}x` : '--'}</p>
+                          <p className="text-gray-500 text-xs">ROAS</p>
                         </div>
                       </div>
                     </div>

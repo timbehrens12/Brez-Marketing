@@ -45,25 +45,22 @@ async function calculateWeeklyProgress(brandId: string) {
   const lastWeekStartStr = lastWeekStart.toISOString().split('T')[0]
   const lastWeekEndStr = lastWeekEnd.toISOString().split('T')[0]
 
-  // Get AI recommendations that were created this week
+  // Get ALL active AI recommendations (not just this week)
   const { data: recommendations } = await supabase
     .from('ai_campaign_recommendations')
     .select('*')
     .eq('brand_id', brandId)
-    .gte('created_at', thisWeekStart)
-    .lte('created_at', thisWeekEnd)
+    .order('created_at', { ascending: false })
 
   const totalRecommendations = recommendations?.length || 0
 
-  // Count implemented actions by checking ai_usage_tracking for "mark as done" actions
+  // Count ALL implemented actions (not just this week)
   const { data: completedActions } = await supabase
     .from('ai_usage_tracking')
     .select('*')
     .eq('brand_id', brandId)
     .eq('feature_type', 'marketing_analysis')
     .eq('action_type', 'mark_as_done')
-    .gte('created_at', thisWeekStart)
-    .lte('created_at', thisWeekEnd)
 
   const completedCount = completedActions?.length || 0
   const completionPercentage = totalRecommendations > 0 
