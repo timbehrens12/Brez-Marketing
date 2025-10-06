@@ -689,21 +689,23 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         // Load Outreach Tool usage - use same API as outreach tool page
         try {
-          const response = await fetch('/api/outreach/usage')
+          const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+          const response = await fetch('/api/outreach/usage', {
+            headers: {
+              'x-user-timezone': userTimezone
+            }
+          })
           if (response.ok) {
             const data = await response.json()
             const dailyUsageCount = data.usage?.daily?.used || 0
-            
-
+            console.log(`[Dashboard] Outreach Tool usage: ${dailyUsageCount}, timezone: ${userTimezone}`)
             
             // Store usage count for this user (daily limit of 25)
             newToolUsageData.outreachTool[userId] = dailyUsageCount
           } else {
-
             newToolUsageData.outreachTool[userId] = 0
           }
         } catch (error) {
-
           newToolUsageData.outreachTool[userId] = 0
         }
 
@@ -740,10 +742,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         // Creative Studio Usage - fetch from API for consistency
         try {
-          const creativeUsageResponse = await fetch('/api/creative-usage')
+          const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+          const creativeUsageResponse = await fetch('/api/creative-usage', {
+            headers: {
+              'x-user-timezone': userTimezone
+            }
+          })
           if (creativeUsageResponse.ok) {
             const usageData = await creativeUsageResponse.json()
             const weeklyUsageCount = usageData.usage?.current || 0
+            console.log(`[Dashboard] Creative Studio usage: ${weeklyUsageCount}, timezone: ${userTimezone}`)
             // Store usage count for this user (weekly limit of 25)
             newToolUsageData.creativeStudio[userId] = weeklyUsageCount
           } else {

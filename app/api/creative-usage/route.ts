@@ -49,41 +49,58 @@ export async function GET(request: NextRequest) {
 
     // Check weekly usage limits
     const supabase = createClient()
+    
+    // Get user's timezone from request header or default to America/Chicago
+    const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago'
+    
+    // Calculate the start of the week (Monday) in the user's local timezone
+    // Then query for all records created since that time
     const now = new Date()
+    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const dayOfWeek = localNow.getDay()
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // Monday = 0 days back
     
-    // Calculate start of current week (Monday at 12:00 AM)
-    const dayOfWeek = now.getDay()
-    const startOfWeek = new Date(now)
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-    startOfWeek.setDate(now.getDate() - daysToSubtract)
-    startOfWeek.setHours(0, 0, 0, 0)
+    const startOfWeekLocal = new Date(localNow)
+    startOfWeekLocal.setDate(localNow.getDate() - daysToSubtract)
+    startOfWeekLocal.setHours(0, 0, 0, 0)
     
-    const startOfNextWeek = new Date(startOfWeek)
-    startOfNextWeek.setDate(startOfWeek.getDate() + 7)
+    const startOfNextWeekLocal = new Date(startOfWeekLocal)
+    startOfNextWeekLocal.setDate(startOfWeekLocal.getDate() + 7)
     
-    // Check user's weekly usage
-    const { data: usageData, error: usageError } = await supabase
+    console.log(`[Creative Usage] User timezone: ${userTimezone}, Local now: ${localNow.toISOString()}, Week starts: ${startOfWeekLocal.toISOString()}`)
+    
+    // Fetch ALL usage records and filter in JavaScript based on local time
+    // This is more reliable than timezone conversion in the query
+    const { data: allUsageData, error: usageError } = await supabase
       .from('ai_feature_usage')
       .select('*')
       .eq('user_id', userId)
       .eq('feature_type', USAGE_FEATURE_TYPE)
-      .gte('created_at', startOfWeek.toISOString())
-      .lt('created_at', startOfNextWeek.toISOString())
-
+      .order('created_at', { ascending: false })
+    
     if (usageError) {
       console.error('Error checking creative usage:', usageError)
       return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
     }
+    
+    // Filter records that fall within this week in user's local timezone
+    const usageData = allUsageData?.filter(record => {
+      const recordDate = new Date(record.created_at)
+      const recordLocalDate = new Date(recordDate.toLocaleString('en-US', { timeZone: userTimezone }))
+      return recordLocalDate >= startOfWeekLocal && recordLocalDate < startOfNextWeekLocal
+    }) || []
+    
+    console.log(`[Creative Usage] Total records: ${allUsageData?.length}, This week (local): ${usageData.length}`)
 
-    const currentWeeklyUsage = usageData?.length || 0
+    const currentWeeklyUsage = usageData.length
     
     return NextResponse.json({
       usage: {
         current: currentWeeklyUsage,
         limit: WEEKLY_CREATIVE_LIMIT,
         remaining: WEEKLY_CREATIVE_LIMIT - currentWeeklyUsage,
-        weekStartDate: startOfWeek.toISOString().split('T')[0],
-        resetsAt: startOfNextWeek.toISOString()
+        weekStartDate: startOfWeekLocal.toISOString().split('T')[0],
+        resetsAt: startOfNextWeekLocal.toISOString()
       }
     })
     

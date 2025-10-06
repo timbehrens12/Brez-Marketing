@@ -259,41 +259,45 @@ const openai = new OpenAI({
 })
 
 // Unified usage tracking - all usage now recorded in ai_feature_usage table
-async function checkCombinedUsage(userId: string, featureType: string, supabase: any) {
+async function checkCombinedUsage(userId: string, featureType: string, supabase: any, userTimezone: string = 'America/Chicago') {
   try {
-    const today = getCurrentLocalDateString()
     const dailyLimit = 15 // Same limit for both modes
     
-    // Get local timezone offset and convert to proper UTC times for database query
+    // Calculate start of today in user's timezone
     const now = new Date()
-    const timezoneOffset = now.getTimezoneOffset() * 60000 // Convert to milliseconds
+    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`
     
-    // Create start of day in local time, then convert to UTC
-    const startOfDayLocal = new Date(`${today}T00:00:00`)
-    const startOfDayUTC = new Date(startOfDayLocal.getTime() - timezoneOffset)
+    console.log(`[AI Consultant Usage] Checking usage for ${localToday} in timezone ${userTimezone}`)
     
-    // Create end of day in local time, then convert to UTC  
-    const endOfDayLocal = new Date(`${today}T23:59:59.999`)
-    const endOfDayUTC = new Date(endOfDayLocal.getTime() - timezoneOffset)
-    
-    // Get today's usage from ai_feature_usage table (now handles both agency and brand modes)
-    const { data: usageData, error: usageError } = await supabase
+    // Fetch ALL usage records and filter in JavaScript based on local time
+    // This is more reliable than timezone conversion in the query
+    const { data: allUsageData, error: usageError } = await supabase
       .from('ai_feature_usage')
       .select('*')
       .eq('user_id', userId)
       .eq('feature_type', featureType)
-      .gte('created_at', startOfDayUTC.toISOString())
-      .lt('created_at', endOfDayUTC.toISOString())
+      .order('created_at', { ascending: false })
     
     if (usageError) {
       console.error('Error checking unified usage:', usageError)
       return { canUse: false, reason: 'Database error' }
     }
     
-    const totalUsageCount = usageData?.length || 0
-    const remaining = dailyLimit - totalUsageCount
+    // Filter records that fall on today in user's local timezone
+    const usageData = allUsageData?.filter(record => {
+      const recordDate = new Date(record.created_at)
+      const recordLocalDate = new Date(recordDate.toLocaleString('en-US', { timeZone: userTimezone }))
+      const recordDateStr = `${recordLocalDate.getFullYear()}-${String(recordLocalDate.getMonth() + 1).padStart(2, '0')}-${String(recordLocalDate.getDate()).padStart(2, '0')}`
+      return recordDateStr === localToday
+    }) || []
     
-    if (totalUsageCount >= dailyLimit) {
+    const todayUsageCount = usageData.length
+    const remaining = dailyLimit - todayUsageCount
+    
+    console.log(`[AI Consultant Usage] Total records: ${allUsageData?.length}, Today (${localToday}): ${todayUsageCount}/${dailyLimit}`)
+    
+    if (todayUsageCount >= dailyLimit) {
       return {
         canUse: false,
         remainingUses: 0,
@@ -371,8 +375,11 @@ export async function POST(request: NextRequest) {
     // Initialize Supabase client
     const supabase = createClient()
     
+    // Get user's timezone from request header or default to America/Chicago
+    const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago'
+    
     // Check AI usage status and daily limits (combined across agency + brand modes)
-    const usageStatus = await checkCombinedUsage(userId, 'ai_consultant_chat', supabase)
+    const usageStatus = await checkCombinedUsage(userId, 'ai_consultant_chat', supabase, userTimezone)
 
     if (!usageStatus.canUse) {
       return NextResponse.json({ 
@@ -531,7 +538,7 @@ export async function POST(request: NextRequest) {
 
     // Get updated usage status to return remaining uses
     console.log(`[AI Marketing] Checking updated usage status for user ${userId}...`)
-    const updatedStatus = await checkCombinedUsage(userId, 'ai_consultant_chat', supabase)
+    const updatedStatus = await checkCombinedUsage(userId, 'ai_consultant_chat', supabase, userTimezone)
     console.log(`[AI Marketing] Updated usage status:`, updatedStatus)
 
     return NextResponse.json({
