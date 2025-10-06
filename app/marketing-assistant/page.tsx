@@ -447,12 +447,6 @@ export default function MarketingAssistantPage() {
   const loadBudgetAllocations = async () => {
     if (!selectedBrandId) return
     
-    // Only load if there are recommendations - budget allocations are part of the weekly recommendation cycle
-    if (optimizationCards.length === 0) {
-      setBudgetAllocations([])
-      return
-    }
-    
     try {
       // Backend always uses last 7 days - pass platform and status filters
       const timestamp = Date.now()
@@ -463,14 +457,17 @@ export default function MarketingAssistantPage() {
           'Pragma': 'no-cache'
         }
       })
-            if (response.ok) {
-              const data = await response.json()
+      if (response.ok) {
+        const data = await response.json()
         if (data.allocations && data.allocations.length > 0) {
+          console.log(`[Marketing Assistant] Loaded ${data.allocations.length} budget allocations`)
         }
         setBudgetAllocations(data.allocations || [])
       } else {
-        }
-      } catch (error) {
+        setBudgetAllocations([])
+      }
+    } catch (error) {
+      console.error('[Marketing Assistant] Error loading budget allocations:', error)
       setBudgetAllocations([])
     }
   }
@@ -478,20 +475,19 @@ export default function MarketingAssistantPage() {
   const loadAudienceExpansions = async () => {
     if (!selectedBrandId) return
     
-    // Only load if there are recommendations - audience expansions are part of the weekly recommendation cycle
-    if (optimizationCards.length === 0) {
-      setAudienceExpansions([])
-      return
-    }
-    
     try {
       const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
       if (response.ok) {
         const data = await response.json()
+        if (data.opportunities && data.opportunities.length > 0) {
+          console.log(`[Marketing Assistant] Loaded ${data.opportunities.length} audience expansions`)
+        }
         setAudienceExpansions(data.opportunities || [])
       } else {
-        }
-      } catch (error) {
+        setAudienceExpansions([])
+      }
+    } catch (error) {
+      console.error('[Marketing Assistant] Error loading audience expansions:', error)
       setAudienceExpansions([])
     }
   }
