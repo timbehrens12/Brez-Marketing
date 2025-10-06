@@ -894,10 +894,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           
           const hasUsedDailyToday = brandLastDailyGeneration === today || 
                                    databaseDailyReports.some((report: any) => {
-                                     // Check for manual reports (null, "manual", or undefined snapshot_time)
-                                     const isManualReport = !report.snapshotTime || report.snapshotTime === "manual"
-                                     const isToday = report.createdAt.startsWith(today)
-                                     return isManualReport && isToday
+                                     const snapshotTime = report.data?.snapshot_time || report.snapshotTime
+                                     const isManual = snapshotTime === "manual" || snapshotTime === null
+                                     return isManual && report.createdAt.startsWith(today)
                                    })
 
           // Check monthly report availability - resets at midnight on the 1st of each month (LOCAL TIME)
