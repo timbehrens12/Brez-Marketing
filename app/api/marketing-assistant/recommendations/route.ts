@@ -918,8 +918,10 @@ async function generateRecommendations(
 
         // Priority based on opportunity size and efficiency gap
         const topEfficiency = topSegments[0]?.efficiency || 0
-        const avgEfficiency = allSegments.length > 0 
-          ? allSegments.reduce((sum, s) => sum + s.efficiency, 0) / allSegments.length 
+        // Calculate average efficiency from top and underperformers (available from accountInsights)
+        const allAvailableSegments = [...demoInsights.topPerformers, ...demoInsights.underperformers]
+        const avgEfficiency = allAvailableSegments.length > 0 
+          ? allAvailableSegments.reduce((sum, s) => sum + s.efficiency, 0) / allAvailableSegments.length 
           : 1
         const efficiencyGap = avgEfficiency > 0 ? topEfficiency / avgEfficiency : 1
         
