@@ -130,39 +130,38 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
       })
     }
 
-    // 3. BEST DEMOGRAPHIC - Age/gender with highest engagement
+    // 3. BEST DEMOGRAPHIC - Age/gender with highest engagement (use ANY data available)
     const { data: demographics } = await supabase
       .from('meta_demographics')
-      .select('breakdown_type, breakdown_value, spend, impressions, clicks, ctr')
+      .select('breakdown_type, breakdown_value, spend, impressions, clicks')
       .eq('brand_id', brandId)
-      .gte('date_range_start', fromDate)
-      .lte('date_range_end', toDate)
-      .eq('breakdown_type', 'age_gender')
 
     if (demographics && demographics.length > 0) {
-      // Aggregate by breakdown_value
+      // Aggregate all demographics regardless of type
       const demoMap = new Map()
       demographics.forEach(demo => {
-        if (!demoMap.has(demo.breakdown_value)) {
-          demoMap.set(demo.breakdown_value, {
+        const key = demo.breakdown_value
+        if (!demoMap.has(key)) {
+          demoMap.set(key, {
             spend: 0,
             impressions: 0,
-            clicks: 0
+            clicks: 0,
+            type: demo.breakdown_type
           })
         }
-        const d = demoMap.get(demo.breakdown_value)
+        const d = demoMap.get(key)
         d.spend += Number(demo.spend) || 0
         d.impressions += Number(demo.impressions) || 0
         d.clicks += Number(demo.clicks) || 0
       })
 
-      // Find demographic with highest CTR (minimum $1 spend)
+      // Find demographic with highest CTR (minimum $0.50 spend)
       let bestDemo = null
       let highestCTR = 0
       let bestValue = ''
       demoMap.forEach((demo, value) => {
         const ctr = demo.impressions > 0 ? (demo.clicks / demo.impressions) * 100 : 0
-        if (ctr > highestCTR && demo.spend >= 1) {
+        if (ctr > highestCTR && demo.spend >= 0.5) {
           highestCTR = ctr
           bestDemo = demo
           bestValue = value
@@ -170,15 +169,19 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
       })
 
       if (bestDemo) {
-        // Parse age_gender format: "25-34_male"
-        const parts = bestValue.split('_')
-        const age = parts[0]
-        const gender = parts[1] === 'male' ? 'M' : parts[1] === 'female' ? 'F' : parts[1]
+        // Parse different formats
+        let displayValue = bestValue
+        if (bestValue.includes('_')) {
+          const parts = bestValue.split('_')
+          const age = parts[0]
+          const gender = parts[1] === 'male' ? 'M' : parts[1] === 'female' ? 'F' : parts[1]
+          displayValue = `${age}, ${gender}`
+        }
         
         insights.push({
           type: 'best_demographic',
           label: 'Best Demographic',
-          value: `${age}, ${gender}`,
+          value: displayValue,
           metric: `${highestCTR.toFixed(2)}% CTR`,
           icon: '👥'
         })
