@@ -958,116 +958,76 @@ export default function MarketingAssistantPage() {
             {/* Left Rail */}
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
             
-            {/* Scope & Filters */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex-shrink-0">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Filter className="w-5 h-5 text-white" />
-          </div>
-                  <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Scope & Filters</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">Configure analysis parameters</p>
-        </div>
-      </div>
-              </CardHeader>
-              <CardContent className="p-4 space-y-4">
-                <div className="p-3 bg-[#222] border border-[#333] rounded-lg">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Calendar className="h-4 w-4 text-[#FF2A2A] flex-shrink-0" />
-                      <span className="text-gray-400 text-sm truncate">Performance Window</span>
-        </div>
-                    <Badge className="text-xs bg-[#FF2A2A] text-black border-[#FF2A2A] flex-shrink-0 font-semibold">Fixed</Badge>
-      </div>
-                  <div className="text-white font-semibold mb-2">{dateRangeText || 'Loading...'}</div>
-                  <p className="text-xs text-gray-500 mb-2">{nextUpdateText || 'Loading...'}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHowItWorks(true)}
-                    className="w-full text-xs h-7 bg-white/10 hover:bg-white/20 text-white border border-white/10"
-                  >
-                    <Info className="h-3 w-3 mr-1" />
-                    How It Works
-                  </Button>
-                  
-                  {/* Mobile Update Button (shown on mobile, hidden on desktop where it's in header) */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      setIsRefreshingData(true)
-                      
-                      // Clear ALL localStorage for this brand
-                      if (selectedBrandId) {
-                        localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
-                        localStorage.removeItem(`completedItems_${selectedBrandId}`)
-                      }
-                      
-                      // Delete AI recommendations from database
-                      await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
-                        method: 'DELETE'
-                      })
-                      
-                      // Clear local state including alerts AND save to localStorage
-                      setRecommendationsViewed(true) // Mark as viewed so countdown shows
-                      if (selectedBrandId) {
-                        localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
-                        // Save the refresh date (this Monday) so we know when to enable refresh again
-                        const { thisMonday } = getMondayToMondayDates()
-                        localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
-                      }
-                      setCompletedItems(new Set())
-                      
-                      // Reload ALL widgets with FORCE REFRESH
-                      await loadDashboardData(true)
-                      
-                      setIsRefreshingData(false)
-                    }}
-                    className="w-full text-xs h-8 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black border-0 font-bold lg:hidden transition-all duration-300"
-                    disabled={isRefreshingData || recommendationsViewed}
-                  >
-                    <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                    {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
-                  </Button>
-      </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Platforms</label>
-                  <Select value={selectedPlatforms.join(',')} onValueChange={(value) => setSelectedPlatforms(value.split(','))}>
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-white">
-                      <SelectValue placeholder="Select platforms" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="meta,google,tiktok">All Platforms</SelectItem>
-                      <SelectItem value="meta">Meta Only</SelectItem>
-                      <SelectItem value="google">Google Only</SelectItem>
-                      <SelectItem value="tiktok">TikTok Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-          
+            {/* Quick Actions Card - Compact */}
+            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+              <CardContent className="p-4 space-y-3">
+                {/* Mobile Update Button */}
+                <Button
+                  onClick={async () => {
+                    setIsRefreshingData(true)
+                    
+                    if (selectedBrandId) {
+                      localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                      localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                    }
+                    
+                    await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                      method: 'DELETE'
+                    })
+                    
+                    setRecommendationsViewed(true)
+                    if (selectedBrandId) {
+                      localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                      const { thisMonday } = getMondayToMondayDates()
+                      localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
+                    }
+                    setCompletedItems(new Set())
+                    
+                    await loadDashboardData(true)
+                    
+                    setIsRefreshingData(false)
+                  }}
+                  disabled={isRefreshingData || recommendationsViewed}
+                  className="w-full text-xs h-9 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black border-0 font-bold lg:hidden transition-all duration-300"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                  {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
+                </Button>
+                
+                {/* How It Works Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHowItWorks(true)}
+                  className="w-full text-xs h-8 bg-white/5 hover:bg-white/10 text-white border-[#333] hover:border-[#444] transition-all duration-200"
+                >
+                  <Info className="h-3 w-3 mr-1.5" />
+                  How It Works
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Optimization Progress Tracker */}
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#111] to-[#0A0A0A] border border-[#FF2A2A]/20 flex flex-col flex-1 min-h-[491px] max-h-[491px] shadow-lg shadow-[#FF2A2A]/5">
-              <CardHeader className="bg-gradient-to-r from-[#FF2A2A]/10 via-[#FF2A2A]/5 to-transparent border-b border-[#FF2A2A]/20 rounded-t-lg flex-shrink-0">
+            {/* Optimization Progress - Premium Radial Gauge */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/90 via-[#111]/90 to-[#0A0A0A]/90 border border-[#FF2A2A]/30 backdrop-blur-sm flex flex-col flex-1 min-h-[491px] max-h-[491px]">
+              {/* Subtle animated glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/5 to-transparent opacity-50 animate-pulse"></div>
+              
+              <CardHeader className="relative border-b border-[#FF2A2A]/20 pb-3 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl 
-                                flex items-center justify-center border border-[#FF2A2A]/30 shadow-lg shadow-[#FF2A2A]/20">
-                    <Activity className="w-5 h-5 text-[#FF5A5A]" />
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="relative w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/30 to-[#FF5A5A]/20 rounded-xl flex items-center justify-center border border-[#FF2A2A]/40">
+                      <Gauge className="w-5 h-5 text-[#FF2A2A]" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Optimization Progress</h3>
+                    <p className="text-xs text-gray-500">Live implementation tracking</p>
+                  </div>
                 </div>
-                  <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">Optimization Progress</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">Live implementation tracking</p>
-        </div>
-      </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 min-h-0 space-y-3">
+              
+              <CardContent className="relative p-4 flex-1 min-h-0 flex flex-col">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1077,39 +1037,83 @@ export default function MarketingAssistantPage() {
                 
                 {weeklyProgress && (
                   <>
-                    {/* Main Progress Summary */}
-                    <div className="relative bg-gradient-to-r from-[#1A1A1A] via-[#1a1a1a] to-[#0f0f0f] border border-[#FF2A2A]/30 rounded-lg p-4 overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/5 to-transparent opacity-50"></div>
-                      <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <div className="text-3xl font-black bg-gradient-to-r from-[#FF5A5A] via-white to-[#FF2A2A] bg-clip-text text-transparent">
-                              {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations}
-                            </div>
-                            <div className="text-xs text-gray-400 font-medium">OPTIMIZATIONS APPLIED</div>
+                    {/* Circular Radial Progress Gauge */}
+                    <div className="flex flex-col items-center justify-center flex-1">
+                      <div className="relative w-48 h-48 mb-4">
+                        {/* SVG Circle Progress */}
+                        <svg className="w-full h-full transform -rotate-90">
+                          {/* Background circle */}
+                          <circle
+                            cx="96"
+                            cy="96"
+                            r="88"
+                            stroke="url(#progressBg)"
+                            strokeWidth="10"
+                            fill="none"
+                            opacity="0.15"
+                          />
+                          {/* Progress circle */}
+                          <circle
+                            cx="96"
+                            cy="96"
+                            r="88"
+                            stroke="url(#progressGradient)"
+                            strokeWidth="10"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeDasharray="552.92"
+                            strokeDashoffset={552.92 - (552.92 * weeklyProgress.completionPercentage) / 100}
+                            className="transition-all duration-1000 ease-out"
+                            style={{ filter: 'drop-shadow(0 0 8px rgba(255, 42, 42, 0.5))' }}
+                          />
+                          <defs>
+                            <linearGradient id="progressBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#FF2A2A" stopOpacity="0.1" />
+                              <stop offset="100%" stopColor="#FF5A5A" stopOpacity="0.1" />
+                            </linearGradient>
+                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#FF2A2A" />
+                              <stop offset="50%" stopColor="#FF5A5A" />
+                              <stop offset="100%" stopColor="#FF7A7A" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        
+                        {/* Center content */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="text-5xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-1">
+                            {weeklyProgress.completionPercentage}%
                           </div>
-                          {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
-                            <div className="text-right bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg px-3 py-2">
-                              <div className={`text-xl font-black ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}%
-                              </div>
-                              <div className="text-xs text-gray-400">ROAS GAIN</div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="relative w-full bg-black/40 rounded-full h-2 border border-[#FF2A2A]/20 overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/20 to-transparent"></div>
-                          <div 
-                            className="relative bg-gradient-to-r from-[#FF2A2A] via-[#FF5A5A] to-[#FF7A7A] h-full rounded-full transition-all duration-700 ease-out shadow-lg shadow-[#FF2A2A]/50"
-                            style={{ width: `${weeklyProgress.completionPercentage}%` }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
+                          <div className="text-xs text-gray-500 uppercase tracking-wider">Complete</div>
+                          <div className="text-sm text-white font-bold mt-2">
+                            {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations} Applied
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">{weeklyProgress.completionPercentage}% Complete</span>
-                          <span className="text-xs text-[#FF5A5A] font-medium">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} remaining</span>
-                        </div>
+                        
+                        {/* Outer glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/20 to-transparent rounded-full blur-2xl -z-10"></div>
+                      </div>
+                      
+                      {/* Stats Grid */}
+                      <div className="w-full space-y-2">
+                        {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
+                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-lg group hover:border-green-500/40 transition-all">
+                            <span className="text-xs text-gray-400 uppercase tracking-wide">ROAS Improvement</span>
+                            <span className={`text-sm font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}%
+                            </span>
+                          </div>
+                        )}
+                        
+                        {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
+                          <button className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg group hover:border-[#FF2A2A]/40 transition-all">
+                            <span className="text-xs text-gray-400 uppercase tracking-wide">Next Action</span>
+                            <div className="flex items-center gap-1 text-[#FF2A2A]">
+                              <span className="text-xs font-medium">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} pending</span>
+                              <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </div>
+                          </button>
+                        )}
                       </div>
                     </div>
 
