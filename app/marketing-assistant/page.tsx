@@ -353,14 +353,14 @@ export default function MarketingAssistantPage() {
     try {
       // First load recommendations
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
-      await loadOptimizationRecommendations(forceRefresh)
+      const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
       // After loading recommendations, check if we should load widgets
-      // We'll check optimizationCards in the next render cycle, so we need to query directly
-      const shouldLoadWidgets = forceRefresh // If force refresh, always load widgets
+      // Load widgets if: 1) force refresh (button clicked) OR 2) recommendations exist (returning user)
+      const shouldLoadWidgets = forceRefresh || (loadedRecommendations && loadedRecommendations.length > 0)
       
       if (shouldLoadWidgets) {
-        // Load all widgets when button is clicked
+        // Load all widgets when button is clicked OR when recommendations already exist
         await Promise.all([
           loadKPIMetrics(),
           loadQuickInsights(),
@@ -415,7 +415,7 @@ export default function MarketingAssistantPage() {
   }
 
   const loadOptimizationRecommendations = async (forceGenerate = false) => {
-    if (!selectedBrandId) return
+    if (!selectedBrandId) return []
 
     try {
       const timestamp = Date.now()
@@ -432,12 +432,16 @@ export default function MarketingAssistantPage() {
       
       if (response.ok) {
         const data = await response.json()
-        setOptimizationCards(data.recommendations || [])
+        const recommendations = data.recommendations || []
+        setOptimizationCards(recommendations)
+        return recommendations
       } else {
         setOptimizationCards([])
+        return []
       }
     } catch (error) {
       setOptimizationCards([])
+      return []
     }
   }
 
