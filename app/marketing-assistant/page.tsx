@@ -903,7 +903,7 @@ export default function MarketingAssistantPage() {
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
             
              {/* Left Rail - Fixed Height Column (No Scroll) */}
-            <div className="col-span-1 xl:col-span-3 flex flex-col gap-3 min-w-0 h-full overflow-hidden">
+            <div className="col-span-1 xl:col-span-3 flex flex-col gap-2.5 min-w-0 h-full overflow-hidden">
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1042,7 +1042,7 @@ export default function MarketingAssistantPage() {
                           </div>
                       
                       {/* Stats Grid - Compact */}
-                      <div className="w-full space-y-1.5">
+                      <div className="w-full space-y-1">
                         {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
                           <div className="flex items-center justify-between p-2 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-lg">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">ROAS Gain</span>
@@ -1065,7 +1065,7 @@ export default function MarketingAssistantPage() {
                     {weeklyProgress.categories && Object.values(weeklyProgress.categories).some((count: any) => count > 0) && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
                         <h4 className="text-white font-medium text-xs mb-2 uppercase tracking-wide">By Category</h4>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           {Object.entries(weeklyProgress.categories).filter(([_, count]: [string, any]) => count > 0).map(([category, count]: [string, any]) => {
                             const completed = Math.floor(count * (weeklyProgress.completionPercentage / 100))
                             return (
@@ -1091,7 +1091,7 @@ export default function MarketingAssistantPage() {
                     {weeklyProgress.completedCount > 0 && weeklyProgress.topApplied && weeklyProgress.topApplied.length > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
                         <h4 className="text-white font-medium text-xs mb-2 uppercase tracking-wide">Top Applied</h4>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           {weeklyProgress.topApplied.slice(0, 2).map((action: any, index: number) => (
                             <div key={index} className="flex items-center gap-1.5">
                               <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
@@ -1131,7 +1131,7 @@ export default function MarketingAssistantPage() {
                     {/* Action Timeline - Compact */}
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
                       <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">This Week's Focus</h4>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
                           <span className="text-[10px] text-gray-400">Demographic targeting optimized</span>
