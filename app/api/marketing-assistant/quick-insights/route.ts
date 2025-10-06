@@ -111,9 +111,10 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   }
 
   // If no data at all, return empty
-  if (performanceData.meta_ads.length === 0 && performanceData.shopify_customers.length === 0) {
+  if (performanceData.meta_ads.length === 0 && performanceData.shopify_customers.length === 0 && performanceData.demographics.length === 0) {
     console.log('[Quick Insights AI] ❌ No data available - cannot generate insights')
     console.log('[Quick Insights AI] Meta ads:', performanceData.meta_ads.length)
+    console.log('[Quick Insights AI] Demographics:', performanceData.demographics.length)
     console.log('[Quick Insights AI] Shopify customers:', performanceData.shopify_customers.length)
     return []
   }
@@ -153,19 +154,21 @@ CRITICAL RULES:
    - metric: Supporting metric or context (e.g., "2.5% CTR", "$450 spent")
    - icon: Single emoji that represents the insight
 
-INSIGHT CATEGORIES (choose 3 that are most relevant):
-- Top performing creative/ad
-- Underperforming creative that needs attention
-- Best performing demographic
-- Demographic opportunity (untapped potential)
-- Geographic concentration or opportunity
-- Spending efficiency (waste or optimization)
-- Creative fatigue indicators
-- Audience saturation
-- Budget allocation issues
-- ROAS/ROI insights
-- Engagement trends
+INSIGHT CATEGORIES (choose 3 that are most relevant based on available data):
+- Top performing creative/ad (if ad data available)
+- Underperforming creative that needs attention (if ad data available)
+- Best performing demographic (use demographic data)
+- Demographic opportunity or trend (use demographic data)
+- Geographic concentration or opportunity (use customer data)
+- Spending efficiency (use any spend data)
+- Creative fatigue indicators (if ad data available)
+- Audience saturation or performance patterns
+- Budget allocation or spend patterns
+- ROAS/ROI insights (if conversion data available)
+- Engagement trends (CTR, clicks, impressions)
 - Any other data-driven insight you discover
+
+NOTE: If only demographic data is available, focus insights on demographic performance, audience patterns, and spending efficiency across different segments.
 
 Return ONLY valid JSON array with exactly 3 insights, no explanation text.`
       },
