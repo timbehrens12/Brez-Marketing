@@ -944,23 +944,13 @@ export default function MarketingAssistantPage() {
             </Card>
 
              {/* Optimization Progress - Premium Radial Gauge */}
-             <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/90 via-[#111]/90 to-[#0A0A0A]/90 border border-[#FF2A2A]/30 backdrop-blur-sm flex-shrink-0">
-              {/* Subtle animated glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/5 to-transparent opacity-50 animate-pulse"></div>
+             <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               
-              <CardHeader className="relative border-b border-[#FF2A2A]/20 pb-3 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="relative w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/30 to-[#FF5A5A]/20 rounded-xl flex items-center justify-center border border-[#FF2A2A]/40">
-                      <Gauge className="w-5 h-5 text-[#FF2A2A]" />
+              <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
+                <div>
+                  <h3 className="text-base font-bold text-white">Optimization Progress</h3>
+                  <p className="text-xs text-gray-500">Live implementation tracking</p>
                 </div>
-                        </div>
-                  <div>
-                    <h3 className="text-base font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Optimization Progress</h3>
-                    <p className="text-xs text-gray-500">Live implementation tracking</p>
-        </div>
-      </div>
               </CardHeader>
               
               <CardContent className="relative p-2.5 flex flex-col">
