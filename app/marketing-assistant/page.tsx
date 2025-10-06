@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import BrandSelector from '@/components/BrandSelector'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { GridOverlay } from "@/components/GridOverlay"
 
 // Icons
 import { 
@@ -741,22 +742,10 @@ export default function MarketingAssistantPage() {
   }
 
     return (
-    <div className="min-h-screen bg-[#0B0B0B] relative" 
-         style={{
-           backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
-             <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-               <defs>
-                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                   <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
-                 </pattern>
-               </defs>
-               <rect width="100%" height="100%" fill="url(#grid)" />
-             </svg>
-           `)}")`,
-           backgroundRepeat: 'repeat',
-           backgroundSize: '40px 40px',
-           backgroundAttachment: 'fixed'
-         }}>
+    <div className="min-h-screen bg-[#0B0B0B] relative">
+      
+      {/* Grid overlay background */}
+      <GridOverlay />
        
       {/* Ambient glow effects */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-radial from-[#FF2A2A]/10 to-transparent blur-3xl opacity-20 animate-pulse pointer-events-none"></div>
@@ -911,7 +900,7 @@ export default function MarketingAssistantPage() {
                         </div>
         
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-220px)]">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
             
              {/* Left Rail - Scrollable Column */}
             <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
