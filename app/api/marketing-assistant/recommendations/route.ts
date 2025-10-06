@@ -1070,21 +1070,20 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
     .from('optimization_action_log')
     .insert(logEntry)
   
-  // ALSO record in ai_usage_tracking for progress tracking
-  await aiUsageService.recordUsage(
-    brandId,
+  // ALSO log in ai_usage_logs for progress tracking
+  await aiUsageService.logUsage({
     userId,
-    'marketing_analysis',
-    'mark_as_done',
-    {
+    brandId,
+    endpoint: 'mark_as_done',
+    metadata: {
       recommendation_id: recommendation?.id,
       campaign_id: campaignId,
       action_id: actionId,
       recommendation_title: actionDescription
     }
-  )
+  })
   
-  console.log('[Marketing Assistant] ✅ Tracked mark-as-done in ai_usage_tracking')
+  console.log('[Marketing Assistant] ✅ Tracked mark-as-done in ai_usage_logs')
 
   // Mark recommendation as completed if it exists in database
   if (recommendation) {
