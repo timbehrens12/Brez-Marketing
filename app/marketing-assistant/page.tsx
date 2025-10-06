@@ -952,11 +952,11 @@ export default function MarketingAssistantPage() {
                           </div>
                         </div>
         
-        {/* MAIN GRID LAYOUT */}
-         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto">
-           
-            {/* Left Rail */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
+         {/* MAIN GRID LAYOUT - Fixed Height Container */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
+            
+             {/* Left Rail */}
+            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1184,10 +1184,10 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Column - Main Work Area */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full">
             
-            {/* AI Optimization Feed - Premium Design */}
-            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1 min-h-[891px] max-h-[891px]">
+            {/* AI Optimization Feed - Completely Redesigned */}
+            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col h-full overflow-hidden">
               <CardHeader className="border-b border-[#333]/60 pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1212,134 +1212,120 @@ export default function MarketingAssistantPage() {
                           </div>
               </CardHeader>
               
-              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
-                <div className="space-y-4">
+              <CardContent className="p-3 flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-3">
                   {filteredOptimizations.map(card => {
-                    // Calculate effort level (you can enhance this logic based on card data)
-                    const effortLevel = card.priority === 'high' ? 2 : card.priority === 'medium' ? 1 : 1
+                    const effortLevel = card.priority === 'high' ? 3 : card.priority === 'medium' ? 2 : 1
                     const confidencePercentage = card.projectedImpact?.confidence || 85
                     
                     return (
-                    <div key={card.id} className="group relative">
-                      {/* Hover glow effect */}
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#FF2A2A]/0 to-[#FF2A2A]/50 rounded-xl opacity-0 group-hover:opacity-20 blur transition-all duration-500"></div>
+                    <div key={card.id} className="group relative bg-gradient-to-br from-[#1a1a1a]/60 to-[#0f0f0f]/60 border border-[#333]/60 rounded-xl p-4 hover:border-[#FF2A2A]/40 hover:shadow-lg hover:shadow-[#FF2A2A]/10 transition-all duration-300">
                       
-                      <Card className="relative bg-gradient-to-br from-[#1a1a1a] via-[#111] to-[#0A0A0A] border border-[#333] group-hover:border-[#FF2A2A]/50 transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-3 flex-1">
-                              {/* Confidence Ring */}
-                              <div className="relative w-12 h-12 flex-shrink-0">
-                                <svg className="w-full h-full transform -rotate-90">
-                                  <circle cx="24" cy="24" r="20" stroke="#333" strokeWidth="3" fill="none" />
-                                  <circle 
-                                    cx="24" 
-                                    cy="24" 
-                                    r="20" 
-                                    stroke="#FF2A2A" 
-                                    strokeWidth="3" 
-                                    fill="none" 
-                                    strokeLinecap="round"
-                                    strokeDasharray="125.6"
-                                    strokeDashoffset={125.6 - (125.6 * confidencePercentage) / 100}
-                                    className="transition-all duration-700"
-                                  />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Zap className="w-5 h-5 text-[#FF2A2A]" />
-                              </div>
+                      {/* Top Row: Priority + Confidence + Effort */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="relative w-10 h-10">
+                            <svg className="w-full h-full transform -rotate-90">
+                              <circle cx="20" cy="20" r="16" stroke="#333" strokeWidth="2.5" fill="none" />
+                              <circle 
+                                cx="20" 
+                                cy="20" 
+                                r="16" 
+                                stroke="url(#confidenceGrad)" 
+                                strokeWidth="2.5" 
+                                fill="none" 
+                                strokeLinecap="round"
+                                strokeDasharray="100.5"
+                                strokeDashoffset={100.5 - (100.5 * confidencePercentage) / 100}
+                                className="transition-all duration-700"
+                              />
+                              <defs>
+                                <linearGradient id="confidenceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FF2A2A" />
+                                  <stop offset="100%" stopColor="#FF5A5A" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                              {confidencePercentage}
                             </div>
-                              
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs uppercase font-bold">
-                                    {card.priority}
-                                  </Badge>
-                                  <Badge className="bg-white/10 text-white border-white/20 text-xs">
-                                    {confidencePercentage}% Confidence
-                                  </Badge>
-                          </div>
-                                <h3 className="text-base font-bold text-white mb-1">{card.title}</h3>
-                                <p className="text-sm text-gray-400 leading-relaxed">{card.description}</p>
-                        </div>
-                        </div>
-                            
-                            {/* Effort Indicator */}
-                            <div className="flex flex-col items-end gap-1">
-                              <div className="flex items-center gap-1">
-                                {[1,2,3].map((i) => (
-                                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= effortLevel ? 'bg-[#10b981]' : 'bg-gray-700'}`}></div>
-                                ))}
-                </div>
-                              <span className="text-xs text-gray-500">{effortLevel <= 1 ? 'Low' : effortLevel === 2 ? 'Medium' : 'High'} Effort</span>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="space-y-3">
-                          {/* Root Cause */}
-                          <div className="p-3 bg-[#0A0A0A]/50 border border-[#333] rounded-lg">
-                            <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Root Cause</div>
-                            <p className="text-sm text-gray-300">{card.rootCause}</p>
                           </div>
                           
-                          {/* Metrics */}
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="bg-[#0F0F0F] border border-[#333] rounded-lg p-2 text-center">
-                              <p className="text-xs text-gray-500">Current</p>
-                              <p className="text-sm font-bold text-white">{card.currentValue}</p>
-                          </div>
-                          <div className="flex items-center justify-center">
-                              <ArrowUpRight className="w-4 h-4 text-[#FF2A2A]" />
-                          </div>
-                            <div className="bg-[#0F0F0F] border border-[#333] rounded-lg p-2 text-center">
-                              <p className="text-xs text-gray-500">Target</p>
-                              <p className="text-sm font-bold text-white">{card.recommendedValue}</p>
+                          <div>
+                            <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs font-bold mb-1">
+                              {card.priority.toUpperCase()}
+                            </Badge>
+                            <div className="flex items-center gap-1">
+                              {[1,2,3].map((i) => (
+                                <div key={i} className={`w-1 h-1 rounded-full ${i <= effortLevel ? 'bg-amber-400' : 'bg-gray-700'}`}></div>
+                              ))}
+                              <span className="text-xs text-gray-500 ml-1">{effortLevel === 1 ? 'Quick' : effortLevel === 2 ? 'Moderate' : 'Complex'}</span>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Actions */}
-                          <div className="flex gap-2 pt-2">
-                            {completedItems.has(`opt-${card.id}`) ? (
-                              <div className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-400" />
-                                <div className="text-sm text-gray-400">
-                                  <div>Completed</div>
-                                  <div className="text-xs">{timeUntilRefresh}</div>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                  <Button
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleExplainRecommendation(card.id)}
-                                  className="flex-1 border-[#333] hover:border-[#444] text-white text-xs"
-                          >
-                                  <Info className="w-3 h-3 mr-1.5" />
-                                  Explain
-                  </Button>
-                          <Button
-                            size="sm"
+                        
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">Est. Impact</div>
+                          <div className="text-lg font-black text-[#10b981]">+{card.projectedImpact?.roasImprovement || 0}%</div>
+                        </div>
+                      </div>
+                      
+                      {/* Title & Description */}
+                      <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
+                      <p className="text-sm text-gray-400 leading-relaxed mb-3">{card.description}</p>
+                      
+                      {/* Metrics Comparison - Horizontal Layout */}
+                      <div className="flex items-center gap-2 p-2.5 bg-black/30 rounded-lg mb-3">
+                        <div className="flex-1 text-center">
+                          <div className="text-xs text-gray-500 mb-0.5">Current</div>
+                          <div className="text-sm font-bold text-white">{card.currentValue}</div>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-[#FF2A2A] flex-shrink-0" />
+                        <div className="flex-1 text-center">
+                          <div className="text-xs text-gray-500 mb-0.5">Target</div>
+                          <div className="text-sm font-bold text-[#10b981]">{card.recommendedValue}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        {completedItems.has(`opt-${card.id}`) ? (
+                          <div className="flex-1 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-400" />
+                            <span className="text-sm font-medium text-green-400">Applied</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleExplainRecommendation(card.id)}
+                              className="flex-1 h-9 text-xs hover:bg-white/5"
+                            >
+                              <Info className="w-3.5 h-3.5 mr-1.5" />
+                              Details
+                            </Button>
+                            <Button
+                              size="sm"
                               onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                                  className="flex-1 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black font-bold text-xs transition-all"
-                          >
-                                  <CheckCircle className="w-3 h-3 mr-1.5" />
-                                  Mark Done
-                          </Button>
-                              </>
-                  )}
-                </div>
-                        </CardContent>
-                      </Card>
-          </div>
+                              className="flex-1 h-9 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/30 text-white font-bold text-xs"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                              Apply
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   )})}
                   
                   {filteredOptimizations.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No AI analysis run yet</h3>
-                      <p className="text-sm">Click "Update Recommendations" above to generate your first AI-powered optimization insights.</p>
+                    <div className="flex flex-col items-center justify-center h-full py-16 text-gray-400">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
+                        <Brain className="w-8 h-8 text-[#FF2A2A]" />
+                      </div>
+                      <h3 className="text-lg font-bold text-white mb-2">Ready to Optimize</h3>
+                      <p className="text-sm text-center max-w-sm">Click "Update Analysis" to get AI-powered recommendations tailored to your campaign performance.</p>
                     </div>
                   )}
                 </div>
@@ -1348,10 +1334,10 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Right Rail - Insights Column */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
             
-            {/* Performance Trends - Premium Glassy Card */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1" style={{ minHeight: '437.5px', maxHeight: '437.5px' }}>
+            {/* Performance Trends - Completely Redesigned */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1370,89 +1356,88 @@ export default function MarketingAssistantPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="relative p-4 flex-1 overflow-y-auto min-h-0">
-                <div className="space-y-4">
-                  {trends && (
-                    <>
-                     {/* Spend Metric Card */}
-                     <div className="group relative p-3 bg-gradient-to-br from-[#0f0f0f]/50 to-[#0A0A0A]/50 border border-[#333]/50 rounded-lg hover:border-[#444]/80 transition-all duration-300">
-                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
-                       
-                       <div className="relative flex items-center justify-between">
-                         <div className="flex items-center gap-3 flex-1">
-                           <div className="w-9 h-9 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-lg flex items-center justify-center border border-blue-500/30">
-                             <DollarSign className="w-4 h-4 text-blue-400" />
-                         </div>
-                         <div className="min-w-0">
-                             <p className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Spend</p>
-                             <p className="text-lg font-bold text-white">${trends.spend.current.toLocaleString()}</p>
-                         </div>
-                       </div>
-                         <div className={`flex flex-col items-end gap-1 ${trends.spend.direction === 'up' ? 'text-red-400' : 'text-green-400'}`}>
-                         {trends.spend.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                           <span className="text-sm font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
-                </div>
-          </div>
-        </div>
-
-                      {/* ROAS Metric Card */}
-                     <div className="group relative p-3 bg-gradient-to-br from-[#0f0f0f]/50 to-[#0A0A0A]/50 border border-[#333]/50 rounded-lg hover:border-[#444]/80 transition-all duration-300">
-                       <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
-                       
-                       <div className="relative flex items-center justify-between">
-                         <div className="flex items-center gap-3 flex-1">
-                           <div className="w-9 h-9 bg-gradient-to-br from-green-500/20 to-emerald-500/10 rounded-lg flex items-center justify-center border border-green-500/30">
-                             <TrendingUp className="w-4 h-4 text-green-400" />
-                         </div>
-                         <div className="min-w-0">
-                             <p className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">ROAS</p>
-                             <p className="text-lg font-bold text-white">{trends.roas.current.toFixed(2)}x</p>
-                         </div>
-                       </div>
-                         <div className={`flex flex-col items-end gap-1 ${trends.roas.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
-                           {trends.roas.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                           <span className="text-sm font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                </div>
-          </div>
-        </div>
-
-                      {/* Conversions Metric Card */}
-                     {trends.conversions && (
-                     <div className="group relative p-3 bg-gradient-to-br from-[#0f0f0f]/50 to-[#0A0A0A]/50 border border-[#333]/50 rounded-lg hover:border-[#444]/80 transition-all duration-300">
-                       <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
-                       
-                       <div className="relative flex items-center justify-between">
-                         <div className="flex items-center gap-3 flex-1">
-                           <div className="w-9 h-9 bg-gradient-to-br from-purple-500/20 to-pink-500/10 rounded-lg flex items-center justify-center border border-purple-500/30">
-                             <ShoppingCart className="w-4 h-4 text-purple-400" />
-                           </div>
-                           <div className="min-w-0">
-                             <p className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Conversions</p>
-                             <p className="text-lg font-bold text-white">{trends.conversions.current.toLocaleString()}</p>
-                           </div>
-                         </div>
-                         <div className={`flex flex-col items-end gap-1 ${trends.conversions.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
-                           {trends.conversions.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                           <span className="text-sm font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
-                         </div>
-                       </div>
-                     </div>
-                     )}
-                    </>
-                  )}
-                  {!trends && (
-                    <div className="text-center py-8 text-gray-400">
-                      <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No analysis run yet</p>
-                      <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to see trends</p>
+              <CardContent className="relative p-3 flex-1 overflow-y-auto min-h-0">
+                {trends ? (
+                  <div className="space-y-3">
+                    {/* Spend Metric - Redesigned */}
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-blue-500/30 transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full"></div>
+                      <div className="relative">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
+                          </div>
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
+                          </div>
+                        </div>
+                        <div className="text-2xl font-black text-white">${trends.spend.current.toLocaleString()}</div>
+                        <div className="text-xs text-gray-600 mt-0.5">vs ${trends.spend.previous.toLocaleString()} last period</div>
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* ROAS Metric - Redesigned */}
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-green-500/30 transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/10 to-transparent rounded-bl-full"></div>
+                      <div className="relative">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-lg flex items-center justify-center">
+                              <Activity className="w-4 h-4 text-green-400" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
+                          </div>
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
+                          </div>
+                        </div>
+                        <div className="text-2xl font-black text-white">{trends.roas.current.toFixed(2)}x</div>
+                        <div className="text-xs text-gray-600 mt-0.5">vs {trends.roas.previous.toFixed(2)}x last period</div>
+                      </div>
+                    </div>
+
+                    {/* Conversions Metric - Redesigned */}
+                    {trends.conversions && (
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-purple-500/30 transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/10 to-transparent rounded-bl-full"></div>
+                      <div className="relative">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-600/10 rounded-lg flex items-center justify-center">
+                              <ShoppingCart className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
+                          </div>
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
+                          </div>
+                        </div>
+                        <div className="text-2xl font-black text-white">{trends.conversions.current.toLocaleString()}</div>
+                        <div className="text-xs text-gray-600 mt-0.5">vs {trends.conversions.previous.toLocaleString()} last period</div>
+                      </div>
+                    </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
+                      <BarChart3 className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <p className="text-sm font-medium">No Data Yet</p>
+                    <p className="text-xs mt-1 text-gray-600">Run analysis to see trends</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Quick Insights - Premium Glassy Card */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1" style={{ minHeight: '437.5px', maxHeight: '437.5px' }}>
+            {/* Quick Insights - Completely Redesigned */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1471,34 +1456,43 @@ export default function MarketingAssistantPage() {
                       </div>
               </CardHeader>
               
-              <CardContent className="relative p-4 flex-1 overflow-y-auto min-h-0">
-                <div className="space-y-3">
-                  {quickInsights.map((insight, index) => (
-                    <div key={index} className="group relative p-3 bg-gradient-to-br from-[#0f0f0f]/50 to-[#0A0A0A]/50 border border-[#333]/50 rounded-lg hover:border-emerald-500/40 transition-all duration-300">
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
-                      
-                      <div className="relative flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-lg flex items-center justify-center border border-emerald-500/30 flex-shrink-0">
-                          <span className="text-xl">{insight.icon}</span>
-                                </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-white mb-0.5">{insight.label}</h4>
-                          <p className="text-lg font-bold text-emerald-400">{insight.value}</p>
+              <CardContent className="relative p-3 flex-1 overflow-y-auto min-h-0">
+                {quickInsights.length > 0 ? (
+                  <div className="space-y-3">
+                    {quickInsights.map((insight, index) => (
+                      <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-emerald-500/30 transition-all">
+                        {/* Decorative corner accent */}
+                        <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-br-full"></div>
+                        
+                        <div className="relative">
+                          {/* Icon & Metric Badge */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
+                              <span className="text-2xl">{insight.icon}</span>
                             </div>
-                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs whitespace-nowrap">
-                          {insight.metric}
-                        </Badge>
-                            </div>
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold px-2 py-1">
+                              {insight.metric}
+                            </Badge>
+                          </div>
+                          
+                          {/* Label & Value */}
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{insight.label}</div>
+                            <div className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{insight.value}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
+                      <Sparkles className="w-6 h-6 text-emerald-400" />
                     </div>
-                  ))}
-                  {quickInsights.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No AI analysis run yet</p>
-                      <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to generate insights</p>
-                    </div>
-                  )}
-                </div>
+                    <p className="text-sm font-medium">No Insights Yet</p>
+                    <p className="text-xs mt-1 text-gray-600">Run analysis to see AI insights</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
