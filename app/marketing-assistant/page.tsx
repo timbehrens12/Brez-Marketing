@@ -870,16 +870,16 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Optimization Progress Tracker */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[491px] max-h-[491px]">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#111] to-[#0A0A0A] border border-[#FF2A2A]/20 flex flex-col flex-1 min-h-[491px] max-h-[491px] shadow-lg shadow-[#FF2A2A]/5">
+              <CardHeader className="bg-gradient-to-r from-[#FF2A2A]/10 via-[#FF2A2A]/5 to-transparent border-b border-[#FF2A2A]/20 rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Activity className="w-5 h-5 text-gray-400" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl 
+                                flex items-center justify-center border border-[#FF2A2A]/30 shadow-lg shadow-[#FF2A2A]/20">
+                    <Activity className="w-5 h-5 text-[#FF5A5A]" />
                 </div>
                   <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Optimization Progress</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">Track implementation & performance</p>
+                    <h3 className="text-base lg:text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">Optimization Progress</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Live implementation tracking</p>
         </div>
       </div>
               </CardHeader>
@@ -894,26 +894,38 @@ export default function MarketingAssistantPage() {
                 {weeklyProgress && (
                   <>
                     {/* Main Progress Summary */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="text-2xl font-bold text-white">{weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations}</div>
-                          <div className="text-xs text-gray-400">implemented</div>
-                        </div>
-                        {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
-                          <div className="text-right">
-                            <div className={`text-lg font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}% ROAS
+                    <div className="relative bg-gradient-to-r from-[#1A1A1A] via-[#1a1a1a] to-[#0f0f0f] border border-[#FF2A2A]/30 rounded-lg p-4 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/5 to-transparent opacity-50"></div>
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <div className="text-3xl font-black bg-gradient-to-r from-[#FF5A5A] via-white to-[#FF2A2A] bg-clip-text text-transparent">
+                              {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations}
                             </div>
-                            <div className="text-xs text-gray-400">vs last week</div>
+                            <div className="text-xs text-gray-400 font-medium">OPTIMIZATIONS APPLIED</div>
                           </div>
-                        )}
-                      </div>
-                      <div className="w-full bg-[#0f0f0f] rounded-full h-1.5 border border-[#333]">
-                        <div 
-                          className="bg-gradient-to-r from-[#10b981] via-[#34d399] to-[#6ee7b7] h-full rounded-full transition-all duration-500"
-                          style={{ width: `${weeklyProgress.completionPercentage}%` }}
-                        ></div>
+                          {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
+                            <div className="text-right bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg px-3 py-2">
+                              <div className={`text-xl font-black ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}%
+                              </div>
+                              <div className="text-xs text-gray-400">ROAS GAIN</div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="relative w-full bg-black/40 rounded-full h-2 border border-[#FF2A2A]/20 overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/20 to-transparent"></div>
+                          <div 
+                            className="relative bg-gradient-to-r from-[#FF2A2A] via-[#FF5A5A] to-[#FF7A7A] h-full rounded-full transition-all duration-700 ease-out shadow-lg shadow-[#FF2A2A]/50"
+                            style={{ width: `${weeklyProgress.completionPercentage}%` }}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-gray-500">{weeklyProgress.completionPercentage}% Complete</span>
+                          <span className="text-xs text-[#FF5A5A] font-medium">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} remaining</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1306,32 +1318,35 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1" style={{ minHeight: '437.5px', maxHeight: '437.5px' }}>
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#111] to-[#0A0A0A] border border-[#10b981]/20 flex flex-col flex-1 shadow-lg shadow-[#10b981]/5" style={{ minHeight: '437.5px', maxHeight: '437.5px' }}>
+              <CardHeader className="bg-gradient-to-r from-[#10b981]/10 via-[#10b981]/5 to-transparent border-b border-[#10b981]/20 rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Sparkles className="w-5 h-5 text-gray-400" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#10b981]/20 to-[#34d399]/10 rounded-xl 
+                                flex items-center justify-center border border-[#10b981]/30 shadow-lg shadow-[#10b981]/20">
+                    <Sparkles className="w-5 h-5 text-[#34d399]" />
                         </div>
                   <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Quick Insights</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">Key performance highlights</p>
+                    <h3 className="text-base lg:text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">Quick Insights</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">AI-powered performance highlights</p>
                         </div>
                       </div>
               </CardHeader>
               <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
                   {quickInsights.map((insight, index) => (
-                    <div key={index} className="p-3.5 bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg hover:border-[#444] transition-all">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xl">{insight.icon}</span>
+                    <div key={index} className="relative p-4 bg-gradient-to-r from-[#1A1A1A] via-[#1a1a1a] to-[#0f0f0f] border border-[#10b981]/20 rounded-lg hover:border-[#10b981]/40 transition-all duration-300 group overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#10b981]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-[#10b981]/10 to-[#34d399]/5 rounded-lg flex items-center justify-center border border-[#10b981]/20">
+                            <span className="text-2xl">{insight.icon}</span>
+                          </div>
                           <div>
-                            <h4 className="text-white font-medium text-sm">{insight.label}</h4>
-                            <p className="text-gray-400 text-xs mt-0.5 truncate max-w-[180px]">{insight.value}</p>
+                            <h4 className="text-white font-semibold text-sm">{insight.label}</h4>
+                            <p className="text-gray-400 text-xs mt-0.5 truncate max-w-[160px]">{insight.value}</p>
                           </div>
                         </div>
-                        <div className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-medium text-white">
+                        <div className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-[#10b981]/20 to-[#34d399]/10 border border-[#10b981]/30 text-xs font-bold text-[#34d399]">
                           {insight.metric}
                         </div>
                       </div>

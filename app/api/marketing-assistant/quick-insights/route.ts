@@ -222,7 +222,24 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
     }
   }
 
-  console.log(`[Quick Insights] Generated ${insights.length} insights`)
+  console.log(`[Quick Insights] Generated ${insights.length} insights:`, insights.map(i => i.type))
+  
+  // If we have less than 3 insights, add fallback insights
+  if (insights.length < 3 && adStats && adStats.length > 0) {
+    // Add a "Total Reach" insight if we're missing one
+    const totalImpressions = adStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
+    if (totalImpressions > 0 && !insights.find(i => i.type === 'total_reach')) {
+      insights.push({
+        type: 'total_reach',
+        label: 'Total Reach',
+        value: `${(totalImpressions / 1000).toFixed(1)}K`,
+        metric: 'impressions',
+        icon: '👁️'
+      })
+    }
+  }
+  
+  console.log(`[Quick Insights] Final insights count: ${insights.length}`)
   return insights
 }
 
