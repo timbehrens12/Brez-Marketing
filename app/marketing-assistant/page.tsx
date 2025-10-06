@@ -147,9 +147,7 @@ export default function MarketingAssistantPage() {
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
   const [quickInsights, setQuickInsights] = useState<any[]>([])
   const [trends, setTrends] = useState<any>(null)
-  const [budgetAllocations, setBudgetAllocations] = useState<any[]>([])
-  const [audienceExpansions, setAudienceExpansions] = useState<any[]>([])
-  const [scalingTab, setScalingTab] = useState('budget')
+  const [weeklyProgress, setWeeklyProgress] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
@@ -171,12 +169,6 @@ export default function MarketingAssistantPage() {
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredOptimizations = optimizationCards.filter(card => 
     selectedPlatforms.includes('meta') // All recommendations are from meta_campaigns for now
-  )
-  const filteredBudgetAllocations = budgetAllocations.filter(allocation =>
-    selectedPlatforms.includes('meta') // Budget data is from meta_campaigns
-  )
-  const filteredAudienceExpansions = audienceExpansions.filter(expansion =>
-    selectedPlatforms.includes('meta') // Audience data is from meta_campaigns
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
@@ -338,8 +330,7 @@ export default function MarketingAssistantPage() {
       loadKPIMetrics()
       loadTrends()
       loadQuickInsights()
-      loadBudgetAllocations()
-      loadAudienceExpansions()
+      loadWeeklyProgress()
     }
   }, [selectedPlatforms])
 
@@ -350,8 +341,7 @@ export default function MarketingAssistantPage() {
       if (forceRefresh) {
         setOptimizationCards([])
         setQuickInsights([])
-        setBudgetAllocations([])
-        setAudienceExpansions([])
+        setWeeklyProgress(null)
         setKpiMetrics(null)
         setTrends(null)
       }
@@ -367,17 +357,11 @@ export default function MarketingAssistantPage() {
       // Always load KPI metrics
       await loadKPIMetrics()
       
-      // Load budget and audience AFTER recommendations are loaded (they depend on optimizationCards state)
-      // Load quick insights and trends in parallel (they don't depend on recommendations)
+      // Load quick insights, trends, and progress tracker in parallel (they don't depend on recommendations)
       await Promise.all([
         loadQuickInsights(),
-        loadTrends()
-      ])
-      
-      // Now load budget and audience (after recommendations are in state)
-      await Promise.all([
-        loadBudgetAllocations(),
-        loadAudienceExpansions()
+        loadTrends(),
+        loadWeeklyProgress()
       ])
     } catch (error) {
     } finally {
@@ -443,13 +427,12 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadBudgetAllocations = async () => {
+  const loadWeeklyProgress = async () => {
     if (!selectedBrandId) return
     
     try {
-      // Backend always uses last 7 days - pass platform and status filters
       const timestamp = Date.now()
-      const response = await fetch(`/api/marketing-assistant/budget-allocation?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+      const response = await fetch(`/api/marketing-assistant/weekly-progress?brandId=${selectedBrandId}&_t=${timestamp}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -458,36 +441,14 @@ export default function MarketingAssistantPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        if (data.allocations && data.allocations.length > 0) {
-          console.log(`[Marketing Assistant] Loaded ${data.allocations.length} budget allocations`)
-        }
-        setBudgetAllocations(data.allocations || [])
+        console.log(`[Marketing Assistant] Loaded weekly progress:`, data.progress)
+        setWeeklyProgress(data.progress || null)
       } else {
-        setBudgetAllocations([])
+        setWeeklyProgress(null)
       }
     } catch (error) {
-      console.error('[Marketing Assistant] Error loading budget allocations:', error)
-      setBudgetAllocations([])
-    }
-  }
-
-  const loadAudienceExpansions = async () => {
-    if (!selectedBrandId) return
-    
-    try {
-      const response = await fetch(`/api/marketing-assistant/audience-expansion?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.opportunities && data.opportunities.length > 0) {
-          console.log(`[Marketing Assistant] Loaded ${data.opportunities.length} audience expansions`)
-        }
-        setAudienceExpansions(data.opportunities || [])
-      } else {
-        setAudienceExpansions([])
-      }
-    } catch (error) {
-      console.error('[Marketing Assistant] Error loading audience expansions:', error)
-      setAudienceExpansions([])
+      console.error('[Marketing Assistant] Error loading weekly progress:', error)
+      setWeeklyProgress(null)
     }
   }
 
@@ -598,79 +559,6 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const handleExplainBudgetAllocation = async (allocationId: string) => {
-    try {
-      const allocation = budgetAllocations.find(a => a.id === allocationId)
-      if (!allocation) return
-
-      const response = await fetch('/api/marketing-assistant/explain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'budget_allocation',
-          data: allocation,
-          brandId: selectedBrandId
-        })
-      })
-
-      if (response.ok) {
-        const explanation = await response.json()
-        setExplanationData(explanation)
-        setShowExplanation(true)
-        }
-      } catch (error) {
-    }
-  }
-
-  const handleExplainAudienceExpansion = async (expansionId: string) => {
-    try {
-      const expansion = audienceExpansions.find(e => e.id === expansionId)
-      if (!expansion) return
-
-      const response = await fetch('/api/marketing-assistant/explain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'audience_expansion',
-          data: expansion,
-          brandId: selectedBrandId
-        })
-      })
-
-      if (response.ok) {
-        const explanation = await response.json()
-        setExplanationData(explanation)
-        setShowExplanation(true)
-      }
-    } catch (error) {
-    }
-  }
-
-  const handleMarkBudgetAsDone = async (allocationId: string) => {
-    try {
-      const newCompleted = new Set(completedItems).add(`budget-${allocationId}`)
-      setCompletedItems(newCompleted)
-      if (selectedBrandId) {
-        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
-      }
-    } catch (error) {
-    }
-  }
-
-  const handleMarkAudienceAsDone = async (expansionId: string) => {
-    try {
-      const newCompleted = new Set(completedItems).add(`audience-${expansionId}`)
-      setCompletedItems(newCompleted)
-      if (selectedBrandId) {
-        localStorage.setItem(`completedItems_${selectedBrandId}`, JSON.stringify([...newCompleted]))
-      }
-    } catch (error) {
-    }
-  }
 
   const handleSimulateAction = async (cardId: string, actionId: string) => {
     try {
@@ -960,194 +848,114 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-            {/* Campaign Scaling Tools */}
+            {/* Optimization Progress Tracker */}
             <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[491px] max-h-[491px]">
               <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                 flex items-center justify-center border border-white/10">
-                    <TrendingUp className="w-5 h-5 text-gray-400" />
+                    <Activity className="w-5 h-5 text-gray-400" />
                 </div>
                   <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Campaign Scaling</h3>
-                    <p className="text-gray-400 text-xs lg:text-sm truncate">Budget optimization & audience expansion</p>
+                    <h3 className="text-base lg:text-lg font-bold text-white truncate">Optimization Progress</h3>
+                    <p className="text-gray-400 text-xs lg:text-sm truncate">Track implementation & performance</p>
         </div>
       </div>
               </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-hidden min-h-0">
-                <Tabs value={scalingTab} onValueChange={setScalingTab} className="h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-2 bg-[#1A1A1A] border-b border-[#333] rounded-none">
-                    <TabsTrigger value="budget" className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-[#333]">
-                      <PieChart className="w-4 h-4 mr-2" />
-                      Budget
-                    </TabsTrigger>
-                    <TabsTrigger value="audience" className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-[#333]">
-                      <Users className="w-4 h-4 mr-2" />
-                      Audience
-                    </TabsTrigger>
-                  </TabsList>
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0 space-y-4">
+                {loading && !weeklyProgress && (
+                  <div className="text-center py-8 text-gray-400">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
+                    <p className="text-sm">Loading progress...</p>
+                  </div>
+                )}
+                
+                {weeklyProgress && (
+                  <>
+                    {/* Progress Bar */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-white font-medium text-sm">Weekly Completion</h4>
+                        <span className="text-2xl font-bold text-white">{weeklyProgress.completionPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-[#0f0f0f] rounded-full h-3 mb-2 border border-[#333]">
+                        <div 
+                          className="bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] h-full rounded-full transition-all duration-500"
+                          style={{ width: `${weeklyProgress.completionPercentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>{weeklyProgress.completedCount} of {weeklyProgress.totalRecommendations} completed</span>
+                        <span>{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} remaining</span>
+                      </div>
+                    </div>
 
-                  <TabsContent value="budget" className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {loading && (
-                      <div className="text-center py-6 text-gray-400">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
-                        <p className="text-sm">Loading budget data...</p>
+                    {/* Week-over-Week Performance */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-4">
+                      <h4 className="text-white font-medium text-sm mb-3">Performance vs Last Week</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center">
+                          <p className="text-gray-400 text-xs mb-1">ROAS</p>
+                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.roas.toFixed(2)}x</p>
+                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
+                            weeklyProgress.changes.roas >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {weeklyProgress.changes.roas >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span>{Math.abs(weeklyProgress.changes.roas).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-400 text-xs mb-1">CTR</p>
+                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.ctr.toFixed(2)}%</p>
+                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
+                            weeklyProgress.changes.ctr >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {weeklyProgress.changes.ctr >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span>{Math.abs(weeklyProgress.changes.ctr).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-400 text-xs mb-1">Revenue</p>
+                          <p className="text-white text-lg font-bold">${(weeklyProgress.thisWeek.revenue || 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+                          <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${
+                            weeklyProgress.changes.revenue >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {weeklyProgress.changes.revenue >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            <span>{Math.abs(weeklyProgress.changes.revenue).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Insights */}
+                    {weeklyProgress.insights && weeklyProgress.insights.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-white font-medium text-sm">Insights</h4>
+                        {weeklyProgress.insights.map((insight: any, index: number) => (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            insight.type === 'success' ? 'bg-green-500/5 border-green-500/20' :
+                            insight.type === 'warning' ? 'bg-yellow-500/5 border-yellow-500/20' :
+                            'bg-blue-500/5 border-blue-500/20'
+                          }`}>
+                            <p className={`text-xs ${
+                              insight.type === 'success' ? 'text-green-400' :
+                              insight.type === 'warning' ? 'text-yellow-400' :
+                              'text-blue-400'
+                            }`}>{insight.message}</p>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    {!loading && filteredBudgetAllocations.length > 0 && filteredBudgetAllocations.map(allocation => (
-                      <div key={allocation.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
-                        <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="flex-shrink-0 w-5 h-5 relative">
-                              <Image 
-                                src="/meta-icon.png" 
-                                alt="Meta" 
-                                width={20} 
-                                height={20}
-                                className="rounded"
-                              />
-                            </div>
-                            <h4 className="text-white font-medium text-sm truncate min-w-0">{allocation.campaignName}</h4>
-                          </div>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge className="flex-shrink-0 text-xs bg-gray-500 text-white border-gray-500">
-                                  {allocation.confidence}%
-                              </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Confidence Score</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                            </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
-                          <div className="min-w-0">
-                            <p className="text-gray-400 truncate">Current: ${allocation.currentBudget}/day</p>
-                            <p className="text-gray-400 truncate">ROAS: {allocation.currentRoas}x</p>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white truncate">Suggested: ${allocation.suggestedBudget}/day</p>
-                            <p className="text-white truncate">Est. ROAS: {allocation.projectedRoas}x</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-2 min-w-0">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs flex-1 min-w-0"
-                            onClick={() => handleExplainBudgetAllocation(allocation.id)}
-                          >
-                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Explain</span>
-                          </Button>
-                          {completedItems.has(`budget-${allocation.id}`) ? (
-                            <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
-                              <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              <div className="text-xs text-gray-400 min-w-0">
-                                <div className="truncate">Completed</div>
-                                <div className="text-xs truncate">{timeUntilRefresh}</div>
-                              </div>
-                            </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                              onClick={() => handleMarkBudgetAsDone(allocation.id)}
-                            >
-                              <span className="truncate">Mark as Done</span>
-                            </Button>
-                          )}
-                          </div>
-                        </div>
-                      ))}
-                    {!loading && filteredBudgetAllocations.length === 0 && (
-                      <div className="text-center py-6 text-gray-400">
-                        <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No budget optimization opportunities</p>
-                        <p className="text-xs text-gray-500 mt-1">Check console for API response data</p>
-                    </div>
-                    )}
-                  </TabsContent>
+                  </>
+                )}
 
-                  <TabsContent value="audience" className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {loading && (
-                      <div className="text-center py-6 text-gray-400">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
-                        <p className="text-sm">Loading audience data...</p>
-                            </div>
-                    )}
-                    {!loading && filteredAudienceExpansions.length > 0 && filteredAudienceExpansions.map(expansion => (
-                      <div key={expansion.id} className="p-3 bg-[#1A1A1A] border border-[#333] rounded-lg min-w-0">
-                        <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="flex-shrink-0 w-5 h-5 relative">
-                              <Image 
-                                src="/meta-icon.png" 
-                                alt="Meta" 
-                                width={20} 
-                                height={20}
-                                className="rounded"
-                              />
-                            </div>
-                            {expansion.type === 'lookalike' && <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            {expansion.type === 'geographic' && <Globe className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            {expansion.type === 'interest' && <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            {expansion.type === 'demographic' && <BarChart3 className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            <h4 className="text-white font-medium text-sm truncate min-w-0">{expansion.title}</h4>
-                            </div>
-                          <Badge className="flex-shrink-0 text-xs bg-gray-500 text-white border-gray-500">{expansion.confidence}%</Badge>
-                        </div>
-                        <p className="text-gray-400 text-xs mb-2 leading-relaxed">{expansion.description}</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
-                          <div className="min-w-0">
-                            <p className="text-gray-400 truncate">Current: {expansion.currentReach.toLocaleString()}</p>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white truncate">+{(expansion.projectedReach - expansion.currentReach).toLocaleString()} reach</p>
-                          </div>
-                        </div>
-                        <p className="text-blue-400 text-xs mt-1 truncate">Est. CPA: ${expansion.estimatedCpa}</p>
-                        <div className="flex gap-2 mt-2 min-w-0">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs flex-1 min-w-0"
-                            onClick={() => handleExplainAudienceExpansion(expansion.id)}
-                          >
-                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Explain</span>
-                          </Button>
-                          {completedItems.has(`audience-${expansion.id}`) ? (
-                            <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
-                              <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              <div className="text-xs text-gray-400 min-w-0">
-                                <div className="truncate">Completed</div>
-                                <div className="text-xs truncate">{timeUntilRefresh}</div>
-                            </div>
-                            </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                              onClick={() => handleMarkAudienceAsDone(expansion.id)}
-                            >
-                              <span className="truncate">Mark as Done</span>
-                            </Button>
-                          )}
-                          </div>
-                        </div>
-                      ))}
-                    {!loading && filteredAudienceExpansions.length === 0 && (
-                      <div className="text-center py-6 text-gray-400">
-                        <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No audience expansion opportunities</p>
-                        <p className="text-xs text-gray-500 mt-1">Check console for API response data</p>
-                    </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                {!loading && !weeklyProgress && (
+                  <div className="text-center py-8 text-gray-400">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No optimization data yet</p>
+                    <p className="text-xs mt-1 opacity-70">Complete recommendations to track progress</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
                 </div>
