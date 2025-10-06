@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
 
     console.log('[Recommendations] Deleting all recommendations for brand:', brandId)
 
-    // First, delete all performance tracking records for this brand's recommendations
+    // 1. Delete performance tracking records
     const { error: perfError } = await supabase
       .from('recommendation_performance')
       .delete()
@@ -77,7 +77,32 @@ export async function DELETE(request: NextRequest) {
       // Continue anyway - performance records may not exist
     }
 
-    // Then delete all recommendations for this brand
+    // 2. Delete all "mark_as_done" usage logs (for progress tracking)
+    const { error: usageLogError } = await supabase
+      .from('ai_usage_logs')
+      .delete()
+      .eq('brand_id', brandId)
+      .eq('endpoint', 'mark_as_done')
+
+    if (usageLogError) {
+      console.error('[Recommendations] Error deleting usage logs:', usageLogError)
+    } else {
+      console.log('[Recommendations] ✅ Deleted mark_as_done usage logs')
+    }
+
+    // 3. Delete optimization action logs
+    const { error: actionLogError } = await supabase
+      .from('optimization_action_log')
+      .delete()
+      .eq('brand_id', brandId)
+
+    if (actionLogError) {
+      console.error('[Recommendations] Error deleting action logs:', actionLogError)
+    } else {
+      console.log('[Recommendations] ✅ Deleted optimization action logs')
+    }
+
+    // 4. Delete all recommendations for this brand
     const { error } = await supabase
       .from('ai_campaign_recommendations')
       .delete()
@@ -88,7 +113,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete recommendations' }, { status: 500 })
     }
 
-    console.log('[Recommendations] Successfully reset recommendations and performance tracking for brand:', brandId)
+    console.log('[Recommendations] Successfully reset all recommendation data for brand:', brandId)
 
     return NextResponse.json({ 
       success: true, 

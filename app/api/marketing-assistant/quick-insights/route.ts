@@ -112,9 +112,19 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
 
   // If no data at all, return empty
   if (performanceData.meta_ads.length === 0 && performanceData.shopify_customers.length === 0) {
-    console.log('[Quick Insights AI] ❌ No data available')
+    console.log('[Quick Insights AI] ❌ No data available - cannot generate insights')
+    console.log('[Quick Insights AI] Meta ads:', performanceData.meta_ads.length)
+    console.log('[Quick Insights AI] Shopify customers:', performanceData.shopify_customers.length)
     return []
   }
+
+  console.log('[Quick Insights AI] 📊 Data summary:')
+  console.log(`  - Meta ads: ${performanceData.meta_ads.length} records`)
+  console.log(`  - Demographics: ${performanceData.demographics.length} records`)
+  console.log(`  - Shopify customers: ${performanceData.shopify_customers.length} customers`)
+  console.log(`  - Total spend: $${performanceData.summary.totalSpend.toFixed(2)}`)
+  console.log(`  - Total impressions: ${performanceData.summary.totalImpressions}`)
+  console.log(`  - Average CTR: ${performanceData.summary.averageCTR.toFixed(2)}%`)
 
   // Prepare data summary for AI (limit data sent to avoid token limits)
   const dataSummary = prepareDataSummaryForAI(performanceData)
@@ -122,7 +132,9 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   console.log('[Quick Insights AI] 🤖 Sending to GPT-4 for analysis...')
 
   // Call OpenAI to generate insights
-  const completion = await openai.chat.completions.create({
+  let completion
+  try {
+    completion = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
       {
@@ -178,6 +190,39 @@ Return exactly 3 insights in this JSON format:
     temperature: 0.7,
     max_tokens: 1000,
   })
+  } catch (aiError: any) {
+    console.error('[Quick Insights AI] ❌ OpenAI API Error:', aiError.message)
+    console.error('[Quick Insights AI] Full error:', aiError)
+    
+    // Return fallback insights if AI fails
+    if (performanceData.summary.totalSpend > 0) {
+      console.log('[Quick Insights AI] Using fallback insights due to AI error')
+      return [
+        {
+          type: 'total_spend',
+          label: 'Total Investment',
+          value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
+          metric: 'last 30 days',
+          icon: '💰'
+        },
+        {
+          type: 'total_reach',
+          label: 'Total Reach',
+          value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
+          metric: 'impressions',
+          icon: '👁️'
+        },
+        {
+          type: 'avg_ctr',
+          label: 'Average CTR',
+          value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
+          metric: 'click-through rate',
+          icon: '📈'
+        }
+      ]
+    }
+    return []
+  }
 
   const aiResponse = completion.choices[0].message.content?.trim() || '[]'
   console.log('[Quick Insights AI] 🤖 GPT Response:', aiResponse)
