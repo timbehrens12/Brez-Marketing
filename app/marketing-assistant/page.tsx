@@ -1497,13 +1497,13 @@ export default function MarketingAssistantPage() {
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
                     <div className="relative w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center border border-emerald-500/30">
                       <Sparkles className="w-5 h-5 text-emerald-400" />
-              </div>
+                        </div>
                 </div>
                         <div>
                     <h3 className="text-base font-bold text-white">Quick Insights</h3>
                     <p className="text-xs text-gray-500">AI-powered analysis</p>
-                </div>
-              </div>
+                        </div>
+                      </div>
               </CardHeader>
               
               <CardContent className="relative p-3">
@@ -1517,19 +1517,19 @@ export default function MarketingAssistantPage() {
                         <div className="relative">
                           {/* Icon, Platform & Metric Badge */}
                           <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
                                 <span className="text-2xl">{insight.icon}</span>
-                              </div>
+                                </div>
                               <div className="w-5 h-5 flex-shrink-0">
-                                <Image 
+                        <Image 
                                   src={insight.platform === 'meta' ? '/meta-icon.png' : insight.platform === 'google' ? 'https://i.imgur.com/TavV4UJ.png' : 'https://i.imgur.com/AXHa9UT.png'} 
                                   alt={insight.platform || 'meta'} 
                                   width={20} 
                                   height={20}
                                   className="rounded"
                                 />
-                              </div>
+                            </div>
                             </div>
                             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold px-2 py-1">
                               {insight.metric}
@@ -1542,14 +1542,14 @@ export default function MarketingAssistantPage() {
                             <div className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{insight.value}</div>
                         </div>
                         </div>
-                      </div>
+                    </div>
                   ))}
-                                </div>
+                    </div>
                               ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
                       <Sparkles className="w-6 h-6 text-emerald-400" />
-                            </div>
+                </div>
                     <p className="text-sm font-medium">No Insights Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see AI insights</p>
                     </div>
