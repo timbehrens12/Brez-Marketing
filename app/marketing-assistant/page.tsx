@@ -953,7 +953,7 @@ export default function MarketingAssistantPage() {
                         </div>
         
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-280px)]">
             
              {/* Left Rail */}
             <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
