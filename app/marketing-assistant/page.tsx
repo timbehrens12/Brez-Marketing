@@ -1526,15 +1526,26 @@ export default function MarketingAssistantPage() {
                         <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-br-full"></div>
                         
                         <div className="relative">
-                          {/* Icon & Metric Badge */}
+                          {/* Icon, Platform & Metric Badge */}
                           <div className="flex items-start justify-between mb-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
-                              <span className="text-2xl">{insight.icon}</span>
-                        </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
+                                <span className="text-2xl">{insight.icon}</span>
+                              </div>
+                              <div className="w-5 h-5 flex-shrink-0">
+                                <Image 
+                                  src={insight.platform === 'meta' ? '/meta-icon.png' : insight.platform === 'google' ? 'https://i.imgur.com/TavV4UJ.png' : 'https://i.imgur.com/AXHa9UT.png'} 
+                                  alt={insight.platform || 'meta'} 
+                                  width={20} 
+                                  height={20}
+                                  className="rounded"
+                                />
+                              </div>
+                            </div>
                             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold px-2 py-1">
                               {insight.metric}
                             </Badge>
-                      </div>
+                          </div>
 
                           {/* Label & Value */}
                         <div>

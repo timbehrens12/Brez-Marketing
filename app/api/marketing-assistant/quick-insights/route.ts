@@ -153,6 +153,7 @@ CRITICAL RULES:
    - value: The key finding (max 35 chars)
    - metric: Supporting metric or context (e.g., "2.5% CTR", "$450 spent")
    - icon: Single emoji that represents the insight
+   - platform: "meta" (all insights are from Meta data for now)
 
 INSIGHT CATEGORIES (choose 3 that are most relevant based on available data):
 - Top performing creative/ad (if ad data available)
@@ -185,7 +186,8 @@ Return exactly 3 insights in this JSON format:
     "label": "Category Name",
     "value": "Key Finding Here",
     "metric": "Supporting Metric",
-    "icon": "📊"
+    "icon": "📊",
+    "platform": "meta"
   }
 ]`
       }
@@ -206,21 +208,24 @@ Return exactly 3 insights in this JSON format:
           label: 'Total Investment',
           value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
           metric: 'last 30 days',
-          icon: '💰'
+          icon: '💰',
+          platform: 'meta'
         },
         {
           type: 'total_reach',
           label: 'Total Reach',
           value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
           metric: 'impressions',
-          icon: '👁️'
+          icon: '👁️',
+          platform: 'meta'
         },
         {
           type: 'avg_ctr',
           label: 'Average CTR',
           value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
           metric: 'click-through rate',
-          icon: '📈'
+          icon: '📈',
+          platform: 'meta'
         }
       ]
     }
