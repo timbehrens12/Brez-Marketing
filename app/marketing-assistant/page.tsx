@@ -955,8 +955,8 @@ export default function MarketingAssistantPage() {
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-280px)]">
             
-             {/* Left Rail */}
-            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
+             {/* Left Rail - Scrollable Column */}
+            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1007,8 +1007,8 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
 
-            {/* Optimization Progress - Premium Radial Gauge */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/90 via-[#111]/90 to-[#0A0A0A]/90 border border-[#FF2A2A]/30 backdrop-blur-sm flex flex-col flex-1 min-h-[491px] max-h-[491px]">
+             {/* Optimization Progress - Premium Radial Gauge */}
+             <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/90 via-[#111]/90 to-[#0A0A0A]/90 border border-[#FF2A2A]/30 backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/5 to-transparent opacity-50 animate-pulse"></div>
               
@@ -1183,11 +1183,11 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-            {/* Middle Column - Main Work Area */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full">
+            {/* Middle Column - Main Work Area - Scrollable */}
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* AI Optimization Feed - Completely Redesigned */}
-            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col h-full overflow-hidden">
+            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               <CardHeader className="border-b border-[#333]/60 pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1212,7 +1212,7 @@ export default function MarketingAssistantPage() {
                           </div>
               </CardHeader>
               
-              <CardContent className="p-3 flex-1 overflow-y-auto min-h-0">
+              <CardContent className="p-3">
                 <div className="space-y-3">
                   {filteredOptimizations.map(card => {
                     const effortLevel = card.priority === 'high' ? 3 : card.priority === 'medium' ? 2 : 1
@@ -1333,11 +1333,11 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-            {/* Right Rail - Insights Column */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
+            {/* Right Rail - Insights Column - Scrollable */}
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* Performance Trends - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1356,7 +1356,7 @@ export default function MarketingAssistantPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="relative p-3 flex-1 overflow-y-auto min-h-0">
+              <CardContent className="relative p-3">
                 {trends ? (
                   <div className="space-y-3">
                     {/* Spend Metric - Redesigned */}
@@ -1437,7 +1437,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1456,7 +1456,7 @@ export default function MarketingAssistantPage() {
                       </div>
               </CardHeader>
               
-              <CardContent className="relative p-3 flex-1 overflow-y-auto min-h-0">
+              <CardContent className="relative p-3">
                 {quickInsights.length > 0 ? (
                   <div className="space-y-3">
                     {quickInsights.map((insight, index) => (
