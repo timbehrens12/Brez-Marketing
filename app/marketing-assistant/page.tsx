@@ -907,7 +907,7 @@ export default function MarketingAssistantPage() {
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-3 space-y-2.5">
                 {/* Mobile Update Button */}
                           <Button 
                   onClick={async () => {
@@ -974,7 +974,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative p-3 flex flex-col">
+              <CardContent className="relative p-2.5 flex flex-col">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
