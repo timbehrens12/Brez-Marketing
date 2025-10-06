@@ -1398,7 +1398,7 @@ export default function MarketingAssistantPage() {
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
+                                <TooltipContent side="right" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
                                   <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
@@ -1436,7 +1436,7 @@ export default function MarketingAssistantPage() {
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
+                                <TooltipContent side="right" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
                                  <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
@@ -1475,7 +1475,7 @@ export default function MarketingAssistantPage() {
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
+                                <TooltipContent side="right" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: {trends.conversions.current.toLocaleString()}</div>
                                   <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
