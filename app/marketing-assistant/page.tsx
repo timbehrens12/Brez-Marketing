@@ -1173,7 +1173,6 @@ export default function MarketingAssistantPage() {
                     </h2>
                     <p className="text-xs text-gray-500">Intelligent recommendations ranked by impact</p>
                           </div>
-                    </div>
                   {filteredOptimizations.length > 0 && (
                     <Badge className="bg-white/10 text-white border-white/20 px-3 py-1">
                       {filteredOptimizations.length} Active
