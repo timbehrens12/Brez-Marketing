@@ -953,7 +953,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative p-2.5 flex flex-col">
+              <CardContent className="relative p-2.5 flex flex-col overflow-y-auto">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
