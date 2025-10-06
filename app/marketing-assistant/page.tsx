@@ -1161,6 +1161,48 @@ export default function MarketingAssistantPage() {
                     </div>
                     )}
 
+                    {/* Weekly Summary Stats */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3 mt-3">
+                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Weekly Summary</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500 mb-1">Actions Applied</div>
+                          <div className="text-lg font-bold text-white">{weeklyProgress.completedCount}</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500 mb-1">Pending</div>
+                          <div className="text-lg font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500 mb-1">Est. ROAS Gain</div>
+                          <div className="text-lg font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500 mb-1">Efficiency</div>
+                          <div className="text-lg font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Timeline */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
+                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">This Week's Focus</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                          <span className="text-xs text-gray-400">Demographic targeting optimized</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                          <span className="text-xs text-gray-400">Budget allocation in progress</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                          <span className="text-xs text-gray-400">Creative refresh pending</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
                       <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-[#FF5A5A]/10 border border-[#FF2A2A]/20 rounded-lg p-2.5">
@@ -1173,10 +1215,12 @@ export default function MarketingAssistantPage() {
                 )}
 
                 {!loading && !weeklyProgress && (
-                  <div className="text-center py-8 text-gray-400">
-                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No optimizations run yet</p>
-                    <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to start tracking</p>
+                  <div className="text-center py-12 text-gray-400 flex-1 flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
+                      <Gauge className="w-8 h-8 text-[#FF2A2A]" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2 text-white">No Optimization Data</h3>
+                    <p className="text-sm text-gray-500">Click "Update Analysis" to generate your first optimization insights and track progress here.</p>
                   </div>
                 )}
               </CardContent>
