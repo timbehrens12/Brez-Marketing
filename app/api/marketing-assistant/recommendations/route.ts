@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { getMondayToMondayRange } from '@/lib/date-utils'
+import { AIUsageService } from '@/lib/services/ai-usage-service'
+
+const aiUsageService = new AIUsageService()
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -196,6 +199,22 @@ export async function GET(request: NextRequest) {
 
     // Generate new recommendations if none exist
     const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
+    
+    // Log AI usage for Marketing Assistant recommendation generation
+    console.log(`[Recommendations API] Logging usage for Marketing Assistant (${recommendations.length} recommendations generated)`)
+    await aiUsageService.logUsage({
+      userId,
+      brandId,
+      endpoint: 'marketing_assistant',
+      metadata: {
+        recommendationCount: recommendations.length,
+        platforms: platforms.join(','),
+        dateRange: `${dateRange.from} to ${dateRange.to}`,
+        campaignCount: allowedCampaignIds.length,
+        timestamp: new Date().toISOString()
+      }
+    })
+    console.log(`[Recommendations API] ✅ Usage logged to ai_usage_logs`)
     
     // Store recommendations in database
     // Set expiration to next Monday (when new recommendations should be generated)
