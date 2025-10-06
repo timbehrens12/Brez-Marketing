@@ -1186,108 +1186,154 @@ export default function MarketingAssistantPage() {
             {/* Middle Column - Main Work Area */}
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0">
             
-            {/* Optimization Feed - Expanded without top KPIs */}
-            <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] flex flex-col flex-1 min-h-[891px] max-h-[891px]">
-              <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg">
+            {/* AI Optimization Feed - Premium Design */}
+            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex flex-col flex-1 min-h-[891px] max-h-[891px]">
+              <CardHeader className="border-b border-[#333]/60 pb-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                  flex items-center justify-center border border-white/10 flex-shrink-0">
-                      <Brain className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                          </div>
-                    <div className="min-w-0 overflow-hidden flex-1">
-                      <h2 className="text-lg lg:text-xl font-bold text-white truncate">AI Optimization Feed</h2>
-                      <p className="text-gray-400 text-xs hidden lg:block truncate">Prioritized recommendations based on performance analysis</p>
+                  <div className="flex items-center gap-3">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                      <div className="relative w-12 h-12 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl flex items-center justify-center border border-[#FF2A2A]/30">
+                        <Sparkles className="w-6 h-6 text-[#FF2A2A]" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        AI Optimization Feed
+                      </h2>
+                      <p className="text-xs text-gray-500">Intelligent recommendations ranked by impact</p>
                     </div>
                   </div>
-                        </div>
-              </CardHeader>
-              <CardContent className="p-6 flex-1 overflow-y-auto min-h-0">
-                <div className="space-y-3">
-                  {filteredOptimizations.map(card => (
-                    <div key={card.id} className="bg-[#1A1A1A] border border-[#333] rounded-lg overflow-hidden">
-                      {/* Header with Priority Badge */}
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#252525] to-[#1A1A1A] border-b border-[#333] gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
-                            <Target className="w-4 h-4 text-gray-400" />
-                          </div>
-                          <div className="min-w-0 overflow-hidden flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="flex-shrink-0 w-4 h-4 relative">
-                                <Image 
-                                  src="/meta-icon.png" 
-                                  alt="Meta" 
-                                  width={16} 
-                                  height={16}
-                                  className="rounded"
-                                />
-                              </div>
-                              <h3 className="text-white font-medium text-sm truncate">{card.title}</h3>
-                            </div>
-                            <p className="text-gray-400 text-xs truncate font-medium">{card.projectedImpact.confidence}% confidence</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            card.priority === 'high' ? 'bg-[#FF2A2A]' :
-                            card.priority === 'medium' ? 'bg-[#FF2A2A]' : 'bg-[#FF2A2A]'
-                          }`}></div>
-                          <span className="text-xs text-[#FF2A2A] uppercase tracking-wide font-medium">{card.priority}</span>
-                        </div>
-                </div>
-
-                      {/* Content */}
-                      <div className="p-3 min-w-0">
-                        <p className="text-gray-300 text-xs mb-3 leading-relaxed">{card.description}</p>
-                        
-                        {/* Metrics Row */}
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          <div className="bg-[#0F0F0F] rounded p-2 text-center">
-                            <p className="text-gray-400 text-xs">Current</p>
-                            <p className="text-white text-sm font-medium">{card.currentValue}</p>
-                          </div>
-                          <div className="flex items-center justify-center">
-                            <ArrowUpRight className="w-4 h-4 text-gray-400" />
-                          </div>
-                          <div className="bg-[#0F0F0F] rounded p-2 text-center">
-                            <p className="text-gray-400 text-xs">Target</p>
-                            <p className="text-white text-sm font-medium">{card.recommendedValue}</p>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                <div className="flex gap-2 min-w-0">
-                  <Button
-                            size="sm" 
-                            variant="outline" 
-                            className="border-[#333] text-gray-300 text-xs flex-1 min-w-0"
-                            onClick={() => handleExplainRecommendation(card.id)}
-                          >
-                            <Brain className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Explain</span>
-                  </Button>
-                  {completedItems.has(`opt-${card.id}`) ? (
-                    <div className="flex-1 min-w-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md flex items-center justify-center gap-1.5">
-                      <CheckCircle className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                      <div className="text-xs text-gray-400 min-w-0">
-                        <div className="truncate">Completed</div>
-                        <div className="text-xs truncate">{timeUntilRefresh}</div>
-                          </div>
-                    </div>
-                  ) : (
-                          <Button
-                            size="sm"
-                              className="bg-white/10 hover:bg-white/20 text-white text-xs flex-1 min-w-0"
-                              onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
-                          >
-                              <span className="truncate">Mark as Done</span>
-                          </Button>
+                  {filteredOptimizations.length > 0 && (
+                    <Badge className="bg-white/10 text-white border-white/20 px-3 py-1">
+                      {filteredOptimizations.length} Active
+                    </Badge>
                   )}
                 </div>
-          </div>
-                        </div>
-                      ))}
+              </CardHeader>
+              
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-4">
+                  {filteredOptimizations.map(card => {
+                    // Calculate effort level (you can enhance this logic based on card data)
+                    const effortLevel = card.priority === 'high' ? 2 : card.priority === 'medium' ? 1 : 1
+                    const confidencePercentage = card.projectedImpact?.confidence || 85
+                    
+                    return (
+                    <div key={card.id} className="group relative">
+                      {/* Hover glow effect */}
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#FF2A2A]/0 to-[#FF2A2A]/50 rounded-xl opacity-0 group-hover:opacity-20 blur transition-all duration-500"></div>
+                      
+                      <Card className="relative bg-gradient-to-br from-[#1a1a1a] via-[#111] to-[#0A0A0A] border border-[#333] group-hover:border-[#FF2A2A]/50 transition-all duration-300">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-3 flex-1">
+                              {/* Confidence Ring */}
+                              <div className="relative w-12 h-12 flex-shrink-0">
+                                <svg className="w-full h-full transform -rotate-90">
+                                  <circle cx="24" cy="24" r="20" stroke="#333" strokeWidth="3" fill="none" />
+                                  <circle 
+                                    cx="24" 
+                                    cy="24" 
+                                    r="20" 
+                                    stroke="#FF2A2A" 
+                                    strokeWidth="3" 
+                                    fill="none" 
+                                    strokeLinecap="round"
+                                    strokeDasharray="125.6"
+                                    strokeDashoffset={125.6 - (125.6 * confidencePercentage) / 100}
+                                    className="transition-all duration-700"
+                                  />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Zap className="w-5 h-5 text-[#FF2A2A]" />
+                                </div>
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs uppercase font-bold">
+                                    {card.priority}
+                                  </Badge>
+                                  <Badge className="bg-white/10 text-white border-white/20 text-xs">
+                                    {confidencePercentage}% Confidence
+                                  </Badge>
+                                </div>
+                                <h3 className="text-base font-bold text-white mb-1">{card.title}</h3>
+                                <p className="text-sm text-gray-400 leading-relaxed">{card.description}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Effort Indicator */}
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center gap-1">
+                                {[1,2,3].map((i) => (
+                                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= effortLevel ? 'bg-[#10b981]' : 'bg-gray-700'}`}></div>
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-500">{effortLevel <= 1 ? 'Low' : effortLevel === 2 ? 'Medium' : 'High'} Effort</span>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-3">
+                          {/* Root Cause */}
+                          <div className="p-3 bg-[#0A0A0A]/50 border border-[#333] rounded-lg">
+                            <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Root Cause</div>
+                            <p className="text-sm text-gray-300">{card.rootCause}</p>
+                          </div>
+                          
+                          {/* Metrics */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-[#0F0F0F] border border-[#333] rounded-lg p-2 text-center">
+                              <p className="text-xs text-gray-500">Current</p>
+                              <p className="text-sm font-bold text-white">{card.currentValue}</p>
+                            </div>
+                            <div className="flex items-center justify-center">
+                              <ArrowUpRight className="w-4 h-4 text-[#FF2A2A]" />
+                            </div>
+                            <div className="bg-[#0F0F0F] border border-[#333] rounded-lg p-2 text-center">
+                              <p className="text-xs text-gray-500">Target</p>
+                              <p className="text-sm font-bold text-white">{card.recommendedValue}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="flex gap-2 pt-2">
+                            {completedItems.has(`opt-${card.id}`) ? (
+                              <div className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                <div className="text-sm text-gray-400">
+                                  <div>Completed</div>
+                                  <div className="text-xs">{timeUntilRefresh}</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleExplainRecommendation(card.id)}
+                                  className="flex-1 border-[#333] hover:border-[#444] text-white text-xs"
+                                >
+                                  <Info className="w-3 h-3 mr-1.5" />
+                                  Explain
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
+                                  className="flex-1 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black font-bold text-xs transition-all"
+                                >
+                                  <CheckCircle className="w-3 h-3 mr-1.5" />
+                                  Mark Done
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )})}
                   
                   {filteredOptimizations.length === 0 && (
                     <div className="text-center py-12 text-gray-400">
