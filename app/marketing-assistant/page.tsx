@@ -1351,7 +1351,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* Performance Trends - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
               
@@ -1477,7 +1477,7 @@ export default function MarketingAssistantPage() {
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#0a0a0a] border-[#555] z-[9999]">
                                   <div className="text-white font-medium">Meta: {trends.conversions.current.toLocaleString()}</div>
-                                  <div className="text-gray-400">100% of total</div>
+                                 <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -1502,7 +1502,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               {/* Subtle animated pulse glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
               
