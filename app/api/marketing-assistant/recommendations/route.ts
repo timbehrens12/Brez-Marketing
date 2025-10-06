@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
+    const forceGenerate = searchParams.get('forceGenerate') === 'true' // Only generate if explicitly requested
     
     // Use Monday-to-Monday weekly window
     const { startDate, endDate } = getMondayToMondayRange()
@@ -196,7 +197,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recommendations })
     }
 
-    // Generate new recommendations if none exist
+    // Only generate new recommendations if explicitly requested (when user clicks "Update Recommendations")
+    if (!forceGenerate) {
+      console.log(`[Recommendations API] No cached recommendations found, but forceGenerate=false, returning empty`)
+      return NextResponse.json({ recommendations: [] })
+    }
+
+    // Generate new recommendations
+    console.log(`[Recommendations API] Generating new recommendations (forceGenerate=true)`)
     const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
     
     // Store recommendations in database

@@ -351,8 +351,9 @@ export default function MarketingAssistantPage() {
     setIsRefreshingData(false)
     
     try {
-      // First load recommendations to check if any exist
-      await loadOptimizationRecommendations()
+      // First load recommendations
+      // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
+      await loadOptimizationRecommendations(forceRefresh)
       
       // After loading recommendations, check if we should load widgets
       // We'll check optimizationCards in the next render cycle, so we need to query directly
@@ -413,13 +414,15 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadOptimizationRecommendations = async () => {
+  const loadOptimizationRecommendations = async (forceGenerate = false) => {
     if (!selectedBrandId) return
 
     try {
       const timestamp = Date.now()
       // Backend always uses last 7 days - pass platform and status filters
-      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+      // Only pass forceGenerate=true when user explicitly clicks "Update Recommendations"
+      const forceParam = forceGenerate ? '&forceGenerate=true' : ''
+      const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}${forceParam}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
