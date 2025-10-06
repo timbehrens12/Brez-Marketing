@@ -759,17 +759,200 @@ export default function MarketingAssistantPage() {
            backgroundAttachment: 'fixed'
          }}>
        
-       {/* Loading overlay for data refreshes */}
-       {isRefreshingData && (
-         <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
-           <div className="bg-[#111] border border-[#333] rounded-lg p-6 text-center">
-             <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-3"></div>
-             <p className="text-white text-sm">Refreshing data...</p>
+      {/* Ambient glow effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-radial from-[#FF2A2A]/10 to-transparent blur-3xl opacity-20 animate-pulse pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-radial from-[#10b981]/10 to-transparent blur-3xl opacity-20 animate-pulse pointer-events-none" style={{ animationDelay: '1s' }}></div>
+      
+      {/* Loading overlay for data refreshes */}
+      {isRefreshingData && (
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-[#111] border border-[#333] rounded-lg p-6 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-3"></div>
+            <p className="text-white text-sm">Refreshing data...</p>
+           </div>
+         </div>
+      )}
+     
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-6 overflow-x-hidden">
+        
+        {/* PREMIUM HEADER SECTION */}
+        <div className="mb-6 space-y-4 max-w-[1920px] mx-auto animate-in fade-in slide-in-from-top-4 duration-700">
+          
+          {/* Main Title Bar with Icon & Quick Actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {/* Premium Icon with Glow */}
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+                <div className="relative w-14 h-14 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center border border-[#FF2A2A]/30 group-hover:border-[#FF2A2A]/50 transition-all duration-300">
+                  <Brain className="w-7 h-7 text-[#FF2A2A] group-hover:scale-110 transition-transform duration-300" />
+                </div>
+              </div>
+              
+              {/* Title */}
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent tracking-tight">
+                  AI Marketing Assistant
+                </h1>
+                <p className="text-sm text-gray-500 font-medium mt-0.5">Intelligent campaign optimization powered by machine learning</p>
+              </div>
+            </div>
+            
+            {/* Quick KPIs - Floating Pills (Hidden on mobile, shown on larger screens) */}
+            <div className="hidden lg:flex items-center gap-3">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="group relative px-4 py-2.5 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-full hover:border-[#FF2A2A]/50 transition-all duration-300 cursor-help">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/0 to-[#FF2A2A]/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-[#FF2A2A]" />
+                        <div>
+                          <div className="text-xs text-gray-500 uppercase tracking-wide">Spend</div>
+                          <div className="text-sm font-bold text-white">${trends?.spend?.current?.toFixed(2) || '0.00'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[#111] border-[#333]">
+                    <p className="text-xs text-gray-400">Total ad spend (last 7 days)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="group relative px-4 py-2.5 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-full hover:border-[#10b981]/50 transition-all duration-300 cursor-help">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#10b981]/0 to-[#10b981]/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-[#10b981]" />
+                        <div>
+                          <div className="text-xs text-gray-500 uppercase tracking-wide">ROAS</div>
+                          <div className="text-sm font-bold text-white">{trends?.roas?.current?.toFixed(2) || '0.00'}x</div>
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[#111] border-[#333]">
+                    <p className="text-xs text-gray-400">Return on ad spend</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {/* Update Button */}
+              <Button 
+                onClick={async () => {
+                  setIsRefreshingData(true)
+                  
+                  // Clear ALL localStorage for this brand
+                  if (selectedBrandId) {
+                    localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+                    localStorage.removeItem(`completedItems_${selectedBrandId}`)
+                  }
+                  
+                  // Delete AI recommendations from database
+                  await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&secret=reset-ai-recs`, {
+                    method: 'DELETE'
+                  })
+                  
+                  // Clear local state including alerts AND save to localStorage
+                  setRecommendationsViewed(true) // Mark as viewed so countdown shows
+                  if (selectedBrandId) {
+                    localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                    // Save the refresh date (this Monday) so we know when to enable refresh again
+                    const { thisMonday } = getMondayToMondayDates()
+                    localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
+                  }
+                  setCompletedItems(new Set())
+                  
+                  // Reload ALL widgets with FORCE REFRESH
+                  await loadDashboardData(true)
+                  
+                  setIsRefreshingData(false)
+                }}
+                disabled={isRefreshingData || recommendationsViewed}
+                className="relative overflow-hidden bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] text-black font-bold px-6 py-5 rounded-xl hover:shadow-lg hover:shadow-[#FF2A2A]/50 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
+              </Button>
             </div>
           </div>
-       )}
-      
-       <div className="w-full px-2 sm:px-4 lg:px-6 py-4 overflow-x-hidden">
+          
+          {/* Performance Window & Platform Filters Bar */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            {/* Performance Window */}
+            <div className="flex-1 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl p-4 group hover:border-[#333]/60 transition-all duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-lg flex items-center justify-center border border-[#FF2A2A]/30">
+                      <Calendar className="w-4 h-4 text-[#FF2A2A]" />
+                    </div>
+                    <span className="text-sm text-gray-400 font-medium">Performance Window</span>
+                  </div>
+                  <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs font-semibold">Mon-Mon</Badge>
+                  <span className="text-white font-bold text-sm">{dateRangeText || 'Loading...'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  {nextUpdateText || 'Loading...'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Platform Filter Chips */}
+            <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 group hover:border-[#333]/60 transition-all duration-300">
+              <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setSelectedPlatforms(['meta', 'google', 'tiktok'])}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    selectedPlatforms.length === 3
+                      ? 'bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30'
+                      : 'bg-white/5 text-gray-400 border border-[#333] hover:bg-white/10'
+                  }`}
+                >
+                  All Platforms
+                </button>
+                <button
+                  onClick={() => setSelectedPlatforms(['meta'])}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    selectedPlatforms.length === 1 && selectedPlatforms[0] === 'meta'
+                      ? 'bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30'
+                      : 'bg-white/5 text-gray-400 border border-[#333] hover:bg-white/10'
+                  }`}
+                >
+                  Meta
+                </button>
+                <button
+                  onClick={() => setSelectedPlatforms(['google'])}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    selectedPlatforms.length === 1 && selectedPlatforms[0] === 'google'
+                      ? 'bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30'
+                      : 'bg-white/5 text-gray-400 border border-[#333] hover:bg-white/10'
+                  }`}
+                >
+                  Google
+                </button>
+                <button
+                  onClick={() => setSelectedPlatforms(['tiktok'])}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    selectedPlatforms.length === 1 && selectedPlatforms[0] === 'tiktok'
+                      ? 'bg-[#FF2A2A]/20 text-[#FF2A2A] border border-[#FF2A2A]/30'
+                      : 'bg-white/5 text-gray-400 border border-[#333] hover:bg-white/10'
+                  }`}
+                >
+                  TikTok
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* MAIN GRID LAYOUT */}
          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto">
            
             {/* Left Rail */}
@@ -810,7 +993,7 @@ export default function MarketingAssistantPage() {
                     How It Works
                   </Button>
                   
-                  {/* Update Recommendations Button - Shows countdown after first click */}
+                  {/* Mobile Update Button (shown on mobile, hidden on desktop where it's in header) */}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -843,10 +1026,11 @@ export default function MarketingAssistantPage() {
                       
                       setIsRefreshingData(false)
                     }}
-                    className="w-full text-xs h-7 bg-[#FF2A2A] hover:bg-[#FF2A2A]/80 text-black border-[#FF2A2A] font-medium"
+                    className="w-full text-xs h-8 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black border-0 font-bold lg:hidden transition-all duration-300"
                     disabled={isRefreshingData || recommendationsViewed}
                   >
-                    {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next update: ${timeUntilRefresh}` : 'Update Recommendations'}
+                    <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
                   </Button>
       </div>
 
