@@ -72,10 +72,12 @@
     console.log('   3. Click "Update Recommendations" to generate first analysis')
     console.log('   4. All widgets will populate with data')
     
-    // Ask if user wants to refresh now
-    if (confirm('Reset complete! Refresh the page now?')) {
+    console.log('\n🔄 Refreshing page to apply changes...')
+    
+    // Force refresh after a short delay to ensure API calls complete
+    setTimeout(() => {
       window.location.reload()
-    }
+    }, 1000)
     
   } catch (error) {
     console.error('❌ Error during reset:', error)

@@ -957,8 +957,8 @@ export default function MarketingAssistantPage() {
                 {!loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No optimization data yet</p>
-                    <p className="text-xs mt-1 opacity-70">Complete recommendations to track progress</p>
+                    <p className="text-sm">No optimizations run yet</p>
+                    <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to start tracking</p>
                   </div>
                 )}
               </CardContent>
@@ -1073,9 +1073,9 @@ export default function MarketingAssistantPage() {
                   
                   {filteredOptimizations.length === 0 && (
                     <div className="text-center py-12 text-gray-400">
-                      <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No optimization opportunities detected</h3>
-                      <p className="text-sm">Your campaigns are performing well. Check back later for new recommendations.</p>
+                      <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No AI analysis run yet</h3>
+                      <p className="text-sm">Click "Update Recommendations" above to generate your first AI-powered optimization insights.</p>
                     </div>
                   )}
                 </div>
@@ -1277,36 +1277,10 @@ export default function MarketingAssistantPage() {
                     </>
                   )}
                   {!trends && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">Spend</p>
-                          <p className="text-white font-semibold">${kpiMetrics?.spend.toLocaleString() || 0}</p>
-                </div>
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <span className="text-sm">—</span>
-              </div>
-            </div>
-
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">Revenue</p>
-                          <p className="text-white font-semibold">${kpiMetrics?.revenue.toLocaleString() || 0}</p>
-                        </div>
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <span className="text-sm">—</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded-lg">
-                        <div>
-                          <p className="text-gray-400 text-sm">ROAS</p>
-                          <p className="text-white font-semibold">{kpiMetrics?.roas.toFixed(2) || 0}x</p>
-                        </div>
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <span className="text-sm">—</span>
-                        </div>
-                      </div>
+                    <div className="text-center py-8 text-gray-400">
+                      <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No analysis run yet</p>
+                      <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to see trends</p>
                     </div>
                   )}
                 </div>
@@ -1354,8 +1328,8 @@ export default function MarketingAssistantPage() {
                   {quickInsights.length === 0 && (
                     <div className="text-center py-8 text-gray-400">
                       <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No insights available yet</p>
-                      <p className="text-xs mt-1 opacity-70">Run some campaigns to see insights</p>
+                      <p className="text-sm">No AI analysis run yet</p>
+                      <p className="text-xs mt-1 opacity-70">Click "Update Recommendations" to generate insights</p>
                     </div>
                   )}
                 </div>
