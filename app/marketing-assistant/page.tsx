@@ -1117,7 +1117,47 @@ export default function MarketingAssistantPage() {
                     </div>
                     )}
 
-                    {/* Compact Stats - Removed to save space */}
+                    {/* Weekly Summary Stats - Compact */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5 mt-2">
+                      <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">Weekly Summary</h4>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
+                          <div className="text-[10px] text-gray-500 mb-0.5">Applied</div>
+                          <div className="text-sm font-bold text-white">{weeklyProgress.completedCount}</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
+                          <div className="text-[10px] text-gray-500 mb-0.5">Pending</div>
+                          <div className="text-sm font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
+                          <div className="text-[10px] text-gray-500 mb-0.5">ROAS Gain</div>
+                          <div className="text-sm font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
+                        </div>
+                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
+                          <div className="text-[10px] text-gray-500 mb-0.5">Efficiency</div>
+                          <div className="text-sm font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Timeline - Compact */}
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
+                      <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">This Week's Focus</h4>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                          <span className="text-[10px] text-gray-400">Demographic targeting optimized</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+                          <span className="text-[10px] text-gray-400">Budget allocation in progress</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+                          <span className="text-[10px] text-gray-400">Creative refresh pending</span>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
