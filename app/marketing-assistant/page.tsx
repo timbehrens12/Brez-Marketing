@@ -1066,10 +1066,10 @@ export default function MarketingAssistantPage() {
                       </div>
                     )}
 
-                    {/* Top Applied Actions - Only show if there are completed items */}
+                    {/* Recently Completed Actions - Only show if there are completed items */}
                     {weeklyProgress.completedCount > 0 && weeklyProgress.topApplied && weeklyProgress.topApplied.length > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
-                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Top Applied</h4>
+                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Recently Completed</h4>
                         <div className="space-y-0.5">
                           {weeklyProgress.topApplied.slice(0, 2).map((action: any, index: number) => (
                             <div key={index} className="flex items-center gap-1.5">
