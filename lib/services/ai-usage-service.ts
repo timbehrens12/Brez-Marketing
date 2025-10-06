@@ -5,7 +5,8 @@ export type AIFeatureType =
   | 'campaign_recommendations' 
   | 'health_report' 
   | 'ai_consultant_chat'
-  | 'marketing_analysis'
+  | 'marketing_analysis'        // Marketing Assistant Recommendations
+  | 'brand_report'               // Brand Report Generation
   | 'creative_analysis'
   | 'brand_analysis'           // Brand Health Synopsis
   | 'task_generation'           // Task Generator
@@ -44,7 +45,10 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 15 // 15 chat messages per day
   },
   marketing_analysis: {
-    dailyLimit: 5 // 5 marketing analyses per day
+    dailyLimit: 1 // 1 weekly marketing assistant analysis (tracked for analytics, not enforced)
+  },
+  brand_report: {
+    dailyLimit: 2 // 1 daily + 1 monthly report per month (tracked for analytics, not enforced)
   },
   creative_analysis: {
     dailyLimit: 10 // 10 creative analyses per day

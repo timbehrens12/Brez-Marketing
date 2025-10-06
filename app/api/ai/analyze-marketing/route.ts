@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     
     console.log('Received data for AI analysis:', JSON.stringify(data, null, 2))
 
-    // Record AI usage
+    // Record AI usage for brand report generation
     if (data.brand?.id) {
-      await aiUsageService.recordUsage(data.brand.id, userId, 'marketing_analysis', {
+      await aiUsageService.recordUsage(data.brand.id, userId, 'brand_report', {
         brandName: data.brand.name,
         reportType: data.formatting_instructions?.report_type,
         dateRange: data.date_range,
