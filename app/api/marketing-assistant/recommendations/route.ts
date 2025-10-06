@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { getMondayToMondayRange } from '@/lib/date-utils'
-import { AIUsageService } from '@/lib/services/ai-usage-service'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -198,6 +198,20 @@ export async function GET(request: NextRequest) {
     // Generate new recommendations if none exist
     const recommendations = await generateRecommendations(brandId, dateRange, platforms, status, allowedCampaignIds)
     
+    // Track usage in ai_usage_logs for centralized tracking
+    await aiUsageService.logUsage({
+      userId,
+      brandId: brandId,
+      endpoint: 'marketing_assistant_recommendations',
+      metadata: {
+        recommendationsCount: recommendations.length,
+        platforms: platforms,
+        dateRange: dateRange,
+        timestamp: new Date().toISOString()
+      }
+    })
+    console.log(`[Recommendations API] ✅ Logged usage to ai_usage_logs`)
+    
     // Store recommendations in database
     // Set expiration to next Monday (when new recommendations should be generated)
     const nextMonday = new Date(endDate)
@@ -296,28 +310,6 @@ export async function GET(request: NextRequest) {
         } catch (error) {
           console.error(`[Recommendations API] Error capturing baseline for ${rec.id}:`, error)
         }
-      }
-
-      // Log AI usage for recommendation generation (weekly refresh)
-      try {
-        const aiUsageService = new AIUsageService()
-        await aiUsageService.logUsage({
-          userId,
-          brandId,
-          endpoint: 'marketing_assistant_recommendations',
-          metadata: {
-            recommendationsGenerated: recommendationsWithDbIds.length,
-            dateRange,
-            platforms,
-            campaignCount: allowedCampaignIds.length,
-            recommendationTypes: [...new Set(recommendationsWithDbIds.map(r => r.type))],
-            timestamp: new Date().toISOString()
-          }
-        })
-        console.log(`[Recommendations API] ✅ Logged AI usage for ${recommendationsWithDbIds.length} recommendations`)
-      } catch (error) {
-        console.error(`[Recommendations API] ⚠️ Failed to log AI usage:`, error)
-        // Don't fail the request if usage logging fails
       }
 
       console.log(`[Recommendations API] Returning ${recommendationsWithDbIds.length} recommendations with database IDs`)
@@ -1079,28 +1071,20 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
       .eq('id', recommendation.id)
   }
 
-  // Log AI usage for marking action as done
-  try {
-    const aiUsageService = new AIUsageService()
-    await aiUsageService.logUsage({
-      userId,
-      brandId,
-      endpoint: 'marketing_assistant_action_completed',
-      metadata: {
-        actionId,
-        actionDescription,
-        campaignId,
-        recommendationId: recommendation?.id || null,
-        actionType: logEntry.action_type,
-        completedManually: true,
-        timestamp: new Date().toISOString()
-      }
-    })
-    console.log(`[Mark As Done] ✅ Logged AI usage for action completion`)
-  } catch (error) {
-    console.error(`[Mark As Done] ⚠️ Failed to log AI usage:`, error)
-    // Don't fail the request if usage logging fails
-  }
+  // Track "mark as done" action in ai_usage_logs for analytics
+  await aiUsageService.logUsage({
+    userId,
+    brandId: brandId,
+    endpoint: 'marketing_assistant_mark_done',
+    metadata: {
+      campaignId: campaignId,
+      actionId: actionId,
+      actionDescription: actionDescription,
+      recommendationId: recommendation?.id || null,
+      timestamp: new Date().toISOString()
+    }
+  })
+  console.log(`[Recommendations API] ✅ Logged "mark as done" to ai_usage_logs`)
 
   return {
     success: true,
