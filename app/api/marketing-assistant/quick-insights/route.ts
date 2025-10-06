@@ -227,8 +227,14 @@ Return exactly 3 insights in this JSON format:
     return []
   }
 
-  const aiResponse = completion.choices[0].message.content?.trim() || '[]'
+  let aiResponse = completion.choices[0].message.content?.trim() || '[]'
   console.log('[Quick Insights AI] 🤖 GPT Response:', aiResponse)
+
+  // Strip markdown code blocks if present (```json ... ```)
+  if (aiResponse.startsWith('```')) {
+    aiResponse = aiResponse.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
+    console.log('[Quick Insights AI] 📝 Stripped markdown formatting')
+  }
 
   try {
     // Parse AI response
