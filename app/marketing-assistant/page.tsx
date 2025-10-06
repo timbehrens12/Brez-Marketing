@@ -1417,6 +1417,7 @@ export default function MarketingAssistantPage() {
         </div>
 
                       {/* Conversions Metric Card */}
+                     {trends.conversions && (
                      <div className="group relative p-3 bg-gradient-to-br from-[#0f0f0f]/50 to-[#0A0A0A]/50 border border-[#333]/50 rounded-lg hover:border-[#444]/80 transition-all duration-300">
                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
                        
@@ -1424,18 +1425,19 @@ export default function MarketingAssistantPage() {
                          <div className="flex items-center gap-3 flex-1">
                            <div className="w-9 h-9 bg-gradient-to-br from-purple-500/20 to-pink-500/10 rounded-lg flex items-center justify-center border border-purple-500/30">
                              <ShoppingCart className="w-4 h-4 text-purple-400" />
-              </div>
-                         <div className="min-w-0">
+                           </div>
+                           <div className="min-w-0">
                              <p className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Conversions</p>
                              <p className="text-lg font-bold text-white">{trends.conversions.current.toLocaleString()}</p>
-                </div>
-                </div>
+                           </div>
+                         </div>
                          <div className={`flex flex-col items-end gap-1 ${trends.conversions.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
                            {trends.conversions.direction === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                            <span className="text-sm font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
-              </div>
-                </div>
-                </div>
+                         </div>
+                       </div>
+                     </div>
+                     )}
                     </>
                   )}
                   {!trends && (
