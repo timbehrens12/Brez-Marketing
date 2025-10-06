@@ -902,8 +902,8 @@ export default function MarketingAssistantPage() {
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
             
-             {/* Left Rail - Scrollable Column */}
-            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
+             {/* Left Rail - Fixed Height Column (No Scroll) */}
+            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-hidden">
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
