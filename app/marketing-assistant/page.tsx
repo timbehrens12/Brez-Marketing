@@ -953,7 +953,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative p-2.5 flex flex-col overflow-y-auto">
+              <CardContent className="relative p-2.5 flex flex-col">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1068,16 +1068,16 @@ export default function MarketingAssistantPage() {
 
                     {/* Top Applied Actions - Only show if there are completed items */}
                     {weeklyProgress.completedCount > 0 && weeklyProgress.topApplied && weeklyProgress.topApplied.length > 0 && (
-                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
-                        <h4 className="text-white font-medium text-xs mb-2 uppercase tracking-wide">Top Applied</h4>
-                        <div className="space-y-1">
+                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
+                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Top Applied</h4>
+                        <div className="space-y-0.5">
                           {weeklyProgress.topApplied.slice(0, 2).map((action: any, index: number) => (
                             <div key={index} className="flex items-center gap-1.5">
                               <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-white text-xs truncate">{action.title}</p>
+                                <p className="text-white text-[10px] truncate">{action.title}</p>
                           </div>
-                              <span className="text-green-400 text-xs font-medium flex-shrink-0">{action.impact}</span>
+                              <span className="text-green-400 text-[10px] font-medium flex-shrink-0">{action.impact}</span>
                         </div>
                       ))}
                         </div>
@@ -1085,7 +1085,7 @@ export default function MarketingAssistantPage() {
                     )}
 
                     {/* Weekly Summary Stats - Compact */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5 mt-2">
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mt-2">
                       <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">Weekly Summary</h4>
                       <div className="grid grid-cols-2 gap-1.5">
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
@@ -1108,7 +1108,7 @@ export default function MarketingAssistantPage() {
                           </div>
 
                     {/* Action Timeline - Compact */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                       <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">This Week's Focus</h4>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
