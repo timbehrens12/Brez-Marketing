@@ -420,15 +420,21 @@ export default function MarketingAssistantPage() {
       const timestamp = Date.now()
       // Backend always uses last 7 days - pass platform and status filters
       const response = await fetch(`/api/marketing-assistant/recommendations?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       })
       
       if (response.ok) {
         const data = await response.json()
-        setOptimizationCards(data.recommendations)
+        setOptimizationCards(data.recommendations || [])
       } else {
-                  }
-                } catch (error) {
+        setOptimizationCards([])
+      }
+    } catch (error) {
+      setOptimizationCards([])
     }
   }
 

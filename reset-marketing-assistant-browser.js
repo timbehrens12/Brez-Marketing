@@ -56,7 +56,11 @@
     // 2. Delete AI recommendations via API
     console.log('\n📋 Deleting AI recommendations from database...')
     const deleteResponse = await fetch(`/api/marketing-assistant/recommendations?brandId=${brandId}&secret=reset-ai-recs`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     })
     
     if (deleteResponse.ok) {
@@ -67,17 +71,17 @@
     
     console.log('\n✨ Reset complete!')
     console.log('\n📝 Next steps:')
-    console.log('   1. Refresh this page (F5)')
+    console.log('   1. Refreshing page with cache cleared...')
     console.log('   2. All widgets should be empty')
     console.log('   3. Click "Update Recommendations" to generate first analysis')
     console.log('   4. All widgets will populate with data')
     
-    console.log('\n🔄 Refreshing page to apply changes...')
+    console.log('\n🔄 Hard refreshing page to clear cache and apply changes...')
     
-    // Force refresh after a short delay to ensure API calls complete
+    // Wait for DELETE to complete, then force hard refresh (bypasses cache)
     setTimeout(() => {
-      window.location.reload()
-    }, 1000)
+      window.location.reload(true)
+    }, 1500)
     
   } catch (error) {
     console.error('❌ Error during reset:', error)
