@@ -879,7 +879,7 @@ export default function MarketingAssistantPage() {
                 {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
                   </Button>
       </div>
-                </div>
+      </div>
 
           {/* Performance Window & Platform Filters Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
@@ -901,8 +901,8 @@ export default function MarketingAssistantPage() {
                   {nextUpdateText || 'Loading...'}
                       </div>
                             </div>
-                          </div>
-            
+                </div>
+
             {/* Platform Filter Chips */}
             <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 group hover:border-[#333]/60 transition-all duration-300">
               <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -953,7 +953,7 @@ export default function MarketingAssistantPage() {
                         </div>
         
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-280px)]">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-220px)]">
             
              {/* Left Rail - Scrollable Column */}
             <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
@@ -1018,13 +1018,13 @@ export default function MarketingAssistantPage() {
                     <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A] to-[#FF5A5A] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
                     <div className="relative w-10 h-10 bg-gradient-to-br from-[#FF2A2A]/30 to-[#FF5A5A]/20 rounded-xl flex items-center justify-center border border-[#FF2A2A]/40">
                       <Gauge className="w-5 h-5 text-[#FF2A2A]" />
-                          </div>
+                </div>
                         </div>
                   <div>
                     <h3 className="text-base font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Optimization Progress</h3>
                     <p className="text-xs text-gray-500">Live implementation tracking</p>
-                    </div>
-                </div>
+        </div>
+      </div>
               </CardHeader>
               
               <CardContent className="relative p-4 flex-1 min-h-0 flex flex-col">
@@ -1032,7 +1032,7 @@ export default function MarketingAssistantPage() {
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
                     <p className="text-sm">Loading progress...</p>
-                            </div>
+                      </div>
                     )}
                 
                 {weeklyProgress && (
@@ -1087,8 +1087,8 @@ export default function MarketingAssistantPage() {
                           <div className="text-xs text-gray-500 uppercase tracking-wider">Complete</div>
                           <div className="text-sm text-white font-bold mt-2">
                             {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations} Applied
+                          </div>
                             </div>
-                        </div>
                         
                         {/* Outer glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/20 to-transparent rounded-full blur-2xl -z-10"></div>
@@ -1114,7 +1114,7 @@ export default function MarketingAssistantPage() {
                         </div>
                           </button>
                         )}
-                            </div>
+                              </div>
                             </div>
 
                     {/* Category Breakdown */}
@@ -1168,21 +1168,21 @@ export default function MarketingAssistantPage() {
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
                           <div className="text-xs text-gray-500 mb-1">Actions Applied</div>
                           <div className="text-lg font-bold text-white">{weeklyProgress.completedCount}</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
                           <div className="text-xs text-gray-500 mb-1">Pending</div>
                           <div className="text-lg font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
                           <div className="text-xs text-gray-500 mb-1">Est. ROAS Gain</div>
                           <div className="text-lg font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
                           <div className="text-xs text-gray-500 mb-1">Efficiency</div>
                           <div className="text-lg font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
                         </div>
-                      </div>
-                    </div>
+                          </div>
+                          </div>
 
                     {/* Action Timeline */}
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
@@ -1195,36 +1195,13 @@ export default function MarketingAssistantPage() {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
                           <span className="text-xs text-gray-400">Budget allocation in progress</span>
-                        </div>
+                            </div>
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-gray-600"></div>
                           <span className="text-xs text-gray-400">Creative refresh pending</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-                          <span className="text-xs text-gray-400">Ad schedule optimization queued</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Performance Impact */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
-                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Performance Impact</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">CPM Reduction</span>
-                          <span className="text-xs font-bold text-green-400">-12%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">CTR Improvement</span>
-                          <span className="text-xs font-bold text-green-400">+8%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">Conv. Rate</span>
-                          <span className="text-xs font-bold text-green-400">+15%</span>
-                        </div>
-                      </div>
-                    </div>
 
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
@@ -1232,7 +1209,7 @@ export default function MarketingAssistantPage() {
                         <p className="text-[#FF5A5A] text-xs">
                           Next up: apply {weeklyProgress.totalRecommendations - weeklyProgress.completedCount} more to unlock <span className="font-bold">+{Math.round((weeklyProgress.totalRecommendations - weeklyProgress.completedCount) * 5)}%</span> ROAS
                         </p>
-                      </div>
+                    </div>
                     )}
                   </>
                 )}
@@ -1276,7 +1253,7 @@ export default function MarketingAssistantPage() {
                       {filteredOptimizations.length} Active
                     </Badge>
                   )}
-                          </div>
+                        </div>
               </CardHeader>
               
               <CardContent className="p-3">
@@ -1315,8 +1292,8 @@ export default function MarketingAssistantPage() {
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
                               {confidencePercentage}
+                              </div>
                             </div>
-                          </div>
                           
                           <div>
                             <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs font-bold mb-1">
@@ -1327,16 +1304,16 @@ export default function MarketingAssistantPage() {
                                 <div key={i} className={`w-1 h-1 rounded-full ${i <= effortLevel ? 'bg-amber-400' : 'bg-gray-700'}`}></div>
                               ))}
                               <span className="text-xs text-gray-500 ml-1">{effortLevel === 1 ? 'Quick' : effortLevel === 2 ? 'Moderate' : 'Complex'}</span>
-                            </div>
                           </div>
+                        </div>
                         </div>
                         
                         <div className="text-right">
                           <div className="text-xs text-gray-500">Est. Impact</div>
                           <div className="text-lg font-black text-[#10b981]">+{card.projectedImpact?.roasImprovement || 0}%</div>
                         </div>
-                      </div>
-                      
+                </div>
+
                       {/* Title & Description */}
                       <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
                       <p className="text-sm text-gray-400 leading-relaxed mb-3">{card.description}</p>
@@ -1346,15 +1323,15 @@ export default function MarketingAssistantPage() {
                         <div className="flex-1 text-center">
                           <div className="text-xs text-gray-500 mb-0.5">Current</div>
                           <div className="text-sm font-bold text-white">{card.currentValue}</div>
-                        </div>
+                          </div>
                         <ArrowUpRight className="w-4 h-4 text-[#FF2A2A] flex-shrink-0" />
                         <div className="flex-1 text-center">
                           <div className="text-xs text-gray-500 mb-0.5">Target</div>
                           <div className="text-sm font-bold text-[#10b981]">{card.recommendedValue}</div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Actions */}
+
+                        {/* Actions */}
                       <div className="flex gap-2">
                         {completedItems.has(`opt-${card.id}`) ? (
                           <div className="flex-1 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center gap-2">
@@ -1363,27 +1340,27 @@ export default function MarketingAssistantPage() {
                           </div>
                         ) : (
                           <>
-                            <Button
-                              size="sm"
+                  <Button
+                            size="sm" 
                               variant="ghost"
-                              onClick={() => handleExplainRecommendation(card.id)}
+                            onClick={() => handleExplainRecommendation(card.id)}
                               className="flex-1 h-9 text-xs hover:bg-white/5"
-                            >
+                          >
                               <Info className="w-3.5 h-3.5 mr-1.5" />
                               Details
-                            </Button>
-                            <Button
-                              size="sm"
+                  </Button>
+                          <Button
+                            size="sm"
                               onClick={() => handleMarkAsDone(card.id, card.actions[0]?.id)}
                               className="flex-1 h-9 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/30 text-white font-bold text-xs"
-                            >
+                          >
                               <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
                               Apply
-                            </Button>
+                          </Button>
                           </>
-                        )}
-                      </div>
-                    </div>
+                  )}
+                </div>
+          </div>
                   )})}
                   
                   {filteredOptimizations.length === 0 && (
@@ -1434,18 +1411,18 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg flex items-center justify-center">
                               <DollarSign className="w-4 h-4 text-blue-400" />
-                            </div>
+                               </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
-                          </div>
+                               </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
                             {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
-                          </div>
-                        </div>
+                             </div>
+                               </div>
                         <div className="text-2xl font-black text-white">${trends.spend.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs ${trends.spend.previous.toLocaleString()} last period</div>
-                      </div>
-                    </div>
+                               </div>
+                             </div>
 
                     {/* ROAS Metric - Redesigned */}
                     <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-green-500/30 transition-all">
@@ -1455,18 +1432,18 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-lg flex items-center justify-center">
                               <Activity className="w-4 h-4 text-green-400" />
-                            </div>
+                               </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                          </div>
+                               </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                          </div>
-                        </div>
+                             </div>
+                         </div>
                         <div className="text-2xl font-black text-white">{trends.roas.current.toFixed(2)}x</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.roas.previous.toFixed(2)}x last period</div>
-                      </div>
-                    </div>
+          </div>
+        </div>
 
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
@@ -1477,48 +1454,29 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-600/10 rounded-lg flex items-center justify-center">
                               <ShoppingCart className="w-4 h-4 text-purple-400" />
-                            </div>
+                               </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
-                          </div>
+                               </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
-                          </div>
-                        </div>
+                             </div>
+                               </div>
                         <div className="text-2xl font-black text-white">{trends.conversions.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.conversions.previous.toLocaleString()} last period</div>
-                      </div>
-                    </div>
-                    )}
-
-                    {/* Weekly Insights */}
-                    <div className="bg-gradient-to-r from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl p-3">
-                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Weekly Insights</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Avg CPC</span>
-                          <span className="text-white font-medium">$0.42</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Impressions</span>
-                          <span className="text-white font-medium">124.5K</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Clicks</span>
-                          <span className="text-white font-medium">3,842</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                               </div>
+                             </div>
+                           )}
+                               </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
                       <BarChart3 className="w-6 h-6 text-blue-400" />
-                    </div>
+                               </div>
                     <p className="text-sm font-medium">No Data Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see trends</p>
-                  </div>
-                )}
+                             </div>
+                           )}
               </CardContent>
             </Card>
 
@@ -1533,13 +1491,13 @@ export default function MarketingAssistantPage() {
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
                     <div className="relative w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center border border-emerald-500/30">
                       <Sparkles className="w-5 h-5 text-emerald-400" />
-                        </div>
-                  </div>
-                  <div>
+                </div>
+              </div>
+                        <div>
                     <h3 className="text-base font-bold text-white">Quick Insights</h3>
                     <p className="text-xs text-gray-500">AI-powered analysis</p>
-                        </div>
-                      </div>
+                </div>
+              </div>
               </CardHeader>
               
               <CardContent className="relative p-3">
@@ -1555,30 +1513,30 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-start justify-between mb-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
                               <span className="text-2xl">{insight.icon}</span>
-                            </div>
+                        </div>
                             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold px-2 py-1">
                               {insight.metric}
                             </Badge>
-                          </div>
-                          
+                      </div>
+
                           {/* Label & Value */}
-                          <div>
+                        <div>
                             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{insight.label}</div>
                             <div className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{insight.value}</div>
-                          </div>
+                        </div>
                         </div>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                                </div>
+                              ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
                       <Sparkles className="w-6 h-6 text-emerald-400" />
-                    </div>
+                            </div>
                     <p className="text-sm font-medium">No Insights Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see AI insights</p>
-                  </div>
-                )}
+                    </div>
+                  )}
               </CardContent>
             </Card>
 
