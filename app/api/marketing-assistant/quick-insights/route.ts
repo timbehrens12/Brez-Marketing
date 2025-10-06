@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
 
     const insights = await generateQuickInsights(brandId, fromDate, toDate, platforms)
     
+    console.log(`[Quick Insights] Generated ${insights.length} insights for brand ${brandId} from ${fromDate} to ${toDate}`)
+    
     return NextResponse.json({ insights })
 
   } catch (error) {
@@ -50,6 +52,8 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
+    
+    console.log(`[Quick Insights] Found ${adStats?.length || 0} ad stats records`)
 
     // Aggregate by ad
     const adPerformance = new Map()
@@ -76,13 +80,33 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
     let highestROAS = 0
     adPerformance.forEach(ad => {
       const roas = ad.spend > 0 ? ad.revenue / ad.spend : 0
-      if (roas > highestROAS && ad.spend > 10) { // At least $10 spend
+      if (roas > highestROAS && ad.spend > 1) { // At least $1 spend
         highestROAS = roas
         topCreative = ad
       }
     })
 
-    if (topCreative) {
+    // If no ad with ROAS, find ad with most clicks (engagement)
+    if (!topCreative) {
+      let mostClicks = 0
+      adPerformance.forEach(ad => {
+        if (ad.clicks > mostClicks && ad.spend > 0.5) {
+          mostClicks = ad.clicks
+          topCreative = ad
+        }
+      })
+      if (topCreative) {
+        const ctr = topCreative.impressions > 0 ? (topCreative.clicks / topCreative.impressions) * 100 : 0
+        insights.push({
+          type: 'top_creative',
+          label: 'Top Creative',
+          value: topCreative.ad_name.length > 40 ? topCreative.ad_name.substring(0, 40) + '...' : topCreative.ad_name,
+          metric: `${ctr.toFixed(2)}% CTR`,
+          icon: '🎨',
+          color: 'green'
+        })
+      }
+    } else {
       insights.push({
         type: 'top_creative',
         label: 'Top Creative',
@@ -124,13 +148,33 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
     let highestConversionRate = 0
     demoPerformance.forEach(demo => {
       const conversionRate = demo.impressions > 0 ? (demo.conversions / demo.impressions) * 100 : 0
-      if (conversionRate > highestConversionRate && demo.spend > 5) {
+      if (conversionRate > highestConversionRate && demo.spend > 0.5) { // Lower threshold to $0.50
         highestConversionRate = conversionRate
         bestDemographic = demo
       }
     })
 
-    if (bestDemographic) {
+    // If no conversions, find demographic with highest impressions
+    if (!bestDemographic) {
+      let mostImpressions = 0
+      demoPerformance.forEach(demo => {
+        if (demo.impressions > mostImpressions && demo.spend > 0.5) {
+          mostImpressions = demo.impressions
+          bestDemographic = demo
+        }
+      })
+      if (bestDemographic) {
+        const genderLabel = bestDemographic.gender === 'male' ? 'M' : bestDemographic.gender === 'female' ? 'F' : 'All'
+        insights.push({
+          type: 'best_demographic',
+          label: 'Top Demographic',
+          value: `${bestDemographic.age}, ${genderLabel}`,
+          metric: `${bestDemographic.impressions.toLocaleString()} views`,
+          icon: '👥',
+          color: 'blue'
+        })
+      }
+    } else {
       const genderLabel = bestDemographic.gender === 'male' ? 'M' : bestDemographic.gender === 'female' ? 'F' : 'All'
       insights.push({
         type: 'best_demographic',
@@ -200,7 +244,7 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
     let lowestROAS = Infinity
     campaignPerformance.forEach(camp => {
       const roas = camp.spend > 0 ? camp.revenue / camp.spend : 0
-      if (roas < lowestROAS && camp.spend > 50 && roas < 1) { // At least $50 spend and ROAS < 1
+      if (roas < lowestROAS && camp.spend > 5 && roas < 0.5) { // At least $5 spend and ROAS < 0.5
         lowestROAS = roas
         worstCampaign = camp
       }
