@@ -798,49 +798,8 @@ export default function MarketingAssistantPage() {
       </div>
         </div>
             
-            {/* Quick KPIs - Floating Pills (Hidden on mobile, shown on larger screens) */}
+            {/* Update Button */}
             <div className="hidden lg:flex items-center gap-3">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="group relative px-4 py-2.5 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-full hover:border-[#FF2A2A]/50 transition-all duration-300 cursor-help">
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#FF2A2A]/0 to-[#FF2A2A]/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-[#FF2A2A]" />
-                        <div>
-                          <div className="text-xs text-gray-500 uppercase tracking-wide">Spend</div>
-                          <div className="text-sm font-bold text-white">${trends?.spend?.current?.toFixed(2) || '0.00'}</div>
-      </div>
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-[#111] border-[#333]">
-                    <p className="text-xs text-gray-400">Total ad spend (last 7 days)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="group relative px-4 py-2.5 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-full hover:border-[#10b981]/50 transition-all duration-300 cursor-help">
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#10b981]/0 to-[#10b981]/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-[#10b981]" />
-                        <div>
-                          <div className="text-xs text-gray-500 uppercase tracking-wide">ROAS</div>
-                          <div className="text-sm font-bold text-white">{trends?.roas?.current?.toFixed(2) || '0.00'}x</div>
-                        </div>
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-[#111] border-[#333]">
-                    <p className="text-xs text-gray-400">Return on ad spend</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              {/* Update Button */}
                   <Button
                     onClick={async () => {
                       setIsRefreshingData(true)
@@ -1314,8 +1273,19 @@ export default function MarketingAssistantPage() {
                         </div>
                 </div>
 
-                      {/* Title & Description */}
-                      <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
+                      {/* Title & Description with Platform Icon */}
+                      <div className="flex items-start gap-2 mb-2">
+                        <div className="w-5 h-5 flex-shrink-0 mt-0.5">
+                          <Image 
+                            src={card.platform === 'meta' ? '/meta-icon.png' : card.platform === 'google' ? 'https://i.imgur.com/TavV4UJ.png' : 'https://i.imgur.com/AXHa9UT.png'} 
+                            alt={card.platform} 
+                            width={20} 
+                            height={20}
+                            className="rounded"
+                          />
+                          </div>
+                        <h3 className="text-base font-bold text-white flex-1">{card.title}</h3>
+                          </div>
                       <p className="text-sm text-gray-400 leading-relaxed mb-3">{card.description}</p>
                       
                       {/* Metrics Comparison - Horizontal Layout */}
@@ -1419,6 +1389,23 @@ export default function MarketingAssistantPage() {
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
                              </div>
                                </div>
+                        <div className="flex items-center gap-2 mb-2">
+                           {selectedPlatforms.includes('meta') && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                    <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
+                               </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-[#0a0a0a] border-[#555]">
+                                  <div className="text-white font-medium">Meta: ${trends.spend.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                           )}
+                               </div>
                         <div className="text-2xl font-black text-white">${trends.spend.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs ${trends.spend.previous.toLocaleString()} last period</div>
                                </div>
@@ -1432,18 +1419,35 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-lg flex items-center justify-center">
                               <Activity className="w-4 h-4 text-green-400" />
-                               </div>
+                         </div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                               </div>
+                         </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
-                             </div>
-                         </div>
+                       </div>
+                </div>
+                        <div className="flex items-center gap-2 mb-2">
+                           {selectedPlatforms.includes('meta') && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                    <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
+                               </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-[#0a0a0a] border-[#555]">
+                                 <div className="text-white font-medium">Meta: {trends.roas.current.toFixed(2)}x</div>
+                                 <div className="text-gray-400">100% of total</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                           )}
+                               </div>
                         <div className="text-2xl font-black text-white">{trends.roas.current.toFixed(2)}x</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.roas.previous.toFixed(2)}x last period</div>
-          </div>
-        </div>
+                               </div>
+                             </div>
 
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
@@ -1461,21 +1465,38 @@ export default function MarketingAssistantPage() {
                             {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
                              </div>
-                               </div>
+                         </div>
+                        <div className="flex items-center gap-2 mb-2">
+                           {selectedPlatforms.includes('meta') && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                    <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
+                </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-[#0a0a0a] border-[#555]">
+                                  <div className="text-white font-medium">Meta: {trends.conversions.current.toLocaleString()}</div>
+                                 <div className="text-gray-400">100% of total</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                           )}
+              </div>
                         <div className="text-2xl font-black text-white">{trends.conversions.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.conversions.previous.toLocaleString()} last period</div>
-                               </div>
-                             </div>
+                </div>
+              </div>
                            )}
-                               </div>
+                </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
                       <BarChart3 className="w-6 h-6 text-blue-400" />
-                               </div>
+              </div>
                     <p className="text-sm font-medium">No Data Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see trends</p>
-                             </div>
+                </div>
                            )}
               </CardContent>
             </Card>
@@ -1491,8 +1512,8 @@ export default function MarketingAssistantPage() {
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
                     <div className="relative w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center border border-emerald-500/30">
                       <Sparkles className="w-5 h-5 text-emerald-400" />
-                </div>
               </div>
+                </div>
                         <div>
                     <h3 className="text-base font-bold text-white">Quick Insights</h3>
                     <p className="text-xs text-gray-500">AI-powered analysis</p>
@@ -1502,7 +1523,7 @@ export default function MarketingAssistantPage() {
               
               <CardContent className="relative p-3">
                 {quickInsights.length > 0 ? (
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     {quickInsights.map((insight, index) => (
                       <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-emerald-500/30 transition-all">
                         {/* Decorative corner accent */}
@@ -1526,7 +1547,7 @@ export default function MarketingAssistantPage() {
                         </div>
                         </div>
                       </div>
-                    ))}
+                  ))}
                                 </div>
                               ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
