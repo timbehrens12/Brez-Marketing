@@ -326,11 +326,10 @@ export default function MarketingAssistantPage() {
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
     if (selectedBrandId && !initialDataLoad && optimizationCards.length > 0) {
-      // Only reload widgets if we already have recommendations loaded
+      // Only reload KPIs and trends when filter changes
+      // Quick insights and progress should NOT reload on filter changes
       loadKPIMetrics()
       loadTrends()
-      loadQuickInsights()
-      loadWeeklyProgress()
     }
   }, [selectedPlatforms])
 
@@ -1124,21 +1123,21 @@ export default function MarketingAssistantPage() {
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Applied</div>
                           <div className="text-sm font-bold text-white">{weeklyProgress.completedCount}</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Pending</div>
                           <div className="text-sm font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">ROAS Gain</div>
                           <div className="text-sm font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
-                        </div>
+                            </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Efficiency</div>
                           <div className="text-sm font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
                         </div>
-                      </div>
-                    </div>
+                          </div>
+                          </div>
 
                     {/* Action Timeline - Compact */}
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
@@ -1151,13 +1150,13 @@ export default function MarketingAssistantPage() {
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
                           <span className="text-[10px] text-gray-400">Budget allocation in progress</span>
-                        </div>
+                            </div>
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
                           <span className="text-[10px] text-gray-400">Creative refresh pending</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
