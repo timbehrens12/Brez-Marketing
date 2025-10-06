@@ -880,7 +880,7 @@ export default function MarketingAssistantPage() {
         </div>
       </div>
               </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0 space-y-4">
+              <CardContent className="p-4 flex-1 overflow-y-auto min-h-0 space-y-3.5">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -890,75 +890,80 @@ export default function MarketingAssistantPage() {
                 
                 {weeklyProgress && (
                   <>
-                    {/* Progress Bar */}
+                    {/* Main Progress Summary */}
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-medium text-sm">Weekly Completion</h4>
-                        <span className="text-2xl font-bold text-white">{weeklyProgress.completionPercentage}%</span>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="text-3xl font-bold text-white">{weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations}</div>
+                          <div className="text-xs text-gray-400 mt-1">implemented</div>
+                        </div>
+                        {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
+                          <div className="text-right">
+                            <div className={`text-xl font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}% ROAS
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">vs last week</div>
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full bg-[#0f0f0f] rounded-full h-3 mb-2 border border-[#333]">
+                      <div className="w-full bg-[#0f0f0f] rounded-full h-2 border border-[#333]">
                         <div 
-                          className="bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] h-full rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-[#10b981] via-[#34d399] to-[#6ee7b7] h-full rounded-full transition-all duration-500"
                           style={{ width: `${weeklyProgress.completionPercentage}%` }}
                         ></div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>{weeklyProgress.completedCount} of {weeklyProgress.totalRecommendations} completed</span>
-                        <span>{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} remaining</span>
-                      </div>
                     </div>
 
-                    {/* Optimization Impact Score */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-white font-medium text-sm">Optimization Impact</h4>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-3.5 h-3.5 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs max-w-[200px]">How much implementing recommendations is improving your campaigns</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">This Week</p>
-                          <p className="text-white text-lg font-bold">${weeklyProgress.thisWeek.spend.toFixed(0)}</p>
-                          <p className="text-gray-500 text-xs">Spend</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">Actions</p>
-                          <p className="text-white text-lg font-bold">{weeklyProgress.completedCount}</p>
-                          <p className="text-gray-500 text-xs">Completed</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs mb-1">Efficiency</p>
-                          <p className="text-white text-lg font-bold">{weeklyProgress.thisWeek.roas > 0 ? `${weeklyProgress.thisWeek.roas.toFixed(1)}x` : '--'}</p>
-                          <p className="text-gray-500 text-xs">ROAS</p>
+                    {/* Category Breakdown */}
+                    {weeklyProgress.categories && (
+                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3.5">
+                        <h4 className="text-white font-medium text-xs mb-2.5 uppercase tracking-wide">By Category</h4>
+                        <div className="space-y-2">
+                          {Object.entries(weeklyProgress.categories).map(([category, count]: [string, any]) => {
+                            const completed = Math.floor(count * (weeklyProgress.completionPercentage / 100))
+                            return (
+                              <div key={category} className="flex items-center justify-between text-sm">
+                                <span className="text-gray-400">{category}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 bg-[#0f0f0f] rounded-full h-1.5 border border-[#333]">
+                                    <div 
+                                      className="bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] h-full rounded-full"
+                                      style={{ width: `${count > 0 ? (completed / count) * 100 : 0}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-white text-xs font-medium w-8 text-right">{completed}/{count}</span>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Insights */}
-                    {weeklyProgress.insights && weeklyProgress.insights.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-white font-medium text-sm">Insights</h4>
-                        {weeklyProgress.insights.map((insight: any, index: number) => (
-                          <div key={index} className={`p-3 rounded-lg border ${
-                            insight.type === 'success' ? 'bg-green-500/5 border-green-500/20' :
-                            insight.type === 'warning' ? 'bg-yellow-500/5 border-yellow-500/20' :
-                            'bg-blue-500/5 border-blue-500/20'
-                          }`}>
-                            <p className={`text-xs ${
-                              insight.type === 'success' ? 'text-green-400' :
-                              insight.type === 'warning' ? 'text-yellow-400' :
-                              'text-blue-400'
-                            }`}>{insight.message}</p>
-                          </div>
-                        ))}
+                    {/* Top Applied Actions */}
+                    {weeklyProgress.topApplied && weeklyProgress.topApplied.length > 0 && (
+                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3.5">
+                        <h4 className="text-white font-medium text-xs mb-2.5 uppercase tracking-wide">Top Applied (Impact)</h4>
+                        <div className="space-y-2">
+                          {weeklyProgress.topApplied.map((action: any, index: number) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-xs truncate">{action.title}</p>
+                              </div>
+                              <span className="text-green-400 text-xs font-medium flex-shrink-0">{action.impact}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Next Up Prompt */}
+                    {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
+                      <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-3">
+                        <p className="text-blue-400 text-xs">
+                          Next up: apply {weeklyProgress.totalRecommendations - weeklyProgress.completedCount} more rec{weeklyProgress.totalRecommendations - weeklyProgress.completedCount === 1 ? '' : 's'} to unlock <span className="font-bold">+{Math.round((weeklyProgress.totalRecommendations - weeklyProgress.completedCount) * 5)}%</span> projected ROAS
+                        </p>
                       </div>
                     )}
                   </>
@@ -1314,22 +1319,16 @@ export default function MarketingAssistantPage() {
               <CardContent className="p-4 flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-3">
                   {quickInsights.map((insight, index) => (
-                    <div key={index} className="p-4 bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg hover:border-[#444] transition-all">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{insight.icon}</span>
+                    <div key={index} className="p-3.5 bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg hover:border-[#444] transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{insight.icon}</span>
                           <div>
                             <h4 className="text-white font-medium text-sm">{insight.label}</h4>
-                            <p className="text-gray-400 text-xs mt-0.5">{insight.value}</p>
+                            <p className="text-gray-400 text-xs mt-0.5 truncate max-w-[180px]">{insight.value}</p>
                           </div>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          insight.color === 'green' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                          insight.color === 'blue' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                          insight.color === 'purple' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
-                          insight.color === 'red' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                          'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                        }`}>
+                        <div className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-medium text-white">
                           {insight.metric}
                         </div>
                       </div>

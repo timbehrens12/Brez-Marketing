@@ -47,223 +47,179 @@ async function generateQuickInsights(brandId: string, fromDate: string, toDate: 
   const insights = []
 
   if (platforms.includes('meta')) {
-    // Get ad creative performance
+    // 1. TOP CREATIVE - Ad with best CTR
     const { data: adStats } = await supabase
       .from('meta_ad_daily_stats')
-      .select('ad_id, ad_name, spend, revenue, impressions, clicks, ctr, roas')
+      .select('ad_id, ad_name, spend, impressions, clicks, date')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
     console.log(`[Quick Insights] Found ${adStats?.length || 0} ad stats records`)
 
-    // Aggregate by ad
-    const adPerformance = new Map()
-    adStats?.forEach(stat => {
-      if (!adPerformance.has(stat.ad_id)) {
-        adPerformance.set(stat.ad_id, {
-          ad_id: stat.ad_id,
-          ad_name: stat.ad_name || 'Unnamed Ad',
-          spend: 0,
-          revenue: 0,
-          impressions: 0,
-          clicks: 0
-        })
-      }
-      const ad = adPerformance.get(stat.ad_id)
-      ad.spend += Number(stat.spend) || 0
-      ad.revenue += Number(stat.revenue) || 0
-      ad.impressions += Number(stat.impressions) || 0
-      ad.clicks += Number(stat.clicks) || 0
-    })
+    if (adStats && adStats.length > 0) {
+      // Aggregate by ad
+      const adPerformance = new Map()
+      adStats.forEach(stat => {
+        if (!adPerformance.has(stat.ad_id)) {
+          adPerformance.set(stat.ad_id, {
+            ad_name: stat.ad_name || 'Unnamed Ad',
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            dates: []
+          })
+        }
+        const ad = adPerformance.get(stat.ad_id)
+        ad.spend += Number(stat.spend) || 0
+        ad.impressions += Number(stat.impressions) || 0
+        ad.clicks += Number(stat.clicks) || 0
+        ad.dates.push(stat.date)
+      })
 
-    // Find top performing ad by ROAS
-    let topCreative = null
-    let highestROAS = 0
-    adPerformance.forEach(ad => {
-      const roas = ad.spend > 0 ? ad.revenue / ad.spend : 0
-      if (roas > highestROAS && ad.spend > 1) { // At least $1 spend
-        highestROAS = roas
-        topCreative = ad
-      }
-    })
-
-    // If no ad with ROAS, find ad with most clicks (engagement)
-    if (!topCreative) {
-      let mostClicks = 0
+      // Find ad with highest CTR (minimum $1 spend)
+      let topAd = null
+      let highestCTR = 0
       adPerformance.forEach(ad => {
-        if (ad.clicks > mostClicks && ad.spend > 0.5) {
-          mostClicks = ad.clicks
-          topCreative = ad
+        const ctr = ad.impressions > 0 ? (ad.clicks / ad.impressions) * 100 : 0
+        if (ctr > highestCTR && ad.spend >= 1) {
+          highestCTR = ctr
+          topAd = ad
         }
       })
-      if (topCreative) {
-        const ctr = topCreative.impressions > 0 ? (topCreative.clicks / topCreative.impressions) * 100 : 0
+
+      if (topAd) {
         insights.push({
           type: 'top_creative',
           label: 'Top Creative',
-          value: topCreative.ad_name.length > 40 ? topCreative.ad_name.substring(0, 40) + '...' : topCreative.ad_name,
-          metric: `${ctr.toFixed(2)}% CTR`,
-          icon: '🎨',
-          color: 'green'
+          value: topAd.ad_name.length > 35 ? topAd.ad_name.substring(0, 35) + '...' : topAd.ad_name,
+          metric: `${highestCTR.toFixed(2)}% CTR`,
+          icon: '🎨'
         })
       }
-    } else {
-      insights.push({
-        type: 'top_creative',
-        label: 'Top Creative',
-        value: topCreative.ad_name.length > 40 ? topCreative.ad_name.substring(0, 40) + '...' : topCreative.ad_name,
-        metric: `${highestROAS.toFixed(2)}x ROAS`,
-        icon: '🎨',
-        color: 'green'
+
+      // 2. CREATIVE FATIGUE - Check for declining engagement
+      adPerformance.forEach(ad => {
+        if (ad.dates.length >= 3 && ad.spend >= 5) {
+          const sortedDates = [...ad.dates].sort()
+          const firstHalf = sortedDates.slice(0, Math.floor(sortedDates.length / 2))
+          const secondHalf = sortedDates.slice(Math.floor(sortedDates.length / 2))
+          
+          // Calculate CTR for first half vs second half
+          const firstHalfStats = adStats.filter(s => s.ad_id === ad.dates[0] && firstHalf.includes(s.date))
+          const secondHalfStats = adStats.filter(s => s.ad_id === ad.dates[0] && secondHalf.includes(s.date))
+          
+          const firstCTR = firstHalfStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0) > 0
+            ? (firstHalfStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0) / firstHalfStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)) * 100
+            : 0
+          const secondCTR = secondHalfStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0) > 0
+            ? (secondHalfStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0) / secondHalfStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)) * 100
+            : 0
+          
+          // If CTR dropped >20%, flag fatigue
+          if (firstCTR > 0 && secondCTR < firstCTR * 0.8) {
+            insights.push({
+              type: 'creative_fatigue',
+              label: 'Creative Fatigue',
+              value: ad.ad_name.length > 35 ? ad.ad_name.substring(0, 35) + '...' : ad.ad_name,
+              metric: `${Math.round(((firstCTR - secondCTR) / firstCTR) * 100)}% decline`,
+              icon: '⚠️'
+            })
+          }
+        }
       })
     }
 
-    // Get demographic performance
+    // 3. BEST DEMOGRAPHIC - Age/gender with highest engagement
     const { data: demographics } = await supabase
       .from('meta_demographics')
-      .select('*')
+      .select('breakdown_type, breakdown_value, spend, impressions, clicks, ctr')
       .eq('brand_id', brandId)
       .gte('date_range_start', fromDate)
       .lte('date_range_end', toDate)
+      .eq('breakdown_type', 'age_gender')
 
-    // Find best performing age/gender combo
-    const demoPerformance = new Map()
-    demographics?.forEach(demo => {
-      const key = `${demo.age || 'Unknown'}_${demo.gender || 'Unknown'}`
-      if (!demoPerformance.has(key)) {
-        demoPerformance.set(key, {
-          age: demo.age,
-          gender: demo.gender,
-          spend: 0,
-          conversions: 0,
-          impressions: 0
-        })
-      }
-      const d = demoPerformance.get(key)
-      d.spend += Number(demo.spend) || 0
-      d.conversions += Number(demo.conversions) || 0
-      d.impressions += Number(demo.impressions) || 0
-    })
+    if (demographics && demographics.length > 0) {
+      // Aggregate by breakdown_value
+      const demoMap = new Map()
+      demographics.forEach(demo => {
+        if (!demoMap.has(demo.breakdown_value)) {
+          demoMap.set(demo.breakdown_value, {
+            spend: 0,
+            impressions: 0,
+            clicks: 0
+          })
+        }
+        const d = demoMap.get(demo.breakdown_value)
+        d.spend += Number(demo.spend) || 0
+        d.impressions += Number(demo.impressions) || 0
+        d.clicks += Number(demo.clicks) || 0
+      })
 
-    let bestDemographic = null
-    let highestConversionRate = 0
-    demoPerformance.forEach(demo => {
-      const conversionRate = demo.impressions > 0 ? (demo.conversions / demo.impressions) * 100 : 0
-      if (conversionRate > highestConversionRate && demo.spend > 0.5) { // Lower threshold to $0.50
-        highestConversionRate = conversionRate
-        bestDemographic = demo
-      }
-    })
-
-    // If no conversions, find demographic with highest impressions
-    if (!bestDemographic) {
-      let mostImpressions = 0
-      demoPerformance.forEach(demo => {
-        if (demo.impressions > mostImpressions && demo.spend > 0.5) {
-          mostImpressions = demo.impressions
-          bestDemographic = demo
+      // Find demographic with highest CTR (minimum $1 spend)
+      let bestDemo = null
+      let highestCTR = 0
+      let bestValue = ''
+      demoMap.forEach((demo, value) => {
+        const ctr = demo.impressions > 0 ? (demo.clicks / demo.impressions) * 100 : 0
+        if (ctr > highestCTR && demo.spend >= 1) {
+          highestCTR = ctr
+          bestDemo = demo
+          bestValue = value
         }
       })
-      if (bestDemographic) {
-        const genderLabel = bestDemographic.gender === 'male' ? 'M' : bestDemographic.gender === 'female' ? 'F' : 'All'
+
+      if (bestDemo) {
+        // Parse age_gender format: "25-34_male"
+        const parts = bestValue.split('_')
+        const age = parts[0]
+        const gender = parts[1] === 'male' ? 'M' : parts[1] === 'female' ? 'F' : parts[1]
+        
         insights.push({
           type: 'best_demographic',
-          label: 'Top Demographic',
-          value: `${bestDemographic.age}, ${genderLabel}`,
-          metric: `${bestDemographic.impressions.toLocaleString()} views`,
-          icon: '👥',
-          color: 'blue'
+          label: 'Best Demographic',
+          value: `${age}, ${gender}`,
+          metric: `${highestCTR.toFixed(2)}% CTR`,
+          icon: '👥'
         })
       }
-    } else {
-      const genderLabel = bestDemographic.gender === 'male' ? 'M' : bestDemographic.gender === 'female' ? 'F' : 'All'
-      insights.push({
-        type: 'best_demographic',
-        label: 'Top Demographic',
-        value: `${bestDemographic.age}, ${genderLabel}`,
-        metric: `${highestConversionRate.toFixed(2)}% CVR`,
-        icon: '👥',
-        color: 'blue'
-      })
     }
 
-    // Get geographic performance
+    // 4. TOP REGION - From Shopify customer data
     const { data: locations } = await supabase
       .from('shopify_customers')
       .select('province, city')
       .eq('brand_id', brandId)
 
-    const locationCounts = new Map()
-    locations?.forEach(loc => {
-      const key = loc.province || loc.city || 'Unknown'
-      locationCounts.set(key, (locationCounts.get(key) || 0) + 1)
-    })
-
-    let topLocation = null
-    let maxCount = 0
-    locationCounts.forEach((count, location) => {
-      if (count > maxCount) {
-        maxCount = count
-        topLocation = location
-      }
-    })
-
-    if (topLocation && maxCount > 0) {
-      insights.push({
-        type: 'top_region',
-        label: 'Top Region',
-        value: topLocation,
-        metric: `${maxCount} customers`,
-        icon: '📍',
-        color: 'purple'
+    if (locations && locations.length > 0) {
+      const regionCounts = new Map()
+      locations.forEach(loc => {
+        const region = loc.province || loc.city || 'Unknown'
+        regionCounts.set(region, (regionCounts.get(region) || 0) + 1)
       })
-    }
 
-    // Find wasted spend (high spend, low ROAS campaigns)
-    const { data: campaignStats } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select('campaign_id, campaign_name, spend, revenue')
-      .eq('brand_id', brandId)
-      .gte('date', fromDate)
-      .lte('date', toDate)
+      let topRegion = ''
+      let maxCount = 0
+      regionCounts.forEach((count, region) => {
+        if (count > maxCount) {
+          maxCount = count
+          topRegion = region
+        }
+      })
 
-    const campaignPerformance = new Map()
-    campaignStats?.forEach(stat => {
-      if (!campaignPerformance.has(stat.campaign_id)) {
-        campaignPerformance.set(stat.campaign_id, {
-          campaign_name: stat.campaign_name || 'Unnamed Campaign',
-          spend: 0,
-          revenue: 0
+      if (topRegion && maxCount > 0) {
+        insights.push({
+          type: 'top_region',
+          label: 'Top Region',
+          value: topRegion,
+          metric: `${maxCount} orders`,
+          icon: '📍'
         })
       }
-      const camp = campaignPerformance.get(stat.campaign_id)
-      camp.spend += Number(stat.spend) || 0
-      camp.revenue += Number(stat.revenue) || 0
-    })
-
-    let worstCampaign = null
-    let lowestROAS = Infinity
-    campaignPerformance.forEach(camp => {
-      const roas = camp.spend > 0 ? camp.revenue / camp.spend : 0
-      if (roas < lowestROAS && camp.spend > 5 && roas < 0.5) { // At least $5 spend and ROAS < 0.5
-        lowestROAS = roas
-        worstCampaign = camp
-      }
-    })
-
-    if (worstCampaign) {
-      insights.push({
-        type: 'wasted_spend',
-        label: 'Wasted Spend Alert',
-        value: worstCampaign.campaign_name.length > 40 ? worstCampaign.campaign_name.substring(0, 40) + '...' : worstCampaign.campaign_name,
-        metric: `$${worstCampaign.spend.toFixed(2)} @ ${lowestROAS.toFixed(2)}x`,
-        icon: '⚠️',
-        color: 'red'
-      })
     }
   }
 
+  console.log(`[Quick Insights] Generated ${insights.length} insights`)
   return insights
 }
 
