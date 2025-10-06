@@ -325,8 +325,8 @@ export default function MarketingAssistantPage() {
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
-    if (selectedBrandId && !initialDataLoad) {
-      // Reload metrics, trends, alerts, budget, audience - but NOT recommendations (those stay cached)
+    if (selectedBrandId && !initialDataLoad && optimizationCards.length > 0) {
+      // Only reload widgets if we already have recommendations loaded
       loadKPIMetrics()
       loadTrends()
       loadQuickInsights()
@@ -354,15 +354,20 @@ export default function MarketingAssistantPage() {
       // First load recommendations to check if any exist
       await loadOptimizationRecommendations()
       
-      // Always load KPI metrics
-      await loadKPIMetrics()
+      // After loading recommendations, check if we should load widgets
+      // We'll check optimizationCards in the next render cycle, so we need to query directly
+      const shouldLoadWidgets = forceRefresh // If force refresh, always load widgets
       
-      // Load quick insights, trends, and progress tracker in parallel (they don't depend on recommendations)
-      await Promise.all([
-        loadQuickInsights(),
-        loadTrends(),
-        loadWeeklyProgress()
-      ])
+      if (shouldLoadWidgets) {
+        // Load all widgets when button is clicked
+        await Promise.all([
+          loadKPIMetrics(),
+          loadQuickInsights(),
+          loadTrends(),
+          loadWeeklyProgress()
+        ])
+      }
+      // Otherwise leave widgets blank until user clicks "Update Recommendations" button
     } catch (error) {
     } finally {
       // Always clear loading states when done
