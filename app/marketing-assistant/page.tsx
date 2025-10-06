@@ -1225,7 +1225,7 @@ export default function MarketingAssistantPage() {
                         
                         <div className="text-right">
                           <div className="text-xs text-gray-500">Est. Impact</div>
-                          <div className="text-lg font-black text-[#10b981]">+{card.projectedImpact?.roasImprovement || 0}%</div>
+                          <div className="text-lg font-black text-[#10b981]">+{Math.round((card.projectedImpact?.roas || 0) * 100) / 100}x ROAS</div>
                         </div>
                 </div>
 
