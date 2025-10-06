@@ -1100,12 +1100,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const optimizedCampaignsCount = optimizedCampaignIds.length
           const totalCampaignsCount = campaignIds.length
           
-          // Check if user has viewed recommendations for this brand
+          // Check if user has viewed recommendations THIS week (not from a previous week)
           const storageKey = `recommendationsViewed_${brand.id}`
-          const hasViewedRecommendations = localStorage.getItem(storageKey) === 'true'
+          const lastRefreshDate = localStorage.getItem(`lastRefreshDate_${brand.id}`)
+          const currentWeekStart = startOfWeek.toISOString().split('T')[0]
+          
+          // Only count as "viewed" if it was viewed this week
+          const hasViewedRecommendationsRaw = localStorage.getItem(storageKey) === 'true'
+          const hasViewedRecommendations = hasViewedRecommendationsRaw && lastRefreshDate && lastRefreshDate >= currentWeekStart
           
           const hasUsedThisWeek = optimizedCampaignsCount > 0
-          // Weekly limit: if ANY optimization happened this week OR user has viewed recommendations, no more optimizations available until next Monday
+          // Weekly limit: if ANY optimization happened this week OR user has viewed recommendations THIS WEEK, no more optimizations available until next Monday
           const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek && !hasViewedRecommendations
 
           // Get detailed campaign optimization stats for display

@@ -279,20 +279,17 @@ export default function MarketingAssistantPage() {
     setDateRangeText(`${formatDate(lastMonday)} - ${formatDate(thisMonday)}`)
     setNextUpdateText(`Next Update: ${formatDate(nextMonday)}`)
     
-    // Check if it's Monday after midnight - reset the viewed state, completed items, and acknowledged alerts
-    if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() < 5) {
-      if (selectedBrandId) {
+    // Check if it's a new week (Monday) - reset the viewed state
+    // Compare current week to last refresh week
+    if (selectedBrandId) {
+      const lastRefreshDate = localStorage.getItem(`lastRefreshDate_${selectedBrandId}`)
+      const currentWeekStart = thisMonday.toISOString().split('T')[0]
+      
+      // If no last refresh or it was from a previous week, enable refresh
+      if (!lastRefreshDate || lastRefreshDate < currentWeekStart) {
         localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+        setRecommendationsViewed(false)
       }
-      if (selectedBrandId) {
-        localStorage.removeItem(`completedItems_${selectedBrandId}`)
-      }
-      if (selectedBrandId) {
-        localStorage.removeItem(`acknowledgedAlerts_${selectedBrandId}`)
-      }
-      setRecommendationsViewed(false)
-      // Don't clear completed items on countdown - only clear on "Update Recommendations" click
-      // Alerts will be refreshed with acknowledged: false on next load
     }
     
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
@@ -1081,6 +1078,9 @@ export default function MarketingAssistantPage() {
                       setRecommendationsViewed(true) // Mark as viewed so countdown shows
                       if (selectedBrandId) {
                         localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
+                        // Save the refresh date (this Monday) so we know when to enable refresh again
+                        const { thisMonday } = getMondayToMondayDates()
+                        localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
                       }
                       setCompletedItems(new Set())
                       setAlerts(alerts.map(a => ({ ...a, acknowledged: false })))
