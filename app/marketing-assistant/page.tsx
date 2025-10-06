@@ -1151,7 +1151,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Column - Main Work Area - Scrollable */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 pb-2 rounded-b-xl">
             
             {/* AI Optimization Feed - Completely Redesigned */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1304,7 +1304,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Right Rail - Insights Column - Scrollable */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 pb-2 rounded-b-xl">
             
             {/* Performance Trends - Completely Redesigned */}
             <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
