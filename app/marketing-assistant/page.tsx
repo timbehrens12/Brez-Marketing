@@ -820,7 +820,7 @@ export default function MarketingAssistantPage() {
           {/* Performance Window & Platform Filters Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             {/* Performance Window */}
-            <div className="flex-1 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl p-4 group hover:border-[#333]/60 transition-all duration-300">
+            <div className="flex-1 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl p-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -840,7 +840,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Platform Filter Chips */}
-            <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 group hover:border-[#333]/60 transition-all duration-300">
+            <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3">
               <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div className="flex gap-1.5 flex-wrap">
                 <button
@@ -935,7 +935,7 @@ export default function MarketingAssistantPage() {
                   variant="outline"
                               size="sm" 
                   onClick={() => setShowHowItWorks(true)}
-                  className="w-full text-xs h-8 bg-white/5 hover:bg-white/10 text-white border-[#333] hover:border-[#444] transition-all duration-200"
+                  className="w-full text-xs h-8 bg-white/5 hover:bg-white/10 text-white border-[#333] transition-all duration-200"
                             >
                   <Info className="h-3 w-3 mr-1.5" />
                   How It Works
@@ -950,7 +950,7 @@ export default function MarketingAssistantPage() {
                 <div>
                   <h3 className="text-base font-bold text-white">Optimization Progress</h3>
                   <p className="text-xs text-gray-500">Live implementation tracking</p>
-                </div>
+      </div>
               </CardHeader>
               
               <CardContent className="relative p-2.5 flex flex-col">
@@ -1178,7 +1178,7 @@ export default function MarketingAssistantPage() {
                     const confidencePercentage = card.projectedImpact?.confidence || 85
                     
                     return (
-                    <div key={card.id} className="group relative bg-gradient-to-br from-[#1a1a1a]/60 to-[#0f0f0f]/60 border border-[#333]/60 rounded-xl p-4 hover:border-[#FF2A2A]/40 hover:shadow-lg hover:shadow-[#FF2A2A]/10 transition-all duration-300">
+                    <div key={card.id} className="group relative bg-gradient-to-br from-[#1a1a1a]/60 to-[#0f0f0f]/60 border border-[#333]/60 rounded-xl p-4 transition-all duration-300">
                       
                       {/* Top Row: Priority + Confidence + Effort */}
                       <div className="flex items-center justify-between mb-3">
@@ -1322,7 +1322,7 @@ export default function MarketingAssistantPage() {
                 {trends ? (
                   <div className="space-y-3">
                     {/* Spend Metric - Redesigned */}
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-blue-500/30 transition-all">
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
@@ -1342,7 +1342,7 @@ export default function MarketingAssistantPage() {
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
-                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
@@ -1360,7 +1360,7 @@ export default function MarketingAssistantPage() {
                              </div>
 
                     {/* ROAS Metric - Redesigned */}
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-green-500/30 transition-all">
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
@@ -1380,7 +1380,7 @@ export default function MarketingAssistantPage() {
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
-                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                                </div>
                                 </TooltipTrigger>
@@ -1399,7 +1399,7 @@ export default function MarketingAssistantPage() {
 
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-purple-500/30 transition-all">
+                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
@@ -1419,7 +1419,7 @@ export default function MarketingAssistantPage() {
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
-                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
+                                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
                 </div>
                                 </TooltipTrigger>
@@ -1465,7 +1465,7 @@ export default function MarketingAssistantPage() {
                 {quickInsights.length > 0 ? (
                 <div className="space-y-3">
                     {quickInsights.map((insight, index) => (
-                      <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group hover:border-emerald-500/30 transition-all">
+                      <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                         {/* Decorative corner accent */}
                         <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-br-full"></div>
                         
