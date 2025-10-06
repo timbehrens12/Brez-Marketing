@@ -986,7 +986,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative p-4 flex-1 min-h-0 flex flex-col">
+              <CardContent className="relative p-3 flex flex-col">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -996,34 +996,34 @@ export default function MarketingAssistantPage() {
                 
                 {weeklyProgress && (
                   <>
-                    {/* Circular Radial Progress Gauge */}
-                    <div className="flex flex-col items-center justify-center flex-1">
-                      <div className="relative w-48 h-48 mb-4">
+                    {/* Circular Radial Progress Gauge - Compact */}
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="relative w-32 h-32 mb-3">
                         {/* SVG Circle Progress */}
                         <svg className="w-full h-full transform -rotate-90">
                           {/* Background circle */}
                           <circle
-                            cx="96"
-                            cy="96"
-                            r="88"
+                            cx="64"
+                            cy="64"
+                            r="56"
                             stroke="url(#progressBg)"
-                            strokeWidth="10"
+                            strokeWidth="8"
                             fill="none"
                             opacity="0.15"
                           />
                           {/* Progress circle */}
                           <circle
-                            cx="96"
-                            cy="96"
-                            r="88"
+                            cx="64"
+                            cy="64"
+                            r="56"
                             stroke="url(#progressGradient)"
-                            strokeWidth="10"
+                            strokeWidth="8"
                             fill="none"
                             strokeLinecap="round"
-                            strokeDasharray="552.92"
-                            strokeDashoffset={552.92 - (552.92 * weeklyProgress.completionPercentage) / 100}
+                            strokeDasharray="351.86"
+                            strokeDashoffset={351.86 - (351.86 * weeklyProgress.completionPercentage) / 100}
                             className="transition-all duration-1000 ease-out"
-                            style={{ filter: 'drop-shadow(0 0 8px rgba(255, 42, 42, 0.5))' }}
+                            style={{ filter: 'drop-shadow(0 0 6px rgba(255, 42, 42, 0.5))' }}
                           />
                           <defs>
                             <linearGradient id="progressBg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1038,13 +1038,13 @@ export default function MarketingAssistantPage() {
                           </defs>
                         </svg>
                         
-                        {/* Center content */}
+                        {/* Center content - Compact */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <div className="text-5xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-1">
+                          <div className="text-3xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-0.5">
                             {weeklyProgress.completionPercentage}%
                             </div>
-                          <div className="text-xs text-gray-500 uppercase tracking-wider">Complete</div>
-                          <div className="text-sm text-white font-bold mt-2">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Complete</div>
+                          <div className="text-xs text-white font-bold mt-1">
                             {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations} Applied
                           </div>
                             </div>
@@ -1053,25 +1053,22 @@ export default function MarketingAssistantPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A2A]/20 to-transparent rounded-full blur-2xl -z-10"></div>
                           </div>
                       
-                      {/* Stats Grid */}
-                      <div className="w-full space-y-2">
+                      {/* Stats Grid - Compact */}
+                      <div className="w-full space-y-1.5">
                         {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
-                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-lg group hover:border-green-500/40 transition-all">
-                            <span className="text-xs text-gray-400 uppercase tracking-wide">ROAS Improvement</span>
-                            <span className={`text-sm font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-lg">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">ROAS Gain</span>
+                            <span className={`text-xs font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}%
                             </span>
                           </div>
                         )}
                         
                         {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
-                          <button className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg group hover:border-[#FF2A2A]/40 transition-all">
-                            <span className="text-xs text-gray-400 uppercase tracking-wide">Next Action</span>
-                            <div className="flex items-center gap-1 text-[#FF2A2A]">
-                              <span className="text-xs font-medium">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount} pending</span>
-                              <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">Pending</span>
+                            <span className="text-xs font-medium text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</span>
                         </div>
-                          </button>
                         )}
                               </div>
                             </div>
@@ -1120,47 +1117,7 @@ export default function MarketingAssistantPage() {
                     </div>
                     )}
 
-                    {/* Weekly Summary Stats */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3 mt-3">
-                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">Weekly Summary</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
-                          <div className="text-xs text-gray-500 mb-1">Actions Applied</div>
-                          <div className="text-lg font-bold text-white">{weeklyProgress.completedCount}</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
-                          <div className="text-xs text-gray-500 mb-1">Pending</div>
-                          <div className="text-lg font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
-                          <div className="text-xs text-gray-500 mb-1">Est. ROAS Gain</div>
-                          <div className="text-lg font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-2">
-                          <div className="text-xs text-gray-500 mb-1">Efficiency</div>
-                          <div className="text-lg font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
-                        </div>
-                          </div>
-                          </div>
-
-                    {/* Action Timeline */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
-                      <h4 className="text-white font-medium text-xs mb-3 uppercase tracking-wide">This Week's Focus</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                          <span className="text-xs text-gray-400">Demographic targeting optimized</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                          <span className="text-xs text-gray-400">Budget allocation in progress</span>
-                            </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-                          <span className="text-xs text-gray-400">Creative refresh pending</span>
-                            </div>
-                          </div>
-                        </div>
+                    {/* Compact Stats - Removed to save space */}
 
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
@@ -1467,22 +1424,22 @@ export default function MarketingAssistantPage() {
                              </div>
                          </div>
                         <div className="flex items-center gap-2 mb-2">
-                          {selectedPlatforms.includes('meta') && (
+                           {selectedPlatforms.includes('meta') && (
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
                                   <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-colors cursor-help">
                                     <Image src="/meta-icon.png" alt="Meta" width={16} height={16} className="rounded" />
-                                  </div>
+                </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="bg-[#0a0a0a] border-[#555] z-[9999]" sideOffset={5}>
                                   <div className="text-white font-medium">Meta: {trends.conversions.current.toLocaleString()}</div>
-                                  <div className="text-gray-400">100% of total</div>
+                                 <div className="text-gray-400">100% of total</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          )}
-                        </div>
+                           )}
+              </div>
                         <div className="text-2xl font-black text-white">{trends.conversions.current.toLocaleString()}</div>
                         <div className="text-xs text-gray-600 mt-0.5">vs {trends.conversions.previous.toLocaleString()} last period</div>
                 </div>
