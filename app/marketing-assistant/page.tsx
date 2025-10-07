@@ -1105,20 +1105,23 @@ export default function MarketingAssistantPage() {
                       </div>
                     )}
 
-                    {/* Recently Completed Actions - Only show if there are completed items */}
-                    {progress.completedCount > 0 && progress.topApplied && progress.topApplied.length > 0 && (
+                    {/* Current Goals - Show optimization objectives */}
+                    {progress.totalRecommendations > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
-                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Recently Completed</h4>
-                        <div className="space-y-0.5">
-                          {progress.topApplied.slice(0, 2).map((action: any, index: number) => (
-                            <div key={index} className="flex items-center gap-1.5">
-                              <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white text-[10px] truncate">{action.title}</p>
+                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Current Goals</h4>
+                        <div className="space-y-1">
+                          <div className="flex items-start gap-1.5">
+                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-[10px] leading-tight">Improve ROAS through better targeting</p>
                           </div>
-                              <span className="text-green-400 text-[10px] font-medium flex-shrink-0">{action.impact}</span>
+                          <div className="flex items-start gap-1.5">
+                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-[10px] leading-tight">Optimize budget allocation across campaigns</p>
                         </div>
-                      ))}
+                          <div className="flex items-start gap-1.5">
+                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-[10px] leading-tight">Reduce wasted ad spend on underperformers</p>
+                          </div>
                         </div>
                     </div>
                     )}
@@ -1131,7 +1134,7 @@ export default function MarketingAssistantPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Performance Tracking</h4>
                         <span className="text-[10px] text-cyan-400 font-bold">{timeline.stats.totalOptimizations} Applied</span>
-                        </div>
+                            </div>
                       
                       {/* Timeline Chart - ROAS bars with optimization markers */}
                       <div className="flex items-end justify-between gap-0.5 h-20 mb-1">
@@ -1164,17 +1167,17 @@ export default function MarketingAssistantPage() {
                                 {week.roasChange !== 0 && (
                                   <div className={week.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'}>
                                     {week.roasChange > 0 ? '+' : ''}{week.roasChange}% vs prev
-                                  </div>
-                                )}
-                              </div>
                             </div>
+                                )}
+                            </div>
+                        </div>
                           )
                         }) : (
                           <div className="flex-1 flex items-center justify-center text-[10px] text-gray-600">
                             Performance data will appear after first week
                           </div>
                         )}
-                            </div>
+                          </div>
                       
                       {/* Week Labels */}
                       {timeline.weeks.length > 0 && (
@@ -1184,7 +1187,7 @@ export default function MarketingAssistantPage() {
                           <span>{timeline.weeks[Math.floor(timeline.weeks.length / 2)]?.week}</span>
                         )}
                         <span>{timeline.weeks[timeline.weeks.length - 1]?.week}</span>
-                          </div>
+                        </div>
                       )}
                       
                       {/* Stats Summary */}
@@ -1192,25 +1195,17 @@ export default function MarketingAssistantPage() {
                         <div className="flex items-center justify-between text-[9px] pt-1.5 border-t border-[#333]">
                           <div className="text-gray-500">
                             Avg ROAS: <span className="text-white font-bold">{timeline.stats.avgRoas.toFixed(2)}x</span>
-                          </div>
+                            </div>
                           <div className="flex items-center gap-1">
                             <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></div>
                             <span className="text-gray-500">= Optimization</span>
-                          </div>
+                            </div>
                         </div>
-                      )}
-                    </div>
+                          )}
+                          </div>
                       )
                     })()}
 
-                    {/* Next Up Prompt */}
-                    {progress.totalRecommendations > progress.completedCount && (
-                      <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-[#FF5A5A]/10 border border-[#FF2A2A]/20 rounded-lg p-2.5">
-                        <p className="text-[#FF5A5A] text-xs">
-                          Next up: apply {progress.totalRecommendations - progress.completedCount} more to unlock <span className="font-bold">+{Math.round((progress.totalRecommendations - progress.completedCount) * 5)}%</span> ROAS
-                        </p>
-                    </div>
-                    )}
                   </>
                   )
                 })()}
@@ -1279,7 +1274,8 @@ export default function MarketingAssistantPage() {
                             </div>
                           
                           <div>
-                            <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs font-bold mb-1">
+                            <div className="text-[9px] text-gray-500 uppercase tracking-wide mb-0.5">Success Rate</div>
+                            <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs font-bold">
                               {card.priority.toUpperCase()}
                             </Badge>
                             <div className="flex items-center gap-1">

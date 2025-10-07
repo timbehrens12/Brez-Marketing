@@ -155,29 +155,33 @@ CRITICAL RULES:
    - icon: Single emoji that represents the insight
    - platform: "meta" (all insights are from Meta data for now)
 
-PRIORITY INSIGHTS (choose 3, in order of importance):
-1. **Best Performing Ad** - Name the specific ad with highest CTR or spend efficiency
-   - value: Should be the ad name, e.g., "Summer Collection Video"
-   - metric: Show CTR and spend, e.g., "3.5% CTR, $1.2K spent"
+PRIORITY INSIGHTS (MUST USE ACTUAL DATA):
+1. **Top Ad Creative** - USE THE ACTUAL AD_NAME FROM top_ads[0]
+   - type: "top_ad"
+   - label: "Top Ad"
+   - value: EXACT ad_name from data (e.g., the actual ad name like "TEST - DO NOT USE")
+   - metric: Show CTR and spend, e.g., "2.5% CTR, $450 spent"
 
-2. **Top Demographic Segment** - Name the specific age/gender performing best
-   - value: The demographic, e.g., "Women 25-34" or "Men 45-54"
-   - metric: Show performance metric, e.g., "2.8% CTR, $890 spent"
+2. **Top Demographic** - USE THE ACTUAL breakdown_value FROM demographics
+   - type: "top_demographic"
+   - label: "Top Audience" 
+   - value: EXACT breakdown_value (e.g., "65+" or "female")
+   - metric: Show CTR and spend, e.g., "3.2% CTR, $320 spent"
 
-3. **Geographic Opportunity** - Name the specific city/province with most orders
-   - value: The location name, e.g., "Ontario" or "California"
-   - metric: Show orders/revenue, e.g., "45 orders, $3.2K revenue"
+3. **Geographic Leader** - USE THE ACTUAL region FROM top_regions
+   - type: "top_region"
+   - label: "Top Region"
+   - value: EXACT region name from data
+   - metric: Show orders and spend, e.g., "12 orders, $450 revenue"
 
-4. **Underperforming Ad** (if spend >$100) - Name specific ad wasting budget
-   - value: Ad name with concern, e.g., "Banner Ad - Low CTR"
-   - metric: Show poor performance, e.g "0.4% CTR, $450 spent"
-
-IMPORTANT:
-- ALWAYS use actual ad names from top_ads data (not generic labels)
-- ALWAYS use specific demographics from demographics data (e.g., "Male 35-44" not "good targeting")
-- ALWAYS use actual region names from top_regions data
-- If no ad data, prioritize demographics and geographic insights
-- Avoid generic insights like "Total Spend" or "Average CTR" unless no other data exists
+CRITICAL RULES FOR DATA USAGE:
+- NEVER make up ad names - use EXACT ad_name field from top_ads array
+- NEVER make up demographics - use EXACT breakdown_value from demographics array
+- NEVER make up regions - use EXACT region field from top_regions array
+- The "value" field MUST contain the actual name/demographic/region from the data
+- The "metric" field MUST show actual numbers (spend, CTR, orders) from the data
+- If ad_name is null or empty, use "Unnamed Ad #{ad_id}"
+- DO NOT use generic labels like "High Performing Ad" - use the ACTUAL name
 
 Return ONLY valid JSON array with exactly 3 insights, no explanation text.`
       },
