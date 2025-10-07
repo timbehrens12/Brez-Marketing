@@ -817,73 +817,6 @@ export default function MarketingAssistantPage() {
       </div>
       </div>
 
-          {/* Live KPI Strip */}
-          {kpiMetrics && (
-            <div className="bg-gradient-to-br from-[#111]/60 to-[#0A0A0A]/60 border border-[#333]/60 rounded-xl p-3 backdrop-blur-sm">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center">
-                    <DollarSign className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">Spend</div>
-                    <div className="text-lg font-bold text-white">${kpiMetrics.spend.toFixed(0)}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-600/10 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">Revenue</div>
-                    <div className="text-lg font-bold text-white">${kpiMetrics.revenue.toFixed(0)}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-600/10 flex items-center justify-center">
-                    <Activity className="w-4 h-4 text-purple-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">ROAS</div>
-                    <div className="text-lg font-bold text-white">{kpiMetrics.roas.toFixed(2)}x</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10 flex items-center justify-center">
-                    <Target className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">CTR</div>
-                    <div className="text-lg font-bold text-white">{kpiMetrics.ctr.toFixed(2)}%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* AI Summary Banner */}
-          {weeklyProgress && optimizationCards.length > 0 && (
-            <div className="bg-gradient-to-r from-[#FF2A2A]/10 via-[#10b981]/10 to-[#FF2A2A]/10 border border-[#333]/60 rounded-xl p-3 backdrop-blur-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2A2A]/30 to-[#FF5A5A]/20 flex items-center justify-center border border-[#FF2A2A]/40 animate-pulse">
-                  <Sparkles className="w-5 h-5 text-[#FF2A2A]" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-white">
-                    {weeklyProgress.completedCount} optimization{weeklyProgress.completedCount !== 1 ? 's' : ''} applied this week
-                    {weeklyProgress.completionPercentage === 100 ? ' 🎯' : ''}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {weeklyProgress.completionPercentage < 100 
-                      ? `Focus next on ${optimizationCards.find(c => !completedItems.has(c.id))?.title || 'remaining optimizations'} for +${Math.round(optimizationCards.find(c => !completedItems.has(c.id))?.projectedImpact?.roas || 0)}x ROAS`
-                      : 'All recommendations completed! Check back Monday for new insights.'
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Performance Window & Platform Filters Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             {/* Performance Window */}
@@ -958,9 +891,8 @@ export default function MarketingAssistantPage() {
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
             
-             {/* Left Rail - Setup Column */}
+             {/* Left Rail - Fixed Height Column (No Scroll) */}
             <div className="col-span-1 xl:col-span-3 flex flex-col gap-2.5 min-w-0 h-full overflow-hidden">
-              <div className="text-[10px] font-medium text-gray-600 uppercase tracking-widest mb-1 px-1">Setup</div>
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1218,9 +1150,8 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-            {/* Middle Column - AI Feed - Scrollable */}
+            {/* Middle Column - Main Work Area - Scrollable */}
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
-              <div className="text-[10px] font-medium text-gray-600 uppercase tracking-widest mb-1 px-1">AI Feed</div>
             
             {/* AI Optimization Feed - Completely Redesigned */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1242,16 +1173,12 @@ export default function MarketingAssistantPage() {
               
               <CardContent className="p-3">
                 <div className="space-y-3">
-                  {filteredOptimizations.map((card, index) => {
+                  {filteredOptimizations.map(card => {
                     const effortLevel = card.priority === 'high' ? 3 : card.priority === 'medium' ? 2 : 1
                     const confidencePercentage = card.projectedImpact?.confidence || 85
                     
                     return (
-                    <div 
-                      key={card.id} 
-                      className="group relative bg-gradient-to-br from-[#1a1a1a]/60 to-[#0f0f0f]/60 border border-[#333]/60 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-[#FF2A2A]/10 hover:border-[#FF2A2A]/40 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
-                      style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
-                    >
+                    <div key={card.id} className="group relative bg-gradient-to-br from-[#1a1a1a]/60 to-[#0f0f0f]/60 border border-[#333]/60 rounded-xl p-4 transition-all duration-300">
                       
                       {/* Top Row: Priority + Confidence + Effort */}
                       <div className="flex items-center justify-between mb-3">
@@ -1260,27 +1187,19 @@ export default function MarketingAssistantPage() {
                             <svg className="w-full h-full transform -rotate-90">
                               <circle cx="20" cy="20" r="16" stroke="#333" strokeWidth="2.5" fill="none" />
                               <circle 
-                                cx="20"
-                                cy="20"
-                                r="16"
-                                stroke={`url(#confidenceGrad${confidencePercentage >= 80 ? 'Green' : confidencePercentage >= 60 ? 'Yellow' : 'Red'})`}
-                                strokeWidth="2.5"
-                                fill="none"
+                                cx="20" 
+                                cy="20" 
+                                r="16" 
+                                stroke="url(#confidenceGrad)" 
+                                strokeWidth="2.5" 
+                                fill="none" 
                                 strokeLinecap="round"
                                 strokeDasharray="100.5"
                                 strokeDashoffset={100.5 - (100.5 * confidencePercentage) / 100}
-                                className="transition-all duration-700 animate-in spin-in"
+                                className="transition-all duration-700"
                               />
                               <defs>
-                                <linearGradient id="confidenceGradGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#10b981" />
-                                  <stop offset="100%" stopColor="#34d399" />
-                                </linearGradient>
-                                <linearGradient id="confidenceGradYellow" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#f59e0b" />
-                                  <stop offset="100%" stopColor="#fbbf24" />
-                                </linearGradient>
-                                <linearGradient id="confidenceGradRed" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <linearGradient id="confidenceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" stopColor="#FF2A2A" />
                                   <stop offset="100%" stopColor="#FF5A5A" />
                                 </linearGradient>
@@ -1384,9 +1303,8 @@ export default function MarketingAssistantPage() {
             </Card>
                 </div>
 
-            {/* Right Rail - Results Column - Scrollable */}
+            {/* Right Rail - Insights Column - Scrollable */}
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
-              <div className="text-[10px] font-medium text-gray-600 uppercase tracking-widest mb-1 px-1">Results</div>
             
             {/* Performance Trends - Completely Redesigned */}
             <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
