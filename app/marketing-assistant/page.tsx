@@ -1123,91 +1123,82 @@ export default function MarketingAssistantPage() {
                     </div>
                     )}
 
-                    {/* Weekly Summary Stats - Compact */}
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mt-2">
-                      <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">Weekly Summary</h4>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
-                          <div className="text-[10px] text-gray-500 mb-0.5">Applied</div>
-                          <div className="text-sm font-bold text-white">{progress.completedCount}</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
-                          <div className="text-[10px] text-gray-500 mb-0.5">Pending</div>
-                          <div className="text-sm font-bold text-[#FF2A2A]">{progress.totalRecommendations - progress.completedCount}</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
-                          <div className="text-[10px] text-gray-500 mb-0.5">ROAS Gain</div>
-                          <div className="text-sm font-bold text-green-400">+{progress.roasImprovement || 0}%</div>
-                            </div>
-                        <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
-                          <div className="text-[10px] text-gray-500 mb-0.5">Efficiency</div>
-                          <div className="text-sm font-bold text-blue-400">{progress.completionPercentage}%</div>
-                        </div>
-                          </div>
-                          </div>
-
-                    {/* Optimization Timeline - Functional tracking - Always show */}
+                    {/* Performance Timeline - Shows week-over-week performance improvements */}
                     {(() => {
-                      const timeline = optimizationTimeline || { weeks: [], stats: { applicationRate: 0 } }
+                      const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
                       return (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
-                        <span className="text-[10px] text-emerald-400 font-bold">{timeline.stats.applicationRate}% Applied</span>
+                        <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Performance Tracking</h4>
+                        <span className="text-[10px] text-cyan-400 font-bold">{timeline.stats.totalOptimizations} Applied</span>
                         </div>
                       
-                      {/* Timeline Chart */}
-                      <div className="flex items-end justify-between gap-0.5 h-16 mb-1">
+                      {/* Timeline Chart - ROAS bars with optimization markers */}
+                      <div className="flex items-end justify-between gap-0.5 h-20 mb-1">
                         {timeline.weeks.length > 0 ? timeline.weeks.map((week: any, index: number) => {
-                          const maxValue = Math.max(...timeline.weeks.map((w: any) => Math.max(w.analyzed, w.applied)))
-                          const analyzedHeight = maxValue > 0 ? (week.analyzed / maxValue) * 100 : 0
-                          const appliedHeight = maxValue > 0 ? (week.applied / maxValue) * 100 : 0
+                          const maxRoas = Math.max(...timeline.weeks.map((w: any) => w.roas || 0), 1)
+                          const roasHeight = maxRoas > 0 ? (week.roas / maxRoas) * 100 : 0
+                          const hasOptimization = week.optimizationsApplied > 0
+                          const isImproving = week.roasChange > 0
                           
                           return (
-                            <div key={index} className="flex-1 flex flex-col items-center gap-0.5">
-                              {/* Analyzed bar (gray) */}
+                            <div key={index} className="flex-1 flex flex-col items-center gap-0.5 group relative">
+                              {/* Optimization marker */}
+                              {hasOptimization && (
+                                <div className="absolute -top-2 w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" title={`${week.optimizationsApplied} optimization${week.optimizationsApplied > 1 ? 's' : ''}`}></div>
+                              )}
+                              
+                              {/* ROAS performance bar */}
                               <div 
-                                className="w-full bg-gray-600/40 rounded-t transition-all hover:bg-gray-500/60"
-                                style={{ height: `${analyzedHeight}%`, minHeight: week.analyzed > 0 ? '4px' : '0' }}
-                                title={`${week.analyzed} analyzed`}
+                                className={`w-full rounded-t transition-all ${
+                                  isImproving ? 'bg-emerald-500/70 hover:bg-emerald-400/90' : 
+                                  week.roasChange < 0 ? 'bg-red-500/70 hover:bg-red-400/90' : 
+                                  'bg-gray-500/70 hover:bg-gray-400/90'
+                                }`}
+                                style={{ height: `${roasHeight}%`, minHeight: week.roas > 0 ? '8px' : '2px' }}
                               ></div>
-                              {/* Applied bar (green) */}
-                              <div 
-                                className="w-full bg-emerald-500/60 rounded-t transition-all hover:bg-emerald-400/80"
-                                style={{ height: `${appliedHeight}%`, minHeight: week.applied > 0 ? '4px' : '0' }}
-                                title={`${week.applied} applied`}
-                              ></div>
+                              
+                              {/* Tooltip on hover */}
+                              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#000] border border-[#444] rounded px-2 py-1 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                                <div className="text-white font-bold">{week.roas.toFixed(2)}x ROAS</div>
+                                {week.roasChange !== 0 && (
+                                  <div className={week.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                    {week.roasChange > 0 ? '+' : ''}{week.roasChange}% vs prev
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )
                         }) : (
                           <div className="flex-1 flex items-center justify-center text-[10px] text-gray-600">
-                            No data yet
-                            </div>
-                          )}
+                            Performance data will appear after first week
                           </div>
+                        )}
+                            </div>
                       
-                      {/* Week Labels - show first, middle, last */}
+                      {/* Week Labels */}
                       {timeline.weeks.length > 0 && (
-                      <div className="flex justify-between text-[8px] text-gray-600 mb-1">
+                      <div className="flex justify-between text-[8px] text-gray-600 mb-1.5">
                         <span>{timeline.weeks[0]?.week}</span>
                         {timeline.weeks.length > 2 && (
                           <span>{timeline.weeks[Math.floor(timeline.weeks.length / 2)]?.week}</span>
                         )}
                         <span>{timeline.weeks[timeline.weeks.length - 1]?.week}</span>
-                        </div>
+                          </div>
                       )}
                       
-                      {/* Legend */}
-                      <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#333]">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-gray-600/40 rounded"></div>
-                          <span className="text-[9px] text-gray-500">Analyzed</span>
+                      {/* Stats Summary */}
+                      {timeline.weeks.length > 0 && (
+                        <div className="flex items-center justify-between text-[9px] pt-1.5 border-t border-[#333]">
+                          <div className="text-gray-500">
+                            Avg ROAS: <span className="text-white font-bold">{timeline.stats.avgRoas.toFixed(2)}x</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></div>
+                            <span className="text-gray-500">= Optimization</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-emerald-500/60 rounded"></div>
-                          <span className="text-[9px] text-gray-500">Applied</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                       )
                     })()}
@@ -1398,6 +1389,8 @@ export default function MarketingAssistantPage() {
                   <div className="space-y-3">
                     {/* Spend Metric - Redesigned */}
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      {/* Dynamic corner accent based on direction */}
+                      <div className={`absolute top-0 right-0 w-20 h-20 rounded-bl-full ${trends.spend.direction === 'up' ? 'bg-gradient-to-br from-red-500/10 to-transparent' : 'bg-gradient-to-br from-emerald-500/10 to-transparent'}`}></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
@@ -1430,6 +1423,8 @@ export default function MarketingAssistantPage() {
 
                     {/* ROAS Metric - Redesigned */}
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      {/* Dynamic corner accent based on direction */}
+                      <div className={`absolute top-0 right-0 w-20 h-20 rounded-bl-full ${trends.roas.direction === 'up' ? 'bg-gradient-to-br from-emerald-500/10 to-transparent' : 'bg-gradient-to-br from-red-500/10 to-transparent'}`}></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
@@ -1463,6 +1458,8 @@ export default function MarketingAssistantPage() {
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      {/* Dynamic corner accent based on direction */}
+                      <div className={`absolute top-0 right-0 w-20 h-20 rounded-bl-full ${trends.conversions.direction === 'up' ? 'bg-gradient-to-br from-emerald-500/10 to-transparent' : 'bg-gradient-to-br from-red-500/10 to-transparent'}`}></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>

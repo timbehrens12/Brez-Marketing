@@ -32,23 +32,39 @@ export async function GET(request: NextRequest) {
 }
 
 async function getOptimizationTimeline(brandId: string) {
-  // Get all AI analysis runs (when recommendations were generated)
-  const { data: recommendations } = await supabase
-    .from('ai_campaign_recommendations')
-    .select('created_at, recommendation_type')
-    .eq('brand_id', brandId)
-    .order('created_at', { ascending: true })
+  // Get last 8 weeks of Meta ad performance data
+  const today = new Date()
+  const eightWeeksAgo = new Date(today)
+  eightWeeksAgo.setDate(today.getDate() - 56) // 8 weeks = 56 days
 
-  // Get all completed optimizations
+  const { data: adStats } = await supabase
+    .from('meta_ad_daily_stats')
+    .select('date, spend, impressions, clicks, revenue')
+    .eq('brand_id', brandId)
+    .gte('date', eightWeeksAgo.toISOString().split('T')[0])
+    .order('date', { ascending: true })
+
+  // Get completed optimizations to show which weeks had optimizations applied
   const { data: completedActions } = await supabase
     .from('ai_usage_logs')
-    .select('created_at, metadata')
+    .select('created_at')
     .eq('brand_id', brandId)
     .eq('endpoint', 'mark_as_done')
+    .gte('created_at', eightWeeksAgo.toISOString())
     .order('created_at', { ascending: true })
 
   // Group by week
-  const weeklyData: { [key: string]: { week: string; analyzed: number; applied: number; weekStart: Date } } = {}
+  const weeklyData: { [key: string]: { 
+    week: string
+    weekStart: Date
+    spend: number
+    revenue: number
+    impressions: number
+    clicks: number
+    roas: number
+    ctr: number
+    optimizationsApplied: number
+  } } = {}
 
   // Helper to get week key (Monday of that week)
   const getWeekStart = (date: Date) => {
@@ -66,45 +82,90 @@ async function getOptimizationTimeline(brandId: string) {
     return `${month} ${day}`
   }
 
-  // Process recommendations (when analysis was run)
-  recommendations?.forEach((rec) => {
-    const weekStart = getWeekStart(new Date(rec.created_at))
+  // Process ad performance data by week
+  adStats?.forEach((stat) => {
+    const weekStart = getWeekStart(new Date(stat.date))
     const weekKey = formatWeekKey(weekStart)
     
     if (!weeklyData[weekKey]) {
-      weeklyData[weekKey] = { week: weekKey, analyzed: 0, applied: 0, weekStart }
+      weeklyData[weekKey] = { 
+        week: weekKey, 
+        weekStart, 
+        spend: 0, 
+        revenue: 0, 
+        impressions: 0, 
+        clicks: 0, 
+        roas: 0, 
+        ctr: 0,
+        optimizationsApplied: 0
+      }
     }
-    weeklyData[weekKey].analyzed++
+    
+    weeklyData[weekKey].spend += Number(stat.spend) || 0
+    weeklyData[weekKey].revenue += Number(stat.revenue) || 0
+    weeklyData[weekKey].impressions += Number(stat.impressions) || 0
+    weeklyData[weekKey].clicks += Number(stat.clicks) || 0
   })
 
-  // Process completed actions
+  // Calculate ROAS and CTR for each week
+  Object.values(weeklyData).forEach((week) => {
+    week.roas = week.spend > 0 ? week.revenue / week.spend : 0
+    week.ctr = week.impressions > 0 ? (week.clicks / week.impressions) * 100 : 0
+  })
+
+  // Process completed optimizations
   completedActions?.forEach((action) => {
     const weekStart = getWeekStart(new Date(action.created_at))
     const weekKey = formatWeekKey(weekStart)
     
-    if (!weeklyData[weekKey]) {
-      weeklyData[weekKey] = { week: weekKey, analyzed: 0, applied: 0, weekStart }
+    if (weeklyData[weekKey]) {
+      weeklyData[weekKey].optimizationsApplied++
     }
-    weeklyData[weekKey].applied++
   })
 
   // Convert to array and sort by date
   const timelineArray = Object.values(weeklyData)
     .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
-    .map(({ week, analyzed, applied }) => ({ week, analyzed, applied }))
+    .map(({ week, spend, revenue, roas, ctr, optimizationsApplied }) => ({ 
+      week, 
+      spend: Math.round(spend * 100) / 100, 
+      revenue: Math.round(revenue * 100) / 100, 
+      roas: Math.round(roas * 100) / 100, 
+      ctr: Math.round(ctr * 100) / 100,
+      optimizationsApplied
+    }))
     .slice(-8) // Last 8 weeks
 
-  // Calculate totals
-  const totalAnalyzed = timelineArray.reduce((sum, item) => sum + item.analyzed, 0)
-  const totalApplied = timelineArray.reduce((sum, item) => sum + item.applied, 0)
-  const applicationRate = totalAnalyzed > 0 ? Math.round((totalApplied / totalAnalyzed) * 100) : 0
+  // Calculate week-over-week improvements
+  const improvements = timelineArray.map((week, index) => {
+    if (index === 0) return { ...week, roasChange: 0, ctrChange: 0 }
+    
+    const previous = timelineArray[index - 1]
+    const roasChange = previous.roas > 0 ? ((week.roas - previous.roas) / previous.roas) * 100 : 0
+    const ctrChange = previous.ctr > 0 ? ((week.ctr - previous.ctr) / previous.ctr) * 100 : 0
+    
+    return {
+      ...week,
+      roasChange: Math.round(roasChange),
+      ctrChange: Math.round(ctrChange)
+    }
+  })
+
+  // Calculate overall stats
+  const totalOptimizations = timelineArray.reduce((sum, week) => sum + week.optimizationsApplied, 0)
+  const avgRoas = timelineArray.length > 0 
+    ? timelineArray.reduce((sum, week) => sum + week.roas, 0) / timelineArray.length 
+    : 0
+  const avgCtr = timelineArray.length > 0
+    ? timelineArray.reduce((sum, week) => sum + week.ctr, 0) / timelineArray.length
+    : 0
 
   return {
-    weeks: timelineArray,
+    weeks: improvements,
     stats: {
-      totalAnalyzed,
-      totalApplied,
-      applicationRate,
+      totalOptimizations,
+      avgRoas: Math.round(avgRoas * 100) / 100,
+      avgCtr: Math.round(avgCtr * 100) / 100,
       weeksTracked: timelineArray.length
     }
   }
