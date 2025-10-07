@@ -1212,9 +1212,7 @@ export default function MarketingAssistantPage() {
                     </div>
                     )}
                   </>
-                )}
-
-                {/* Removed empty state - widget always shows with 0 values if no data */}
+                  )
                 })()}
               </CardContent>
             </Card>
