@@ -142,6 +142,7 @@ export default function MarketingAssistantPage() {
   const { agencySettings } = useAgency()
   
   // State
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
@@ -179,11 +180,13 @@ export default function MarketingAssistantPage() {
       if (!selectedBrandId) {
         setIsCheckingPlatforms(false)
         setHasAdPlatforms(false)
+        setIsLoadingPage(false)
         setLoading(false)
         return
       }
 
       setIsCheckingPlatforms(true)
+      setIsLoadingPage(true)
       setLoading(true)
 
       try {
@@ -205,16 +208,19 @@ export default function MarketingAssistantPage() {
             await loadDashboardData()
           } else {
             // No platforms - stop loading
+            setIsLoadingPage(false)
             setLoading(false)
           }
         } else {
           // API error - assume no platforms
           setHasAdPlatforms(false)
+          setIsLoadingPage(false)
           setLoading(false)
         }
       } catch (error) {
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
+        setIsLoadingPage(false)
         setLoading(false)
       } finally {
         setIsCheckingPlatforms(false)
@@ -332,18 +338,19 @@ export default function MarketingAssistantPage() {
   const loadDashboardData = async (forceRefresh = false) => {
     if (!selectedBrandId) return
     
-      // If force refresh, clear ALL state first
+      // If force refresh, clear ALL state first and show unified loading
       if (forceRefresh) {
+        setIsRefreshingData(true)
+        setLoading(true)
         setOptimizationCards([])
         setQuickInsights([])
         setWeeklyProgress(null)
         setKpiMetrics(null)
         setTrends(null)
+      } else {
+        // For initial load, use the page loading state
+        setLoading(true)
       }
-    
-    // Always set loading for data fetch
-    setLoading(true)
-    setIsRefreshingData(false)
     
     try {
       // First load recommendations
@@ -370,6 +377,7 @@ export default function MarketingAssistantPage() {
       // Always clear loading states when done
       setInitialDataLoad(false)
       setLoading(false)
+      setIsLoadingPage(false)
       setIsRefreshingData(false)
     }
   }
@@ -659,7 +667,7 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  if (loading) {
+  if (isLoadingPage || loading || isRefreshingData) {
     return (
       <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
@@ -694,7 +702,7 @@ export default function MarketingAssistantPage() {
           
           {/* Dynamic loading phase */}
           <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            Preparing AI insights
+            {isRefreshingData ? 'Updating Analysis' : 'Preparing AI insights'}
           </p>
           
           {/* Subtle loading tip */}
@@ -981,7 +989,18 @@ export default function MarketingAssistantPage() {
                       </div>
                     )}
                 
-                {weeklyProgress && (
+                {(() => {
+                  // Always show progress - use default 0 values if no data yet
+                  const progress = weeklyProgress || {
+                    completionPercentage: 0,
+                    completedCount: 0,
+                    totalRecommendations: 0,
+                    roasImprovement: 0,
+                    categories: {},
+                    topApplied: []
+                  }
+                  
+                  return !loading && (
                   <>
                     {/* Circular Radial Progress Gauge - Compact */}
                     <div className="flex flex-col items-center justify-center">
@@ -1008,7 +1027,7 @@ export default function MarketingAssistantPage() {
                             fill="none"
                             strokeLinecap="round"
                             strokeDasharray="351.86"
-                            strokeDashoffset={351.86 - (351.86 * weeklyProgress.completionPercentage) / 100}
+                            strokeDashoffset={351.86 - (351.86 * progress.completionPercentage) / 100}
                             className="transition-all duration-1000 ease-out"
                             style={{ filter: 'drop-shadow(0 0 6px rgba(255, 42, 42, 0.5))' }}
                           />
@@ -1028,11 +1047,11 @@ export default function MarketingAssistantPage() {
                         {/* Center content - Compact */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <div className="text-3xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-0.5">
-                            {weeklyProgress.completionPercentage}%
+                            {progress.completionPercentage}%
                             </div>
                           <div className="text-[10px] text-gray-500 uppercase tracking-wider">Complete</div>
                           <div className="text-xs text-white font-bold mt-1">
-                            {weeklyProgress.completedCount}/{weeklyProgress.totalRecommendations} Applied
+                            {progress.completedCount}/{progress.totalRecommendations} Applied
                           </div>
                             </div>
                         
@@ -1042,31 +1061,31 @@ export default function MarketingAssistantPage() {
                       
                       {/* Stats Grid - Compact */}
                       <div className="w-full space-y-1">
-                        {weeklyProgress.roasImprovement !== undefined && weeklyProgress.roasImprovement !== 0 && (
+                        {progress.roasImprovement !== undefined && progress.roasImprovement !== 0 && (
                           <div className="flex items-center justify-between p-2 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-lg">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">ROAS Gain</span>
-                            <span className={`text-xs font-bold ${weeklyProgress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {weeklyProgress.roasImprovement > 0 ? '+' : ''}{weeklyProgress.roasImprovement.toFixed(0)}%
+                            <span className={`text-xs font-bold ${progress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {progress.roasImprovement > 0 ? '+' : ''}{progress.roasImprovement.toFixed(0)}%
                             </span>
                           </div>
                         )}
                         
-                        {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
+                        {progress.totalRecommendations > progress.completedCount && (
                           <div className="flex items-center justify-between p-2 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">Pending</span>
-                            <span className="text-xs font-medium text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</span>
+                            <span className="text-xs font-medium text-[#FF2A2A]">{progress.totalRecommendations - progress.completedCount}</span>
                         </div>
                         )}
                               </div>
                             </div>
 
-                    {/* Category Breakdown - Always show */}
-                    {weeklyProgress.categories && Object.keys(weeklyProgress.categories).length > 0 && (
+                    {/* Category Breakdown */}
+                    {progress.categories && Object.values(progress.categories).some((count: any) => count > 0) && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
                         <h4 className="text-white font-medium text-xs mb-2 uppercase tracking-wide">By Category</h4>
                         <div className="space-y-1">
-                          {Object.entries(weeklyProgress.categories).map(([category, count]: [string, any]) => {
-                            const completed = Math.floor(count * (weeklyProgress.completionPercentage / 100))
+                          {Object.entries(progress.categories).filter(([_, count]: [string, any]) => count > 0).map(([category, count]: [string, any]) => {
+                            const completed = Math.floor(count * (progress.completionPercentage / 100))
                             return (
                               <div key={category} className="flex items-center justify-between text-xs">
                                 <span className="text-gray-400">{category}</span>
@@ -1087,11 +1106,11 @@ export default function MarketingAssistantPage() {
                     )}
 
                     {/* Recently Completed Actions - Only show if there are completed items */}
-                    {weeklyProgress.completedCount > 0 && weeklyProgress.topApplied && weeklyProgress.topApplied.length > 0 && (
+                    {progress.completedCount > 0 && progress.topApplied && progress.topApplied.length > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                         <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Recently Completed</h4>
                         <div className="space-y-0.5">
-                          {weeklyProgress.topApplied.slice(0, 2).map((action: any, index: number) => (
+                          {progress.topApplied.slice(0, 2).map((action: any, index: number) => (
                             <div key={index} className="flex items-center gap-1.5">
                               <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
@@ -1110,25 +1129,25 @@ export default function MarketingAssistantPage() {
                       <div className="grid grid-cols-2 gap-1.5">
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Applied</div>
-                          <div className="text-sm font-bold text-white">{weeklyProgress.completedCount}</div>
+                          <div className="text-sm font-bold text-white">{progress.completedCount}</div>
                             </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Pending</div>
-                          <div className="text-sm font-bold text-[#FF2A2A]">{weeklyProgress.totalRecommendations - weeklyProgress.completedCount}</div>
+                          <div className="text-sm font-bold text-[#FF2A2A]">{progress.totalRecommendations - progress.completedCount}</div>
                             </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">ROAS Gain</div>
-                          <div className="text-sm font-bold text-green-400">+{weeklyProgress.roasImprovement || 0}%</div>
+                          <div className="text-sm font-bold text-green-400">+{progress.roasImprovement || 0}%</div>
                             </div>
                         <div className="bg-[#0A0A0A]/50 rounded-lg p-1.5">
                           <div className="text-[10px] text-gray-500 mb-0.5">Efficiency</div>
-                          <div className="text-sm font-bold text-blue-400">{weeklyProgress.completionPercentage}%</div>
+                          <div className="text-sm font-bold text-blue-400">{progress.completionPercentage}%</div>
                         </div>
                           </div>
                           </div>
 
-                    {/* Optimization Timeline - Functional tracking - Always show */}
-                    {optimizationTimeline && optimizationTimeline.weeks && (
+                    {/* Optimization Timeline - Functional tracking */}
+                    {optimizationTimeline && optimizationTimeline.weeks && optimizationTimeline.weeks.length > 0 && (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
@@ -1185,25 +1204,18 @@ export default function MarketingAssistantPage() {
                     )}
 
                     {/* Next Up Prompt */}
-                    {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
+                    {progress.totalRecommendations > progress.completedCount && (
                       <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-[#FF5A5A]/10 border border-[#FF2A2A]/20 rounded-lg p-2.5">
                         <p className="text-[#FF5A5A] text-xs">
-                          Next up: apply {weeklyProgress.totalRecommendations - weeklyProgress.completedCount} more to unlock <span className="font-bold">+{Math.round((weeklyProgress.totalRecommendations - weeklyProgress.completedCount) * 5)}%</span> ROAS
+                          Next up: apply {progress.totalRecommendations - progress.completedCount} more to unlock <span className="font-bold">+{Math.round((progress.totalRecommendations - progress.completedCount) * 5)}%</span> ROAS
                         </p>
                     </div>
                     )}
                   </>
                 )}
 
-                {!loading && !weeklyProgress && (
-                  <div className="text-center py-12 text-gray-400 flex-1 flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
-                      <Gauge className="w-8 h-8 text-[#FF2A2A]" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-2 text-white">No Optimization Data</h3>
-                    <p className="text-sm text-gray-500">Click "Update Analysis" to generate your first optimization insights and track progress here.</p>
-                  </div>
-                )}
+                {/* Removed empty state - widget always shows with 0 values if no data */}
+                })()}
               </CardContent>
             </Card>
                 </div>
@@ -1379,12 +1391,11 @@ export default function MarketingAssistantPage() {
                   <div className="space-y-3">
                     {/* Spend Metric - Redesigned */}
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.change > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                            {trends.spend.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
               </div>
                 </div>
@@ -1412,12 +1423,11 @@ export default function MarketingAssistantPage() {
 
                     {/* ROAS Metric - Redesigned */}
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.change > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {trends.roas.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
                                </div>
                                </div>
@@ -1446,12 +1456,11 @@ export default function MarketingAssistantPage() {
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
                     <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.change > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {trends.conversions.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
                                </div>
                                </div>
@@ -1505,9 +1514,6 @@ export default function MarketingAssistantPage() {
                 <div className="space-y-3">
                     {quickInsights.map((insight, index) => (
                       <div key={index} className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                        {/* Decorative corner accent */}
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
-                        
                         <div className="relative">
                           {/* Platform & Metric Badge */}
                       <div className="flex items-start justify-between mb-2">

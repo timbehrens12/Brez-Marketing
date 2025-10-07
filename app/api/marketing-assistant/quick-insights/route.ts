@@ -144,32 +144,40 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
 
 CRITICAL RULES:
 1. Generate EXACTLY 3 insights, no more, no less
-2. Each insight should be unique and actionable
-3. Focus on the MOST IMPORTANT patterns, opportunities, or concerns
+2. Each insight should be SPECIFIC and NAME-DRIVEN (mention specific ad names, demographics, or regions)
+3. Focus on ACTIONABLE findings, not generic metrics
 4. Be specific with numbers and metrics
 5. Each insight should have:
-   - type: snake_case identifier (e.g., "top_creative", "demographic_opportunity", "spending_efficiency")
+   - type: snake_case identifier (e.g., "top_ad", "best_demographic", "opportunity_region")
    - label: Short category name (2-3 words max)
-   - value: The key finding (max 35 chars)
-   - metric: Supporting metric or context (e.g., "2.5% CTR", "$450 spent")
+   - value: The key finding with SPECIFIC NAME (max 35 chars) - e.g., "Spring Sale Ad" not "High CTR"
+   - metric: Supporting metric with numbers (e.g., "2.5% CTR, $450 spent", "65+ age, 3.2% CTR")
    - icon: Single emoji that represents the insight
    - platform: "meta" (all insights are from Meta data for now)
 
-INSIGHT CATEGORIES (choose 3 that are most relevant based on available data):
-- Top performing creative/ad (if ad data available)
-- Underperforming creative that needs attention (if ad data available)
-- Best performing demographic (use demographic data)
-- Demographic opportunity or trend (use demographic data)
-- Geographic concentration or opportunity (use customer data)
-- Spending efficiency (use any spend data)
-- Creative fatigue indicators (if ad data available)
-- Audience saturation or performance patterns
-- Budget allocation or spend patterns
-- ROAS/ROI insights (if conversion data available)
-- Engagement trends (CTR, clicks, impressions)
-- Any other data-driven insight you discover
+PRIORITY INSIGHTS (choose 3, in order of importance):
+1. **Best Performing Ad** - Name the specific ad with highest CTR or spend efficiency
+   - value: Should be the ad name, e.g., "Summer Collection Video"
+   - metric: Show CTR and spend, e.g., "3.5% CTR, $1.2K spent"
 
-NOTE: If only demographic data is available, focus insights on demographic performance, audience patterns, and spending efficiency across different segments.
+2. **Top Demographic Segment** - Name the specific age/gender performing best
+   - value: The demographic, e.g., "Women 25-34" or "Men 45-54"
+   - metric: Show performance metric, e.g., "2.8% CTR, $890 spent"
+
+3. **Geographic Opportunity** - Name the specific city/province with most orders
+   - value: The location name, e.g., "Ontario" or "California"
+   - metric: Show orders/revenue, e.g., "45 orders, $3.2K revenue"
+
+4. **Underperforming Ad** (if spend >$100) - Name specific ad wasting budget
+   - value: Ad name with concern, e.g., "Banner Ad - Low CTR"
+   - metric: Show poor performance, e.g "0.4% CTR, $450 spent"
+
+IMPORTANT:
+- ALWAYS use actual ad names from top_ads data (not generic labels)
+- ALWAYS use specific demographics from demographics data (e.g., "Male 35-44" not "good targeting")
+- ALWAYS use actual region names from top_regions data
+- If no ad data, prioritize demographics and geographic insights
+- Avoid generic insights like "Total Spend" or "Average CTR" unless no other data exists
 
 Return ONLY valid JSON array with exactly 3 insights, no explanation text.`
       },
