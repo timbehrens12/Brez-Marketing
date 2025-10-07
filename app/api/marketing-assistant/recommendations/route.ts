@@ -540,7 +540,7 @@ async function generateRecommendations(
       return []
     }
 
-    // Get campaign performance data - filter by allowed campaigns
+    // Get performance data at ALL levels: Campaign, Ad Set, and Ad
     const { data: campaignStats } = await supabase
       .from('meta_campaign_daily_stats')
       .select('*')
@@ -549,11 +549,35 @@ async function generateRecommendations(
       .gte('date', dateRange.from)
       .lte('date', dateRange.to)
 
+    const { data: adsetStats } = await supabase
+      .from('meta_adset_daily_stats')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gte('date', dateRange.from)
+      .lte('date', dateRange.to)
+
+    const { data: adStats } = await supabase
+      .from('meta_ad_daily_stats')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gte('date', dateRange.from)
+      .lte('date', dateRange.to)
+
     const { data: campaigns } = await supabase
       .from('meta_campaigns')
       .select('*')
       .eq('brand_id', brandId)
       .in('campaign_id', allowedCampaignIds)
+
+    const { data: adsets } = await supabase
+      .from('meta_adsets')
+      .select('*')
+      .eq('brand_id', brandId)
+
+    const { data: ads } = await supabase
+      .from('meta_ads')
+      .select('*')
+      .eq('brand_id', brandId)
 
     // Fetch demographic data for the brand (account-level data)
     // Note: meta_demographics is at account level, not campaign level
@@ -573,7 +597,9 @@ async function generateRecommendations(
       .lte('date_range_end', dateRange.to)
 
     console.log(`[Recommendations] 🔍 Analyzing data from ${dateRange.from} to ${dateRange.to}`)
-    console.log(`[Recommendations] 📊 Found ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
+    console.log(`[Recommendations] 📊 Campaign Level: ${campaignStats?.length || 0} stat records for ${campaigns?.length || 0} campaigns`)
+    console.log(`[Recommendations] 📊 Ad Set Level: ${adsetStats?.length || 0} stat records for ${adsets?.length || 0} ad sets`)
+    console.log(`[Recommendations] 📊 Ad Level: ${adStats?.length || 0} stat records for ${ads?.length || 0} ads`)
     console.log(`[Recommendations] 👥 Found ${demographics?.length || 0} demographic records`)
     console.log(`[Recommendations] 📱 Found ${devicePerformance?.length || 0} device performance records`)
 
@@ -652,6 +678,62 @@ async function generateRecommendations(
       perf.totalRevenue += parseFloat(stat.purchase_value) || 0
       perf.days += 1
     })
+
+    // Group stats by ad set
+    const adsetPerformance = new Map()
+    adsetStats?.forEach(stat => {
+      const adsetId = stat.adset_id
+      if (!adsetPerformance.has(adsetId)) {
+        adsetPerformance.set(adsetId, {
+          adsetId,
+          campaignId: stat.campaign_id,
+          totalSpend: 0,
+          totalImpressions: 0,
+          totalClicks: 0,
+          totalConversions: 0,
+          totalRevenue: 0,
+          days: 0
+        })
+      }
+      const perf = adsetPerformance.get(adsetId)
+      perf.totalSpend += parseFloat(stat.spend) || 0
+      perf.totalImpressions += parseInt(stat.impressions) || 0
+      perf.totalClicks += parseInt(stat.clicks) || 0
+      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalRevenue += parseFloat(stat.purchase_value) || 0
+      perf.days += 1
+    })
+
+    // Group stats by ad
+    const adPerformance = new Map()
+    adStats?.forEach(stat => {
+      const adId = stat.ad_id
+      if (!adPerformance.has(adId)) {
+        adPerformance.set(adId, {
+          adId,
+          adsetId: stat.adset_id,
+          campaignId: stat.campaign_id,
+          totalSpend: 0,
+          totalImpressions: 0,
+          totalClicks: 0,
+          totalConversions: 0,
+          totalRevenue: 0,
+          days: 0
+        })
+      }
+      const perf = adPerformance.get(adId)
+      perf.totalSpend += parseFloat(stat.spend) || 0
+      perf.totalImpressions += parseInt(stat.impressions) || 0
+      perf.totalClicks += parseInt(stat.clicks) || 0
+      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalRevenue += parseFloat(stat.purchase_value) || 0
+      perf.days += 1
+    })
+
+    console.log(`[Recommendations] 📊 Aggregated Performance:`)
+    console.log(`  - ${campaignPerformance.size} campaigns with data`)
+    console.log(`  - ${adsetPerformance.size} ad sets with data`)
+    console.log(`  - ${adPerformance.size} ads with data`)
 
     // Process demographic data at account level (applies to all campaigns)
     const demoInsights = analyzeDemographics(demographics || [], devicePerformance || [])
@@ -999,6 +1081,94 @@ async function generateRecommendations(
           campaignName: campaign.campaign_name,
           platform: 'meta'
         })
+      }
+    }
+
+    // Analyze underperforming ads and suggest pausing
+    if (ads && ads.length > 0 && adPerformance.size > 0) {
+      console.log(`[Recommendations] 🎯 Analyzing ${adPerformance.size} ads for performance issues...`)
+      
+      for (const ad of ads) {
+        const perf = adPerformance.get(ad.ad_id)
+        if (!perf || perf.days < 3) continue // Need at least 3 days of data
+        
+        const roas = perf.totalSpend > 0 ? perf.totalRevenue / perf.totalSpend : 0
+        const ctr = perf.totalImpressions > 0 ? (perf.totalClicks / perf.totalImpressions) * 100 : 0
+        
+        // Flag underperforming ads (low ROAS and low CTR, but spending money)
+        if (perf.totalSpend > 50 && roas < 0.5 && ctr < 0.5) {
+          const campaign = campaigns.find(c => c.campaign_id === ad.campaign_id)
+          
+          recommendations.push({
+            id: `pause-ad-${ad.ad_id}`,
+            type: 'creative' as any,
+            priority: 'high',
+            title: `Pause Underperforming Ad: ${ad.ad_name}`,
+            description: `This ad is spending $${perf.totalSpend.toFixed(2)} with ${roas.toFixed(2)}x ROAS and ${ctr.toFixed(2)}% CTR. Consider pausing it to reallocate budget to better performers.`,
+            rootCause: `Low performance detected: ${roas.toFixed(2)}x ROAS and ${ctr.toFixed(2)}% CTR over ${perf.days} days`,
+            actions: [
+              {
+                id: 'pause-ad',
+                description: `Pause ad "${ad.ad_name}" and reallocate budget`,
+                implementation: 'Set ad status to "PAUSED" in Meta Ads Manager'
+              }
+            ],
+            currentValue: `Active, spending $${(perf.totalSpend / perf.days).toFixed(2)}/day`,
+            recommendedValue: 'Paused',
+            projectedImpact: {
+              revenue: perf.totalSpend * 0.5, // Savings redirected elsewhere
+              roas: 0.5,
+              confidence: 75
+            },
+            campaignId: ad.campaign_id,
+            campaignName: campaign?.campaign_name || 'Unknown',
+            platform: 'meta' as any
+          })
+        }
+      }
+    }
+
+    // Analyze ad set performance for optimization opportunities
+    if (adsets && adsets.length > 0 && adsetPerformance.size > 0) {
+      console.log(`[Recommendations] 🎯 Analyzing ${adsetPerformance.size} ad sets for optimization opportunities...`)
+      
+      for (const adset of adsets) {
+        const perf = adsetPerformance.get(adset.adset_id)
+        if (!perf || perf.days < 3) continue
+        
+        const roas = perf.totalSpend > 0 ? perf.totalRevenue / perf.totalSpend : 0
+        const ctr = perf.totalImpressions > 0 ? (perf.totalClicks / perf.totalImpressions) * 100 : 0
+        
+        // Suggest scaling high-performing ad sets
+        if (perf.totalSpend > 100 && roas > 2.5 && ctr > 1.0) {
+          const campaign = campaigns.find(c => c.campaign_id === adset.campaign_id)
+          
+          recommendations.push({
+            id: `scale-adset-${adset.adset_id}`,
+            type: 'budget' as any,
+            priority: 'high',
+            title: `Scale High-Performing Ad Set: ${adset.adset_name}`,
+            description: `This ad set is delivering ${roas.toFixed(2)}x ROAS with ${ctr.toFixed(2)}% CTR. Increase budget to maximize returns.`,
+            rootCause: `Strong performance: ${roas.toFixed(2)}x ROAS and ${ctr.toFixed(2)}% CTR over ${perf.days} days`,
+            actions: [
+              {
+                id: 'increase-adset-budget',
+                description: `Increase ad set budget by 50%`,
+                implementation: 'Update budget in Meta Ads Manager'
+              }
+            ],
+            currentValue: `$${(perf.totalSpend / perf.days).toFixed(2)}/day`,
+            recommendedValue: `$${((perf.totalSpend / perf.days) * 1.5).toFixed(2)}/day`,
+            projectedImpact: {
+              revenue: (perf.totalSpend / perf.days) * 0.5 * roas,
+              roas: roas * 0.85, // Slightly conservative estimate
+              confidence: 85
+            },
+            campaignId: adset.campaign_id,
+            campaignName: campaign?.campaign_name || 'Unknown',
+            platform: 'meta' as any
+          })
+        }
       }
     }
 
