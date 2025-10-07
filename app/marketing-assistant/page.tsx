@@ -1140,7 +1140,7 @@ export default function MarketingAssistantPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
                         <span className="text-[10px] text-emerald-400 font-bold">{optimizationTimeline.stats.applicationRate}% Applied</span>
-                      </div>
+                        </div>
                       
                       {/* Timeline Chart */}
                       <div className="flex items-end justify-between gap-0.5 h-16 mb-1">
@@ -1166,7 +1166,7 @@ export default function MarketingAssistantPage() {
                             </div>
                           )
                         })}
-                      </div>
+                            </div>
                       
                       {/* Week Labels - show first, middle, last */}
                       <div className="flex justify-between text-[8px] text-gray-600 mb-1">
@@ -1175,7 +1175,7 @@ export default function MarketingAssistantPage() {
                           <span>{optimizationTimeline.weeks[Math.floor(optimizationTimeline.weeks.length / 2)]?.week}</span>
                         )}
                         <span>{optimizationTimeline.weeks[optimizationTimeline.weeks.length - 1]?.week}</span>
-                      </div>
+                          </div>
                       
                       {/* Legend */}
                       <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#333]">
@@ -1372,9 +1372,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
             
             {/* Performance Trends - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
-              {/* Subtle animated pulse glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-30 animate-pulse"></div>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1488,9 +1486,9 @@ export default function MarketingAssistantPage() {
                            )}
                 </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
-                      <BarChart3 className="w-6 h-6 text-blue-400" />
+                  <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400">
+                    <div className="w-12 h-12 bg-gradient-to-br from-gray-500/20 to-gray-600/10 rounded-xl flex items-center justify-center mb-3">
+                      <BarChart3 className="w-6 h-6 text-gray-400" />
               </div>
                     <p className="text-sm font-medium">No Data Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see trends</p>
@@ -1500,9 +1498,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#1a1a1a]/80 via-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
-              {/* Subtle animated pulse glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-30 animate-pulse"></div>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                         <div>
@@ -1546,9 +1542,9 @@ export default function MarketingAssistantPage() {
                   ))}
                     </div>
                               ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
-                      <Sparkles className="w-6 h-6 text-emerald-400" />
+                  <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-400">
+                    <div className="w-12 h-12 bg-gradient-to-br from-gray-500/20 to-gray-600/10 rounded-xl flex items-center justify-center mb-3">
+                      <Sparkles className="w-6 h-6 text-gray-400" />
                 </div>
                     <p className="text-sm font-medium">No Insights Yet</p>
                     <p className="text-xs mt-1 text-gray-600">Run analysis to see AI insights</p>
