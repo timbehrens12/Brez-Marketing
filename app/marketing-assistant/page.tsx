@@ -1355,7 +1355,7 @@ export default function MarketingAssistantPage() {
                   )})}
                   
                   {filteredOptimizations.length === 0 && (
-                    <div className="flex flex-col items-center justify-center min-h-[500px] text-gray-400">
+                    <div className="flex flex-col items-center justify-center min-h-[600px] text-gray-400">
                       <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
                         <Brain className="w-8 h-8 text-[#FF2A2A]" />
                       </div>
