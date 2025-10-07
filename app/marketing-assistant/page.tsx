@@ -1356,8 +1356,8 @@ export default function MarketingAssistantPage() {
                   
                   {filteredOptimizations.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[500px] text-gray-400">
-                      <div className="w-16 h-16 bg-gradient-to-br from-gray-500/20 to-gray-600/10 rounded-2xl flex items-center justify-center mb-4">
-                        <Brain className="w-8 h-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
+                        <Brain className="w-8 h-8 text-[#FF2A2A]" />
                       </div>
                       <h3 className="text-lg font-bold text-white mb-2">Ready to Optimize</h3>
                       <p className="text-sm text-center max-w-sm">Click "Update Analysis" to get AI-powered recommendations tailored to your campaign performance.</p>
@@ -1487,11 +1487,11 @@ export default function MarketingAssistantPage() {
                 </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400">
-                    <div className="w-12 h-12 bg-gradient-to-br from-gray-500/20 to-gray-600/10 rounded-xl flex items-center justify-center mb-3">
-                      <BarChart3 className="w-6 h-6 text-gray-400" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-xl flex items-center justify-center mb-3">
+                      <BarChart3 className="w-6 h-6 text-blue-400" />
               </div>
-                    <p className="text-sm font-medium">No Data Yet</p>
-                    <p className="text-xs mt-1 text-gray-600">Run analysis to see trends</p>
+                    <p className="text-sm font-medium text-white">No Data Yet</p>
+                    <p className="text-xs mt-1 text-gray-500">Run analysis to see trends</p>
                 </div>
                            )}
               </CardContent>
@@ -1543,11 +1543,11 @@ export default function MarketingAssistantPage() {
                     </div>
                               ) : (
                   <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-400">
-                    <div className="w-12 h-12 bg-gradient-to-br from-gray-500/20 to-gray-600/10 rounded-xl flex items-center justify-center mb-3">
-                      <Sparkles className="w-6 h-6 text-gray-400" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-xl flex items-center justify-center mb-3">
+                      <Sparkles className="w-6 h-6 text-emerald-400" />
                 </div>
-                    <p className="text-sm font-medium">No Insights Yet</p>
-                    <p className="text-xs mt-1 text-gray-600">Run analysis to see AI insights</p>
+                    <p className="text-sm font-medium text-white">No Insights Yet</p>
+                    <p className="text-xs mt-1 text-gray-500">Run analysis to see AI insights</p>
                     </div>
                   )}
               </CardContent>
