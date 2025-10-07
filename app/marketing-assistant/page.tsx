@@ -1467,7 +1467,7 @@ export default function MarketingAssistantPage() {
                     {quickInsights.map((insight, index) => (
                       <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                         {/* Decorative corner accent */}
-                        <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-br-full"></div>
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                         
                         <div className="relative">
                           {/* Icon, Platform & Metric Badge */}
