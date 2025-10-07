@@ -142,7 +142,6 @@ export default function MarketingAssistantPage() {
   const { agencySettings } = useAgency()
   
   // State
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
@@ -180,13 +179,11 @@ export default function MarketingAssistantPage() {
       if (!selectedBrandId) {
         setIsCheckingPlatforms(false)
         setHasAdPlatforms(false)
-        setIsLoadingPage(false)
         setLoading(false)
         return
       }
 
       setIsCheckingPlatforms(true)
-      setIsLoadingPage(true)
       setLoading(true)
 
       try {
@@ -208,19 +205,16 @@ export default function MarketingAssistantPage() {
             await loadDashboardData()
           } else {
             // No platforms - stop loading
-            setIsLoadingPage(false)
             setLoading(false)
           }
         } else {
           // API error - assume no platforms
           setHasAdPlatforms(false)
-          setIsLoadingPage(false)
           setLoading(false)
         }
       } catch (error) {
         // On error, assume no platforms to be safe
         setHasAdPlatforms(false)
-        setIsLoadingPage(false)
         setLoading(false)
       } finally {
         setIsCheckingPlatforms(false)
@@ -376,7 +370,6 @@ export default function MarketingAssistantPage() {
       // Always clear loading states when done
       setInitialDataLoad(false)
       setLoading(false)
-      setIsLoadingPage(false)
       setIsRefreshingData(false)
     }
   }
@@ -666,7 +659,7 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  if (isLoadingPage || loading) {
+  if (loading) {
     return (
       <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
@@ -1067,12 +1060,12 @@ export default function MarketingAssistantPage() {
                               </div>
                             </div>
 
-                    {/* Category Breakdown */}
-                    {weeklyProgress.categories && Object.values(weeklyProgress.categories).some((count: any) => count > 0) && (
+                    {/* Category Breakdown - Always show */}
+                    {weeklyProgress.categories && Object.keys(weeklyProgress.categories).length > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-3">
                         <h4 className="text-white font-medium text-xs mb-2 uppercase tracking-wide">By Category</h4>
                         <div className="space-y-1">
-                          {Object.entries(weeklyProgress.categories).filter(([_, count]: [string, any]) => count > 0).map(([category, count]: [string, any]) => {
+                          {Object.entries(weeklyProgress.categories).map(([category, count]: [string, any]) => {
                             const completed = Math.floor(count * (weeklyProgress.completionPercentage / 100))
                             return (
                               <div key={category} className="flex items-center justify-between text-xs">
@@ -1134,8 +1127,8 @@ export default function MarketingAssistantPage() {
                           </div>
                           </div>
 
-                    {/* Optimization Timeline - Functional tracking */}
-                    {optimizationTimeline && optimizationTimeline.weeks && optimizationTimeline.weeks.length > 0 && (
+                    {/* Optimization Timeline - Functional tracking - Always show */}
+                    {optimizationTimeline && optimizationTimeline.weeks && (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
@@ -1390,8 +1383,8 @@ export default function MarketingAssistantPage() {
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                            {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.change > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {trends.spend.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
               </div>
                 </div>
@@ -1423,8 +1416,8 @@ export default function MarketingAssistantPage() {
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.change > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.roas.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
                                </div>
                                </div>
@@ -1457,8 +1450,8 @@ export default function MarketingAssistantPage() {
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.change > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {trends.conversions.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
                                </div>
                                </div>
