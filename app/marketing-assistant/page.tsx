@@ -1322,16 +1322,11 @@ export default function MarketingAssistantPage() {
                 {trends ? (
                   <div className="space-y-3">
                     {/* Spend Metric - Redesigned */}
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full"></div>
+                    <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg flex items-center justify-center">
-                              <DollarSign className="w-4 h-4 text-blue-400" />
-              </div>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
-                </div>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Spend</span>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.spend.direction === 'up' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
                             {trends.spend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.spend.change > 0 ? '+' : ''}{trends.spend.change}%</span>
@@ -1360,16 +1355,11 @@ export default function MarketingAssistantPage() {
                              </div>
 
                     {/* ROAS Metric - Redesigned */}
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/10 to-transparent rounded-bl-full"></div>
+                    <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-lg flex items-center justify-center">
-                              <Activity className="w-4 h-4 text-green-400" />
-                               </div>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
-                               </div>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">ROAS</span>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.roas.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.roas.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.roas.change > 0 ? '+' : ''}{trends.roas.change}%</span>
@@ -1399,16 +1389,11 @@ export default function MarketingAssistantPage() {
 
                     {/* Conversions Metric - Redesigned */}
                     {trends.conversions && (
-                    <div className="relative p-3 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/10 to-transparent rounded-bl-full"></div>
+                    <div className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-600/10 rounded-lg flex items-center justify-center">
-                              <ShoppingCart className="w-4 h-4 text-purple-400" />
-                               </div>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
-                               </div>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Conversions</span>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trends.conversions.direction === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {trends.conversions.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             <span className="text-xs font-bold">{trends.conversions.change > 0 ? '+' : ''}{trends.conversions.change}%</span>
@@ -1465,26 +1450,21 @@ export default function MarketingAssistantPage() {
                 {quickInsights.length > 0 ? (
                 <div className="space-y-3">
                     {quickInsights.map((insight, index) => (
-                      <div key={index} className="relative p-4 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
+                      <div key={index} className="relative p-2.5 bg-gradient-to-br from-[#0A0A0A] to-[#111] border border-[#333] rounded-xl overflow-hidden group transition-all">
                         {/* Decorative corner accent */}
                         <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full"></div>
                         
                         <div className="relative">
-                          {/* Icon, Platform & Metric Badge */}
-                          <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-teal-600/20 rounded-xl flex items-center justify-center">
-                                <span className="text-2xl">{insight.icon}</span>
-                                </div>
-                              <div className="w-5 h-5 flex-shrink-0">
-                        <Image 
-                                  src={insight.platform === 'meta' ? '/meta-icon.png' : insight.platform === 'google' ? 'https://i.imgur.com/TavV4UJ.png' : 'https://i.imgur.com/AXHa9UT.png'} 
-                                  alt={insight.platform || 'meta'} 
-                                  width={20} 
-                                  height={20}
-                                  className="rounded"
-                                />
-                            </div>
+                          {/* Platform & Metric Badge */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="w-5 h-5 flex-shrink-0">
+                              <Image 
+                                src={insight.platform === 'meta' ? '/meta-icon.png' : insight.platform === 'google' ? 'https://i.imgur.com/TavV4UJ.png' : 'https://i.imgur.com/AXHa9UT.png'} 
+                                alt={insight.platform || 'meta'} 
+                                width={20} 
+                                height={20}
+                                className="rounded"
+                              />
                             </div>
                             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold px-2 py-1">
                               {insight.metric}
