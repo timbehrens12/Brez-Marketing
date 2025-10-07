@@ -1146,18 +1146,20 @@ export default function MarketingAssistantPage() {
                           </div>
                           </div>
 
-                    {/* Optimization Timeline - Functional tracking */}
-                    {optimizationTimeline && optimizationTimeline.weeks && optimizationTimeline.weeks.length > 0 && (
+                    {/* Optimization Timeline - Functional tracking - Always show */}
+                    {(() => {
+                      const timeline = optimizationTimeline || { weeks: [], stats: { applicationRate: 0 } }
+                      return (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
-                        <span className="text-[10px] text-emerald-400 font-bold">{optimizationTimeline.stats.applicationRate}% Applied</span>
+                        <span className="text-[10px] text-emerald-400 font-bold">{timeline.stats.applicationRate}% Applied</span>
                         </div>
                       
                       {/* Timeline Chart */}
                       <div className="flex items-end justify-between gap-0.5 h-16 mb-1">
-                        {optimizationTimeline.weeks.map((week: any, index: number) => {
-                          const maxValue = Math.max(...optimizationTimeline.weeks.map((w: any) => Math.max(w.analyzed, w.applied)))
+                        {timeline.weeks.length > 0 ? timeline.weeks.map((week: any, index: number) => {
+                          const maxValue = Math.max(...timeline.weeks.map((w: any) => Math.max(w.analyzed, w.applied)))
                           const analyzedHeight = maxValue > 0 ? (week.analyzed / maxValue) * 100 : 0
                           const appliedHeight = maxValue > 0 ? (week.applied / maxValue) * 100 : 0
                           
@@ -1177,17 +1179,23 @@ export default function MarketingAssistantPage() {
                               ></div>
                             </div>
                           )
-                        })}
+                        }) : (
+                          <div className="flex-1 flex items-center justify-center text-[10px] text-gray-600">
+                            No data yet
                             </div>
+                          )}
+                          </div>
                       
                       {/* Week Labels - show first, middle, last */}
+                      {timeline.weeks.length > 0 && (
                       <div className="flex justify-between text-[8px] text-gray-600 mb-1">
-                        <span>{optimizationTimeline.weeks[0]?.week}</span>
-                        {optimizationTimeline.weeks.length > 2 && (
-                          <span>{optimizationTimeline.weeks[Math.floor(optimizationTimeline.weeks.length / 2)]?.week}</span>
+                        <span>{timeline.weeks[0]?.week}</span>
+                        {timeline.weeks.length > 2 && (
+                          <span>{timeline.weeks[Math.floor(timeline.weeks.length / 2)]?.week}</span>
                         )}
-                        <span>{optimizationTimeline.weeks[optimizationTimeline.weeks.length - 1]?.week}</span>
-                          </div>
+                        <span>{timeline.weeks[timeline.weeks.length - 1]?.week}</span>
+                        </div>
+                      )}
                       
                       {/* Legend */}
                       <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#333]">
@@ -1201,7 +1209,8 @@ export default function MarketingAssistantPage() {
                         </div>
                       </div>
                     </div>
-                    )}
+                      )
+                    })()}
 
                     {/* Next Up Prompt */}
                     {progress.totalRecommendations > progress.completedCount && (
