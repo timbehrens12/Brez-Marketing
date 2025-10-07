@@ -1242,7 +1242,7 @@ export default function MarketingAssistantPage() {
               
               <CardContent className="p-3">
                 <div className="space-y-3">
-                  {filteredOptimizations.map(card => {
+                  {filteredOptimizations.map((card, index) => {
                     const effortLevel = card.priority === 'high' ? 3 : card.priority === 'medium' ? 2 : 1
                     const confidencePercentage = card.projectedImpact?.confidence || 85
                     
