@@ -149,6 +149,7 @@ export default function MarketingAssistantPage() {
   const [quickInsights, setQuickInsights] = useState<any[]>([])
   const [trends, setTrends] = useState<any>(null)
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null)
+  const [optimizationTimeline, setOptimizationTimeline] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
@@ -365,7 +366,8 @@ export default function MarketingAssistantPage() {
           loadKPIMetrics(),
           loadQuickInsights(),
           loadTrends(),
-          loadWeeklyProgress()
+          loadWeeklyProgress(),
+          loadOptimizationTimeline()
         ])
       }
       // Otherwise leave widgets blank until user clicks "Update Recommendations" button
@@ -445,6 +447,31 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  const loadOptimizationTimeline = async () => {
+    if (!selectedBrandId) return
+    
+    try {
+      const timestamp = Date.now()
+      const response = await fetch(`/api/marketing-assistant/optimization-timeline?brandId=${selectedBrandId}&_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
+            if (response.ok) {
+              const data = await response.json()
+        console.log(`[Marketing Assistant] Loaded optimization timeline:`, data.timeline)
+        setOptimizationTimeline(data.timeline || null)
+      } else {
+        setOptimizationTimeline(null)
+        }
+      } catch (error) {
+      console.error('[Marketing Assistant] Error loading optimization timeline:', error)
+      setOptimizationTimeline(null)
+    }
+  }
+
   const loadWeeklyProgress = async () => {
     if (!selectedBrandId) return
     
@@ -457,8 +484,8 @@ export default function MarketingAssistantPage() {
           'Pragma': 'no-cache'
         }
       })
-            if (response.ok) {
-              const data = await response.json()
+      if (response.ok) {
+        const data = await response.json()
         console.log(`[Marketing Assistant] Loaded weekly progress:`, data.progress)
         setWeeklyProgress(data.progress || null)
       } else {
@@ -1107,24 +1134,62 @@ export default function MarketingAssistantPage() {
                           </div>
                           </div>
 
-                    {/* Action Timeline - Compact */}
+                    {/* Optimization Timeline - Functional tracking */}
+                    {optimizationTimeline && optimizationTimeline.weeks && optimizationTimeline.weeks.length > 0 && (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
-                      <h4 className="text-white font-medium text-[10px] mb-2 uppercase tracking-wide">This Week's Focus</h4>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                          <span className="text-[10px] text-gray-400">Demographic targeting optimized</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
-                          <span className="text-[10px] text-gray-400">Budget allocation in progress</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Weekly Progress</h4>
+                        <span className="text-[10px] text-emerald-400 font-bold">{optimizationTimeline.stats.applicationRate}% Applied</span>
+                      </div>
+                      
+                      {/* Timeline Chart */}
+                      <div className="flex items-end justify-between gap-0.5 h-16 mb-1">
+                        {optimizationTimeline.weeks.map((week: any, index: number) => {
+                          const maxValue = Math.max(...optimizationTimeline.weeks.map((w: any) => Math.max(w.analyzed, w.applied)))
+                          const analyzedHeight = maxValue > 0 ? (week.analyzed / maxValue) * 100 : 0
+                          const appliedHeight = maxValue > 0 ? (week.applied / maxValue) * 100 : 0
+                          
+                          return (
+                            <div key={index} className="flex-1 flex flex-col items-center gap-0.5">
+                              {/* Analyzed bar (gray) */}
+                              <div 
+                                className="w-full bg-gray-600/40 rounded-t transition-all hover:bg-gray-500/60"
+                                style={{ height: `${analyzedHeight}%`, minHeight: week.analyzed > 0 ? '4px' : '0' }}
+                                title={`${week.analyzed} analyzed`}
+                              ></div>
+                              {/* Applied bar (green) */}
+                              <div 
+                                className="w-full bg-emerald-500/60 rounded-t transition-all hover:bg-emerald-400/80"
+                                style={{ height: `${appliedHeight}%`, minHeight: week.applied > 0 ? '4px' : '0' }}
+                                title={`${week.applied} applied`}
+                              ></div>
                             </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
-                          <span className="text-[10px] text-gray-400">Creative refresh pending</span>
-                            </div>
-                          </div>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Week Labels - show first, middle, last */}
+                      <div className="flex justify-between text-[8px] text-gray-600 mb-1">
+                        <span>{optimizationTimeline.weeks[0]?.week}</span>
+                        {optimizationTimeline.weeks.length > 2 && (
+                          <span>{optimizationTimeline.weeks[Math.floor(optimizationTimeline.weeks.length / 2)]?.week}</span>
+                        )}
+                        <span>{optimizationTimeline.weeks[optimizationTimeline.weeks.length - 1]?.week}</span>
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#333]">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-gray-600/40 rounded"></div>
+                          <span className="text-[9px] text-gray-500">Analyzed</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-emerald-500/60 rounded"></div>
+                          <span className="text-[9px] text-gray-500">Applied</span>
+                        </div>
+                      </div>
+                    </div>
+                    )}
 
                     {/* Next Up Prompt */}
                     {weeklyProgress.totalRecommendations > weeklyProgress.completedCount && (
