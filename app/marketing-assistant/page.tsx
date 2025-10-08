@@ -2268,7 +2268,7 @@ export default function MarketingAssistantPage() {
                                       : hasOptimizations
                                       ? 'bg-[#FF2A2A]/50 border-[#1A1A1A]'
                                       : 'bg-[#444] border-[#1A1A1A]' // Gray for all future weeks
-                                  } relative z-10`}
+                                  } relative z-10 mb-4`}
                                 >
                                   {hasOptimizations && (
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#1A1A1A]"></div>
@@ -2284,7 +2284,7 @@ export default function MarketingAssistantPage() {
                                   </div>
                                   <div className="text-[10px] text-gray-500">{week.week}</div>
                                   {hasOptimizations && (
-                                    <div className="text-[10px] text-emerald-400 mt-0.5">
+                                    <div className="text-[10px] text-emerald-400 mt-1.5">
                                       {week.optimizationsApplied} opt
                                     </div>
                                   )}
