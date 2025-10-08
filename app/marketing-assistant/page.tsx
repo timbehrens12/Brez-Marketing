@@ -1130,7 +1130,7 @@ export default function MarketingAssistantPage() {
                             </div>
                     )}
 
-                    {/* Current Goals - Show goals from Week 1 timeline */}
+                    {/* Current Goals - Show ALL goals from Week 1 timeline (titles only) */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
                       const week1Goals = timeline.weeks.length > 0 ? timeline.weeks[0].goals : []
@@ -2169,8 +2169,8 @@ export default function MarketingAssistantPage() {
 
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-[calc(100vw-280px)] lg:w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:pl-[280px]">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
@@ -2276,7 +2276,7 @@ export default function MarketingAssistantPage() {
                                 </button>
                                 
                                 {/* Week Label */}
-                                <div className="mt-4 text-center">
+                                <div className="mt-3 text-center">
                                   <div className={`text-xs font-bold mb-0.5 ${
                                     isSelected || isCurrentWeek ? 'text-[#FF2A2A]' : 'text-gray-400'
                                   }`}>
