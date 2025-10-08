@@ -362,19 +362,37 @@ export default function MarketingAssistantPage() {
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
-      // ONLY load widgets when the "Run Week X Analysis" button is clicked
-      // Do NOT auto-load widgets on page refresh - user must explicitly click the button
+      // Load widgets based on context:
+      // - On button click: Load ALL widgets
+      // - On page refresh with viewed recommendations: Load ALL widgets (persist the analysis)
+      // - On page refresh without viewed recommendations: Load ONLY timeline for week tracking
       if (forceRefresh) {
-        // Load all widgets ONLY when button is clicked
-      await Promise.all([
+        // Load all widgets when button is clicked
+        await Promise.all([
           loadKPIMetrics(),
           loadQuickInsights(),
           loadTrends(),
           loadWeeklyProgress(),
           loadOptimizationTimeline()
         ])
+      } else if (loadedRecommendations && loadedRecommendations.length > 0) {
+        // Check if user has already run analysis this week
+        const hasRunAnalysis = selectedBrandId && localStorage.getItem(`recommendationsViewed_${selectedBrandId}`) === 'true'
+        
+        if (hasRunAnalysis) {
+          // User already ran analysis - load all widgets to persist the view
+      await Promise.all([
+            loadKPIMetrics(),
+            loadQuickInsights(),
+            loadTrends(),
+            loadWeeklyProgress(),
+            loadOptimizationTimeline()
+          ])
+        } else {
+          // User hasn't run analysis yet - only load timeline for week tracking
+          await loadOptimizationTimeline()
+        }
       }
-      // Otherwise leave widgets blank until user clicks "Run Week X Analysis" button
     } catch (error) {
     } finally {
       // Always clear loading states when done
