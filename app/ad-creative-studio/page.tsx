@@ -5683,7 +5683,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
 
   const renderAutoCreativeSetupStep = () => {
     return (
-      <div className="pt-[20px] max-w-6xl mx-auto">
+      <div className="pt-[60px] max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button
@@ -5900,11 +5900,11 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
         ) : (
           <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative lg:w-[70%] flex-shrink-0 h-[720px]">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (DESKTOP ONLY) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-4 right-8 z-[100] hidden xl:block">
+                <div className="absolute top-1 right-8 z-30 hidden xl:block">
                   <div className="flex items-center gap-3 flex-nowrap justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
@@ -6122,7 +6122,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 </div>
               </div>
 
-              <div className={`${currentStep === 'customization' || currentStep === 'custom-template-prompt' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'} overflow-hidden`}>
+              <div className={`${currentStep === 'customization' || currentStep === 'custom-template-prompt' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
                 <div className={`flex-1 ${currentStep === 'upload' ? 'overflow-visible' : 'overflow-y-auto'} pr-4 mr-2`}>
                   {renderCurrentStep()}
                 </div>
