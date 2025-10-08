@@ -12,27 +12,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Helper function to get Monday-to-Monday date range
-function getMondayToMondayRange() {
+// Helper function to get Sunday-to-Sunday date range (last complete week)
+function getSundayToSundayRange() {
   const now = new Date()
   const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   
-  // Calculate days back to last Monday
-  const daysBackToMonday = currentDay === 0 ? 6 : currentDay - 1
+  // Calculate days back to last Sunday (end of last week)
+  const daysBackToSunday = currentDay === 0 ? 0 : currentDay
   
-  // Get last Monday
-  const lastMonday = new Date(now)
-  lastMonday.setDate(now.getDate() - daysBackToMonday - 7) // Go back one more week to get the previous Monday
-  lastMonday.setHours(0, 0, 0, 0)
+  // Get last Sunday (end of last week)
+  const lastSunday = new Date(now)
+  lastSunday.setDate(now.getDate() - daysBackToSunday)
+  lastSunday.setHours(23, 59, 59, 999) // End of Sunday
   
-  // Get this Monday
-  const thisMonday = new Date(now)
-  thisMonday.setDate(now.getDate() - daysBackToMonday)
-  thisMonday.setHours(0, 0, 0, 0)
+  // Get the Sunday before that (start of last week)
+  const previousSunday = new Date(lastSunday)
+  previousSunday.setDate(lastSunday.getDate() - 7)
+  previousSunday.setHours(0, 0, 0, 0) // Start of Sunday
   
   return {
-    from: lastMonday.toISOString().split('T')[0],
-    to: thisMonday.toISOString().split('T')[0]
+    from: previousSunday.toISOString().split('T')[0],
+    to: lastSunday.toISOString().split('T')[0]
   }
 }
 
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
     
-    // Use Monday-to-Monday date range (same as recommendations)
-    const dateRange = getMondayToMondayRange()
+    // Use Sunday-to-Sunday date range (same as recommendations)
+    const dateRange = getSundayToSundayRange()
     const fromDate = searchParams.get('from') || dateRange.from
     const toDate = searchParams.get('to') || dateRange.to
     
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    console.log(`[Quick Insights AI] 📅 Monday-to-Monday range: ${fromDate} to ${toDate}`)
+    console.log(`[Quick Insights AI] 📅 Sunday-to-Sunday range: ${fromDate} to ${toDate}`)
     console.log(`[Quick Insights AI] Generating insights for brand ${brandId}`)
 
     const insights = await generateAIInsights(brandId, fromDate, toDate, platforms)
@@ -134,11 +134,13 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
         : 0
     }
 
-    // Get demographic data
+    // Get demographic data (filtered by date range)
     const { data: demographics } = await supabase
       .from('meta_demographics')
-      .select('breakdown_type, breakdown_value, spend, impressions, clicks')
+      .select('breakdown_type, breakdown_value, spend, impressions, clicks, date_range_start, date_range_end')
       .eq('brand_id', brandId)
+      .gte('date_range_start', fromDate)
+      .lte('date_range_end', toDate)
     
     performanceData.demographics = demographics || []
     console.log(`[Quick Insights AI] Found ${demographics?.length || 0} demographic records`)

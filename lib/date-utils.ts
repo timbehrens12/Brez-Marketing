@@ -1,50 +1,56 @@
 /**
- * Get the Monday-to-Monday date range for data analysis
- * If today is Monday-Sunday, return last Monday to this Monday
- * This ensures consistent weekly windows
+ * Get the Sunday-to-Sunday date range for data analysis
+ * Returns last complete week (Sunday to Sunday)
+ * This ensures analysis is available every Monday morning
  */
 export function getMondayToMondayRange(): { startDate: string; endDate: string } {
   const now = new Date()
   const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   
-  // Calculate this week's Monday (or today if it's Monday)
-  const thisMonday = new Date(now)
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // If Sunday, go back 6 days
-  thisMonday.setDate(now.getDate() - daysFromMonday)
-  thisMonday.setHours(0, 0, 0, 0)
+  // Calculate days back to last Sunday (end of last week)
+  const daysBackToSunday = dayOfWeek === 0 ? 0 : dayOfWeek
   
-  // Calculate last Monday (7 days before this Monday)
-  const lastMonday = new Date(thisMonday)
-  lastMonday.setDate(thisMonday.getDate() - 7)
+  // Get last Sunday (end of last week)
+  const lastSunday = new Date(now)
+  lastSunday.setDate(now.getDate() - daysBackToSunday)
+  lastSunday.setHours(23, 59, 59, 999)
   
-  const startDate = lastMonday.toISOString().split('T')[0]
-  const endDate = thisMonday.toISOString().split('T')[0]
+  // Get the Sunday before that (start of last week)
+  const previousSunday = new Date(lastSunday)
+  previousSunday.setDate(lastSunday.getDate() - 7)
+  previousSunday.setHours(0, 0, 0, 0)
   
-  console.log(`📅 Monday-to-Monday range: ${startDate} to ${endDate}`)
+  const startDate = previousSunday.toISOString().split('T')[0]
+  const endDate = lastSunday.toISOString().split('T')[0]
+  
+  console.log(`📅 Sunday-to-Sunday range: ${startDate} to ${endDate}`)
   
   return { startDate, endDate }
 }
 
 /**
- * Get the most recent complete Monday-to-Monday week
- * This is always the 7 days ending on the most recent Monday
+ * Get the most recent complete Sunday-to-Sunday week
+ * This is always the 7 days ending on the most recent Sunday
  */
 export function getLastCompleteWeek(): { startDate: string; endDate: string } {
   const now = new Date()
   const dayOfWeek = now.getDay()
   
-  // Find the most recent Monday (could be today)
-  const lastMonday = new Date(now)
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-  lastMonday.setDate(now.getDate() - daysFromMonday)
-  lastMonday.setHours(0, 0, 0, 0)
+  // Calculate days back to last Sunday
+  const daysBackToSunday = dayOfWeek === 0 ? 0 : dayOfWeek
   
-  // Go back 7 days for the start
-  const weekStart = new Date(lastMonday)
-  weekStart.setDate(lastMonday.getDate() - 7)
+  // Find the most recent Sunday (end of last week)
+  const lastSunday = new Date(now)
+  lastSunday.setDate(now.getDate() - daysBackToSunday)
+  lastSunday.setHours(23, 59, 59, 999)
+  
+  // Go back 7 days for the start (previous Sunday)
+  const weekStart = new Date(lastSunday)
+  weekStart.setDate(lastSunday.getDate() - 7)
+  weekStart.setHours(0, 0, 0, 0)
   
   const startDate = weekStart.toISOString().split('T')[0]
-  const endDate = lastMonday.toISOString().split('T')[0]
+  const endDate = lastSunday.toISOString().split('T')[0]
   
   console.log(`📅 Last complete week: ${startDate} to ${endDate}`)
   

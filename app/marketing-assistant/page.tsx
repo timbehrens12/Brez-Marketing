@@ -230,25 +230,28 @@ export default function MarketingAssistantPage() {
     checkPlatformConnections()
   }, [selectedBrandId])
 
-  // Calculate Monday-to-Monday date range
-  const getMondayToMondayDates = () => {
+  // Calculate Sunday-to-Sunday date range (last complete week)
+  const getSundayToSundayDates = () => {
     const now = new Date()
     const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
     
-    // Calculate this week's Monday (or today if it's Monday)
-    const thisMonday = new Date(now)
-    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-    thisMonday.setDate(now.getDate() - daysFromMonday)
-    thisMonday.setHours(0, 0, 0, 0)
+    // Calculate days back to last Sunday (end of last week)
+    const daysBackToSunday = dayOfWeek === 0 ? 0 : dayOfWeek
     
-    // Calculate last Monday (7 days before this Monday)
-    const lastMonday = new Date(thisMonday)
-    lastMonday.setDate(thisMonday.getDate() - 7)
+    // Get last Sunday (end of last week)
+    const lastSunday = new Date(now)
+    lastSunday.setDate(now.getDate() - daysBackToSunday)
+    lastSunday.setHours(23, 59, 59, 999)
     
-    return { lastMonday, thisMonday }
+    // Get the Sunday before that (start of last week)
+    const previousSunday = new Date(lastSunday)
+    previousSunday.setDate(lastSunday.getDate() - 7)
+    previousSunday.setHours(0, 0, 0, 0)
+    
+    return { previousSunday, lastSunday }
   }
   
-  // Calculate time until next Monday 12am
+  // Calculate time until next Monday 12am (when new analysis becomes available)
   const getNextMondayMidnight = () => {
     const now = new Date()
     const nextMonday = new Date(now)
@@ -263,20 +266,20 @@ export default function MarketingAssistantPage() {
     const diff = nextMonday.getTime() - now.getTime()
     
     // Update date range text and next update text
-    const { lastMonday, thisMonday } = getMondayToMondayDates()
+    const { previousSunday, lastSunday } = getSundayToSundayDates()
     const formatDate = (date: Date) => {
       const month = date.toLocaleDateString('en-US', { month: 'short' })
       const day = date.getDate()
       return `${month} ${day}`
     }
-    setDateRangeText(`${formatDate(lastMonday)} - ${formatDate(thisMonday)}`)
+    setDateRangeText(`${formatDate(previousSunday)} - ${formatDate(lastSunday)}`)
     setNextUpdateText(`Next Update: ${formatDate(nextMonday)}`)
     
     // Check if it's a new week (Monday) - reset the viewed state
     // Compare current week to last refresh week
       if (selectedBrandId) {
       const lastRefreshDate = localStorage.getItem(`lastRefreshDate_${selectedBrandId}`)
-      const currentWeekStart = thisMonday.toISOString().split('T')[0]
+      const currentWeekStart = lastSunday.toISOString().split('T')[0]
       
       // If no last refresh or it was from a previous week, enable refresh
       if (!lastRefreshDate || lastRefreshDate < currentWeekStart) {
