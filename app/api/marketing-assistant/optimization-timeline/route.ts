@@ -124,7 +124,7 @@ async function getOptimizationTimeline(brandId: string) {
   })
 
   // Convert to array and sort by date
-  const timelineArray = Object.values(weeklyData)
+  let timelineArray = Object.values(weeklyData)
     .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
     .map(({ week, spend, revenue, roas, ctr, optimizationsApplied }) => ({ 
       week, 
@@ -135,6 +135,20 @@ async function getOptimizationTimeline(brandId: string) {
       optimizationsApplied
     }))
     .slice(-8) // Last 8 weeks
+  
+  // If no data exists, create a placeholder for the current week
+  if (timelineArray.length === 0) {
+    const currentWeekStart = getWeekStart(today)
+    const currentWeekKey = formatWeekKey(currentWeekStart)
+    timelineArray = [{
+      week: currentWeekKey,
+      spend: 0,
+      revenue: 0,
+      roas: 0,
+      ctr: 0,
+      optimizationsApplied: 0
+    }]
+  }
 
   // Calculate week-over-week improvements
   const improvements = timelineArray.map((week, index) => {

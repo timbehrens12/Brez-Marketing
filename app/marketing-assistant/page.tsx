@@ -986,7 +986,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative p-2.5 flex flex-col">
+              <CardContent className="relative px-2.5 pt-2.5 pb-0 flex flex-col">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1157,7 +1157,7 @@ export default function MarketingAssistantPage() {
                       const maxRoas = Math.max(...progressiveWeeks.filter(w => !w.isFuture).map((w: any) => w.roas || 0), 1)
                       
                       return (
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mb-2">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Performance Tracking</h4>
                         <span className="text-[10px] text-cyan-400 font-bold">
