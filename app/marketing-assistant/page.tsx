@@ -1133,8 +1133,9 @@ export default function MarketingAssistantPage() {
                     {/* Performance Tracking - Redesigned with bigger text */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
-                      const currentWeekNum = timeline.weeks.length > 0 ? timeline.weeks.length : 0
-                      const nextWeekNum = currentWeekNum + 1
+                      // Current week is always Week 1 (the first week in the array with data)
+                      const currentWeekNum = 1
+                      const nextWeekNum = 2
                       
                       // Show only first 3 weeks for space
                       const weeksToShow = 3
