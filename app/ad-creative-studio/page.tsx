@@ -5904,7 +5904,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* Product → Template Preview (DESKTOP ONLY) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-8 z-30 hidden xl:block">
+                <div className="absolute top-4 right-8 z-30 hidden xl:block">
                   <div className="flex items-center gap-3 flex-nowrap justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
