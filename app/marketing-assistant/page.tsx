@@ -2219,15 +2219,20 @@ export default function MarketingAssistantPage() {
                           {timeline.weeks.map((week: any, index: number) => {
                             const weekNum = index + 1
                             const hasOptimizations = week.optimizationsApplied > 0
+                            const hasData = week.spend > 0 || week.impressions > 0 || hasOptimizations
                             const isCurrentWeek = weekNum === timeline.weeks.length
                             const isSelected = selectedWeekIndex === index
+                            const isClickable = hasData || week.goals?.length > 0
                         
                             return (
                               <div key={weekNum} className="flex flex-col items-center">
                                 {/* Marker Dot */}
                                 <button
-                                  onClick={() => setSelectedWeekIndex(index)}
-                                  className={`w-6 h-6 rounded-full border-4 transition-all hover:scale-125 ${
+                                  onClick={() => isClickable && setSelectedWeekIndex(index)}
+                                  disabled={!isClickable}
+                                  className={`w-6 h-6 rounded-full border-4 transition-all ${
+                                    isClickable ? 'hover:scale-125 cursor-pointer' : 'cursor-not-allowed opacity-50'
+                                  } ${
                                     isSelected
                                       ? 'bg-[#FF2A2A] border-[#FF2A2A] ring-4 ring-[#FF2A2A]/30 scale-125'
                                       : isCurrentWeek
