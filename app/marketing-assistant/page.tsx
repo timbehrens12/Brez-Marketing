@@ -585,7 +585,7 @@ export default function MarketingAssistantPage() {
           loadWeeklyProgress(),
           loadOptimizationTimeline()
         ])
-        console.log('[Marketing Assistant] ✅ Marked as done and reloaded progress + timeline')
+        console.log('[Marketing Assistant] ✅ Marked as done and reloaded progress')
                   }
     } catch (error) {
       console.error('[Marketing Assistant] Error marking as done:', error)

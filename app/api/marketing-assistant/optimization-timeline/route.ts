@@ -79,21 +79,6 @@ async function getOptimizationTimeline(brandId: string) {
     console.error('[Optimization Timeline] Error fetching recommendations:', recsError)
   }
 
-  // Group by week
-  const weeklyData: { [key: string]: { 
-    week: string
-    weekStart: Date
-    spend: number
-    revenue: number
-    impressions: number
-    clicks: number
-    roas: number
-    ctr: number
-    optimizationsApplied: number
-    actions: any[]
-    goals: any[]
-  } } = {}
-
   // Helper to get week key (Sunday of that week)
   const getWeekStart = (date: Date) => {
     const d = new Date(date)
@@ -110,201 +95,119 @@ async function getOptimizationTimeline(brandId: string) {
     return `${month} ${day}`
   }
 
-  // Process campaign performance data by week
+  // Current week's Sunday
+  const currentWeekSunday = getWeekStart(today)
+  const currentWeekKey = formatWeekKey(currentWeekSunday)
+  
+  // Aggregate current week's data
+  let currentWeekData = {
+    spend: 0,
+    revenue: 0,
+    impressions: 0,
+    clicks: 0,
+    roas: 0,
+    ctr: 0,
+    optimizationsApplied: 0,
+    actions: [] as any[],
+    goals: [] as any[]
+  }
+  
+  // Process ALL campaign stats from current week (they're already filtered to current week by the query)
   campaignStats?.forEach((stat) => {
-    const weekStart = getWeekStart(new Date(stat.date))
-    const weekKey = formatWeekKey(weekStart)
-    
-    if (!weeklyData[weekKey]) {
-      weeklyData[weekKey] = { 
-        week: weekKey, 
-        weekStart, 
-        spend: 0, 
-        revenue: 0, 
-        impressions: 0, 
-        clicks: 0, 
-        roas: 0, 
-        ctr: 0,
-        optimizationsApplied: 0,
-        actions: [],
-        goals: []
-      }
-    }
-    
     const spend = Number(stat.spend) || 0
     const roas = Number(stat.roas) || 0
-    const revenue = spend * roas // Calculate revenue from ROAS * spend
+    const revenue = spend * roas
     
-    weeklyData[weekKey].spend += spend
-    weeklyData[weekKey].revenue += revenue
-    weeklyData[weekKey].impressions += Number(stat.impressions) || 0
-    weeklyData[weekKey].clicks += Number(stat.clicks) || 0
-  })
-
-  // Calculate ROAS and CTR for each week
-  Object.values(weeklyData).forEach((week) => {
-    week.roas = week.spend > 0 ? week.revenue / week.spend : 0
-    week.ctr = week.impressions > 0 ? (week.clicks / week.impressions) * 100 : 0
+    currentWeekData.spend += spend
+    currentWeekData.revenue += revenue
+    currentWeekData.impressions += Number(stat.impressions) || 0
+    currentWeekData.clicks += Number(stat.clicks) || 0
   })
   
-  console.log(`[Optimization Timeline] Processed ${Object.keys(weeklyData).length} weeks of data:`, 
-    Object.entries(weeklyData).map(([key, val]) => `${key}: $${val.spend.toFixed(2)} spend, ${val.optimizationsApplied} opts`)
-  )
+  // Calculate ROAS and CTR
+  currentWeekData.roas = currentWeekData.spend > 0 ? currentWeekData.revenue / currentWeekData.spend : 0
+  currentWeekData.ctr = currentWeekData.impressions > 0 ? (currentWeekData.clicks / currentWeekData.impressions) * 100 : 0
+  
+  console.log(`[Optimization Timeline] Current week (${currentWeekKey}): $${currentWeekData.spend.toFixed(2)} spend, ${currentWeekData.impressions} impressions`)
 
-  // Process completed optimizations
+  // Process completed optimizations - only count those in current week
   completedActions?.forEach((action) => {
-    const weekStart = getWeekStart(new Date(action.created_at))
-    const weekKey = formatWeekKey(weekStart)
-    
-    // Create week entry if it doesn't exist (for weeks with optimizations but no ad data yet)
-    if (!weeklyData[weekKey]) {
-      weeklyData[weekKey] = { 
-        week: weekKey, 
-        weekStart, 
-        spend: 0, 
-        revenue: 0, 
-        impressions: 0, 
-        clicks: 0, 
-        roas: 0, 
-        ctr: 0,
-        optimizationsApplied: 0,
-        actions: [],
-        goals: []
-      }
-    }
-    
-    weeklyData[weekKey].optimizationsApplied++
-    
-    // Extract optimization details from metadata
-    try {
-      const metadata = typeof action.metadata === 'string' 
-        ? JSON.parse(action.metadata) 
-        : action.metadata
-      
-      weeklyData[weekKey].actions.push({
-        title: metadata?.recommendation_title || metadata?.title || 'Optimization Applied',
-        description: metadata?.description || 'No description available',
-        category: metadata?.category || 'general',
-        created_at: action.created_at
-      })
-    } catch (e) {
-      // If parsing fails, just add a generic entry
-      weeklyData[weekKey].actions.push({
-        title: 'Optimization Applied',
-        description: 'Details unavailable',
-        category: 'general',
-        created_at: action.created_at
-      })
-    }
-  })
-
-  // Process recommendations to show goals for each week
-  recommendations?.forEach((rec) => {
-    const weekStart = getWeekStart(new Date(rec.created_at))
-    const weekKey = formatWeekKey(weekStart)
-    
-    // Create week entry if it doesn't exist
-    if (!weeklyData[weekKey]) {
-      weeklyData[weekKey] = { 
-        week: weekKey, 
-        weekStart, 
-        spend: 0, 
-        revenue: 0, 
-        impressions: 0, 
-        clicks: 0, 
-        roas: 0, 
-        ctr: 0,
-        optimizationsApplied: 0,
-        actions: [],
-        goals: []
-      }
-    }
-    
-    // Extract goal/recommendation details from JSONB recommendation column
-    try {
-      const recommendation = typeof rec.recommendation === 'string' 
-        ? JSON.parse(rec.recommendation) 
-        : rec.recommendation
-      
-      weeklyData[weekKey].goals.push({
-        title: recommendation?.title || 'Optimization Goal',
-        description: recommendation?.description || 'Improve campaign performance',
-        type: recommendation?.type || 'general',
-        created_at: rec.created_at
-      })
-    } catch (e) {
-      // If parsing fails, just add a generic entry
-      weeklyData[weekKey].goals.push({
-        title: 'Optimization Goal',
-        description: 'Improve campaign performance',
-        type: 'general',
-        created_at: rec.created_at
-      })
-    }
-  })
-
-  // Build timeline: Week 1 = current week ALWAYS, Weeks 2-8 = future placeholders
-  const timelineArray: any[] = []
-  const thisWeekStart = getWeekStart(today)
-  const currentWeekKey = formatWeekKey(thisWeekStart)
-  
-  console.log(`[Optimization Timeline] Current week key: ${currentWeekKey}, weeklyData keys:`, Object.keys(weeklyData))
-  
-  // Week 1 = Current week (ALWAYS)
-  const currentWeekData = weeklyData[currentWeekKey]
-  const currentWeekGoals = recommendations?.map((rec: any) => {
-    try {
-      const recommendation = typeof rec.recommendation === 'string' 
-        ? JSON.parse(rec.recommendation) 
-        : rec.recommendation
-      return {
-        title: recommendation?.title || 'Optimization Goal',
-        description: recommendation?.description || 'Improve campaign performance',
-        type: recommendation?.type || 'general',
-        created_at: rec.created_at
-      }
-    } catch {
-      return {
-        title: 'Optimization Goal',
-        description: 'Improve campaign performance',
-        type: 'general',
-        created_at: rec.created_at
-      }
-    }
-  }) || []
-  
-  // Only count actions from the CURRENT week
-  const currentWeekActions = completedActions?.filter((action: any) => {
     const actionWeekStart = getWeekStart(new Date(action.created_at))
-    return formatWeekKey(actionWeekStart) === currentWeekKey
-  }) || []
+    const actionWeekKey = formatWeekKey(actionWeekStart)
+    
+    // Only add to current week data
+    if (actionWeekKey === currentWeekKey) {
+      currentWeekData.optimizationsApplied++
+      
+      // Extract optimization details from metadata
+      try {
+        const metadata = typeof action.metadata === 'string' 
+          ? JSON.parse(action.metadata) 
+          : action.metadata
+        
+        currentWeekData.actions.push({
+          title: metadata?.recommendation_title || metadata?.title || 'Optimization Applied',
+          description: metadata?.description || 'No description available',
+          category: metadata?.category || 'general',
+          created_at: action.created_at
+        })
+      } catch (e) {
+        // If parsing fails, just add a generic entry
+        currentWeekData.actions.push({
+          title: 'Optimization Applied',
+          description: 'Details unavailable',
+          category: 'general',
+          created_at: action.created_at
+        })
+      }
+    }
+  })
+
+  // Process recommendations to show goals for current week
+  recommendations?.forEach((rec) => {
+    try {
+      const recommendation = typeof rec.recommendation === 'string' 
+        ? JSON.parse(rec.recommendation) 
+        : rec.recommendation
+      
+      currentWeekData.goals.push({
+        title: recommendation?.title || 'Optimization Goal',
+        description: recommendation?.description || 'Improve campaign performance',
+        type: recommendation?.type || 'general',
+        created_at: rec.created_at
+      })
+    } catch (e) {
+      // If parsing fails, just add a generic entry
+      currentWeekData.goals.push({
+        title: 'Optimization Goal',
+        description: 'Improve campaign performance',
+        type: 'general',
+        created_at: rec.created_at
+      })
+    }
+  })
+
+  // Build timeline: Week 1 = current week data, Weeks 2-8 = future placeholders
+  const timelineArray: any[] = []
   
-  // Week 1: Current week with actual data OR zeros if no data yet
+  // Week 1 = Current week (always)
   timelineArray.push({
     week: currentWeekKey,
-    spend: currentWeekData ? Math.round(currentWeekData.spend * 100) / 100 : 0,
-    revenue: currentWeekData ? Math.round(currentWeekData.revenue * 100) / 100 : 0,
-    roas: currentWeekData ? Math.round(currentWeekData.roas * 100) / 100 : 0,
-    ctr: currentWeekData ? Math.round(currentWeekData.ctr * 100) / 100 : 0,
-    impressions: currentWeekData ? currentWeekData.impressions : 0,
-    clicks: currentWeekData ? currentWeekData.clicks : 0,
-    optimizationsApplied: currentWeekActions.length,
-    actions: currentWeekActions.map((action: any) => {
-      const metadata = typeof action.metadata === 'string' ? JSON.parse(action.metadata) : action.metadata
-      return {
-        title: metadata?.title || 'Optimization Applied',
-        description: metadata?.description || 'No description available',
-        category: metadata?.category || 'general',
-        created_at: action.created_at
-      }
-    }),
-    goals: currentWeekGoals
+    spend: Math.round(currentWeekData.spend * 100) / 100,
+    revenue: Math.round(currentWeekData.revenue * 100) / 100,
+    roas: Math.round(currentWeekData.roas * 100) / 100,
+    ctr: Math.round(currentWeekData.ctr * 100) / 100,
+    impressions: currentWeekData.impressions,
+    clicks: currentWeekData.clicks,
+    optimizationsApplied: currentWeekData.optimizationsApplied,
+    actions: currentWeekData.actions,
+    goals: currentWeekData.goals
   })
   
-  // Weeks 2-8: Future placeholders
+  // Weeks 2-8: Future weeks (placeholders)
   for (let i = 1; i < 8; i++) {
-    const futureWeekStart = new Date(thisWeekStart)
-    futureWeekStart.setDate(thisWeekStart.getDate() + (i * 7))
+    const futureWeekStart = new Date(currentWeekSunday)
+    futureWeekStart.setDate(currentWeekSunday.getDate() + (i * 7))
     const futureWeekKey = formatWeekKey(futureWeekStart)
     
     timelineArray.push({
@@ -313,11 +216,11 @@ async function getOptimizationTimeline(brandId: string) {
       revenue: 0,
       roas: 0,
       ctr: 0,
+      impressions: 0,
+      clicks: 0,
       optimizationsApplied: 0,
       actions: [],
-      goals: [],
-      impressions: 0,
-      clicks: 0
+      goals: []
     })
   }
 
