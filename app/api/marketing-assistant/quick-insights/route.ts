@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const forceGenerate = searchParams.get('forceGenerate') === 'true'
     
     // Use Sunday-to-Sunday date range (same as recommendations)
     const dateRange = getSundayToSundayRange()
@@ -58,11 +59,41 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[Quick Insights AI] 📅 Sunday-to-Sunday range: ${fromDate} to ${toDate}`)
-    console.log(`[Quick Insights AI] Generating insights for brand ${brandId}`)
+    
+    // Check for cached insights from this week
+    const currentSunday = new Date(dateRange.from)
+    const { data: cachedInsights, error: cacheError } = await supabase
+      .from('ai_usage_logs')
+      .select('response_data')
+      .eq('brand_id', brandId)
+      .eq('endpoint', 'quick_insights')
+      .gte('created_at', currentSunday.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    
+    // Return cached insights if they exist and forceGenerate is not set
+    if (!forceGenerate && cachedInsights && cachedInsights.response_data) {
+      console.log(`[Quick Insights AI] Returning cached insights from this week`)
+      const insights = typeof cachedInsights.response_data === 'string' 
+        ? JSON.parse(cachedInsights.response_data) 
+        : cachedInsights.response_data
+      return NextResponse.json({ insights: insights.insights || insights })
+    }
 
+    console.log(`[Quick Insights AI] Generating new insights for brand ${brandId}`)
     const insights = await generateAIInsights(brandId, fromDate, toDate, platforms)
     
-    console.log(`[Quick Insights AI] Generated ${insights.length} AI-powered insights`)
+    // Cache the insights in ai_usage_logs
+    await supabase.from('ai_usage_logs').insert({
+      brand_id: brandId,
+      user_id: userId,
+      endpoint: 'quick_insights',
+      response_data: { insights },
+      created_at: new Date().toISOString()
+    })
+    
+    console.log(`[Quick Insights AI] Generated and cached ${insights.length} AI-powered insights`)
     
     return NextResponse.json({ insights })
 

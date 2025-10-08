@@ -367,10 +367,10 @@ export default function MarketingAssistantPage() {
       // - On page refresh with viewed recommendations: Load ALL widgets (persist the analysis)
       // - On page refresh without viewed recommendations: Load ONLY timeline for week tracking
       if (forceRefresh) {
-        // Load all widgets when button is clicked
+        // Load all widgets when button is clicked - force regenerate insights
         await Promise.all([
           loadKPIMetrics(),
-          loadQuickInsights(),
+          loadQuickInsights(true), // Force generate new insights
           loadTrends(),
           loadWeeklyProgress(),
           loadOptimizationTimeline()
@@ -380,10 +380,10 @@ export default function MarketingAssistantPage() {
         const hasRunAnalysis = selectedBrandId && localStorage.getItem(`recommendationsViewed_${selectedBrandId}`) === 'true'
         
         if (hasRunAnalysis) {
-          // User already ran analysis - load all widgets to persist the view
-      await Promise.all([
+          // User already ran analysis - load all widgets with cached data
+          await Promise.all([
             loadKPIMetrics(),
-            loadQuickInsights(),
+            loadQuickInsights(false), // Use cached insights
             loadTrends(),
             loadWeeklyProgress(),
             loadOptimizationTimeline()
@@ -519,12 +519,13 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  const loadQuickInsights = async () => {
+  const loadQuickInsights = async (forceGenerate = false) => {
     if (!selectedBrandId) return
 
     try {
       const timestamp = Date.now()
-      const response = await fetch(`/api/marketing-assistant/quick-insights?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}`, {
+      const forceParam = forceGenerate ? '&forceGenerate=true' : ''
+      const response = await fetch(`/api/marketing-assistant/quick-insights?brandId=${selectedBrandId}&platforms=${selectedPlatforms.join(',')}&_t=${timestamp}${forceParam}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -2235,7 +2236,7 @@ export default function MarketingAssistantPage() {
                       <p className="text-gray-400 text-sm mb-6">Click any week dot to view detailed breakdown</p>
                       
                       {/* Timeline Bar */}
-                      <div className="relative py-16">
+                      <div className="relative py-20">
                         {/* Horizontal Line - Gray throughout, not red at the end */}
                         <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
                         
