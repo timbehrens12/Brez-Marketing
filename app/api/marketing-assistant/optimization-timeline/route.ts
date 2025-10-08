@@ -245,8 +245,8 @@ async function getOptimizationTimeline(brandId: string) {
 
   // Build timeline: Week 1 = current week ALWAYS, Weeks 2-8 = future placeholders
   const timelineArray: any[] = []
-  const currentWeekStart = getWeekStart(today)
-  const currentWeekKey = formatWeekKey(currentWeekStart)
+  const thisWeekStart = getWeekStart(today)
+  const currentWeekKey = formatWeekKey(thisWeekStart)
   
   console.log(`[Optimization Timeline] Current week key: ${currentWeekKey}, weeklyData keys:`, Object.keys(weeklyData))
   
@@ -303,8 +303,8 @@ async function getOptimizationTimeline(brandId: string) {
   
   // Weeks 2-8: Future placeholders
   for (let i = 1; i < 8; i++) {
-    const futureWeekStart = new Date(currentWeekStart)
-    futureWeekStart.setDate(currentWeekStart.getDate() + (i * 7))
+    const futureWeekStart = new Date(thisWeekStart)
+    futureWeekStart.setDate(thisWeekStart.getDate() + (i * 7))
     const futureWeekKey = formatWeekKey(futureWeekStart)
     
     timelineArray.push({
