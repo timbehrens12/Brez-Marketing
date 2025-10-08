@@ -848,7 +848,7 @@ export default function MarketingAssistantPage() {
                 {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
                   </Button>
       </div>
-      </div>
+                </div>
 
           {/* Performance Window & Platform Filters Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
@@ -870,7 +870,7 @@ export default function MarketingAssistantPage() {
                   {nextUpdateText || 'Loading...'}
                       </div>
                             </div>
-                </div>
+                          </div>
 
             {/* Platform Filter Chips */}
             <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3">
@@ -1053,11 +1053,11 @@ export default function MarketingAssistantPage() {
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <div className="text-3xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-0.5">
                             {progress.completionPercentage}%
-                            </div>
+                          </div>
                           <div className="text-[10px] text-gray-500 uppercase tracking-wider">Complete</div>
                           <div className="text-xs text-white font-bold mt-1">
                             {progress.completedCount}/{progress.totalRecommendations} Applied
-                          </div>
+                        </div>
                             </div>
                         
                         {/* Outer glow effect */}
@@ -1072,16 +1072,16 @@ export default function MarketingAssistantPage() {
                             <span className={`text-xs font-bold ${progress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {progress.roasImprovement > 0 ? '+' : ''}{progress.roasImprovement.toFixed(0)}%
                             </span>
-                          </div>
+                    </div>
                     )}
                         
                         {progress.totalRecommendations > progress.completedCount && (
                           <div className="flex items-center justify-between p-2 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">Pending</span>
                             <span className="text-xs font-medium text-[#FF2A2A]">{progress.totalRecommendations - progress.completedCount}</span>
-                        </div>
+                            </div>
                     )}
-                              </div>
+                            </div>
                             </div>
 
                     {/* Category Breakdown */}
@@ -1112,167 +1112,139 @@ export default function MarketingAssistantPage() {
 
                     {/* Current Goals - Show optimization objectives */}
                     {progress.totalRecommendations > 0 && (
-                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
-                        <h4 className="text-white font-medium text-[10px] mb-1.5 uppercase tracking-wide">Current Goals</h4>
-                        <div className="space-y-1">
-                          <div className="flex items-start gap-1.5">
-                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-[10px] leading-tight">Improve ROAS through better targeting</p>
-                          </div>
-                          <div className="flex items-start gap-1.5">
-                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-[10px] leading-tight">Optimize budget allocation across campaigns</p>
+                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
+                        <h4 className="text-white font-semibold text-xs mb-2 uppercase tracking-wide">Current Goals</h4>
+                        <div className="space-y-1.5">
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-xs leading-snug">Improve ROAS through better targeting</p>
+                            </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-xs leading-snug">Optimize budget allocation</p>
                         </div>
-                          <div className="flex items-start gap-1.5">
-                            <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-[10px] leading-tight">Reduce wasted ad spend on underperformers</p>
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-gray-300 text-xs leading-snug">Reduce wasted ad spend</p>
                           </div>
                         </div>
                     </div>
                     )}
 
-                    {/* Performance Timeline - Shows week-over-week performance improvements */}
+                    {/* Performance Tracking - Redesigned with bigger text */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
+                      const currentWeekNum = timeline.weeks.length > 0 ? timeline.weeks.length : 1
                       
-                      // Create 8-week progressive timeline
-                      const totalWeeks = 8
-                      const currentWeekIndex = timeline.weeks.length > 0 ? timeline.weeks.length - 1 : 0
-                      const progressiveWeeks = Array.from({ length: totalWeeks }, (_, i) => {
+                      // Show only first 3 weeks for space
+                      const weeksToShow = 3
+                      const displayWeeks = Array.from({ length: weeksToShow }, (_, i) => {
+                        const weekNum = i + 1
                         if (i < timeline.weeks.length) {
-                          return { ...timeline.weeks[i], isFuture: false, isCurrent: i === currentWeekIndex, weekNum: i + 1 }
+                          return { 
+                            ...timeline.weeks[i], 
+                            weekNum,
+                            isCurrent: weekNum === currentWeekNum,
+                            isActive: true
+                          }
                         } else {
                           return { 
-                            week: `Week ${i + 1}`, 
-                            roas: 0, 
-                            spend: 0,
-                            optimizationsApplied: 0, 
-                            isFuture: true,
+                            weekNum,
+                            optimizationsApplied: 0,
+                            roas: 0,
                             isCurrent: false,
-                            weekNum: i + 1
+                            isActive: false
                           }
                         }
                       })
                       
-                      const maxRoas = Math.max(...progressiveWeeks.filter(w => !w.isFuture).map((w: any) => w.roas || 0), 1)
-                      const currentWeek = progressiveWeeks.find(w => w.isCurrent)
-                      
                       return (
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Performance Tracking</h4>
-                        <span className="text-[10px] text-[#FF2A2A] font-bold">
-                          Week {timeline.weeks.length > 0 ? timeline.weeks.length : 1} of 8
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5 mb-2">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <h4 className="text-white font-semibold text-xs uppercase tracking-wide">Performance Tracking</h4>
+                        <span className="text-xs text-[#FF2A2A] font-bold">
+                          Week {currentWeekNum}
                         </span>
-                            </div>
+                          </div>
                       
-                      {/* Week-by-Week Timeline with Optimization Count */}
-                      <div className="space-y-0.5 mb-1.5">
-                        {progressiveWeeks.slice(0, 3).map((week: any, index: number) => {
-                          const isActive = !week.isFuture
+                      {/* Week Cards - Bigger and more readable */}
+                      <div className="space-y-2">
+                        {displayWeeks.map((week: any) => {
                           const hasOptimizations = week.optimizationsApplied > 0
                           const isImproving = week.roasChange > 0
-                          const isCurrentWeek = week.isCurrent
                           
                           return (
-                            <div key={index} className={`flex items-center gap-1.5 p-1 rounded ${isCurrentWeek ? 'bg-[#FF2A2A]/10 border border-[#FF2A2A]/30' : 'bg-[#0A0A0A]/50'}`}>
-                              {/* Week Number Badge */}
-                              <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold flex-shrink-0 ${
-                                isCurrentWeek 
-                                  ? 'bg-[#FF2A2A] text-white' 
-                                  : isActive 
-                                  ? 'bg-[#333] text-gray-400' 
-                                  : 'bg-[#1A1A1A] text-gray-700 border border-dashed border-gray-800'
-                              }`}>
-                                {week.weekNum}
+                            <div key={week.weekNum} className={`relative p-2.5 rounded-lg border ${
+                              week.isCurrent 
+                                ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/50' 
+                                : week.isActive
+                                ? 'bg-[#0A0A0A]/80 border-[#333]'
+                                : 'bg-[#0A0A0A]/30 border-[#222] border-dashed'
+                            }`}>
+                              {/* Week Label */}
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm font-bold ${
+                                    week.isCurrent ? 'text-[#FF2A2A]' : week.isActive ? 'text-white' : 'text-gray-700'
+                                  }`}>
+                                    Week {week.weekNum}
+                                  </span>
+                                  {week.isCurrent && (
+                                    <span className="px-1.5 py-0.5 bg-[#FF2A2A] text-white text-[9px] font-bold rounded uppercase">Current</span>
+                                  )}
+                                </div>
+                                {week.isActive && week.roas > 0 && (
+                                  <span className={`text-xs font-bold ${
+                                    isImproving ? 'text-emerald-400' : week.roasChange < 0 ? 'text-red-400' : 'text-gray-400'
+                                  }`}>
+                                    {week.roas.toFixed(2)}x ROAS
+                                  </span>
+                                )}
                               </div>
                               
-                              {/* Week Info */}
-                              <div className="flex-1 min-w-0">
+                              {/* Stats */}
+                              {week.isActive ? (
                                 <div className="flex items-center justify-between">
-                                  <span className={`text-[8px] font-medium ${isActive ? 'text-white' : 'text-gray-700'}`}>
-                                    {week.week}
-                                  </span>
-                                  {isActive && (
-                                    <span className={`text-[8px] font-bold ${
-                                      isImproving ? 'text-emerald-400' : week.roasChange < 0 ? 'text-red-400' : 'text-gray-500'
-                                    }`}>
-                                      {week.roas > 0 ? `${week.roas.toFixed(2)}x` : '—'}
-                                    </span>
-                                  )}
-                            </div>
-                                
-                                {/* Optimization Count & Status */}
-                                {isActive ? (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     {hasOptimizations ? (
                                       <>
-                                        <div className="w-1 h-1 bg-[#FF2A2A] rounded-full"></div>
-                                        <span className="text-[7px] text-[#FF2A2A]">{week.optimizationsApplied} applied</span>
-                                        {week.roasChange !== 0 && (
-                                          <span className={`text-[7px] ${isImproving ? 'text-emerald-400' : 'text-red-400'}`}>
-                                            ({isImproving ? '+' : ''}{week.roasChange}%)
-                                          </span>
-                                        )}
+                                        <div className="w-2 h-2 bg-[#FF2A2A] rounded-full"></div>
+                                        <span className="text-xs text-white font-medium">{week.optimizationsApplied} applied</span>
                                       </>
                                     ) : (
-                                      <span className="text-[7px] text-gray-600">No optimizations</span>
-                                    )}
-                            </div>
-                                ) : (
-                                  <span className="text-[7px] text-gray-700">Upcoming</span>
-                                )}
-                        </div>
+                                      <>
+                                        <div className="w-2 h-2 bg-gray-700 rounded-full"></div>
+                                        <span className="text-xs text-gray-500">No optimizations yet</span>
+                                      </>
+                          )}
                           </div>
+                                  {week.roasChange !== 0 && (
+                                    <span className={`text-xs font-bold ${isImproving ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {isImproving ? '+' : ''}{week.roasChange}%
+                                    </span>
+                                  )}
+                        </div>
+                              ) : (
+                                <span className="text-xs text-gray-600">Upcoming</span>
+                              )}
+                    </div>
                           )
                         })}
                           </div>
                       
-                      {/* Current Week Summary - Compact */}
-                      {currentWeek && !currentWeek.isFuture && (
-                        <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg p-1.5 mb-1.5">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[8px] text-gray-400 uppercase tracking-wide">This Week</span>
-                            <span className="text-[8px] text-[#FF2A2A] font-bold">{currentWeek.week}</span>
-                        </div>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            <div>
-                              <div className="text-[7px] text-gray-500">Applied</div>
-                              <div className="text-xs font-bold text-white">{currentWeek.optimizationsApplied}</div>
-                            </div>
-                            <div>
-                              <div className="text-[7px] text-gray-500">ROAS</div>
-                              <div className={`text-xs font-bold ${currentWeek.roas > 0 ? 'text-white' : 'text-gray-600'}`}>
-                                {currentWeek.roas > 0 ? `${currentWeek.roas.toFixed(2)}x` : '—'}
-                            </div>
-                            </div>
-                            <div>
-                              <div className="text-[7px] text-gray-500">Spend</div>
-                              <div className="text-xs font-bold text-white">
-                                ${currentWeek.spend > 0 ? currentWeek.spend.toFixed(0) : '0'}
-                              </div>
-                            </div>
+                      {/* Summary Stats */}
+                      {timeline.weeks.length > 0 && (
+                        <div className="flex items-center justify-between text-xs pt-2.5 mt-2.5 border-t border-[#333]">
+                          <div className="text-gray-400">
+                            <span className="text-white font-bold">{timeline.stats.totalOptimizations}</span> total
+                          </div>
+                        <div className="text-gray-400">
+                          {timeline.stats.avgRoas > 0 && (
+                            <>Avg: <span className="text-white font-bold">{timeline.stats.avgRoas.toFixed(2)}x</span></>
+                          )}
                           </div>
                         </div>
                       )}
-                      
-                      {/* Overall Progress Stats */}
-                      <div className="flex items-center justify-between text-[9px] pt-1.5 border-t border-[#333]">
-                        <div className="text-gray-500">
-                          {timeline.weeks.length > 0 ? (
-                            <>
-                              <span className="text-white font-bold">{timeline.stats.totalOptimizations}</span> total applied
-                            </>
-                          ) : (
-                            <span className="text-gray-600">Start optimizing</span>
-                          )}
-                          </div>
-                        <div className="text-gray-500">
-                          {timeline.weeks.length > 0 && timeline.stats.avgRoas > 0 && (
-                            <>Avg: <span className="text-white font-bold">{timeline.stats.avgRoas.toFixed(2)}x</span></>
-                          )}
-                        </div>
-                    </div>
                           </div>
                       )
                     })()}
