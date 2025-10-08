@@ -68,7 +68,7 @@ async function getOptimizationTimeline(brandId: string) {
   // Get AI recommendations to show what goals were set for each week
   const { data: recommendations, error: recsError } = await supabase
     .from('ai_campaign_recommendations')
-    .select('created_at, recommendation, recommendation_type, campaign_id')
+    .select('created_at, recommendation, campaign_id')
     .eq('brand_id', brandId)
     .gte('created_at', eightWeeksAgo.toISOString())
     .order('created_at', { ascending: true })
@@ -219,24 +219,24 @@ async function getOptimizationTimeline(brandId: string) {
       }
     }
     
-    // Extract goal/recommendation details
+    // Extract goal/recommendation details from JSONB recommendation column
     try {
       const recommendation = typeof rec.recommendation === 'string' 
         ? JSON.parse(rec.recommendation) 
         : rec.recommendation
       
       weeklyData[weekKey].goals.push({
-        title: recommendation?.title || rec.recommendation_type || 'Optimization Goal',
+        title: recommendation?.title || 'Optimization Goal',
         description: recommendation?.description || 'Improve campaign performance',
-        type: rec.recommendation_type,
+        type: recommendation?.type || 'general',
         created_at: rec.created_at
       })
     } catch (e) {
       // If parsing fails, just add a generic entry
       weeklyData[weekKey].goals.push({
-        title: rec.recommendation_type || 'Optimization Goal',
+        title: 'Optimization Goal',
         description: 'Improve campaign performance',
-        type: rec.recommendation_type,
+        type: 'general',
         created_at: rec.created_at
       })
     }
