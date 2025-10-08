@@ -1235,27 +1235,29 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
   
   if (recommendation) {
     const recData = recommendation.recommendation
-    recommendationTitle = recData.title || 'Optimization Applied'
-    recommendationDescription = recData.description || 'No description available'
-    recommendationType = recData.type || 'general'
+    recommendationTitle = recData?.title || 'Optimization Applied'
+    recommendationDescription = recData?.description || 'No description available'
+    recommendationType = recData?.type || 'general'
     
-    const action = recData.actions.find((a: any) => a.id === actionId)
+    const action = recData?.actions?.find((a: any) => a.id === actionId)
     if (action) {
       actionDescription = action.label || action.description || 'Manual optimization completed'
     }
-  } else {
-    // For dynamic recommendations, create a description based on the actionId
-    if (actionId?.includes('budget')) {
-      actionDescription = 'Budget optimization completed manually'
-      recommendationTitle = 'Budget Optimization'
+  }
+  
+  // Parse action ID for better titles if recommendation data is missing
+  if (!recommendation || !recommendation.recommendation?.title) {
+    if (actionId?.includes('demographic') || actionId?.includes('targeting')) {
+      recommendationTitle = 'Smart Demographic Targeting'
+      recommendationType = 'targeting'
+    } else if (actionId?.includes('budget') || actionId?.includes('scale')) {
+      recommendationTitle = 'Smart Budget Scaling'
       recommendationType = 'budget'
-    } else if (actionId?.includes('creative')) {
-      actionDescription = 'Creative optimization completed manually'
-      recommendationTitle = 'Creative Optimization'
+    } else if (actionId?.includes('creative') || actionId?.includes('performance')) {
+      recommendationTitle = 'Creative Performance Optimization'
       recommendationType = 'creative'
-    } else if (actionId?.includes('tracking')) {
-      actionDescription = 'Conversion tracking setup completed'
-      recommendationTitle = 'Conversion Tracking Setup'
+    } else if (actionId?.includes('tracking') || actionId?.includes('conversion')) {
+      recommendationTitle = 'Set Up Conversion Tracking'
       recommendationType = 'tracking'
     }
   }

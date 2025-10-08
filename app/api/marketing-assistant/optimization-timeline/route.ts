@@ -32,10 +32,24 @@ export async function GET(request: NextRequest) {
 }
 
 async function getOptimizationTimeline(brandId: string) {
-  // Get last 8 weeks of Meta ad performance data
+  // ONLY fetch data from when recommendations were first generated (current cycle)
+  // This ensures Week 1 = when first recommendations were created
   const today = new Date()
-  const eightWeeksAgo = new Date(today)
-  eightWeeksAgo.setDate(today.getDate() - 56) // 8 weeks = 56 days
+  
+  // First, find when the FIRST recommendation was created for this brand
+  const { data: firstRec } = await supabase
+    .from('ai_campaign_recommendations')
+    .select('created_at')
+    .eq('brand_id', brandId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+  
+  // Use first recommendation date as the start, or current week if none exist
+  const startDate = firstRec && firstRec.length > 0 
+    ? new Date(firstRec[0].created_at)
+    : today
+  
+  console.log(`[Optimization Timeline] Timeline starts from: ${startDate.toISOString()}`)
 
   // Note: meta_campaign_daily_stats doesn't have revenue column
   // We'll calculate revenue from ROAS * spend
@@ -43,21 +57,21 @@ async function getOptimizationTimeline(brandId: string) {
     .from('meta_campaign_daily_stats')
     .select('date, spend, impressions, clicks, roas, purchase_count')
     .eq('brand_id', brandId)
-    .gte('date', eightWeeksAgo.toISOString().split('T')[0])
+    .gte('date', startDate.toISOString().split('T')[0])
     .order('date', { ascending: true })
   
-  console.log(`[Optimization Timeline] Fetched ${campaignStats?.length || 0} campaign stats records from ${eightWeeksAgo.toISOString().split('T')[0]}`)
+  console.log(`[Optimization Timeline] Fetched ${campaignStats?.length || 0} campaign stats records from ${startDate.toISOString().split('T')[0]}`)
   if (campaignStatsError) {
     console.error('[Optimization Timeline] Error fetching campaign stats:', campaignStatsError)
   }
 
-  // Get completed optimizations to show which weeks had optimizations applied
+  // Get completed optimizations from the same start date
   const { data: completedActions, error: actionsError } = await supabase
     .from('ai_usage_logs')
     .select('created_at, metadata')
     .eq('brand_id', brandId)
     .eq('endpoint', 'mark_as_done')
-    .gte('created_at', eightWeeksAgo.toISOString())
+    .gte('created_at', startDate.toISOString())
     .order('created_at', { ascending: true })
   
   console.log(`[Optimization Timeline] Fetched ${completedActions?.length || 0} completed optimizations`)
@@ -65,12 +79,11 @@ async function getOptimizationTimeline(brandId: string) {
     console.error('[Optimization Timeline] Error fetching completed actions:', actionsError)
   }
 
-  // Get AI recommendations to show what goals were set for each week
+  // Get ALL recommendations (they define the weeks)
   const { data: recommendations, error: recsError } = await supabase
     .from('ai_campaign_recommendations')
     .select('created_at, recommendation, campaign_id')
     .eq('brand_id', brandId)
-    .gte('created_at', eightWeeksAgo.toISOString())
     .order('created_at', { ascending: true })
   
   console.log(`[Optimization Timeline] Fetched ${recommendations?.length || 0} AI recommendations`)
