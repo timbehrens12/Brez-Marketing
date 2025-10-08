@@ -47,7 +47,7 @@ async function getOptimizationTimeline(brandId: string) {
   // Get completed optimizations to show which weeks had optimizations applied
   const { data: completedActions } = await supabase
     .from('ai_usage_logs')
-    .select('created_at')
+    .select('created_at, request_data, response_data')
     .eq('brand_id', brandId)
     .eq('endpoint', 'mark_as_done')
     .gte('created_at', eightWeeksAgo.toISOString())
@@ -64,6 +64,7 @@ async function getOptimizationTimeline(brandId: string) {
     roas: number
     ctr: number
     optimizationsApplied: number
+    actions: any[]
   } } = {}
 
   // Helper to get week key (Monday of that week)
@@ -97,7 +98,8 @@ async function getOptimizationTimeline(brandId: string) {
         clicks: 0, 
         roas: 0, 
         ctr: 0,
-        optimizationsApplied: 0
+        optimizationsApplied: 0,
+        actions: []
       }
     }
     
@@ -129,23 +131,49 @@ async function getOptimizationTimeline(brandId: string) {
         clicks: 0, 
         roas: 0, 
         ctr: 0,
-        optimizationsApplied: 0
+        optimizationsApplied: 0,
+        actions: []
       }
     }
     
     weeklyData[weekKey].optimizationsApplied++
+    
+    // Extract optimization details from request_data
+    try {
+      const requestData = typeof action.request_data === 'string' 
+        ? JSON.parse(action.request_data) 
+        : action.request_data
+      
+      weeklyData[weekKey].actions.push({
+        title: requestData?.title || 'Optimization Applied',
+        description: requestData?.description || 'No description available',
+        category: requestData?.category || 'general',
+        created_at: action.created_at
+      })
+    } catch (e) {
+      // If parsing fails, just add a generic entry
+      weeklyData[weekKey].actions.push({
+        title: 'Optimization Applied',
+        description: 'Details unavailable',
+        category: 'general',
+        created_at: action.created_at
+      })
+    }
   })
 
   // Convert to array and sort by date
   let timelineArray = Object.values(weeklyData)
     .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
-    .map(({ week, spend, revenue, roas, ctr, optimizationsApplied }) => ({ 
+    .map(({ week, spend, revenue, roas, ctr, optimizationsApplied, actions, impressions, clicks }) => ({ 
       week, 
       spend: Math.round(spend * 100) / 100, 
       revenue: Math.round(revenue * 100) / 100, 
       roas: Math.round(roas * 100) / 100, 
       ctr: Math.round(ctr * 100) / 100,
-      optimizationsApplied
+      optimizationsApplied,
+      actions,
+      impressions,
+      clicks
     }))
     .slice(-8) // Last 8 weeks
   
@@ -159,7 +187,10 @@ async function getOptimizationTimeline(brandId: string) {
       revenue: 0,
       roas: 0,
       ctr: 0,
-      optimizationsApplied: 0
+      optimizationsApplied: 0,
+      actions: [],
+      impressions: 0,
+      clicks: 0
     }]
   }
 

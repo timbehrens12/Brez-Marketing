@@ -151,6 +151,8 @@ export default function MarketingAssistantPage() {
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null)
   const [optimizationTimeline, setOptimizationTimeline] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showDetailedTimeline, setShowDetailedTimeline] = useState(false)
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set())
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [simulationData, setSimulationData] = useState<any>(null)
@@ -1118,7 +1120,7 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-xs leading-snug">Improve ROAS through better targeting</p>
-                          </div>
+                            </div>
                           <div className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-xs leading-snug">Optimize budget allocation</p>
@@ -1135,6 +1137,16 @@ export default function MarketingAssistantPage() {
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
                       const currentWeekNum = timeline.weeks.length > 0 ? timeline.weeks.length : 1
+                      
+                      const toggleWeekExpansion = (weekNum: number) => {
+                        const newExpanded = new Set(expandedWeeks)
+                        if (newExpanded.has(weekNum)) {
+                          newExpanded.delete(weekNum)
+                        } else {
+                          newExpanded.add(weekNum)
+                        }
+                        setExpandedWeeks(newExpanded)
+                      }
                       
                       // Show only first 3 weeks for space
                       const weeksToShow = 3
@@ -1161,11 +1173,22 @@ export default function MarketingAssistantPage() {
                       return (
                     <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mb-2">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-semibold text-xs uppercase tracking-wide">Performance Tracking</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-white font-semibold text-xs uppercase tracking-wide">Performance Tracking</h4>
+                          <button
+                            onClick={() => setShowDetailedTimeline(true)}
+                            className="text-gray-400 hover:text-[#FF2A2A] transition-colors"
+                            title="View detailed timeline"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                            </div>
                         <span className="text-xs text-[#FF2A2A] font-bold">
                           Week {currentWeekNum}
                         </span>
-                          </div>
+                            </div>
                       
                       {/* Week Cards - Bigger and more readable */}
                       <div className="space-y-1">
@@ -2124,6 +2147,290 @@ export default function MarketingAssistantPage() {
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Got It!
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Timeline Modal */}
+      {showDetailedTimeline && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-[#333] flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1">Performance Timeline</h2>
+                <p className="text-gray-400 text-sm">Detailed week-by-week optimization breakdown</p>
+              </div>
+              <button
+                onClick={() => setShowDetailedTimeline(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
+                
+                if (timeline.weeks.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-[#FF2A2A]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-white font-semibold text-lg mb-2">No Data Yet</h3>
+                      <p className="text-gray-400">Apply optimizations to start tracking your progress</p>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4">
+                        <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Weeks</div>
+                        <div className="text-white text-2xl font-bold">{timeline.weeks.length}</div>
+                      </div>
+                      <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4">
+                        <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Optimizations</div>
+                        <div className="text-[#FF2A2A] text-2xl font-bold">{timeline.stats.totalOptimizations}</div>
+                      </div>
+                      <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4">
+                        <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Avg ROAS</div>
+                        <div className="text-emerald-400 text-2xl font-bold">
+                          {timeline.stats.avgRoas > 0 ? `${timeline.stats.avgRoas.toFixed(2)}x` : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="space-y-3">
+                      {timeline.weeks.map((week: any, index: number) => {
+                        const weekNum = index + 1
+                        const isExpanded = expandedWeeks.has(weekNum)
+                        const hasOptimizations = week.optimizationsApplied > 0
+                        const isCurrentWeek = weekNum === timeline.weeks.length
+                        
+                        return (
+                          <div
+                            key={weekNum}
+                            className={`border rounded-lg overflow-hidden transition-all ${
+                              isCurrentWeek
+                                ? 'border-[#FF2A2A]/50 bg-[#FF2A2A]/5'
+                                : 'border-[#333] bg-[#0f0f0f]'
+                            }`}
+                          >
+                            {/* Week Header - Clickable */}
+                            <button
+                              onClick={() => toggleWeekExpansion(weekNum)}
+                              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+                            >
+                              <div className="flex items-center gap-4">
+                                {/* Week Number Badge */}
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold ${
+                                  isCurrentWeek
+                                    ? 'bg-[#FF2A2A] text-white'
+                                    : 'bg-[#1A1A1A] text-gray-400'
+                                }`}>
+                                  W{weekNum}
+                                </div>
+                                
+                                {/* Week Info */}
+                                <div className="text-left">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-white font-semibold text-base">Week {weekNum}</h3>
+                                    {isCurrentWeek && (
+                                      <span className="px-2 py-0.5 bg-[#FF2A2A] text-white text-xs font-bold rounded uppercase">
+                                        Current
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <span className="text-gray-400">
+                                      {week.week}
+                                    </span>
+                                    {hasOptimizations && (
+                                      <span className="text-[#FF2A2A] font-medium">
+                                        {week.optimizationsApplied} optimization{week.optimizationsApplied !== 1 ? 's' : ''} applied
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Stats & Expand Icon */}
+                              <div className="flex items-center gap-6">
+                                {week.roas > 0 && (
+                                  <div className="text-right">
+                                    <div className="text-xs text-gray-400 mb-0.5">ROAS</div>
+                                    <div className="text-emerald-400 font-bold text-lg">{week.roas.toFixed(2)}x</div>
+                                    {week.roasChange !== 0 && (
+                                      <div className={`text-xs font-medium ${
+                                        week.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'
+                                      }`}>
+                                        {week.roasChange > 0 ? '+' : ''}{week.roasChange}%
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <svg
+                                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                                    isExpanded ? 'rotate-180' : ''
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </button>
+
+                            {/* Expanded Details */}
+                            {isExpanded && (
+                              <div className="border-t border-[#333] p-4 bg-black/20">
+                                <div className="grid grid-cols-2 gap-4">
+                                  {/* Performance Metrics */}
+                                  <div>
+                                    <h4 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+                                      <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                      </svg>
+                                      Performance Metrics
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center p-2 bg-[#0A0A0A] rounded">
+                                        <span className="text-gray-400 text-sm">Spend</span>
+                                        <span className="text-white font-semibold">${week.spend?.toFixed(2) || '0.00'}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center p-2 bg-[#0A0A0A] rounded">
+                                        <span className="text-gray-400 text-sm">Revenue</span>
+                                        <span className="text-emerald-400 font-semibold">${week.revenue?.toFixed(2) || '0.00'}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center p-2 bg-[#0A0A0A] rounded">
+                                        <span className="text-gray-400 text-sm">Impressions</span>
+                                        <span className="text-white font-semibold">{week.impressions?.toLocaleString() || '0'}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center p-2 bg-[#0A0A0A] rounded">
+                                        <span className="text-gray-400 text-sm">Clicks</span>
+                                        <span className="text-white font-semibold">{week.clicks?.toLocaleString() || '0'}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center p-2 bg-[#0A0A0A] rounded">
+                                        <span className="text-gray-400 text-sm">CTR</span>
+                                        <span className="text-white font-semibold">{week.ctr?.toFixed(2) || '0.00'}%</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Optimizations Applied */}
+                                  <div>
+                                    <h4 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+                                      <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      Optimizations Applied
+                                    </h4>
+                                    {hasOptimizations ? (
+                                      <div className="space-y-2">
+                                        {week.actions?.map((action: any, actionIndex: number) => (
+                                          <div key={actionIndex} className="p-3 bg-[#0A0A0A] rounded border border-[#333]">
+                                            <div className="flex items-start gap-2 mb-2">
+                                              <div className="w-2 h-2 bg-[#FF2A2A] rounded-full mt-1.5 flex-shrink-0"></div>
+                                              <div className="flex-1">
+                                                <p className="text-white text-sm font-medium mb-1">{action.title}</p>
+                                                <p className="text-gray-400 text-xs">{action.description}</p>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                              <span className={`px-2 py-0.5 rounded font-medium ${
+                                                action.category === 'budget'
+                                                  ? 'bg-blue-500/20 text-blue-400'
+                                                  : action.category === 'targeting'
+                                                  ? 'bg-purple-500/20 text-purple-400'
+                                                  : action.category === 'creative'
+                                                  ? 'bg-pink-500/20 text-pink-400'
+                                                  : 'bg-gray-500/20 text-gray-400'
+                                              }`}>
+                                                {action.category}
+                                              </span>
+                                              <span className="text-gray-500">
+                                                {new Date(action.created_at).toLocaleDateString()}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )) || (
+                                          <div className="p-3 bg-[#0A0A0A] rounded border border-[#333]">
+                                            <p className="text-gray-400 text-sm">
+                                              {week.optimizationsApplied} optimization{week.optimizationsApplied !== 1 ? 's' : ''} applied this week
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="p-4 bg-[#0A0A0A] rounded border border-[#333] text-center">
+                                        <p className="text-gray-500 text-sm">No optimizations applied yet</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Goals for this week */}
+                                {hasOptimizations && (
+                                  <div className="mt-4 pt-4 border-t border-[#333]">
+                                    <h4 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                                      <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      Week Goals
+                                    </h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div className="p-2 bg-[#0A0A0A] rounded text-center">
+                                        <div className="text-xs text-gray-400 mb-1">Target</div>
+                                        <div className="text-white font-semibold text-sm">Improve ROAS</div>
+                                      </div>
+                                      <div className="p-2 bg-[#0A0A0A] rounded text-center">
+                                        <div className="text-xs text-gray-400 mb-1">Focus</div>
+                                        <div className="text-white font-semibold text-sm">Better Targeting</div>
+                                      </div>
+                                      <div className="p-2 bg-[#0A0A0A] rounded text-center">
+                                        <div className="text-xs text-gray-400 mb-1">Status</div>
+                                        <div className={`font-semibold text-sm ${
+                                          week.roasChange > 0 ? 'text-emerald-400' : week.roasChange < 0 ? 'text-red-400' : 'text-gray-400'
+                                        }`}>
+                                          {week.roasChange > 0 ? '✓ Improving' : week.roasChange < 0 ? '↓ Declining' : '→ Stable'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[#333] flex justify-end">
+              <Button
+                onClick={() => setShowDetailedTimeline(false)}
+                className="bg-[#FF2A2A] hover:bg-[#FF2A2A]/90 text-white"
+              >
+                Close
               </Button>
             </div>
           </div>
