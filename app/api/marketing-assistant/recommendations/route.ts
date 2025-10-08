@@ -550,14 +550,14 @@ async function generateRecommendations(
       .lte('date', dateRange.to)
 
     const { data: adsetStats } = await supabase
-      .from('meta_adset_daily_stats')
+      .from('meta_adset_daily_insights')
       .select('*')
       .eq('brand_id', brandId)
       .gte('date', dateRange.from)
       .lte('date', dateRange.to)
 
     const { data: adStats } = await supabase
-      .from('meta_ad_daily_stats')
+      .from('meta_ad_daily_insights')
       .select('*')
       .eq('brand_id', brandId)
       .gte('date', dateRange.from)
@@ -674,7 +674,8 @@ async function generateRecommendations(
       perf.totalSpend += parseFloat(stat.spend) || 0
       perf.totalImpressions += parseInt(stat.impressions) || 0
       perf.totalClicks += parseInt(stat.clicks) || 0
-      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalConversions += parseInt(stat.purchase_count) || 0
+      // Note: revenue data would come from purchase_value field if available, defaulting to 0 for now
       perf.totalRevenue += parseFloat(stat.purchase_value) || 0
       perf.days += 1
     })
@@ -696,10 +697,11 @@ async function generateRecommendations(
         })
       }
       const perf = adsetPerformance.get(adsetId)
-      perf.totalSpend += parseFloat(stat.spend) || 0
+      perf.totalSpend += parseFloat(stat.spent) || 0
       perf.totalImpressions += parseInt(stat.impressions) || 0
       perf.totalClicks += parseInt(stat.clicks) || 0
-      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalConversions += parseInt(stat.purchase_count) || 0
+      // Note: revenue data would come from purchase_value field if available, defaulting to 0 for now
       perf.totalRevenue += parseFloat(stat.purchase_value) || 0
       perf.days += 1
     })
@@ -722,10 +724,11 @@ async function generateRecommendations(
         })
       }
       const perf = adPerformance.get(adId)
-      perf.totalSpend += parseFloat(stat.spend) || 0
+      perf.totalSpend += parseFloat(stat.spent) || 0
       perf.totalImpressions += parseInt(stat.impressions) || 0
       perf.totalClicks += parseInt(stat.clicks) || 0
-      perf.totalConversions += parseInt(stat.conversions) || 0
+      perf.totalConversions += parseInt(stat.purchase_count) || 0
+      // Note: revenue data would come from purchase_value field if available, defaulting to 0 for now
       perf.totalRevenue += parseFloat(stat.purchase_value) || 0
       perf.days += 1
     })
