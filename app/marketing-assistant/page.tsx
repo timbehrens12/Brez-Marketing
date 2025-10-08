@@ -1115,20 +1115,25 @@ export default function MarketingAssistantPage() {
                             </div>
                     )}
 
-                    {/* Current Goals - Show optimization objectives from actual recommendations */}
-                    {filteredOptimizations.length > 0 && (
-                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
-                        <h4 className="text-white font-semibold text-xs mb-1.5 uppercase tracking-wide">Current Goals</h4>
-                        <div className="space-y-1">
-                          {filteredOptimizations.slice(0, 3).map((card, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
-                              <p className="text-gray-300 text-xs leading-snug">{card.title}</p>
-                            </div>
-                          ))}
+                    {/* Current Goals - Show goals from Week 1 timeline */}
+                    {(() => {
+                      const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
+                      const week1Goals = timeline.weeks.length > 0 ? timeline.weeks[0].goals : []
+                      
+                      return week1Goals && week1Goals.length > 0 && (
+                        <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
+                          <h4 className="text-white font-semibold text-xs mb-1.5 uppercase tracking-wide">Current Goals</h4>
+                          <div className="space-y-1">
+                            {week1Goals.slice(0, 3).map((goal: any, idx: number) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
+                                <p className="text-gray-300 text-xs leading-snug">{goal.title}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                    </div>
-                    )}
+                      )
+                    })()}
 
                     {/* Performance Tracking - Redesigned with bigger text */}
                     {(() => {
@@ -2212,31 +2217,34 @@ export default function MarketingAssistantPage() {
 
                     {/* Horizontal Timeline Bar */}
                     <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-6">
-                      <h3 className="text-white font-semibold text-lg mb-6">Timeline Overview</h3>
+                      <h3 className="text-white font-semibold text-lg mb-2">Timeline Overview</h3>
+                      <p className="text-gray-400 text-sm mb-6">💡 Click any week dot to view detailed breakdown</p>
                       
                       {/* Timeline Bar */}
                       <div className="relative py-8">
-                        {/* Horizontal Line */}
-                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] via-[#FF2A2A]/30 to-[#FF2A2A] transform -translate-y-1/2"></div>
+                        {/* Horizontal Line - Gray throughout, not red at the end */}
+                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2"></div>
                         
                         {/* Week Markers */}
                         <div className="relative flex justify-between items-center">
                           {timeline.weeks.map((week: any, index: number) => {
                             const weekNum = index + 1
                             const hasOptimizations = week.optimizationsApplied > 0
-                            const hasData = week.spend > 0 || week.impressions > 0 || hasOptimizations
-                            const isCurrentWeek = weekNum === timeline.weeks.length
+                            const hasData = week.spend > 0 || week.impressions > 0 || hasOptimizations || week.goals?.length > 0
+                            const isCurrentWeek = weekNum === 1 // Only Week 1 is current
                             const isSelected = selectedWeekIndex === index
-                            const isClickable = hasData || week.goals?.length > 0
+                            const isClickable = hasData
+                            const isFutureWeek = weekNum > 1 && !hasData
                         
                             return (
-                              <div key={weekNum} className="flex flex-col items-center">
+                              <div key={weekNum} className="flex flex-col items-center group">
                                 {/* Marker Dot */}
                                 <button
                                   onClick={() => isClickable && setSelectedWeekIndex(index)}
                                   disabled={!isClickable}
+                                  title={isClickable ? 'Click to view details' : 'No data yet'}
                                   className={`w-6 h-6 rounded-full border-4 transition-all ${
-                                    isClickable ? 'hover:scale-125 cursor-pointer' : 'cursor-not-allowed opacity-50'
+                                    isClickable ? 'hover:scale-150 hover:shadow-lg hover:shadow-[#FF2A2A]/50 cursor-pointer' : 'cursor-not-allowed opacity-40'
                                   } ${
                                     isSelected
                                       ? 'bg-[#FF2A2A] border-[#FF2A2A] ring-4 ring-[#FF2A2A]/30 scale-125'
@@ -2244,7 +2252,7 @@ export default function MarketingAssistantPage() {
                                       ? 'bg-[#FF2A2A] border-[#1A1A1A]'
                                       : hasOptimizations
                                       ? 'bg-[#FF2A2A]/50 border-[#1A1A1A]'
-                                      : 'bg-[#333] border-[#1A1A1A]'
+                                      : 'bg-[#444] border-[#1A1A1A]' // Gray for all future weeks
                                   } relative z-10`}
                                 >
                                   {hasOptimizations && (
