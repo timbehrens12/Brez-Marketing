@@ -91,26 +91,30 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   }
 
   if (platforms.includes('meta')) {
-    // Get Meta ad performance - JOIN with meta_ads to get ad_name
-    const { data: adStats } = await supabase
+    // Get Meta ad performance data
+    const { data: insights } = await supabase
       .from('meta_ad_daily_insights')
-      .select(`
-        ad_id,
-        spent,
-        impressions,
-        clicks,
-        date,
-        meta_ads!inner(ad_name)
-      `)
+      .select('ad_id, spent, impressions, clicks, date')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
       .order('date', { ascending: false })
     
-    // Flatten the joined data structure
-    const flattenedStats = adStats?.map((stat: any) => ({
+    // Get ad names from meta_ads table
+    const uniqueAdIds = [...new Set(insights?.map(i => i.ad_id) || [])]
+    const { data: ads } = await supabase
+      .from('meta_ads')
+      .select('ad_id, ad_name')
+      .eq('brand_id', brandId)
+      .in('ad_id', uniqueAdIds)
+    
+    // Create a map of ad_id to ad_name
+    const adNameMap = new Map(ads?.map(ad => [ad.ad_id, ad.ad_name]) || [])
+    
+    // Combine insights with ad names
+    const flattenedStats = insights?.map((stat: any) => ({
       ad_id: stat.ad_id,
-      ad_name: stat.meta_ads?.ad_name || `Ad ${stat.ad_id}`,
+      ad_name: adNameMap.get(stat.ad_id) || `Ad ${stat.ad_id}`,
       spent: stat.spent,
       impressions: stat.impressions,
       clicks: stat.clicks,
@@ -118,7 +122,7 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     })) || []
     
     performanceData.meta_ads = flattenedStats
-    console.log(`[Quick Insights AI] Found ${flattenedStats.length} ad stats records`)
+    console.log(`[Quick Insights AI] Found ${flattenedStats.length} ad stats records with ${ads?.length || 0} ad names`)
 
     // Calculate summary metrics (use 'spent' not 'spend')
     if (flattenedStats && flattenedStats.length > 0) {
