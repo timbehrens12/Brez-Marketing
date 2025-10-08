@@ -2221,9 +2221,9 @@ export default function MarketingAssistantPage() {
                       <p className="text-gray-400 text-sm mb-6">💡 Click any week dot to view detailed breakdown</p>
                       
                       {/* Timeline Bar */}
-                      <div className="relative py-8">
+                      <div className="relative py-12">
                         {/* Horizontal Line - Gray throughout, not red at the end */}
-                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2"></div>
+                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
                         
                         {/* Week Markers */}
                         <div className="relative flex justify-between items-center">

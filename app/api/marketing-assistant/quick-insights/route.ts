@@ -182,7 +182,7 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   let completion
   try {
     completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini', // Use faster mini model to prevent timeouts
+    model: 'gpt-3.5-turbo', // Fastest model - critical to stay under 15s Vercel timeout
     messages: [
       {
         role: 'system',
@@ -288,8 +288,8 @@ Return exactly 3 insights in this JSON format:
 ]`
       }
     ],
-    temperature: 0.3, // Lower temperature for faster, more consistent responses
-    max_tokens: 500, // Reduced tokens since we only need 3 insights
+    temperature: 0.2, // Lower = faster
+    max_tokens: 300, // Minimal tokens for 3 insights
   })
   } catch (aiError: any) {
     console.error('[Quick Insights AI] ❌ OpenAI API Error:', aiError.message)
@@ -456,7 +456,7 @@ function prepareDataSummaryForAI(data: any) {
       cpc: ad.clicks > 0 ? ad.spend / ad.clicks : 0
     }))
     .sort((a, b) => b.spend - a.spend)
-    .slice(0, 5) // Top 5 ads only (reduced from 10)
+    .slice(0, 3) // Top 3 ads only - minimize data for speed
 
   // Aggregate demographics
   const demoPerformance = new Map()
@@ -487,7 +487,7 @@ function prepareDataSummaryForAI(data: any) {
       ctr: demo.impressions > 0 ? (demo.clicks / demo.impressions) * 100 : 0
     }))
     .sort((a, b) => b.spend - a.spend)
-    .slice(0, 5) // Top 5 demographics only (reduced from 10)
+    .slice(0, 3) // Top 3 demographics only - minimize data for speed
 
   // Aggregate geography
   const regionCounts = new Map()
@@ -503,7 +503,7 @@ function prepareDataSummaryForAI(data: any) {
 
   const topRegions = Array.from(regionCounts.values())
     .sort((a, b) => b.orders - a.orders)
-    .slice(0, 3) // Top 3 regions only (reduced from 5)
+    .slice(0, 2) // Top 2 regions only - minimize data for speed
 
   // Clearly indicate which data categories are available
   const summary = {
