@@ -118,9 +118,22 @@ async function getOptimizationTimeline(brandId: string) {
     const weekStart = getWeekStart(new Date(action.created_at))
     const weekKey = formatWeekKey(weekStart)
     
-    if (weeklyData[weekKey]) {
-      weeklyData[weekKey].optimizationsApplied++
+    // Create week entry if it doesn't exist (for weeks with optimizations but no ad data yet)
+    if (!weeklyData[weekKey]) {
+      weeklyData[weekKey] = { 
+        week: weekKey, 
+        weekStart, 
+        spend: 0, 
+        revenue: 0, 
+        impressions: 0, 
+        clicks: 0, 
+        roas: 0, 
+        ctr: 0,
+        optimizationsApplied: 0
+      }
     }
+    
+    weeklyData[weekKey].optimizationsApplied++
   })
 
   // Convert to array and sort by date

@@ -1159,8 +1159,8 @@ export default function MarketingAssistantPage() {
                       })
                       
                       return (
-                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5 mb-2">
-                      <div className="flex items-center justify-between mb-2.5">
+                    <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2 mb-2">
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-semibold text-xs uppercase tracking-wide">Performance Tracking</h4>
                         <span className="text-xs text-[#FF2A2A] font-bold">
                           Week {currentWeekNum}
@@ -1168,13 +1168,13 @@ export default function MarketingAssistantPage() {
                           </div>
                       
                       {/* Week Cards - Bigger and more readable */}
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {displayWeeks.map((week: any) => {
                           const hasOptimizations = week.optimizationsApplied > 0
                           const isImproving = week.roasChange > 0
                           
                           return (
-                            <div key={week.weekNum} className={`relative p-2.5 rounded-lg border ${
+                            <div key={week.weekNum} className={`relative p-2 rounded-lg border ${
                               week.isCurrent 
                                 ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/50' 
                                 : week.isActive
@@ -1182,7 +1182,7 @@ export default function MarketingAssistantPage() {
                                 : 'bg-[#0A0A0A]/30 border-[#222] border-dashed'
                             }`}>
                               {/* Week Label */}
-                              <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
                                   <span className={`text-sm font-bold ${
                                     week.isCurrent ? 'text-[#FF2A2A]' : week.isActive ? 'text-white' : 'text-gray-700'
@@ -1234,7 +1234,7 @@ export default function MarketingAssistantPage() {
                       
                       {/* Summary Stats */}
                       {timeline.weeks.length > 0 && (
-                        <div className="flex items-center justify-between text-xs pt-2.5 mt-2.5 border-t border-[#333]">
+                        <div className="flex items-center justify-between text-xs pt-2 mt-2 border-t border-[#333]">
                           <div className="text-gray-400">
                             <span className="text-white font-bold">{timeline.stats.totalOptimizations}</span> total
                           </div>
