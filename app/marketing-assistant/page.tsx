@@ -381,7 +381,7 @@ export default function MarketingAssistantPage() {
         
         if (hasRunAnalysis) {
           // User already ran analysis - load all widgets with cached data
-          await Promise.all([
+      await Promise.all([
             loadKPIMetrics(),
             loadQuickInsights(false), // Use cached insights
             loadTrends(),
@@ -1139,7 +1139,7 @@ export default function MarketingAssistantPage() {
                         <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                           <h4 className="text-white font-semibold text-xs mb-1.5 uppercase tracking-wide">Current Goals</h4>
                           <div className="space-y-1">
-                            {week1Goals.slice(0, 3).map((goal: any, idx: number) => (
+                            {week1Goals.map((goal: any, idx: number) => (
                               <div key={idx} className="flex items-start gap-2">
                                 <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
                                 <p className="text-gray-300 text-xs leading-snug">{goal.title}</p>
@@ -2170,7 +2170,7 @@ export default function MarketingAssistantPage() {
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-[calc(100vw-280px)] lg:w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
@@ -2268,7 +2268,7 @@ export default function MarketingAssistantPage() {
                                       : hasOptimizations
                                       ? 'bg-[#FF2A2A]/50 border-[#1A1A1A]'
                                       : 'bg-[#444] border-[#1A1A1A]' // Gray for all future weeks
-                                  } relative z-10 mb-4`}
+                                  } relative z-10 mb-6`}
                                 >
                                   {hasOptimizations && (
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#1A1A1A]"></div>
@@ -2276,7 +2276,7 @@ export default function MarketingAssistantPage() {
                                 </button>
                                 
                                 {/* Week Label */}
-                                <div className="mt-3 text-center">
+                                <div className="mt-4 text-center">
                                   <div className={`text-xs font-bold mb-0.5 ${
                                     isSelected || isCurrentWeek ? 'text-[#FF2A2A]' : 'text-gray-400'
                                   }`}>
