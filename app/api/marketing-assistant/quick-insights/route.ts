@@ -91,23 +91,40 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   }
 
   if (platforms.includes('meta')) {
-    // Get Meta ad performance (use correct table name)
+    // Get Meta ad performance - JOIN with meta_ads to get ad_name
     const { data: adStats } = await supabase
       .from('meta_ad_daily_insights')
-      .select('ad_id, ad_name, spent, impressions, clicks, date')
+      .select(`
+        ad_id,
+        spent,
+        impressions,
+        clicks,
+        date,
+        meta_ads!inner(ad_name)
+      `)
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
       .order('date', { ascending: false })
     
-    performanceData.meta_ads = adStats || []
-    console.log(`[Quick Insights AI] Found ${adStats?.length || 0} ad stats records`)
+    // Flatten the joined data structure
+    const flattenedStats = adStats?.map((stat: any) => ({
+      ad_id: stat.ad_id,
+      ad_name: stat.meta_ads?.ad_name || `Ad ${stat.ad_id}`,
+      spent: stat.spent,
+      impressions: stat.impressions,
+      clicks: stat.clicks,
+      date: stat.date
+    })) || []
+    
+    performanceData.meta_ads = flattenedStats
+    console.log(`[Quick Insights AI] Found ${flattenedStats.length} ad stats records`)
 
     // Calculate summary metrics (use 'spent' not 'spend')
-    if (adStats && adStats.length > 0) {
-      performanceData.summary.totalSpend = adStats.reduce((sum, s) => sum + (Number(s.spent) || 0), 0)
-      performanceData.summary.totalImpressions = adStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
-      performanceData.summary.totalClicks = adStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0)
+    if (flattenedStats && flattenedStats.length > 0) {
+      performanceData.summary.totalSpend = flattenedStats.reduce((sum, s) => sum + (Number(s.spent) || 0), 0)
+      performanceData.summary.totalImpressions = flattenedStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
+      performanceData.summary.totalClicks = flattenedStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0)
       performanceData.summary.averageCTR = performanceData.summary.totalImpressions > 0
         ? (performanceData.summary.totalClicks / performanceData.summary.totalImpressions) * 100
         : 0
