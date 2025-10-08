@@ -3,7 +3,7 @@
  * Returns last complete week (Sunday to Sunday)
  * This ensures analysis is available every Monday morning
  */
-export function getMondayToMondayRange(): { startDate: string; endDate: string } {
+export function getSundayToSundayRange(): { from: string; to: string } {
   const now = new Date()
   const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   
@@ -20,12 +20,21 @@ export function getMondayToMondayRange(): { startDate: string; endDate: string }
   previousSunday.setDate(lastSunday.getDate() - 7)
   previousSunday.setHours(0, 0, 0, 0)
   
-  const startDate = previousSunday.toISOString().split('T')[0]
-  const endDate = lastSunday.toISOString().split('T')[0]
+  const from = previousSunday.toISOString().split('T')[0]
+  const to = lastSunday.toISOString().split('T')[0]
   
-  console.log(`📅 Sunday-to-Sunday range: ${startDate} to ${endDate}`)
+  console.log(`📅 Sunday-to-Sunday range: ${from} to ${to}`)
   
-  return { startDate, endDate }
+  return { from, to }
+}
+
+/**
+ * Backward compatibility alias for getSundayToSundayRange
+ * @deprecated Use getSundayToSundayRange instead
+ */
+export function getMondayToMondayRange(): { startDate: string; endDate: string } {
+  const { from, to } = getSundayToSundayRange()
+  return { startDate: from, endDate: to }
 }
 
 /**
