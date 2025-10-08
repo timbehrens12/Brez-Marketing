@@ -827,9 +827,9 @@ export default function MarketingAssistantPage() {
                       setRecommendationsViewed(true) // Mark as viewed so countdown shows
                       if (selectedBrandId) {
                         localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
-                    // Save the refresh date (this Monday) so we know when to enable refresh again
-                    const { thisMonday } = getMondayToMondayDates()
-                    localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
+                    // Save the refresh date (last Sunday) so we know when to enable refresh again
+                    const { lastSunday } = getSundayToSundayDates()
+                    localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, lastSunday.toISOString().split('T')[0])
                       }
                       setCompletedItems(new Set())
                       
@@ -945,8 +945,8 @@ export default function MarketingAssistantPage() {
                     setRecommendationsViewed(true)
                     if (selectedBrandId) {
                       localStorage.setItem(`recommendationsViewed_${selectedBrandId}`, 'true')
-                      const { thisMonday } = getMondayToMondayDates()
-                      localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, thisMonday.toISOString().split('T')[0])
+                      const { lastSunday } = getSundayToSundayDates()
+                      localStorage.setItem(`lastRefreshDate_${selectedBrandId}`, lastSunday.toISOString().split('T')[0])
                     }
                     setCompletedItems(new Set())
                     
