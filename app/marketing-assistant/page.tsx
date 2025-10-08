@@ -1130,7 +1130,7 @@ export default function MarketingAssistantPage() {
                             </div>
                     )}
 
-                    {/* Current Goals - Show ALL goals from Week 1 timeline (titles only) */}
+                    {/* Current Goals - Show goals from Week 1 timeline */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
                       const week1Goals = timeline.weeks.length > 0 ? timeline.weeks[0].goals : []
@@ -2169,7 +2169,7 @@ export default function MarketingAssistantPage() {
 
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:pl-[280px]">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
@@ -2268,7 +2268,7 @@ export default function MarketingAssistantPage() {
                                       : hasOptimizations
                                       ? 'bg-[#FF2A2A]/50 border-[#1A1A1A]'
                                       : 'bg-[#444] border-[#1A1A1A]' // Gray for all future weeks
-                                  } relative z-10 mb-6`}
+                                  } relative z-10 mb-8`}
                                 >
                                   {hasOptimizations && (
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#1A1A1A]"></div>
