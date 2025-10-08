@@ -180,7 +180,7 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   let completion
   try {
     completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini', // Use faster mini model to prevent timeouts
     messages: [
       {
         role: 'system',
@@ -286,8 +286,8 @@ Return exactly 3 insights in this JSON format:
 ]`
       }
     ],
-    temperature: 0.7,
-    max_tokens: 1000,
+    temperature: 0.3, // Lower temperature for faster, more consistent responses
+    max_tokens: 500, // Reduced tokens since we only need 3 insights
   })
   } catch (aiError: any) {
     console.error('[Quick Insights AI] ❌ OpenAI API Error:', aiError.message)
@@ -446,12 +446,15 @@ function prepareDataSummaryForAI(data: any) {
   // Calculate CTR for each ad
   const topAds = Array.from(adPerformance.values())
     .map((ad: any) => ({
-      ...ad,
+      ad_name: ad.ad_name,
+      spend: ad.spend,
+      impressions: ad.impressions,
+      clicks: ad.clicks,
       ctr: ad.impressions > 0 ? (ad.clicks / ad.impressions) * 100 : 0,
       cpc: ad.clicks > 0 ? ad.spend / ad.clicks : 0
     }))
     .sort((a, b) => b.spend - a.spend)
-    .slice(0, 10) // Top 10 ads by spend
+    .slice(0, 5) // Top 5 ads only (reduced from 10)
 
   // Aggregate demographics
   const demoPerformance = new Map()
@@ -474,11 +477,15 @@ function prepareDataSummaryForAI(data: any) {
 
   const topDemographics = Array.from(demoPerformance.values())
     .map((demo: any) => ({
-      ...demo,
+      type: demo.type,
+      value: demo.value,
+      spend: demo.spend,
+      impressions: demo.impressions,
+      clicks: demo.clicks,
       ctr: demo.impressions > 0 ? (demo.clicks / demo.impressions) * 100 : 0
     }))
     .sort((a, b) => b.spend - a.spend)
-    .slice(0, 10) // Top 10 demographics
+    .slice(0, 5) // Top 5 demographics only (reduced from 10)
 
   // Aggregate geography
   const regionCounts = new Map()
@@ -494,7 +501,7 @@ function prepareDataSummaryForAI(data: any) {
 
   const topRegions = Array.from(regionCounts.values())
     .sort((a, b) => b.orders - a.orders)
-    .slice(0, 5)
+    .slice(0, 3) // Top 3 regions only (reduced from 5)
 
   // Clearly indicate which data categories are available
   const summary = {
