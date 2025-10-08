@@ -12,6 +12,30 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Helper function to get Monday-to-Monday date range
+function getMondayToMondayRange() {
+  const now = new Date()
+  const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+  
+  // Calculate days back to last Monday
+  const daysBackToMonday = currentDay === 0 ? 6 : currentDay - 1
+  
+  // Get last Monday
+  const lastMonday = new Date(now)
+  lastMonday.setDate(now.getDate() - daysBackToMonday - 7) // Go back one more week to get the previous Monday
+  lastMonday.setHours(0, 0, 0, 0)
+  
+  // Get this Monday
+  const thisMonday = new Date(now)
+  thisMonday.setDate(now.getDate() - daysBackToMonday)
+  thisMonday.setHours(0, 0, 0, 0)
+  
+  return {
+    from: lastMonday.toISOString().split('T')[0],
+    to: thisMonday.toISOString().split('T')[0]
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { userId } = auth()
@@ -22,12 +46,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
     
-    // Use last 30 days of data for insights (more comprehensive)
-    const today = new Date()
-    const thirtyDaysAgo = new Date(today)
-    thirtyDaysAgo.setDate(today.getDate() - 30)
-    const fromDate = searchParams.get('from') || thirtyDaysAgo.toISOString().split('T')[0]
-    const toDate = searchParams.get('to') || today.toISOString().split('T')[0]
+    // Use Monday-to-Monday date range (same as recommendations)
+    const dateRange = getMondayToMondayRange()
+    const fromDate = searchParams.get('from') || dateRange.from
+    const toDate = searchParams.get('to') || dateRange.to
     
     const platforms = searchParams.get('platforms')?.split(',') || ['meta']
 
@@ -35,7 +57,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    console.log(`[Quick Insights AI] Generating insights for brand ${brandId} from ${fromDate} to ${toDate}`)
+    console.log(`[Quick Insights AI] 📅 Monday-to-Monday range: ${fromDate} to ${toDate}`)
+    console.log(`[Quick Insights AI] Generating insights for brand ${brandId}`)
 
     const insights = await generateAIInsights(brandId, fromDate, toDate, platforms)
     
@@ -68,10 +91,10 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   }
 
   if (platforms.includes('meta')) {
-    // Get Meta ad performance
+    // Get Meta ad performance (use correct table name)
     const { data: adStats } = await supabase
-      .from('meta_ad_daily_stats')
-      .select('ad_id, ad_name, spend, impressions, clicks, date')
+      .from('meta_ad_daily_insights')
+      .select('ad_id, ad_name, spent, impressions, clicks, date')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
@@ -80,9 +103,9 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     performanceData.meta_ads = adStats || []
     console.log(`[Quick Insights AI] Found ${adStats?.length || 0} ad stats records`)
 
-    // Calculate summary metrics
+    // Calculate summary metrics (use 'spent' not 'spend')
     if (adStats && adStats.length > 0) {
-      performanceData.summary.totalSpend = adStats.reduce((sum, s) => sum + (Number(s.spend) || 0), 0)
+      performanceData.summary.totalSpend = adStats.reduce((sum, s) => sum + (Number(s.spent) || 0), 0)
       performanceData.summary.totalImpressions = adStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
       performanceData.summary.totalClicks = adStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0)
       performanceData.summary.averageCTR = performanceData.summary.totalImpressions > 0
@@ -355,7 +378,7 @@ function prepareDataSummaryForAI(data: any) {
       })
     }
     const ad = adPerformance.get(stat.ad_id)
-    ad.spend += Number(stat.spend) || 0
+    ad.spend += Number(stat.spent) || 0 // Use 'spent' not 'spend'
     ad.impressions += Number(stat.impressions) || 0
     ad.clicks += Number(stat.clicks) || 0
     ad.days.push(stat.date)
