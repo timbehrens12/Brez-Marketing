@@ -37,22 +37,24 @@ async function getOptimizationTimeline(brandId: string) {
   const eightWeeksAgo = new Date(today)
   eightWeeksAgo.setDate(today.getDate() - 56) // 8 weeks = 56 days
 
-  const { data: adStats, error: adStatsError } = await supabase
-    .from('meta_ad_daily_insights')
-    .select('date, spent, impressions, clicks, purchase_value')
+  // Note: meta_ad_daily_insights doesn't have revenue/purchase data
+  // We need to aggregate from campaign level data instead
+  const { data: campaignStats, error: campaignStatsError } = await supabase
+    .from('meta_campaign_daily_stats')
+    .select('date, spend, impressions, clicks, revenue')
     .eq('brand_id', brandId)
     .gte('date', eightWeeksAgo.toISOString().split('T')[0])
     .order('date', { ascending: true })
   
-  console.log(`[Optimization Timeline] Fetched ${adStats?.length || 0} ad stats records from ${eightWeeksAgo.toISOString().split('T')[0]}`)
-  if (adStatsError) {
-    console.error('[Optimization Timeline] Error fetching ad stats:', adStatsError)
+  console.log(`[Optimization Timeline] Fetched ${campaignStats?.length || 0} campaign stats records from ${eightWeeksAgo.toISOString().split('T')[0]}`)
+  if (campaignStatsError) {
+    console.error('[Optimization Timeline] Error fetching campaign stats:', campaignStatsError)
   }
 
   // Get completed optimizations to show which weeks had optimizations applied
   const { data: completedActions, error: actionsError } = await supabase
     .from('ai_usage_logs')
-    .select('created_at, request_data, response_data')
+    .select('created_at, metadata')
     .eq('brand_id', brandId)
     .eq('endpoint', 'mark_as_done')
     .gte('created_at', eightWeeksAgo.toISOString())
@@ -93,8 +95,8 @@ async function getOptimizationTimeline(brandId: string) {
     return `${month} ${day}`
   }
 
-  // Process ad performance data by week
-  adStats?.forEach((stat) => {
+  // Process campaign performance data by week
+  campaignStats?.forEach((stat) => {
     const weekStart = getWeekStart(new Date(stat.date))
     const weekKey = formatWeekKey(weekStart)
     
@@ -113,8 +115,8 @@ async function getOptimizationTimeline(brandId: string) {
       }
     }
     
-    weeklyData[weekKey].spend += Number(stat.spent) || 0
-    weeklyData[weekKey].revenue += Number(stat.purchase_value) || 0
+    weeklyData[weekKey].spend += Number(stat.spend) || 0
+    weeklyData[weekKey].revenue += Number(stat.revenue) || 0
     weeklyData[weekKey].impressions += Number(stat.impressions) || 0
     weeklyData[weekKey].clicks += Number(stat.clicks) || 0
   })
@@ -152,16 +154,16 @@ async function getOptimizationTimeline(brandId: string) {
     
     weeklyData[weekKey].optimizationsApplied++
     
-    // Extract optimization details from request_data
+    // Extract optimization details from metadata
     try {
-      const requestData = typeof action.request_data === 'string' 
-        ? JSON.parse(action.request_data) 
-        : action.request_data
+      const metadata = typeof action.metadata === 'string' 
+        ? JSON.parse(action.metadata) 
+        : action.metadata
       
       weeklyData[weekKey].actions.push({
-        title: requestData?.title || 'Optimization Applied',
-        description: requestData?.description || 'No description available',
-        category: requestData?.category || 'general',
+        title: metadata?.recommendation_title || metadata?.title || 'Optimization Applied',
+        description: metadata?.description || 'No description available',
+        category: metadata?.category || 'general',
         created_at: action.created_at
       })
     } catch (e) {
