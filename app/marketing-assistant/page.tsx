@@ -2232,10 +2232,10 @@ export default function MarketingAssistantPage() {
                     {/* Horizontal Timeline Bar */}
                     <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-6">
                       <h3 className="text-white font-semibold text-lg mb-2">Timeline Overview</h3>
-                      <p className="text-gray-400 text-sm mb-6">💡 Click any week dot to view detailed breakdown</p>
+                      <p className="text-gray-400 text-sm mb-6">Click any week dot to view detailed breakdown</p>
                       
                       {/* Timeline Bar */}
-                      <div className="relative py-12">
+                      <div className="relative py-16">
                         {/* Horizontal Line - Gray throughout, not red at the end */}
                         <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
                         
