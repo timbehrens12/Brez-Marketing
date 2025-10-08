@@ -5683,7 +5683,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
 
   const renderAutoCreativeSetupStep = () => {
     return (
-      <div className="pt-[60px] max-w-6xl mx-auto">
+      <div className="pt-[40px] max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button
