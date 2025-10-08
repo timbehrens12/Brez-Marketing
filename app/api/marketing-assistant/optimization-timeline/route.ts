@@ -37,49 +37,30 @@ async function getOptimizationTimeline(brandId: string) {
   const eightWeeksAgo = new Date(today)
   eightWeeksAgo.setDate(today.getDate() - 56) // 8 weeks = 56 days
 
-  console.log('[Optimization Timeline] Fetching data from', eightWeeksAgo.toISOString().split('T')[0], 'to', today.toISOString().split('T')[0])
-
   const { data: adStats, error: adStatsError } = await supabase
     .from('meta_ad_daily_insights')
     .select('date, spent, impressions, clicks, purchase_value')
     .eq('brand_id', brandId)
     .gte('date', eightWeeksAgo.toISOString().split('T')[0])
     .order('date', { ascending: true })
-
+  
+  console.log(`[Optimization Timeline] Fetched ${adStats?.length || 0} ad stats records from ${eightWeeksAgo.toISOString().split('T')[0]}`)
   if (adStatsError) {
     console.error('[Optimization Timeline] Error fetching ad stats:', adStatsError)
-  } else {
-    console.log('[Optimization Timeline] Found', adStats?.length || 0, 'ad stat records')
   }
 
-  // Get completed optimizations from ai_usage_logs (mark_as_done events)
-  const { data: completedLogs, error: logsError } = await supabase
+  // Get completed optimizations to show which weeks had optimizations applied
+  const { data: completedActions, error: actionsError } = await supabase
     .from('ai_usage_logs')
-    .select('created_at, request_data')
+    .select('created_at, request_data, response_data')
     .eq('brand_id', brandId)
     .eq('endpoint', 'mark_as_done')
     .gte('created_at', eightWeeksAgo.toISOString())
     .order('created_at', { ascending: true })
-
-  if (logsError) {
-    console.error('[Optimization Timeline] Error fetching logs:', logsError)
-  } else {
-    console.log('[Optimization Timeline] Found', completedLogs?.length || 0, 'completed optimization logs')
-  }
-
-  // Get recommendation details from ai_recommendations table
-  const { data: recommendations, error: recsError } = await supabase
-    .from('ai_recommendations')
-    .select('id, title, description, category, created_at')
-    .eq('brand_id', brandId)
-    .eq('status', 'completed')
-    .gte('created_at', eightWeeksAgo.toISOString())
-    .order('created_at', { ascending: true })
-
-  if (recsError) {
-    console.error('[Optimization Timeline] Error fetching recommendations:', recsError)
-  } else {
-    console.log('[Optimization Timeline] Found', recommendations?.length || 0, 'completed recommendations')
+  
+  console.log(`[Optimization Timeline] Fetched ${completedActions?.length || 0} completed optimizations`)
+  if (actionsError) {
+    console.error('[Optimization Timeline] Error fetching completed actions:', actionsError)
   }
 
   // Group by week
@@ -143,10 +124,14 @@ async function getOptimizationTimeline(brandId: string) {
     week.roas = week.spend > 0 ? week.revenue / week.spend : 0
     week.ctr = week.impressions > 0 ? (week.clicks / week.impressions) * 100 : 0
   })
+  
+  console.log(`[Optimization Timeline] Processed ${Object.keys(weeklyData).length} weeks of data:`, 
+    Object.entries(weeklyData).map(([key, val]) => `${key}: $${val.spend.toFixed(2)} spend, ${val.optimizationsApplied} opts`)
+  )
 
-  // Process completed optimizations using recommendations data
-  recommendations?.forEach((rec) => {
-    const weekStart = getWeekStart(new Date(rec.created_at))
+  // Process completed optimizations
+  completedActions?.forEach((action) => {
+    const weekStart = getWeekStart(new Date(action.created_at))
     const weekKey = formatWeekKey(weekStart)
     
     // Create week entry if it doesn't exist (for weeks with optimizations but no ad data yet)
@@ -166,15 +151,29 @@ async function getOptimizationTimeline(brandId: string) {
     }
     
     weeklyData[weekKey].optimizationsApplied++
-    weeklyData[weekKey].actions.push({
-      title: rec.title || 'Optimization Applied',
-      description: rec.description || 'No description available',
-      category: rec.category || 'general',
-      created_at: rec.created_at
-    })
+    
+    // Extract optimization details from request_data
+    try {
+      const requestData = typeof action.request_data === 'string' 
+        ? JSON.parse(action.request_data) 
+        : action.request_data
+      
+      weeklyData[weekKey].actions.push({
+        title: requestData?.title || 'Optimization Applied',
+        description: requestData?.description || 'No description available',
+        category: requestData?.category || 'general',
+        created_at: action.created_at
+      })
+    } catch (e) {
+      // If parsing fails, just add a generic entry
+      weeklyData[weekKey].actions.push({
+        title: 'Optimization Applied',
+        description: 'Details unavailable',
+        category: 'general',
+        created_at: action.created_at
+      })
+    }
   })
-
-  console.log('[Optimization Timeline] Processed weekly data:', Object.keys(weeklyData).length, 'weeks')
 
   // Convert to array and sort by date
   let timelineArray = Object.values(weeklyData)
