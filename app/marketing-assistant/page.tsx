@@ -847,7 +847,7 @@ export default function MarketingAssistantPage() {
                   >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
+                {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : `Run Week ${(optimizationTimeline?.weeks?.length || 0) + 1} Analysis`}
                   </Button>
       </div>
                 </div>
@@ -962,7 +962,7 @@ export default function MarketingAssistantPage() {
                   className="w-full text-xs h-9 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/50 text-black border-0 font-bold lg:hidden transition-all duration-300"
                 >
                   <RefreshCw className={`h-3 w-3 mr-1.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                  {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
+                  {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : `Run Week ${(optimizationTimeline?.weeks?.length || 0) + 1} Analysis`}
                           </Button>
                 
                 {/* How It Works Button */}
@@ -1232,7 +1232,7 @@ export default function MarketingAssistantPage() {
                                   )}
                         </div>
                               ) : (
-                                <span className="text-xs text-gray-600">Upcoming</span>
+                                <span className="text-xs text-emerald-400 font-medium">Available Now</span>
                               )}
                     </div>
                           )
