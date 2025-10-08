@@ -1112,13 +1112,13 @@ export default function MarketingAssistantPage() {
 
                     {/* Current Goals - Show optimization objectives */}
                     {progress.totalRecommendations > 0 && (
-                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2.5">
-                        <h4 className="text-white font-semibold text-xs mb-2 uppercase tracking-wide">Current Goals</h4>
-                        <div className="space-y-1.5">
+                      <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
+                        <h4 className="text-white font-semibold text-xs mb-1.5 uppercase tracking-wide">Current Goals</h4>
+                        <div className="space-y-1">
                           <div className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-xs leading-snug">Improve ROAS through better targeting</p>
-                            </div>
+                          </div>
                           <div className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-xs leading-snug">Optimize budget allocation</p>
@@ -1168,13 +1168,13 @@ export default function MarketingAssistantPage() {
                           </div>
                       
                       {/* Week Cards - Bigger and more readable */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {displayWeeks.map((week: any) => {
                           const hasOptimizations = week.optimizationsApplied > 0
                           const isImproving = week.roasChange > 0
                           
                           return (
-                            <div key={week.weekNum} className={`relative p-2 rounded-lg border ${
+                            <div key={week.weekNum} className={`relative p-1.5 rounded-lg border ${
                               week.isCurrent 
                                 ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/50' 
                                 : week.isActive
@@ -1234,7 +1234,7 @@ export default function MarketingAssistantPage() {
                       
                       {/* Summary Stats */}
                       {timeline.weeks.length > 0 && (
-                        <div className="flex items-center justify-between text-xs pt-2 mt-2 border-t border-[#333]">
+                        <div className="flex items-center justify-between text-xs pt-1.5 mt-1.5 border-t border-[#333]">
                           <div className="text-gray-400">
                             <span className="text-white font-bold">{timeline.stats.totalOptimizations}</span> total
                           </div>
