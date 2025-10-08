@@ -332,9 +332,9 @@ export default function MarketingAssistantPage() {
 
   // Reload data when platform filter changes (for viewing, not regenerating recommendations)
   useEffect(() => {
-    if (selectedBrandId && !initialDataLoad && optimizationCards.length > 0) {
-      // Only reload KPIs and trends when filter changes
-      // Quick insights and progress should NOT reload on filter changes
+    if (selectedBrandId && !initialDataLoad && optimizationCards.length > 0 && kpiMetrics) {
+      // Only reload KPIs and trends when filter changes AND widgets were already loaded
+      // This ensures we don't auto-load on page refresh
       loadKPIMetrics()
       loadTrends()
     }
@@ -362,14 +362,10 @@ export default function MarketingAssistantPage() {
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
-      // After loading recommendations, check if we should load widgets
-      // Load widgets if:
-      // 1. Force refresh (button clicked), OR
-      // 2. Recommendations exist (page refresh with existing data)
-      const shouldLoadWidgets = forceRefresh || (loadedRecommendations && loadedRecommendations.length > 0)
-      
-      if (shouldLoadWidgets) {
-        // Load all widgets when recommendations exist or button is clicked
+      // ONLY load widgets when the "Run Week X Analysis" button is clicked
+      // Do NOT auto-load widgets on page refresh - user must explicitly click the button
+      if (forceRefresh) {
+        // Load all widgets ONLY when button is clicked
       await Promise.all([
           loadKPIMetrics(),
           loadQuickInsights(),
@@ -378,7 +374,7 @@ export default function MarketingAssistantPage() {
           loadOptimizationTimeline()
         ])
       }
-      // Otherwise leave widgets blank until user clicks "Update Recommendations" button
+      // Otherwise leave widgets blank until user clicks "Run Week X Analysis" button
     } catch (error) {
     } finally {
       // Always clear loading states when done
