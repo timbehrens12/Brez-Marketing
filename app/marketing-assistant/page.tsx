@@ -580,9 +580,12 @@ export default function MarketingAssistantPage() {
       })
 
       if (response.ok) {
-        // Reload weekly progress to reflect the new completion
-        await loadWeeklyProgress()
-        console.log('[Marketing Assistant] ✅ Marked as done and reloaded progress')
+        // Reload weekly progress AND optimization timeline to reflect the new completion
+        await Promise.all([
+          loadWeeklyProgress(),
+          loadOptimizationTimeline()
+        ])
+        console.log('[Marketing Assistant] ✅ Marked as done and reloaded progress + timeline')
                   }
     } catch (error) {
       console.error('[Marketing Assistant] Error marking as done:', error)

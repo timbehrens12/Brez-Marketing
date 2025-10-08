@@ -243,98 +243,82 @@ async function getOptimizationTimeline(brandId: string) {
     }
   })
 
-  // Build timeline: Week 1 = current week data, Weeks 2-8 = placeholders
+  // Build timeline: Week 1 = current week ALWAYS, Weeks 2-8 = future placeholders
   const timelineArray: any[] = []
-  const weekStart = getWeekStart(today)
+  const currentWeekStart = getWeekStart(today)
+  const currentWeekKey = formatWeekKey(currentWeekStart)
   
-  // Generate 8 weeks starting from current week
-  for (let i = 0; i < 8; i++) {
-    const thisWeekStart = new Date(weekStart)
-    thisWeekStart.setDate(thisWeekStart.getDate() + (i * 7))
-    const weekKey = formatWeekKey(thisWeekStart)
-    
-    // Week 1 (i=0) gets the CURRENT week's data from weeklyData
-    // Future weeks (i>0) are empty placeholders
-    const existingWeek = weeklyData[weekKey]
-    
-    if (existingWeek && i === 0) {
-      // Week 1: Use actual current week data
-      timelineArray.push({
-        week: weekKey,
-        spend: Math.round(existingWeek.spend * 100) / 100,
-        revenue: Math.round(existingWeek.revenue * 100) / 100,
-        roas: Math.round(existingWeek.roas * 100) / 100,
-        ctr: Math.round(existingWeek.ctr * 100) / 100,
-        optimizationsApplied: existingWeek.optimizationsApplied,
-        actions: existingWeek.actions,
-        goals: existingWeek.goals || [],
-        impressions: existingWeek.impressions,
-        clicks: existingWeek.clicks
-      })
-    } else if (i === 0) {
-      // Week 1 but no data yet - create with zeros but include goals and actions from THIS week only
-      const currentWeekGoals = recommendations?.map((rec: any) => {
-        try {
-          const recommendation = typeof rec.recommendation === 'string' 
-            ? JSON.parse(rec.recommendation) 
-            : rec.recommendation
-          return {
-            title: recommendation?.title || 'Optimization Goal',
-            description: recommendation?.description || 'Improve campaign performance',
-            type: recommendation?.type || 'general',
-            created_at: rec.created_at
-          }
-        } catch {
-          return {
-            title: 'Optimization Goal',
-            description: 'Improve campaign performance',
-            type: 'general',
-            created_at: rec.created_at
-          }
-        }
-      }) || []
-      
-      // Only count actions from the CURRENT week
-      const currentWeekActions = completedActions?.filter((action: any) => {
-        const actionWeekStart = getWeekStart(new Date(action.created_at))
-        return formatWeekKey(actionWeekStart) === weekKey
-      }) || []
-      
-      timelineArray.push({
-        week: weekKey,
-        spend: 0,
-        revenue: 0,
-        roas: 0,
-        ctr: 0,
-        optimizationsApplied: currentWeekActions.length,
-        actions: currentWeekActions.map((action: any) => {
-          const metadata = typeof action.metadata === 'string' ? JSON.parse(action.metadata) : action.metadata
-          return {
-            title: metadata?.title || 'Optimization Applied',
-            description: metadata?.description || 'No description available',
-            category: metadata?.category || 'general',
-            created_at: action.created_at
-          }
-        }),
-        goals: currentWeekGoals,
-        impressions: 0,
-        clicks: 0
-      })
-    } else {
-      // Future weeks: empty placeholders
-      timelineArray.push({
-        week: weekKey,
-        spend: 0,
-        revenue: 0,
-        roas: 0,
-        ctr: 0,
-        optimizationsApplied: 0,
-        actions: [],
-        goals: [],
-        impressions: 0,
-        clicks: 0
-      })
+  console.log(`[Optimization Timeline] Current week key: ${currentWeekKey}, weeklyData keys:`, Object.keys(weeklyData))
+  
+  // Week 1 = Current week (ALWAYS)
+  const currentWeekData = weeklyData[currentWeekKey]
+  const currentWeekGoals = recommendations?.map((rec: any) => {
+    try {
+      const recommendation = typeof rec.recommendation === 'string' 
+        ? JSON.parse(rec.recommendation) 
+        : rec.recommendation
+      return {
+        title: recommendation?.title || 'Optimization Goal',
+        description: recommendation?.description || 'Improve campaign performance',
+        type: recommendation?.type || 'general',
+        created_at: rec.created_at
+      }
+    } catch {
+      return {
+        title: 'Optimization Goal',
+        description: 'Improve campaign performance',
+        type: 'general',
+        created_at: rec.created_at
+      }
     }
+  }) || []
+  
+  // Only count actions from the CURRENT week
+  const currentWeekActions = completedActions?.filter((action: any) => {
+    const actionWeekStart = getWeekStart(new Date(action.created_at))
+    return formatWeekKey(actionWeekStart) === currentWeekKey
+  }) || []
+  
+  // Week 1: Current week with actual data OR zeros if no data yet
+  timelineArray.push({
+    week: currentWeekKey,
+    spend: currentWeekData ? Math.round(currentWeekData.spend * 100) / 100 : 0,
+    revenue: currentWeekData ? Math.round(currentWeekData.revenue * 100) / 100 : 0,
+    roas: currentWeekData ? Math.round(currentWeekData.roas * 100) / 100 : 0,
+    ctr: currentWeekData ? Math.round(currentWeekData.ctr * 100) / 100 : 0,
+    impressions: currentWeekData ? currentWeekData.impressions : 0,
+    clicks: currentWeekData ? currentWeekData.clicks : 0,
+    optimizationsApplied: currentWeekActions.length,
+    actions: currentWeekActions.map((action: any) => {
+      const metadata = typeof action.metadata === 'string' ? JSON.parse(action.metadata) : action.metadata
+      return {
+        title: metadata?.title || 'Optimization Applied',
+        description: metadata?.description || 'No description available',
+        category: metadata?.category || 'general',
+        created_at: action.created_at
+      }
+    }),
+    goals: currentWeekGoals
+  })
+  
+  // Weeks 2-8: Future placeholders
+  for (let i = 1; i < 8; i++) {
+    const futureWeekStart = new Date(currentWeekStart)
+    futureWeekStart.setDate(currentWeekStart.getDate() + (i * 7))
+    const futureWeekKey = formatWeekKey(futureWeekStart)
+    
+    timelineArray.push({
+      week: futureWeekKey,
+      spend: 0,
+      revenue: 0,
+      roas: 0,
+      ctr: 0,
+      optimizationsApplied: 0,
+      actions: [],
+      goals: [],
+      impressions: 0,
+      clicks: 0
+    })
   }
 
   // Calculate week-over-week improvements
