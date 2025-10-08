@@ -843,7 +843,7 @@ export default function MarketingAssistantPage() {
                 {isRefreshingData ? 'Updating...' : recommendationsViewed ? `Next: ${timeUntilRefresh}` : 'Update Analysis'}
                   </Button>
       </div>
-      </div>
+                </div>
 
           {/* Performance Window & Platform Filters Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
@@ -865,7 +865,7 @@ export default function MarketingAssistantPage() {
                   {nextUpdateText || 'Loading...'}
                       </div>
                             </div>
-                </div>
+                          </div>
 
             {/* Platform Filter Chips */}
             <div className="flex items-center gap-2 bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3">
@@ -1048,11 +1048,11 @@ export default function MarketingAssistantPage() {
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <div className="text-3xl font-black bg-gradient-to-br from-[#FF2A2A] via-white to-[#FF5A5A] bg-clip-text text-transparent mb-0.5">
                             {progress.completionPercentage}%
-                            </div>
+                          </div>
                           <div className="text-[10px] text-gray-500 uppercase tracking-wider">Complete</div>
                           <div className="text-xs text-white font-bold mt-1">
                             {progress.completedCount}/{progress.totalRecommendations} Applied
-                          </div>
+                        </div>
                             </div>
                         
                         {/* Outer glow effect */}
@@ -1067,16 +1067,16 @@ export default function MarketingAssistantPage() {
                             <span className={`text-xs font-bold ${progress.roasImprovement > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {progress.roasImprovement > 0 ? '+' : ''}{progress.roasImprovement.toFixed(0)}%
                             </span>
-                          </div>
-                        )}
+                    </div>
+                    )}
                         
                         {progress.totalRecommendations > progress.completedCount && (
                           <div className="flex items-center justify-between p-2 bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">Pending</span>
                             <span className="text-xs font-medium text-[#FF2A2A]">{progress.totalRecommendations - progress.completedCount}</span>
-                        </div>
-                        )}
-                              </div>
+                            </div>
+                    )}
+                            </div>
                             </div>
 
                     {/* Category Breakdown */}
@@ -1095,14 +1095,14 @@ export default function MarketingAssistantPage() {
                                       className="bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] h-full rounded-full"
                                       style={{ width: `${count > 0 ? (completed / count) * 100 : 0}%` }}
                                     ></div>
-                                  </div>
+                        </div>
                                   <span className="text-white text-xs font-medium w-7 text-right">{completed}/{count}</span>
-                                </div>
-                              </div>
+                          </div>
+                          </div>
                             )
                           })}
                         </div>
-                      </div>
+                            </div>
                     )}
 
                     {/* Current Goals - Show optimization objectives */}
@@ -1113,7 +1113,7 @@ export default function MarketingAssistantPage() {
                           <div className="flex items-start gap-1.5">
                             <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-[10px] leading-tight">Improve ROAS through better targeting</p>
-                          </div>
+                            </div>
                           <div className="flex items-start gap-1.5">
                             <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1 flex-shrink-0"></div>
                             <p className="text-gray-300 text-[10px] leading-tight">Optimize budget allocation across campaigns</p>
@@ -1134,7 +1134,7 @@ export default function MarketingAssistantPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-white font-medium text-[10px] uppercase tracking-wide">Performance Tracking</h4>
                         <span className="text-[10px] text-cyan-400 font-bold">{timeline.stats.totalOptimizations} Applied</span>
-                            </div>
+                          </div>
                       
                       {/* Timeline Chart - ROAS bars with optimization markers */}
                       <div className="flex items-end justify-between gap-0.5 h-20 mb-1">
@@ -1167,7 +1167,7 @@ export default function MarketingAssistantPage() {
                                 {week.roasChange !== 0 && (
                                   <div className={week.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'}>
                                     {week.roasChange > 0 ? '+' : ''}{week.roasChange}% vs prev
-                            </div>
+                        </div>
                                 )}
                             </div>
                         </div>
@@ -1175,8 +1175,8 @@ export default function MarketingAssistantPage() {
                         }) : (
                           <div className="flex-1 flex items-center justify-center text-[10px] text-gray-600">
                             Performance data will appear after first week
-                          </div>
-                        )}
+                    </div>
+                    )}
                           </div>
                       
                       {/* Week Labels */}
@@ -1345,7 +1345,7 @@ export default function MarketingAssistantPage() {
                               className="flex-1 h-9 bg-gradient-to-r from-[#FF2A2A] to-[#FF5A5A] hover:shadow-lg hover:shadow-[#FF2A2A]/30 text-white font-bold text-xs"
                           >
                               <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                              Apply
+                              Confirm
                           </Button>
                           </>
                   )}
