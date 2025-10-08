@@ -1133,9 +1133,10 @@ export default function MarketingAssistantPage() {
                     {/* Performance Tracking - Redesigned with bigger text */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
-                      // Current week is always Week 1 (the first week in the array with data)
-                      const currentWeekNum = 1
-                      const nextWeekNum = 2
+                      // Determine which week is "current" based on whether recommendations exist
+                      const hasRecommendations = recommendations && recommendations.length > 0
+                      const currentWeekNum = hasRecommendations ? 1 : 0 // 0 means no week is current yet
+                      const nextAvailableWeek = hasRecommendations ? 2 : 1 // If no recommendations, Week 1 is available
                       
                       // Show only first 3 weeks for space
                       const weeksToShow = 3
@@ -1156,7 +1157,7 @@ export default function MarketingAssistantPage() {
                             roas: 0,
                             isCurrent: false,
                             isActive: false,
-                            isAvailable: weekNum === nextWeekNum
+                            isAvailable: weekNum === nextAvailableWeek
                           }
                         }
                       })
