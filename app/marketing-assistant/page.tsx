@@ -1130,7 +1130,8 @@ export default function MarketingAssistantPage() {
                     {/* Performance Tracking - Redesigned with bigger text */}
                     {(() => {
                       const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
-                      const currentWeekNum = timeline.weeks.length > 0 ? timeline.weeks.length : 1
+                      const currentWeekNum = timeline.weeks.length > 0 ? timeline.weeks.length : 0
+                      const nextWeekNum = currentWeekNum + 1
                       
                       // Show only first 3 weeks for space
                       const weeksToShow = 3
@@ -1141,7 +1142,8 @@ export default function MarketingAssistantPage() {
                             ...timeline.weeks[i], 
                             weekNum,
                             isCurrent: weekNum === currentWeekNum,
-                            isActive: true
+                            isActive: true,
+                            isAvailable: false
                           }
                         } else {
                           return { 
@@ -1149,7 +1151,8 @@ export default function MarketingAssistantPage() {
                             optimizationsApplied: 0,
                             roas: 0,
                             isCurrent: false,
-                            isActive: false
+                            isActive: false,
+                            isAvailable: weekNum === nextWeekNum
                           }
                         }
                       })
@@ -1170,7 +1173,7 @@ export default function MarketingAssistantPage() {
                           </button>
                             </div>
                         <span className="text-xs text-[#FF2A2A] font-bold">
-                          Week {currentWeekNum}
+                          {currentWeekNum > 0 ? `Week ${currentWeekNum}` : 'Not Started'}
                         </span>
                             </div>
                       
@@ -1231,8 +1234,10 @@ export default function MarketingAssistantPage() {
                                     </span>
                                   )}
                         </div>
-                              ) : (
+                              ) : week.isAvailable ? (
                                 <span className="text-xs text-emerald-400 font-medium">Available Now</span>
+                              ) : (
+                                <span className="text-xs text-gray-600">Upcoming</span>
                               )}
                     </div>
                           )
