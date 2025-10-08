@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
       startDateStr = fromDate
       endDateStr = toDate
     } else {
-      // Use Monday-to-Monday window
+      // Use Sunday-to-Sunday window (last complete week)
       const { startDate: mondayStart, endDate: mondayEnd } = getMondayToMondayRange()
       startDateStr = mondayStart
       endDateStr = mondayEnd
-      console.log(`[Trends API] Using Monday-to-Monday range: ${mondayStart} to ${mondayEnd}`)
+      console.log(`[Trends API] Using Sunday-to-Sunday range: ${mondayStart} to ${mondayEnd}`)
     }
     
     // Get campaigns that have data in the date range (regardless of current status)

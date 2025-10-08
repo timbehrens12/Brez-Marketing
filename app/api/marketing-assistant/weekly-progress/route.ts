@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function calculateWeeklyProgress(brandId: string) {
-  // Get current week's date range (Monday to Monday)
+  // Get current week's date range (Sunday to Sunday)
   const { startDate: thisWeekStart, endDate: thisWeekEnd } = getMondayToMondayRange()
   
   // Get last week's date range

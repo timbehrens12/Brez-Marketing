@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
     console.log('[ACTION KPIs] Calculating for brand:', brandId)
     console.log('[ACTION KPIs] Platforms:', platforms)
 
-    // Use Monday-to-Monday weekly window
+    // Use Sunday-to-Sunday weekly window (last complete week)
     const { startDate, endDate } = getMondayToMondayRange()
     const startDateStr = startDate
     const endDateStr = endDate
 
-    console.log('[ACTION KPIs] Monday-to-Monday range:', startDateStr, 'to', endDateStr)
+    console.log('[ACTION KPIs] Sunday-to-Sunday range:', startDateStr, 'to', endDateStr)
 
     // Initialize response object
     const actionKPIs = {

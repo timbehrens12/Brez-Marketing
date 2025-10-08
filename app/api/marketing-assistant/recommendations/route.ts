@@ -139,14 +139,14 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'active'
     const forceGenerate = searchParams.get('forceGenerate') === 'true' // Only generate if explicitly requested
     
-    // Use Monday-to-Monday weekly window
+    // Use Sunday-to-Sunday weekly window (last complete week)
     const { startDate, endDate } = getMondayToMondayRange()
     const dateRange = {
       from: searchParams.get('from') || startDate,
       to: searchParams.get('to') || endDate
     }
     
-    console.log(`[Recommendations API] Using Monday-to-Monday range: ${dateRange.from} to ${dateRange.to}`)
+    console.log(`[Recommendations API] Using Sunday-to-Sunday range: ${dateRange.from} to ${dateRange.to}`)
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })

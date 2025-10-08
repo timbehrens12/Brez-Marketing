@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
     
-    // Use Monday-to-Monday weekly window
+    // Use Sunday-to-Sunday weekly window (last complete week)
     const { startDate, endDate } = getMondayToMondayRange()
     const fromDate = searchParams.get('from') || startDate
     const toDate = searchParams.get('to') || endDate
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
     
-    console.log(`[Metrics API] Using Monday-to-Monday range: ${fromDate} to ${toDate}`)
+    console.log(`[Metrics API] Using Sunday-to-Sunday range: ${fromDate} to ${toDate}`)
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })

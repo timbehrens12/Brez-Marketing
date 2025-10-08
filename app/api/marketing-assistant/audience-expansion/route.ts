@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Use Monday-to-Monday weekly window
+    // Use Sunday-to-Sunday weekly window (last complete week)
     const { startDate, endDate } = getMondayToMondayRange()
     const sevenDaysAgo = startDate
     const today = endDate
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.log(`🎯 AUDIENCE DEBUG: Querying for brand ${brandId}`)
     console.log(`🎯 AUDIENCE DEBUG: Platforms filter:`, platforms)
     console.log(`🎯 AUDIENCE DEBUG: Status filter:`, status)
-    console.log(`🎯 AUDIENCE DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
+    console.log(`🎯 AUDIENCE DEBUG: Using Sunday-to-Sunday window: ${sevenDaysAgo} to ${today}`)
 
     // Get campaigns that have data in the date range (regardless of current status)
     let allowedCampaignIds: string[] = []

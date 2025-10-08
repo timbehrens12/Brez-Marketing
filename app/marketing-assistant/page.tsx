@@ -1814,7 +1814,7 @@ export default function MarketingAssistantPage() {
                     <div className="pb-6">
                       <h5 className="text-white font-medium mb-1">Monday: Fresh Analysis & New Recommendations</h5>
                       <p className="text-gray-400 text-sm mb-2">
-                        Every Monday at 12 AM, the system analyzes a <strong className="text-white">Monday-to-Monday weekly window</strong> (last Monday to this Monday):
+                        Every Monday at 12 AM, the system analyzes a <strong className="text-white">Sunday-to-Sunday weekly window</strong> (last Sunday to this Sunday):
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">
@@ -1889,7 +1889,7 @@ export default function MarketingAssistantPage() {
                     <div>
                       <h5 className="text-white font-medium mb-1">Next Monday: Validation & New Cycle</h5>
                       <p className="text-gray-400 text-sm mb-2">
-                        When Monday rolls around again, the system analyzes the <strong className="text-white">new Monday-to-Monday window</strong>:
+                        When Monday rolls around again, the system analyzes the <strong className="text-white">new Sunday-to-Sunday window</strong>:
                       </p>
                       <ul className="space-y-1 text-sm text-gray-400 ml-4">
                         <li className="flex items-start gap-2">

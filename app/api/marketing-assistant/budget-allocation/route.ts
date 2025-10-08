@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const platforms = searchParams.get('platforms')?.split(',') || ['meta', 'google', 'tiktok']
     const status = searchParams.get('status') || 'active'
     
-    // Use Monday-to-Monday weekly window
+    // Use Sunday-to-Sunday weekly window (last complete week)
     const { startDate, endDate } = getMondayToMondayRange()
     const sevenDaysAgo = startDate
     const today = endDate
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 BUDGET DEBUG: Querying for brand ${brandId}`)
     console.log(`🔍 BUDGET DEBUG: Platforms filter:`, platforms)
     console.log(`🔍 BUDGET DEBUG: Status filter:`, status)
-    console.log(`🔍 BUDGET DEBUG: Using Monday-to-Monday window: ${sevenDaysAgo} to ${today}`)
+    console.log(`🔍 BUDGET DEBUG: Using Sunday-to-Sunday window: ${sevenDaysAgo} to ${today}`)
     console.log(`🔍 BUDGET DEBUG: Starting campaign data fetch...`)
 
     // Get campaigns that have data in the date range (regardless of current status)
