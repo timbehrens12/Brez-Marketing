@@ -184,48 +184,86 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     messages: [
       {
         role: 'system',
-        content: `You are a marketing analytics AI assistant. Analyze brand performance data and generate exactly 3 actionable insights.
+        content: `You are a marketing analytics AI assistant. Analyze the provided brand performance data and generate EXACTLY 3 actionable insights based ONLY on the data that is actually available.
 
 CRITICAL RULES:
 1. Generate EXACTLY 3 insights, no more, no less
-2. Each insight should be SPECIFIC and NAME-DRIVEN (mention specific ad names, demographics, or regions)
-3. Focus on ACTIONABLE findings, not generic metrics
-4. Be specific with numbers and metrics
-5. Each insight should have:
-   - type: snake_case identifier (e.g., "top_ad", "best_demographic", "opportunity_region")
-   - label: Short category name (2-3 words max)
-   - value: The key finding with SPECIFIC NAME (max 35 chars) - e.g., "Spring Sale Ad" not "High CTR"
-   - metric: Supporting metric with numbers (e.g., "2.5% CTR, $450 spent", "65+ age, 3.2% CTR")
+2. ONLY generate insights for data that actually exists in the provided dataset
+3. Each insight should be SPECIFIC and NAME-DRIVEN (use actual ad names, demographics, campaigns, etc.)
+4. Focus on ACTIONABLE findings with real numbers and metrics
+5. Each insight MUST have:
+   - type: snake_case identifier (e.g., "top_ad", "best_demographic", "high_ctr_campaign", "cost_efficient_adset")
+   - label: Short category name (2-3 words max, e.g., "Top Ad", "Best Audience", "High CTR")
+   - value: The key finding with SPECIFIC NAME (max 35 chars) - use ACTUAL names from data
+   - metric: Supporting metric with real numbers (e.g., "2.5% CTR, $450 spent", "65+ age, 3.2% CTR")
    - icon: Single emoji that represents the insight
-   - platform: "meta" (all insights are from Meta data for now)
+   - platform: "meta" or "google" or "tiktok" depending on data source
 
-PRIORITY INSIGHTS (MUST USE ACTUAL DATA):
-1. **Top Ad Creative** - USE THE ACTUAL AD_NAME FROM top_ads[0]
-   - type: "top_ad"
-   - label: "Top Ad"
-   - value: EXACT ad_name from data (e.g., the actual ad name like "TEST - DO NOT USE")
-   - metric: Show CTR and spend, e.g., "2.5% CTR, $450 spent"
+WHAT TO GENERATE INSIGHTS FOR (choose 3 from available data):
 
-2. **Top Demographic** - USE THE ACTUAL breakdown_value FROM demographics
-   - type: "top_demographic"
-   - label: "Top Audience" 
-   - value: EXACT breakdown_value (e.g., "65+" or "female")
-   - metric: Show CTR and spend, e.g., "3.2% CTR, $320 spent"
+**IF top_ads EXISTS AND HAS DATA:**
+- Generate insight about the best performing ad creative
+- type: "top_ad"
+- label: "Top Ad"
+- value: Use EXACT ad_name from top_ads[0]
+- metric: Show CTR and spend from that ad
 
-3. **Geographic Leader** - USE THE ACTUAL region FROM top_regions
-   - type: "top_region"
-   - label: "Top Region"
-   - value: EXACT region name from data
-   - metric: Show orders and spend, e.g., "12 orders, $450 revenue"
+**IF demographics EXISTS AND HAS DATA:**
+- Generate insight about the best performing audience segment
+- type: "top_demographic"
+- label: "Top Audience"
+- value: Use EXACT breakdown_value (e.g., "65+", "female", "18-24")
+- metric: Show CTR and spend for that demographic
 
-CRITICAL RULES FOR DATA USAGE:
-- NEVER make up ad names - use EXACT ad_name field from top_ads array
-- NEVER make up demographics - use EXACT breakdown_value from demographics array
-- NEVER make up regions - use EXACT region field from top_regions array
-- The "value" field MUST contain the actual name/demographic/region from the data
-- The "metric" field MUST show actual numbers (spend, CTR, orders) from the data
+**IF top_regions EXISTS AND HAS DATA:**
+- Generate insight about geographic performance
+- type: "top_region"
+- label: "Top Region"
+- value: Use EXACT region/city name
+- metric: Show orders and revenue
+
+**IF top_campaigns EXISTS AND HAS DATA:**
+- Generate insight about campaign performance
+- type: "top_campaign"
+- label: "Top Campaign"
+- value: Use EXACT campaign name
+- metric: Show ROAS and spend
+
+**IF top_adsets EXISTS AND HAS DATA:**
+- Generate insight about ad set performance
+- type: "top_adset"
+- label: "Best Ad Set"
+- value: Use EXACT adset name
+- metric: Show CTR and conversions
+
+**IF spend_efficiency EXISTS:**
+- Generate insight about cost efficiency
+- type: "cost_efficiency"
+- label: "Best CPC"
+- value: Show lowest cost per click with ad/campaign name
+- metric: Show CPC and total spend
+
+**IF high_engagement EXISTS:**
+- Generate insight about engagement
+- type: "high_engagement"
+- label: "Most Engaging"
+- value: Show item with highest CTR
+- metric: Show CTR and impressions
+
+CRITICAL DATA USAGE RULES:
+- NEVER generate an insight if the data category is empty or doesn't exist
+- NEVER make up ad names, demographics, regions, campaigns, or ad sets
+- ALWAYS use EXACT values from the provided data arrays
+- If a data category is missing/empty, skip it and choose a different insight type
+- The "value" field MUST contain the actual name from the data, not a generic description
 - If ad_name is null or empty, use "Unnamed Ad #{ad_id}"
-- DO NOT use generic labels like "High Performing Ad" - use the ACTUAL name
+
+EXAMPLE - If only ads and demographics have data:
+[
+  {"type": "top_ad", "label": "Top Ad", "value": "Summer Sale 2025", "metric": "3.2% CTR, $450 spent", "icon": "📈", "platform": "meta"},
+  {"type": "top_demographic", "label": "Top Audience", "value": "25-34", "metric": "4.1% CTR, $280 spent", "icon": "👥", "platform": "meta"},
+  {"type": "high_engagement", "label": "High CTR", "value": "Brand Awareness Campaign", "metric": "5.2% CTR, 12K views", "icon": "🎯", "platform": "meta"}
+]
 
 Return ONLY valid JSON array with exactly 3 insights, no explanation text.`
       },
@@ -458,15 +496,36 @@ function prepareDataSummaryForAI(data: any) {
     .sort((a, b) => b.orders - a.orders)
     .slice(0, 5)
 
-  return {
-    summary: data.summary,
-    top_ads: topAds,
-    demographics: topDemographics,
-    top_regions: topRegions,
-    data_quality: {
-      has_ad_data: data.meta_ads.length > 0,
-      has_demographic_data: data.demographics.length > 0,
-      has_customer_data: data.shopify_customers.length > 0
-    }
+  // Clearly indicate which data categories are available
+  const summary = {
+    date_range: data.summary.dateRange,
+    total_spend: data.summary.totalSpend,
+    total_impressions: data.summary.totalImpressions,
+    total_clicks: data.summary.totalClicks,
+    average_ctr: data.summary.averageCTR
   }
+
+  // Only include data categories that have actual data
+  const result: any = { summary }
+
+  if (topAds.length > 0) {
+    result.top_ads = topAds
+  }
+
+  if (topDemographics.length > 0) {
+    result.demographics = topDemographics
+  }
+
+  if (topRegions.length > 0) {
+    result.top_regions = topRegions
+  }
+
+  // Add data availability flags to help AI make decisions
+  result.data_available = {
+    ads: topAds.length > 0,
+    demographics: topDemographics.length > 0,
+    regions: topRegions.length > 0
+  }
+
+  return result
 }
