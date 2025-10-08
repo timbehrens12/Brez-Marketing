@@ -361,11 +361,13 @@ export default function MarketingAssistantPage() {
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
       // After loading recommendations, check if we should load widgets
-      // ONLY load widgets if force refresh (button clicked) - NOT on initial page load
-      const shouldLoadWidgets = forceRefresh
+      // Load widgets if:
+      // 1. Force refresh (button clicked), OR
+      // 2. Recommendations exist (page refresh with existing data)
+      const shouldLoadWidgets = forceRefresh || (loadedRecommendations && loadedRecommendations.length > 0)
       
       if (shouldLoadWidgets) {
-        // Load all widgets ONLY when "Update Recommendations" button is clicked
+        // Load all widgets when recommendations exist or button is clicked
       await Promise.all([
           loadKPIMetrics(),
           loadQuickInsights(),
