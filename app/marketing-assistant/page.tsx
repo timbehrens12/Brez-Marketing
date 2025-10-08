@@ -1167,17 +1167,17 @@ export default function MarketingAssistantPage() {
                             </div>
                       
                       {/* Week-by-Week Timeline with Optimization Count */}
-                      <div className="space-y-1 mb-2">
-                        {progressiveWeeks.slice(0, 4).map((week: any, index: number) => {
+                      <div className="space-y-0.5 mb-1.5">
+                        {progressiveWeeks.slice(0, 3).map((week: any, index: number) => {
                           const isActive = !week.isFuture
                           const hasOptimizations = week.optimizationsApplied > 0
                           const isImproving = week.roasChange > 0
                           const isCurrentWeek = week.isCurrent
                           
                           return (
-                            <div key={index} className={`flex items-center gap-2 p-1.5 rounded ${isCurrentWeek ? 'bg-[#FF2A2A]/10 border border-[#FF2A2A]/30' : 'bg-[#0A0A0A]/50'}`}>
+                            <div key={index} className={`flex items-center gap-1.5 p-1 rounded ${isCurrentWeek ? 'bg-[#FF2A2A]/10 border border-[#FF2A2A]/30' : 'bg-[#0A0A0A]/50'}`}>
                               {/* Week Number Badge */}
-                              <div className={`w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${
+                              <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold flex-shrink-0 ${
                                 isCurrentWeek 
                                   ? 'bg-[#FF2A2A] text-white' 
                                   : isActive 
@@ -1190,7 +1190,7 @@ export default function MarketingAssistantPage() {
                               {/* Week Info */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`text-[9px] font-medium ${isActive ? 'text-white' : 'text-gray-700'}`}>
+                                  <span className={`text-[8px] font-medium ${isActive ? 'text-white' : 'text-gray-700'}`}>
                                     {week.week}
                                   </span>
                                   {isActive && (
@@ -1204,23 +1204,23 @@ export default function MarketingAssistantPage() {
                                 
                                 {/* Optimization Count & Status */}
                                 {isActive ? (
-                                  <div className="flex items-center gap-1 mt-0.5">
+                                  <div className="flex items-center gap-1">
                                     {hasOptimizations ? (
                                       <>
                                         <div className="w-1 h-1 bg-[#FF2A2A] rounded-full"></div>
-                                        <span className="text-[8px] text-[#FF2A2A]">{week.optimizationsApplied} applied</span>
+                                        <span className="text-[7px] text-[#FF2A2A]">{week.optimizationsApplied} applied</span>
                                         {week.roasChange !== 0 && (
-                                          <span className={`text-[8px] ${isImproving ? 'text-emerald-400' : 'text-red-400'}`}>
+                                          <span className={`text-[7px] ${isImproving ? 'text-emerald-400' : 'text-red-400'}`}>
                                             ({isImproving ? '+' : ''}{week.roasChange}%)
                                           </span>
                                         )}
                                       </>
                                     ) : (
-                                      <span className="text-[8px] text-gray-600">No optimizations</span>
+                                      <span className="text-[7px] text-gray-600">No optimizations</span>
                                     )}
                             </div>
                                 ) : (
-                                  <span className="text-[8px] text-gray-700">Upcoming</span>
+                                  <span className="text-[7px] text-gray-700">Upcoming</span>
                                 )}
                         </div>
                           </div>
@@ -1228,27 +1228,27 @@ export default function MarketingAssistantPage() {
                         })}
                           </div>
                       
-                      {/* Current Week Summary */}
+                      {/* Current Week Summary - Compact */}
                       {currentWeek && !currentWeek.isFuture && (
-                        <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg p-2 mb-2">
+                        <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-transparent border border-[#FF2A2A]/20 rounded-lg p-1.5 mb-1.5">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wide">This Week</span>
-                            <span className="text-[9px] text-[#FF2A2A] font-bold">{currentWeek.week}</span>
+                            <span className="text-[8px] text-gray-400 uppercase tracking-wide">This Week</span>
+                            <span className="text-[8px] text-[#FF2A2A] font-bold">{currentWeek.week}</span>
                         </div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-1.5">
                             <div>
-                              <div className="text-[8px] text-gray-500">Optimizations</div>
-                              <div className="text-sm font-bold text-white">{currentWeek.optimizationsApplied}</div>
+                              <div className="text-[7px] text-gray-500">Applied</div>
+                              <div className="text-xs font-bold text-white">{currentWeek.optimizationsApplied}</div>
                             </div>
                             <div>
-                              <div className="text-[8px] text-gray-500">ROAS</div>
-                              <div className={`text-sm font-bold ${currentWeek.roas > 0 ? 'text-white' : 'text-gray-600'}`}>
+                              <div className="text-[7px] text-gray-500">ROAS</div>
+                              <div className={`text-xs font-bold ${currentWeek.roas > 0 ? 'text-white' : 'text-gray-600'}`}>
                                 {currentWeek.roas > 0 ? `${currentWeek.roas.toFixed(2)}x` : '—'}
                             </div>
                             </div>
                             <div>
-                              <div className="text-[8px] text-gray-500">Spend</div>
-                              <div className="text-sm font-bold text-white">
+                              <div className="text-[7px] text-gray-500">Spend</div>
+                              <div className="text-xs font-bold text-white">
                                 ${currentWeek.spend > 0 ? currentWeek.spend.toFixed(0) : '0'}
                               </div>
                             </div>
