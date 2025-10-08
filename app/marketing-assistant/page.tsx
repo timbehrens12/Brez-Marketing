@@ -1112,23 +1112,17 @@ export default function MarketingAssistantPage() {
                             </div>
                     )}
 
-                    {/* Current Goals - Show optimization objectives */}
-                    {progress.totalRecommendations > 0 && (
+                    {/* Current Goals - Show optimization objectives from actual recommendations */}
+                    {filteredOptimizations.length > 0 && (
                       <div className="bg-gradient-to-r from-[#1A1A1A] to-[#0f0f0f] border border-[#333] rounded-lg p-2">
                         <h4 className="text-white font-semibold text-xs mb-1.5 uppercase tracking-wide">Current Goals</h4>
                         <div className="space-y-1">
-                          <div className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-xs leading-snug">Improve ROAS through better targeting</p>
+                          {filteredOptimizations.slice(0, 3).map((card, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
+                              <p className="text-gray-300 text-xs leading-snug">{card.title}</p>
                             </div>
-                          <div className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-xs leading-snug">Optimize budget allocation</p>
-                        </div>
-                          <div className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1 flex-shrink-0"></div>
-                            <p className="text-gray-300 text-xs leading-snug">Reduce wasted ad spend</p>
-                          </div>
+                          ))}
                         </div>
                     </div>
                     )}

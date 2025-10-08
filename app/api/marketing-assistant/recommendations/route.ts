@@ -1229,9 +1229,17 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
     .single()
 
   let actionDescription = 'Manual optimization completed'
+  let recommendationTitle = 'Optimization Applied'
+  let recommendationDescription = 'No description available'
+  let recommendationType = 'general'
   
   if (recommendation) {
-    const action = recommendation.recommendation.actions.find((a: any) => a.id === actionId)
+    const recData = recommendation.recommendation
+    recommendationTitle = recData.title || 'Optimization Applied'
+    recommendationDescription = recData.description || 'No description available'
+    recommendationType = recData.type || 'general'
+    
+    const action = recData.actions.find((a: any) => a.id === actionId)
     if (action) {
       actionDescription = action.label || action.description || 'Manual optimization completed'
     }
@@ -1239,10 +1247,16 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
     // For dynamic recommendations, create a description based on the actionId
     if (actionId?.includes('budget')) {
       actionDescription = 'Budget optimization completed manually'
+      recommendationTitle = 'Budget Optimization'
+      recommendationType = 'budget'
     } else if (actionId?.includes('creative')) {
       actionDescription = 'Creative optimization completed manually'
+      recommendationTitle = 'Creative Optimization'
+      recommendationType = 'creative'
     } else if (actionId?.includes('tracking')) {
       actionDescription = 'Conversion tracking setup completed'
+      recommendationTitle = 'Conversion Tracking Setup'
+      recommendationType = 'tracking'
     }
   }
 
@@ -1277,7 +1291,10 @@ async function markActionAsDone(campaignId: string, actionId: string, brandId: s
       recommendation_id: recommendation?.id,
       campaign_id: campaignId,
       action_id: actionId,
-      recommendation_title: actionDescription
+      title: recommendationTitle,
+      description: recommendationDescription,
+      category: recommendationType,
+      recommendation_title: recommendationTitle // Keep for backwards compatibility
     }
   })
   
