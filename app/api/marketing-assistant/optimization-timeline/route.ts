@@ -242,39 +242,78 @@ async function getOptimizationTimeline(brandId: string) {
     }
   })
 
-  // Convert to array and sort by date
-  let timelineArray = Object.values(weeklyData)
+  // Find the week when first optimization was applied
+  const weeksWithOptimizations = Object.values(weeklyData)
+    .filter(w => w.optimizationsApplied > 0)
     .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
-    .map(({ week, spend, revenue, roas, ctr, optimizationsApplied, actions, goals, impressions, clicks }) => ({ 
-      week, 
-      spend: Math.round(spend * 100) / 100, 
-      revenue: Math.round(revenue * 100) / 100, 
-      roas: Math.round(roas * 100) / 100, 
-      ctr: Math.round(ctr * 100) / 100,
-      optimizationsApplied,
-      actions,
-      goals,
-      impressions,
-      clicks
-    }))
-    .slice(-8) // Last 8 weeks
   
-  // If no data exists, create a placeholder for the current week
-  if (timelineArray.length === 0) {
+  let timelineArray: any[] = []
+  
+  if (weeksWithOptimizations.length > 0) {
+    // Start from the first optimization week
+    const firstOptWeek = weeksWithOptimizations[0].weekStart
     const currentWeekStart = getWeekStart(today)
-    const currentWeekKey = formatWeekKey(currentWeekStart)
-    timelineArray = [{
-      week: currentWeekKey,
-      spend: 0,
-      revenue: 0,
-      roas: 0,
-      ctr: 0,
-      optimizationsApplied: 0,
-      actions: [],
-      goals: [],
-      impressions: 0,
-      clicks: 0
-    }]
+    
+    // Generate timeline from first optimization week to 8 weeks in the future
+    for (let i = 0; i < 8; i++) {
+      const weekStart = new Date(firstOptWeek)
+      weekStart.setDate(weekStart.getDate() + (i * 7))
+      const weekKey = formatWeekKey(weekStart)
+      
+      // Use existing data if available, otherwise create placeholder
+      const existingWeek = weeklyData[weekKey]
+      if (existingWeek) {
+        timelineArray.push({
+          week: weekKey,
+          spend: Math.round(existingWeek.spend * 100) / 100,
+          revenue: Math.round(existingWeek.revenue * 100) / 100,
+          roas: Math.round(existingWeek.roas * 100) / 100,
+          ctr: Math.round(existingWeek.ctr * 100) / 100,
+          optimizationsApplied: existingWeek.optimizationsApplied,
+          actions: existingWeek.actions,
+          goals: existingWeek.goals,
+          impressions: existingWeek.impressions,
+          clicks: existingWeek.clicks
+        })
+      } else {
+        // Future week placeholder
+        timelineArray.push({
+          week: weekKey,
+          spend: 0,
+          revenue: 0,
+          roas: 0,
+          ctr: 0,
+          optimizationsApplied: 0,
+          actions: [],
+          goals: [],
+          impressions: 0,
+          clicks: 0
+        })
+      }
+    }
+  } else {
+    // No optimizations yet - show current week as Week 1
+    const currentWeekStart = getWeekStart(today)
+    
+    for (let i = 0; i < 8; i++) {
+      const weekStart = new Date(currentWeekStart)
+      weekStart.setDate(weekStart.getDate() + (i * 7))
+      const weekKey = formatWeekKey(weekStart)
+      
+      const existingWeek = weeklyData[weekKey]
+      timelineArray.push({
+        week: weekKey,
+        spend: existingWeek?.spend ? Math.round(existingWeek.spend * 100) / 100 : 0,
+        revenue: existingWeek?.revenue ? Math.round(existingWeek.revenue * 100) / 100 : 0,
+        roas: existingWeek?.roas ? Math.round(existingWeek.roas * 100) / 100 : 0,
+        ctr: existingWeek?.ctr ? Math.round(existingWeek.ctr * 100) / 100 : 0,
+        optimizationsApplied: existingWeek?.optimizationsApplied || 0,
+        actions: existingWeek?.actions || [],
+        goals: existingWeek?.goals || [],
+        impressions: existingWeek?.impressions || 0,
+        clicks: existingWeek?.clicks || 0
+      })
+    }
   }
 
   // Calculate week-over-week improvements
