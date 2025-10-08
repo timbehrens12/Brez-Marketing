@@ -94,14 +94,14 @@ async function getOptimizationTimeline(brandId: string) {
     goals: any[]
   } } = {}
 
-  // Helper to get week key (Monday of that week)
+  // Helper to get week key (Sunday of that week)
   const getWeekStart = (date: Date) => {
     const d = new Date(date)
     const day = d.getDay()
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday
-    const monday = new Date(d.setDate(diff))
-    monday.setHours(0, 0, 0, 0)
-    return monday
+    const diff = d.getDate() - day // Sunday is 0, so this gets us to Sunday
+    const sunday = new Date(d.setDate(diff))
+    sunday.setHours(0, 0, 0, 0)
+    return sunday
   }
 
   const formatWeekKey = (date: Date) => {
@@ -272,7 +272,7 @@ async function getOptimizationTimeline(brandId: string) {
         clicks: existingWeek.clicks
       })
     } else if (i === 0) {
-      // Week 1 but no data yet - create with zeros but include goals
+      // Week 1 but no data yet - create with zeros but include goals and actions from THIS week only
       const currentWeekGoals = recommendations?.map((rec: any) => {
         try {
           const recommendation = typeof rec.recommendation === 'string' 
@@ -294,14 +294,20 @@ async function getOptimizationTimeline(brandId: string) {
         }
       }) || []
       
+      // Only count actions from the CURRENT week
+      const currentWeekActions = completedActions?.filter((action: any) => {
+        const actionWeekStart = getWeekStart(new Date(action.created_at))
+        return formatWeekKey(actionWeekStart) === weekKey
+      }) || []
+      
       timelineArray.push({
         week: weekKey,
         spend: 0,
         revenue: 0,
         roas: 0,
         ctr: 0,
-        optimizationsApplied: completedActions?.length || 0,
-        actions: completedActions?.map((action: any) => {
+        optimizationsApplied: currentWeekActions.length,
+        actions: currentWeekActions.map((action: any) => {
           const metadata = typeof action.metadata === 'string' ? JSON.parse(action.metadata) : action.metadata
           return {
             title: metadata?.title || 'Optimization Applied',
@@ -309,7 +315,7 @@ async function getOptimizationTimeline(brandId: string) {
             category: metadata?.category || 'general',
             created_at: action.created_at
           }
-        }) || [],
+        }),
         goals: currentWeekGoals,
         impressions: 0,
         clicks: 0
