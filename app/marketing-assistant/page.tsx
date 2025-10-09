@@ -742,8 +742,8 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  // Only show loading screen when refreshing data (Update Analysis button clicked)
-  if (isRefreshingData) {
+  // Show loading screen on initial page load and when refreshing data
+  if (isLoadingPage || loading || isRefreshingData) {
     return (
       <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
@@ -773,17 +773,17 @@ export default function MarketingAssistantPage() {
           
           {/* Loading title */}
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Updating Analysis
+            Marketing Assistant
           </h1>
           
           {/* Loading message */}
           <p className="text-xl text-gray-300 mb-6 font-medium">
-            Syncing fresh data from Meta...
+            {isRefreshingData ? 'Updating Analysis' : 'Loading your dashboard'}
           </p>
           
-          {/* Simple spinner - no progress bar needed */}
+          {/* Subtle loading tip */}
           <div className="text-sm text-gray-400 italic">
-            This may take a few moments
+            {isRefreshingData ? 'Syncing fresh data from Meta...' : 'Preparing your AI-powered insights...'}
           </div>
         </div>
       </div>
