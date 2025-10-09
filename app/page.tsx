@@ -1050,25 +1050,14 @@ export default function HomePage() {
                             </span>
                             <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-                          {billingInterval === 'weekly' ? (
-                            <div className="flex flex-col gap-1 mt-1">
-                              <span className="text-xs text-white/50">
-                                ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
-                                Billed weekly
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-lg text-white/50 line-through">
-                                ${plan.originalPrice}
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                                Save ${plan.originalPrice - plan.price}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-lg text-white/50 line-through">
+                              ${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}
+                            </span>
+                            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                              SAVE ${billingInterval === 'weekly' ? Math.round((plan.originalPrice - plan.price) * 1.10 / 4) : (plan.originalPrice - plan.price)}
+                            </span>
+                          </div>
                         </div>
                       
                       {/* Usage Limits */}
