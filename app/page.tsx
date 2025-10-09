@@ -289,7 +289,6 @@ function Ribbon({ children }: { children: React.ReactNode }) {
 export default function HomePage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [activePreview, setActivePreview] = useState('analytics')
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly')
 
   const scrollToPricing = () => {
     const pricingSection = document.getElementById('pricing')
@@ -864,24 +863,6 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              {/* Billing Toggle */}
-              <div className="flex items-center justify-center gap-4 mt-8 mb-6">
-                <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
-                  Monthly
-                </span>
-                <button
-                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                  className="relative w-14 h-7 bg-white/10 rounded-full border border-white/20 transition-colors hover:bg-white/15"
-                >
-                  <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
-                </button>
-                <span className={`text-sm font-medium transition-colors ${billingInterval === 'yearly' ? 'text-white' : 'text-white/50'}`}>
-                  Yearly
-                  <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
-                    Save 10%
-                  </span>
-                </span>
-              </div>
 
               <div className="grid lg:grid-cols-5 gap-6 items-start">
                 {[
