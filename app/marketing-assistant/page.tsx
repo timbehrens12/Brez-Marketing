@@ -145,8 +145,6 @@ export default function MarketingAssistantPage() {
   
   // State
   const [isLoadingPage, setIsLoadingPage] = useState(true)
-  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Marketing Assistant')
-  const [loadingProgress, setLoadingProgress] = useState(0)
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
@@ -182,41 +180,8 @@ export default function MarketingAssistantPage() {
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
-  // Smooth progress animation - fast for UI loading
-  useEffect(() => {
-    if (!isLoadingPage && !loading && !isRefreshingData) return
-    
-    let progressInterval: NodeJS.Timeout
-    let currentProgress = 0
-    
-    // Fast progress increment for quick UI loading
-    progressInterval = setInterval(() => {
-      currentProgress += 2 // Increment by 2% for faster animation
-      
-      // Update progress (cap at 95% to leave room for actual loading completion)
-      setLoadingProgress(Math.min(currentProgress, 95))
-      
-      // Update phase based on progress thresholds
-      if (currentProgress >= 75) {
-        setLoadingPhase('Finalizing dashboard')
-      } else if (currentProgress >= 50) {
-        setLoadingPhase('Loading insights')
-      } else if (currentProgress >= 25) {
-        setLoadingPhase('Analyzing data')
-      } else {
-        setLoadingPhase('Connecting to campaigns')
-      }
-      
-      // Stop at 95% and wait for actual loading to complete
-      if (currentProgress >= 95) {
-        clearInterval(progressInterval)
-      }
-    }, 50) // Update every 50ms for fast animation (2.5 seconds to reach 95%)
-    
-    return () => {
-      clearInterval(progressInterval)
-    }
-  }, [isLoadingPage, loading, isRefreshingData])
+  // No loading animation needed - page loads instantly for normal loads
+  // Only show loading spinner for force refresh (Update Analysis button)
 
   // Check if brand has advertising platforms connected (by checking for campaigns)
   useEffect(() => {
@@ -478,9 +443,6 @@ export default function MarketingAssistantPage() {
           await loadOptimizationTimeline()
         }
       }
-      
-      // Complete (100%) - this will trigger the loading screen to disappear
-      setLoadingProgress(100)
     } catch (error) {
     } finally {
       // Always clear loading states when done
@@ -780,7 +742,8 @@ export default function MarketingAssistantPage() {
     }
   }
 
-  if (isLoadingPage || loading || isRefreshingData) {
+  // Only show loading screen when refreshing data (Update Analysis button clicked)
+  if (isRefreshingData) {
     return (
       <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
@@ -810,51 +773,17 @@ export default function MarketingAssistantPage() {
           
           {/* Loading title */}
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Marketing Assistant
+            Updating Analysis
           </h1>
           
-          {/* Dynamic loading phase */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            {isRefreshingData ? 'Updating Analysis' : loadingPhase}
+          {/* Loading message */}
+          <p className="text-xl text-gray-300 mb-6 font-medium">
+            Syncing fresh data from Meta...
           </p>
           
-          {/* Progress bar */}
-          <div className="w-full max-w-md mx-auto mb-6">
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-              <span>Progress</span>
-              <span>{loadingProgress}%</span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
-            </div>
-          </div>
-          
-          {/* Loading phases checklist - 4 dots synced with percentage (25%, 50%, 75%, 100%) */}
-          <div className="text-left space-y-2 text-sm text-gray-400">
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 0 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 25 ? 'bg-[#FF2A2A]' : loadingProgress >= 0 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Connecting to campaigns</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 25 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 25 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Analyzing data</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 75 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Loading insights</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 75 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 75 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Finalizing dashboard</span>
-            </div>
-          </div>
-          
-          {/* Subtle loading tip */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Building your AI-powered marketing insights...
+          {/* Simple spinner - no progress bar needed */}
+          <div className="text-sm text-gray-400 italic">
+            This may take a few moments
           </div>
         </div>
       </div>
