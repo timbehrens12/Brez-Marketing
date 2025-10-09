@@ -1016,41 +1016,33 @@ export default function HomePage() {
                     limitations: [],
                     whiteLabel: true
                   }
-                ].map((plan, index) => {
-                  const isWeekly = billingInterval === 'weekly'
-                  const weeklyPrice = Math.round(plan.price * 1.10 / 4)
-                  const weeklyEquivalent = Math.round(plan.price * 1.10)
-                  const launchOriginal = isWeekly ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice
-                  const savingsPercent = Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
+                ].map((plan, index) => (
+                  <div
+                    key={plan.name}
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
+                      plan.popular 
+                        ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
+                        : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
+                    }`}
+                  >
+                    {plan.popular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                        <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
 
-                  return (
-                    <div
-                      key={plan.name}
-                      className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
-                        plan.popular
-                          ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]'
-                          : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
-                      }`}
-                    >
-                      {/* Most Popular Badge - Top Center */}
-                      {plan.popular && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                          <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
-                            Most Popular
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Launch Special Badge - Floating Pill */}
-                      <div className="absolute top-3 right-3 z-10">
-                        <div className="inline-flex flex-col items-end gap-1 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white px-3 py-1.5 shadow-[0_6px_16px_rgba(0,0,0,.35)] border border-white/15">
-                          <span className="text-[9px] font-black uppercase tracking-[0.18em] leading-none">Launch Special</span>
-                          <span className="text-[10px] font-mono font-semibold leading-none whitespace-nowrap">
-                            <span className="line-through opacity-80">${launchOriginal}</span>
-                            <span className="ml-1 font-black">-{savingsPercent}%</span>
-                          </span>
+                    {/* Launch Special Badge - Inside card, top right corner */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <div className="bg-gradient-to-br from-green-500/90 to-green-600/90 text-white px-2.5 py-1 rounded-md shadow-md text-right">
+                        <div className="text-[9px] font-bold uppercase tracking-wider opacity-90">Launch Special</div>
+                        <div className="text-[11px] font-black">
+                          <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
+                          <span className="ml-1 text-yellow-300">Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
                         </div>
                       </div>
+                    </div>
 
                       <div className="p-6 flex flex-col h-full">
                         <div className="flex items-center gap-3 mb-6">
@@ -1065,14 +1057,14 @@ export default function HomePage() {
                         <div className="mb-6">
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white">
-                              ${isWeekly ? weeklyPrice : plan.price}
+                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
                             </span>
-                            <span className="text-white/40 text-sm">/{isWeekly ? 'wk' : 'mo'}</span>
+                            <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-                          {isWeekly && (
+                          {billingInterval === 'weekly' && (
                             <div className="flex flex-col gap-1 mt-2">
                               <span className="text-xs text-white/50">
-                                ≈ ${weeklyEquivalent}/mo equivalent
+                                ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
                               </span>
                               <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
                                 Billed weekly
@@ -1080,95 +1072,94 @@ export default function HomePage() {
                             </div>
                           )}
                         </div>
-
-                        {/* Usage Limits */}
-                        <div className="flex-1">
-                          <div className="mb-6">
-                            <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Brand Connections</span>
-                                <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.brands}</span>
-                              </div>
-                              {plan.teamMembers && (
-                                <div className="flex justify-between items-center gap-4">
-                                  <span className="text-white/70 text-xs">Team Member Add-Ons</span>
-                                  <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.teamMembers}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Lead Generation</span>
-                                <span className={`font-semibold text-xs whitespace-nowrap ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
-                                  {plan.leadGen === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.leadGen / 4)}/week` : `${plan.leadGen}/month`}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Outreach Messages</span>
-                                <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
-                                  {plan.outreach === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.outreach / 4)}/week` : `${plan.outreach}/month`}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">AI Chatbot</span>
-                                <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.aiChats}/day</span>
-                              </div>
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Creative Generation</span>
-                                <span className="text-white font-semibold text-xs whitespace-nowrap">
-                                  {billingInterval === 'weekly' ? `${Math.round(plan.creativeGen / 4)}/week` : `${plan.creativeGen}/month`}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Custom AI Campaign Optimization</span>
-                                <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Weekly</span>
-                              </div>
-                              <div className="flex justify-between items-center gap-4">
-                                <span className="text-white/70 text-xs">Premium Report Generation</span>
-                                <span className="text-[var(--brand-red)] font-semibold text-xs text-right">✓ Daily & Monthly</span>
-                              </div>
+                      
+                      {/* Usage Limits */}
+                      <div className="flex-1">
+                        <div className="mb-6">
+                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">What's Included</h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Brand Connections</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.brands}</span>
                             </div>
-                          </div>
-
-                          {/* Limitations */}
-                          {plan.limitations.length > 0 && (
-                            <div className="mb-4">
-                              <div className="space-y-1">
-                                {plan.limitations.map((limitation: string, i: number) => (
-                                  <div key={i} className="flex items-center">
-                                    <X className="w-3 h-3 mr-2 flex-shrink-0 text-white/40" />
-                                    <span className="text-white/50 text-xs">{limitation}</span>
-                                  </div>
-                                ))}
+                            {plan.teamMembers && (
+                              <div className="flex justify-between items-center gap-4">
+                                <span className="text-white/70 text-xs">Team Member Add-Ons</span>
+                                <span className="text-white font-semibold text-xs whitespace-nowrap">Up to {plan.teamMembers}</span>
                               </div>
-                            </div>
-                          )}
-
-                          {/* White Label Badge */}
-                          {plan.whiteLabel && (
-                            <div className="text-center mb-4">
-                              <span className="bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 text-[var(--brand-red)] px-3 py-1 rounded-full text-xs font-medium">
-                                White-Label Ready
+                            )}
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Lead Generation</span>
+                              <span className={`font-semibold text-xs whitespace-nowrap ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
+                                {plan.leadGen === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.leadGen / 4)}/week` : `${plan.leadGen}/month`}
                               </span>
                             </div>
-                          )}
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Outreach Messages</span>
+                              <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
+                                {plan.outreach === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.outreach / 4)}/week` : `${plan.outreach}/month`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">AI Chatbot</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.aiChats}/day</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Creative Generation</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">
+                                {billingInterval === 'weekly' ? `${Math.round(plan.creativeGen / 4)}/week` : `${plan.creativeGen}/month`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Custom AI Campaign Optimization</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs whitespace-nowrap">✓ Weekly</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-white/70 text-xs">Premium Report Generation</span>
+                              <span className="text-[var(--brand-red)] font-semibold text-xs text-right">✓ Daily & Monthly</span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Button aligned at bottom */}
-                        <div className="mt-auto pt-4">
-                          <Link href="/login">
-                            <Button className={`w-full h-10 text-sm font-bold ${
-                              plan.popular
-                                ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all'
-                                : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
-                            }`}>
-                              Get Started
-                            </Button>
-                          </Link>
-                        </div>
+                        {/* Limitations */}
+                        {plan.limitations.length > 0 && (
+                          <div className="mb-4">
+                            <div className="space-y-1">
+                              {plan.limitations.map((limitation: string, i: number) => (
+                                <div key={i} className="flex items-center">
+                                  <X className="w-3 h-3 mr-2 flex-shrink-0 text-white/40" />
+                                  <span className="text-white/50 text-xs">{limitation}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* White Label Badge */}
+                        {plan.whiteLabel && (
+                          <div className="text-center mb-4">
+                            <span className="bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 text-[var(--brand-red)] px-3 py-1 rounded-full text-xs font-medium">
+                              White-Label Ready
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Button aligned at bottom */}
+                      <div className="mt-auto pt-4">
+                        <Link href="/login">
+                          <Button className={`w-full h-10 text-sm font-bold ${
+                            plan.popular 
+                              ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
+                              : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
+                          }`}>
+                            Get Started
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
 
               {/* Contact Sales */}
