@@ -106,8 +106,10 @@ export async function GET(request: NextRequest) {
 async function generateAIInsights(brandId: string, fromDate: string, toDate: string, platforms: string[]) {
   console.log('[Quick Insights AI] 📊 Collecting performance data...')
 
-  // Collect all available data
+  // Collect all available data at ALL LEVELS (campaign, adset, ad creative)
   const performanceData: any = {
+    meta_campaigns: [],
+    meta_adsets: [],
     meta_ads: [],
     demographics: [],
     shopify_customers: [],
@@ -122,28 +124,81 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
   }
 
   if (platforms.includes('meta')) {
-    // Get Meta ad performance data
-    const { data: insights } = await supabase
+    // Get CAMPAIGN-level performance data
+    const { data: campaignInsights } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('campaign_id, spend, impressions, clicks, roas, conversions, date')
+      .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+    
+    // Get campaign names
+    const uniqueCampaignIds = [...new Set(campaignInsights?.map(i => i.campaign_id) || [])]
+    const { data: campaigns } = await supabase
+      .from('meta_campaigns')
+      .select('campaign_id, campaign_name')
+      .eq('brand_id', brandId)
+      .in('campaign_id', uniqueCampaignIds)
+    
+    const campaignNameMap = new Map(campaigns?.map(c => [c.campaign_id, c.campaign_name]) || [])
+    performanceData.meta_campaigns = campaignInsights?.map((stat: any) => ({
+      campaign_id: stat.campaign_id,
+      campaign_name: campaignNameMap.get(stat.campaign_id) || `Campaign ${stat.campaign_id}`,
+      spend: stat.spend,
+      impressions: stat.impressions,
+      clicks: stat.clicks,
+      roas: stat.roas,
+      conversions: stat.conversions,
+      date: stat.date
+    })) || []
+    console.log(`[Quick Insights AI] Found ${performanceData.meta_campaigns.length} campaign stats records`)
+
+    // Get ADSET-level performance data
+    const { data: adsetInsights } = await supabase
+      .from('meta_adset_daily_insights')
+      .select('adset_id, spent, impressions, clicks, conversions, date')
+      .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+    
+    // Get adset names
+    const uniqueAdsetIds = [...new Set(adsetInsights?.map(i => i.adset_id) || [])]
+    const { data: adsets } = await supabase
+      .from('meta_adsets')
+      .select('adset_id, adset_name')
+      .eq('brand_id', brandId)
+      .in('adset_id', uniqueAdsetIds)
+    
+    const adsetNameMap = new Map(adsets?.map(a => [a.adset_id, a.adset_name]) || [])
+    performanceData.meta_adsets = adsetInsights?.map((stat: any) => ({
+      adset_id: stat.adset_id,
+      adset_name: adsetNameMap.get(stat.adset_id) || `Ad Set ${stat.adset_id}`,
+      spent: stat.spent,
+      impressions: stat.impressions,
+      clicks: stat.clicks,
+      conversions: stat.conversions,
+      date: stat.date
+    })) || []
+    console.log(`[Quick Insights AI] Found ${performanceData.meta_adsets.length} adset stats records`)
+
+    // Get AD CREATIVE-level performance data
+    const { data: adInsights } = await supabase
       .from('meta_ad_daily_insights')
       .select('ad_id, spent, impressions, clicks, date')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
-      .order('date', { ascending: false })
     
-    // Get ad names from meta_ads table
-    const uniqueAdIds = [...new Set(insights?.map(i => i.ad_id) || [])]
+    // Get ad names
+    const uniqueAdIds = [...new Set(adInsights?.map(i => i.ad_id) || [])]
     const { data: ads } = await supabase
       .from('meta_ads')
       .select('ad_id, ad_name')
       .eq('brand_id', brandId)
       .in('ad_id', uniqueAdIds)
     
-    // Create a map of ad_id to ad_name
     const adNameMap = new Map(ads?.map(ad => [ad.ad_id, ad.ad_name]) || [])
-    
-    // Combine insights with ad names
-    const flattenedStats = insights?.map((stat: any) => ({
+    performanceData.meta_ads = adInsights?.map((stat: any) => ({
       ad_id: stat.ad_id,
       ad_name: adNameMap.get(stat.ad_id) || `Ad ${stat.ad_id}`,
       spent: stat.spent,
@@ -151,15 +206,13 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
       clicks: stat.clicks,
       date: stat.date
     })) || []
-    
-    performanceData.meta_ads = flattenedStats
-    console.log(`[Quick Insights AI] Found ${flattenedStats.length} ad stats records with ${ads?.length || 0} ad names`)
+    console.log(`[Quick Insights AI] Found ${performanceData.meta_ads.length} ad creative stats records`)
 
-    // Calculate summary metrics (use 'spent' not 'spend')
-    if (flattenedStats && flattenedStats.length > 0) {
-      performanceData.summary.totalSpend = flattenedStats.reduce((sum, s) => sum + (Number(s.spent) || 0), 0)
-      performanceData.summary.totalImpressions = flattenedStats.reduce((sum, s) => sum + (Number(s.impressions) || 0), 0)
-      performanceData.summary.totalClicks = flattenedStats.reduce((sum, s) => sum + (Number(s.clicks) || 0), 0)
+    // Calculate summary metrics from campaign data (most complete)
+    if (performanceData.meta_campaigns.length > 0) {
+      performanceData.summary.totalSpend = performanceData.meta_campaigns.reduce((sum: number, s: any) => sum + (Number(s.spend) || 0), 0)
+      performanceData.summary.totalImpressions = performanceData.meta_campaigns.reduce((sum: number, s: any) => sum + (Number(s.impressions) || 0), 0)
+      performanceData.summary.totalClicks = performanceData.meta_campaigns.reduce((sum: number, s: any) => sum + (Number(s.clicks) || 0), 0)
       performanceData.summary.averageCTR = performanceData.summary.totalImpressions > 0
         ? (performanceData.summary.totalClicks / performanceData.summary.totalImpressions) * 100
         : 0
@@ -187,12 +240,15 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     console.log(`[Quick Insights AI] Found ${customers?.length || 0} Shopify customers`)
   }
 
-  // If no data at all, return empty
-  if (performanceData.meta_ads.length === 0 && performanceData.shopify_customers.length === 0 && performanceData.demographics.length === 0) {
-    console.log('[Quick Insights AI] ❌ No data available - cannot generate insights')
-    console.log('[Quick Insights AI] Meta ads:', performanceData.meta_ads.length)
-    console.log('[Quick Insights AI] Demographics:', performanceData.demographics.length)
-    console.log('[Quick Insights AI] Shopify customers:', performanceData.shopify_customers.length)
+  // If NO data at all, return empty array (NO FALLBACKS)
+  const hasAnyData = performanceData.meta_campaigns.length > 0 || 
+                     performanceData.meta_adsets.length > 0 || 
+                     performanceData.meta_ads.length > 0 || 
+                     performanceData.demographics.length > 0 || 
+                     performanceData.shopify_customers.length > 0
+  
+  if (!hasAnyData) {
+    console.log('[Quick Insights AI] ❌ NO DATA AVAILABLE - Cannot generate insights')
     return []
   }
 
@@ -327,37 +383,7 @@ Return exactly 5 insights in this JSON format:
   } catch (aiError: any) {
     console.error('[Quick Insights AI] ❌ OpenAI API Error:', aiError.message)
     console.error('[Quick Insights AI] Full error:', aiError)
-    
-    // Return fallback insights if AI fails
-    if (performanceData.summary.totalSpend > 0) {
-      console.log('[Quick Insights AI] Using fallback insights due to AI error')
-      return [
-        {
-          type: 'total_spend',
-          label: 'Total Investment',
-          value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
-          metric: 'last 30 days',
-          icon: '💰',
-          platform: 'meta'
-        },
-        {
-          type: 'total_reach',
-          label: 'Total Reach',
-          value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
-          metric: 'impressions',
-          icon: '👁️',
-          platform: 'meta'
-        },
-        {
-          type: 'avg_ctr',
-          label: 'Average CTR',
-          value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
-          metric: 'click-through rate',
-          icon: '📈',
-          platform: 'meta'
-        }
-      ]
-    }
+    // NO FALLBACKS - Return empty array if AI fails
     return []
   }
 
@@ -374,49 +400,21 @@ Return exactly 5 insights in this JSON format:
     // Parse AI response
     let insights = JSON.parse(aiResponse)
     
-    // Ensure we have exactly 3 insights
+    // Ensure we have exactly 5 insights
     if (!Array.isArray(insights)) {
       console.error('[Quick Insights AI] ❌ AI did not return an array')
-      insights = []
+      return []
     }
     
-    // Validate structure
+    // Validate structure - must have all required fields
     insights = insights.filter((insight: any) => 
       insight.type && insight.label && insight.value && insight.metric && insight.icon
-    ).slice(0, 3) // Take only first 3
+    ).slice(0, 5) // Take only first 5
 
-    // If we don't have exactly 3, add fallback insights
-    if (insights.length < 3 && performanceData.summary.totalSpend > 0) {
-      console.log(`[Quick Insights AI] ⚠️ Only got ${insights.length} insights from AI, adding fallbacks...`)
-      
-      const fallbacks = [
-        {
-          type: 'total_spend',
-          label: 'Total Investment',
-          value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
-          metric: 'last 30 days',
-          icon: '💰'
-        },
-        {
-          type: 'total_reach',
-          label: 'Total Reach',
-          value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
-          metric: 'impressions',
-          icon: '👁️'
-        },
-        {
-          type: 'avg_ctr',
-          label: 'Average CTR',
-          value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
-          metric: 'click-through rate',
-          icon: '📈'
-        }
-      ]
-      
-      // Add fallbacks until we have 5
-      while (insights.length < 5 && fallbacks.length > 0) {
-        insights.push(fallbacks.shift())
-      }
+    // NO FALLBACKS - If AI doesn't return exactly 5 valid insights, return empty
+    if (insights.length < 5) {
+      console.error(`[Quick Insights AI] ❌ AI returned only ${insights.length} insights, expected 5. Returning empty.`)
+      return []
     }
 
     console.log(`[Quick Insights AI] ✅ Returning ${insights.length} insights:`, insights.map((i: any) => i.type))
@@ -425,62 +423,86 @@ Return exactly 5 insights in this JSON format:
   } catch (parseError) {
     console.error('[Quick Insights AI] ❌ Failed to parse AI response:', parseError)
     console.error('[Quick Insights AI] Raw response:', aiResponse)
-    
-    // Return basic fallback insights if AI fails (5 insights)
-    if (performanceData.summary.totalSpend > 0) {
-      const totalClicks = performanceData.summary.totalClicks || 0
-      const avgCPC = totalClicks > 0 ? performanceData.summary.totalSpend / totalClicks : 0
-      
-      return [
-        {
-          type: 'total_spend',
-          label: 'Total Investment',
-          value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
-          metric: 'this week',
-          icon: '💰',
-          platform: 'meta'
-        },
-        {
-          type: 'total_reach',
-          label: 'Total Reach',
-          value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
-          metric: 'impressions',
-          icon: '👁️',
-          platform: 'meta'
-        },
-        {
-          type: 'avg_ctr',
-          label: 'Average CTR',
-          value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
-          metric: 'click-through rate',
-          icon: '📈',
-          platform: 'meta'
-        },
-        {
-          type: 'total_clicks',
-          label: 'Total Clicks',
-          value: `${totalClicks.toLocaleString()}`,
-          metric: 'this week',
-          icon: '🖱️',
-          platform: 'meta'
-        },
-        {
-          type: 'avg_cpc',
-          label: 'Average CPC',
-          value: `$${avgCPC.toFixed(2)}`,
-          metric: 'cost per click',
-          icon: '💵',
-          platform: 'meta'
-        }
-      ]
-    }
-    
+    // NO FALLBACKS - Return empty array if parsing fails
     return []
   }
 }
 
 function prepareDataSummaryForAI(data: any) {
-  // Aggregate ad performance by ad_id
+  // Aggregate CAMPAIGN performance by campaign_id
+  const campaignPerformance = new Map()
+  data.meta_campaigns.forEach((stat: any) => {
+    if (!campaignPerformance.has(stat.campaign_id)) {
+      campaignPerformance.set(stat.campaign_id, {
+        campaign_id: stat.campaign_id,
+        campaign_name: stat.campaign_name || 'Unnamed Campaign',
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        roas: 0,
+        conversions: 0,
+        days: []
+      })
+    }
+    const campaign = campaignPerformance.get(stat.campaign_id)
+    campaign.spend += Number(stat.spend) || 0
+    campaign.impressions += Number(stat.impressions) || 0
+    campaign.clicks += Number(stat.clicks) || 0
+    campaign.roas += Number(stat.roas) || 0
+    campaign.conversions += Number(stat.conversions) || 0
+    campaign.days.push(stat.date)
+  })
+
+  const topCampaigns = Array.from(campaignPerformance.values())
+    .map((campaign: any) => ({
+      campaign_name: campaign.campaign_name,
+      spend: campaign.spend,
+      impressions: campaign.impressions,
+      clicks: campaign.clicks,
+      roas: campaign.roas / campaign.days.length, // Average ROAS
+      conversions: campaign.conversions,
+      ctr: campaign.impressions > 0 ? (campaign.clicks / campaign.impressions) * 100 : 0,
+      cpc: campaign.clicks > 0 ? campaign.spend / campaign.clicks : 0
+    }))
+    .sort((a, b) => b.spend - a.spend)
+    .slice(0, 3) // Top 3 campaigns
+
+  // Aggregate ADSET performance by adset_id
+  const adsetPerformance = new Map()
+  data.meta_adsets.forEach((stat: any) => {
+    if (!adsetPerformance.has(stat.adset_id)) {
+      adsetPerformance.set(stat.adset_id, {
+        adset_id: stat.adset_id,
+        adset_name: stat.adset_name || 'Unnamed Ad Set',
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        days: []
+      })
+    }
+    const adset = adsetPerformance.get(stat.adset_id)
+    adset.spend += Number(stat.spent) || 0
+    adset.impressions += Number(stat.impressions) || 0
+    adset.clicks += Number(stat.clicks) || 0
+    adset.conversions += Number(stat.conversions) || 0
+    adset.days.push(stat.date)
+  })
+
+  const topAdsets = Array.from(adsetPerformance.values())
+    .map((adset: any) => ({
+      adset_name: adset.adset_name,
+      spend: adset.spend,
+      impressions: adset.impressions,
+      clicks: adset.clicks,
+      conversions: adset.conversions,
+      ctr: adset.impressions > 0 ? (adset.clicks / adset.impressions) * 100 : 0,
+      cpc: adset.clicks > 0 ? adset.spend / adset.clicks : 0
+    }))
+    .sort((a, b) => b.spend - a.spend)
+    .slice(0, 3) // Top 3 adsets
+
+  // Aggregate AD CREATIVE performance by ad_id
   const adPerformance = new Map()
   data.meta_ads.forEach((stat: any) => {
     if (!adPerformance.has(stat.ad_id)) {
@@ -494,13 +516,12 @@ function prepareDataSummaryForAI(data: any) {
       })
     }
     const ad = adPerformance.get(stat.ad_id)
-    ad.spend += Number(stat.spent) || 0 // Use 'spent' not 'spend'
+    ad.spend += Number(stat.spent) || 0
     ad.impressions += Number(stat.impressions) || 0
     ad.clicks += Number(stat.clicks) || 0
     ad.days.push(stat.date)
   })
 
-  // Calculate CTR for each ad
   const topAds = Array.from(adPerformance.values())
     .map((ad: any) => ({
       ad_name: ad.ad_name,
@@ -511,7 +532,7 @@ function prepareDataSummaryForAI(data: any) {
       cpc: ad.clicks > 0 ? ad.spend / ad.clicks : 0
     }))
     .sort((a, b) => b.spend - a.spend)
-    .slice(0, 3) // Top 3 ads only - minimize data for speed
+    .slice(0, 3) // Top 3 ads
 
   // Aggregate demographics
   const demoPerformance = new Map()
@@ -572,6 +593,14 @@ function prepareDataSummaryForAI(data: any) {
   // Only include data categories that have actual data
   const result: any = { summary }
 
+  if (topCampaigns.length > 0) {
+    result.top_campaigns = topCampaigns
+  }
+
+  if (topAdsets.length > 0) {
+    result.top_adsets = topAdsets
+  }
+
   if (topAds.length > 0) {
     result.top_ads = topAds
   }
@@ -586,6 +615,8 @@ function prepareDataSummaryForAI(data: any) {
 
   // Add data availability flags to help AI make decisions
   result.data_available = {
+    campaigns: topCampaigns.length > 0,
+    adsets: topAdsets.length > 0,
     ads: topAds.length > 0,
     demographics: topDemographics.length > 0,
     regions: topRegions.length > 0

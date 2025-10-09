@@ -1479,8 +1479,8 @@ export default function MarketingAssistantPage() {
                       <div className="w-16 h-16 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-2xl flex items-center justify-center mb-4">
                         <Brain className="w-8 h-8 text-[#FF2A2A]" />
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-2">Ready to Optimize</h3>
-                      <p className="text-sm text-center max-w-sm">Click "Update Analysis" to get AI-powered recommendations tailored to your campaign performance.</p>
+                      <h3 className="text-lg font-bold text-white mb-2">No Recommendations Found</h3>
+                      <p className="text-sm text-center max-w-sm">No data available to analyze. Click "Update Analysis" to generate AI-powered recommendations based on your campaign performance.</p>
                     </div>
                   )}
                 </div>
@@ -1613,8 +1613,8 @@ export default function MarketingAssistantPage() {
                     <div className="w-12 h-12 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl flex items-center justify-center mb-3">
                       <BarChart3 className="w-6 h-6 text-[#FF2A2A]" />
               </div>
-                    <p className="text-sm font-medium text-white">No Data Yet</p>
-                    <p className="text-xs mt-1 text-gray-500">Run analysis to see trends</p>
+                    <p className="text-sm font-medium text-white">No Data Found</p>
+                    <p className="text-xs mt-1 text-gray-500">No performance data available to analyze</p>
                 </div>
                            )}
               </CardContent>
@@ -1666,8 +1666,8 @@ export default function MarketingAssistantPage() {
                     <div className="w-12 h-12 bg-gradient-to-br from-[#FF2A2A]/20 to-[#FF5A5A]/10 rounded-xl flex items-center justify-center mb-3">
                       <Sparkles className="w-6 h-6 text-[#FF2A2A]" />
                 </div>
-                    <p className="text-sm font-medium text-white">No Insights Yet</p>
-                    <p className="text-xs mt-1 text-gray-500">Run analysis to see AI insights</p>
+                    <p className="text-sm font-medium text-white">No Insights Found</p>
+                    <p className="text-xs mt-1 text-gray-500">No data available to generate AI insights</p>
                     </div>
                   )}
               </CardContent>
@@ -2252,8 +2252,8 @@ export default function MarketingAssistantPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
-                      <h3 className="text-white font-semibold text-lg mb-2">No Data Yet</h3>
-                      <p className="text-gray-400">Apply optimizations to start tracking your progress</p>
+                      <h3 className="text-white font-semibold text-lg mb-2">No Data Found</h3>
+                      <p className="text-gray-400">No optimization data available to display</p>
                     </div>
                   )
                 }
