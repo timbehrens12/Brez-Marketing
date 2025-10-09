@@ -1033,6 +1033,17 @@ export default function HomePage() {
                       </div>
                     )}
 
+                    {/* Launch Special Badge - Angled in top right corner */}
+                    <div className="absolute top-0 right-0 overflow-hidden w-32 h-32 pointer-events-none z-[5]">
+                      <div className="absolute top-6 -right-8 w-40 bg-gradient-to-br from-green-500 to-green-600 text-white text-center shadow-lg transform rotate-45 py-1.5">
+                        <div className="text-[9px] font-bold uppercase tracking-wider">Launch Special</div>
+                        <div className="text-[10px] font-black">
+                          <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
+                          <span className="mx-1 text-yellow-300">{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
+                        </div>
+                      </div>
+                    </div>
+
                       <div className="p-6 flex flex-col h-full">
                         <div className="flex items-center gap-3 mb-6">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
@@ -1145,17 +1156,6 @@ export default function HomePage() {
                             Get Started
                           </Button>
                         </Link>
-                      </div>
-                    </div>
-
-                    {/* Launch Special Badge - Bottom Left Corner, OUTSIDE the padding */}
-                    <div className="absolute bottom-3 left-3 z-10">
-                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2.5 py-1.5 rounded-lg shadow-lg border-2 border-green-400/50">
-                        <div className="text-[9px] font-bold uppercase tracking-wider">Launch Special</div>
-                        <div className="text-[11px] font-black">
-                          <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
-                          <span className="ml-1 text-yellow-300">Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
-                        </div>
                       </div>
                     </div>
                   </div>
