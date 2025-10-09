@@ -1332,6 +1332,9 @@ export default function MarketingAssistantPage() {
                 })()}
               </CardContent>
             </Card>
+            
+            {/* Spacer to push content and fill remaining space */}
+            <div className="flex-1"></div>
                 </div>
 
             {/* Middle Column - Main Work Area - Scrollable */}
