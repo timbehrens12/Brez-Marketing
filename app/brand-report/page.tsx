@@ -231,11 +231,8 @@ export default function BrandReportPage() {
         }
       }
       
-      // STEP 6A: Check if already used today (brand-specific)
-      const brandSpecificKey = `lastManualGeneration_${checkBrandId}`
-      const brandLastGeneration = localStorage.getItem(brandSpecificKey)
-      
-      // Also check database reports for this brand today
+      // STEP 6A: Check if already used today (brand-specific) - DATABASE ONLY
+      // Check database reports for this brand today
       const brandDailyReports = dailyReports.filter(report => {
         const dbReport = report.data || report
         const snapshotTime = dbReport.snapshot_time || report.snapshotTime
@@ -247,8 +244,8 @@ export default function BrandReportPage() {
         return isManual && isToday
       })
       
-      // Check localStorage, database reports, and state for daily report availability
-      const hasUsedToday = brandLastGeneration === today || brandDailyReports.length > 0 || hasDailyReportToday
+      // Check database reports and state for daily report availability (NO localStorage)
+      const hasUsedToday = brandDailyReports.length > 0 || hasDailyReportToday
       
               if (hasUsedToday) {
           return {
@@ -293,14 +290,12 @@ export default function BrandReportPage() {
       // STEP 6B: Monthly reports are available throughout the month (not just on the 1st)
       // The report becomes available starting the 1st of the following month and remains available
       
-      // STEP 7B: Check if monthly report already exists (localStorage and database state)
+      // STEP 7B: Check if monthly report already exists (DATABASE ONLY)
       const currentMonthKey = format(now, 'yyyy-MM')
-      const brandSpecificKey = `lastMonthlyGeneration_${checkBrandId}`
-      const brandLastMonthlyGeneration = localStorage.getItem(brandSpecificKey)
       
-      // Check both localStorage and database state for monthly report availability
+      // Check database state for monthly report availability (NO localStorage)
       // hasMonthlyReportThisMonth now includes both period-specific and month-specific checks
-      const hasUsedMonthlyThisMonth = brandLastMonthlyGeneration === currentMonthKey || hasMonthlyReportThisMonth
+      const hasUsedMonthlyThisMonth = hasMonthlyReportThisMonth
       
       if (hasUsedMonthlyThisMonth) {
         const nextFirst = startOfMonth(addMonths(now, 1))
@@ -442,19 +437,12 @@ export default function BrandReportPage() {
     }
   }, [user, mounted, selectedBrandId])
 
-  // Check brand-specific last generation date on brand change
+  // Check brand-specific last generation date on brand change (DATABASE ONLY)
   useEffect(() => {
     if (selectedBrandId && mounted) {
-      const brandSpecificKey = `lastManualGeneration_${selectedBrandId}`
-      const globalKey = 'lastManualGeneration'
-      
-      // Check brand-specific key first, then fall back to global
-      const storedLastGeneration = localStorage.getItem(brandSpecificKey) || localStorage.getItem(globalKey)
-      if (storedLastGeneration) {
-        setLastManualGeneration(storedLastGeneration)
-      } else {
-        setLastManualGeneration(null)
-      }
+      // Last manual generation is now tracked via database reports only
+      // The state will be updated when reports are loaded
+      setLastManualGeneration(null)
     }
   }, [selectedBrandId, mounted])
 
@@ -522,7 +510,7 @@ export default function BrandReportPage() {
       if (result.success && result.reports) {
 
         
-        // Sync localStorage with database reports for shared brands
+        // Sync state with database reports for shared brands (NO localStorage)
         syncLocalStorageWithReports(brandId, result.reports)
         
         return result.reports
@@ -560,28 +548,11 @@ export default function BrandReportPage() {
         return format(reportDate, 'yyyy-MM-dd') === today
       })
       
-      // Update state to reflect database state
+      // Update state to reflect database state (NO localStorage)
       setHasMonthlyReportThisMonth(hasMonthlyReportThisMonth)
       setHasDailyReportToday(hasDailyReportToday)
-      
-      // Update localStorage to reflect database state
-      const monthlyKey = `lastMonthlyGeneration_${brandId}`
-      const dailyKey = `lastDailyGeneration_${brandId}`
-      
-      if (hasMonthlyReportThisMonth) {
-        localStorage.setItem(monthlyKey, currentMonthKey)
-
-      }
-      
-      if (hasDailyReportToday) {
-        localStorage.setItem(dailyKey, today)
-
-      }
-      
-
-      
     } catch (error) {
-
+      console.error('[Brand Report] Error syncing state:', error)
     }
   }
 
@@ -2630,16 +2601,13 @@ export default function BrandReportPage() {
     
 
     
-    // Set the brand-specific last generation date
+    // Set the brand-specific last generation date (DATABASE ONLY - NO localStorage)
     if (selectedPeriod === "today") {
       const today = format(new Date(), 'yyyy-MM-dd')
       setLastManualGeneration(today)
-      // Store brand-specific key
-      localStorage.setItem(`lastManualGeneration_${selectedBrandId}`, today)
+      // Database will be the source of truth - no localStorage needed
     } else if (selectedPeriod === "last-month") {
-      const currentMonthKey = format(new Date(), 'yyyy-MM')
-      // Store brand-specific monthly generation
-      localStorage.setItem(`lastMonthlyGeneration_${selectedBrandId}`, currentMonthKey)
+      // Database will be the source of truth - no localStorage needed
     }
     
     // Generate report without snapshot time (null will be saved to database)
@@ -2683,10 +2651,7 @@ export default function BrandReportPage() {
           
           if (todayManualReport) {
             setLastManualGeneration(today)
-            // Also update localStorage for persistence
-            if (selectedBrandId) {
-              localStorage.setItem(`lastManualGeneration_${selectedBrandId}`, today)
-            }
+            // Database is the source of truth - no localStorage needed
           }
           
           if (reports.length > 0) {
