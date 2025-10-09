@@ -1034,11 +1034,11 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Launch Special Badge - Top Right */}
-                    <div className="absolute top-4 right-4 z-10">
-                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2.5 py-1 rounded-md shadow-lg border border-green-400/50">
-                        <div className="text-[9px] font-bold uppercase tracking-wide leading-tight">Launch Special</div>
-                        <div className="text-[10px] font-black leading-tight mt-0.5">
+                    {/* Launch Special Badge - Corner Ribbon Style */}
+                    <div className="absolute -top-2 -right-2 z-10 overflow-hidden">
+                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-6 py-2 shadow-xl transform rotate-12 translate-x-3 -translate-y-1">
+                        <div className="text-[9px] font-bold uppercase tracking-wide leading-tight text-center">Launch</div>
+                        <div className="text-[11px] font-black leading-tight text-center whitespace-nowrap">
                           <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
                           <span className="ml-1">-{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
                         </div>
