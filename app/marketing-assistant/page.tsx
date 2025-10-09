@@ -182,24 +182,22 @@ export default function MarketingAssistantPage() {
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
-  // Smooth progress animation
+  // Smooth progress animation - slower and more realistic
   useEffect(() => {
     if (!isLoadingPage && !loading && !isRefreshingData) return
     
     let progressInterval: NodeJS.Timeout
     let currentProgress = 0
     
-    // Smooth progress increment
+    // Smooth progress increment - slower for more realistic feel
     progressInterval = setInterval(() => {
-      currentProgress += 1
+      currentProgress += 0.5 // Increment by 0.5% instead of 1%
       
-      // Update progress
-      setLoadingProgress(Math.min(currentProgress, 95))
+      // Update progress (cap at 90% to leave room for actual loading)
+      setLoadingProgress(Math.min(Math.round(currentProgress), 90))
       
       // Update phase based on progress thresholds
-      if (currentProgress >= 85) {
-        setLoadingPhase('Finalizing your dashboard')
-      } else if (currentProgress >= 70) {
+      if (currentProgress >= 70) {
         setLoadingPhase('Calculating performance trends')
       } else if (currentProgress >= 50) {
         setLoadingPhase('Preparing insights dashboard')
@@ -211,11 +209,11 @@ export default function MarketingAssistantPage() {
         setLoadingPhase('Connecting to your campaigns')
       }
       
-      // Stop at 95% and wait for actual loading to complete
-      if (currentProgress >= 95) {
+      // Stop at 90% and wait for actual loading to complete
+      if (currentProgress >= 90) {
         clearInterval(progressInterval)
       }
-    }, 100) // Update every 100ms for smooth animation
+    }, 200) // Update every 200ms (slower than before)
     
     return () => {
       clearInterval(progressInterval)
@@ -404,6 +402,10 @@ export default function MarketingAssistantPage() {
       }
       
     try {
+      // Jump to 90% when starting actual data loading
+      setLoadingProgress(90)
+      setLoadingPhase('Finalizing your dashboard')
+      
       // FIRST: Ensure data exists for the analysis period (check for gaps and trigger sync if needed)
       const { previousSunday, lastSunday } = getSundayToSundayDates()
       const startDate = previousSunday.toISOString().split('T')[0]
@@ -440,6 +442,9 @@ export default function MarketingAssistantPage() {
         console.error('[Marketing Assistant] Error checking/syncing data:', syncError)
         // Continue anyway - we'll work with whatever data exists
       }
+      
+      // Progress to 95% after data sync
+      setLoadingProgress(95)
       
       // Now load recommendations with ensured data
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
@@ -830,30 +835,30 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          {/* Loading phases checklist */}
+          {/* Loading phases checklist - synced with percentage (each dot = ~16.67%) */}
           <div className="text-left space-y-2 text-sm text-gray-400">
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 0 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 17 ? 'bg-[#FF2A2A]' : loadingProgress >= 0 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Connecting to your campaigns</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 17 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 33 ? 'bg-[#FF2A2A]' : loadingProgress >= 17 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Analyzing campaign performance</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 33 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 33 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Generating AI recommendations</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 67 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Preparing insights dashboard</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 67 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 83 ? 'bg-[#FF2A2A]' : loadingProgress >= 67 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Calculating performance trends</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 83 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 83 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Finalizing your dashboard</span>
             </div>
           </div>
