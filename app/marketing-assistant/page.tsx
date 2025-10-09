@@ -765,12 +765,12 @@ export default function MarketingAssistantPage() {
               {/* Enhanced spinner with glow */}
               <div className="relative w-24 h-24 mx-auto mb-8">
                 {/* Pulsing glow ring */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#FF2A2A]/30 to-purple-500/30 blur-2xl animate-pulse"></div>
+                <div className="absolute inset-0 rounded-full bg-white/10 blur-2xl animate-pulse"></div>
                 
                 {/* Spinner */}
                 <div className="relative w-24 h-24">
                   <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FF2A2A] border-r-[#FF2A2A]/50 animate-spin"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-white/60 border-r-white/30 animate-spin"></div>
                   
                   {/* Logo container */}
                   <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm flex items-center justify-center">
