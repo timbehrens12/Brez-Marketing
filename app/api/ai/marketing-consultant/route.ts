@@ -444,7 +444,7 @@ export async function POST(request: NextRequest) {
       }
       
     const brand = brandData
-    const analysisData = await gatherComprehensiveMarketingData(supabase, brandId, effectiveDateRange)
+    const analysisData = await gatherComprehensiveMarketingData(supabase, brandId, effectiveDateRange, userId, userTimezone)
     
     // Generate personalized AI response
     console.log(`[AI Marketing] About to generate response for brand ${brandId}...`)
@@ -562,7 +562,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function gatherComprehensiveMarketingData(supabase: any, brandId: string, customDateRange?: { from?: string, to?: string, days?: number }) {
+async function gatherComprehensiveMarketingData(supabase: any, brandId: string, customDateRange?: { from?: string, to?: string, days?: number }, userId?: string, userTimezone: string = 'America/Chicago') {
   const today = new Date()
   const easternTime = new Date(today.toLocaleString("en-US", {timeZone: "America/New_York"}))
   const todayStr = easternTime.toISOString().split('T')[0]
@@ -646,6 +646,12 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
     // Fetch available optimizations and reports for the brand
     const brandOptimizations = await gatherBrandOptimizations(supabase, brandId)
     const availableReports = await gatherAvailableReports(supabase, brandId)
+    
+    // Fetch usage data for all features to provide context about available tools (only if userId is provided)
+    const usageData = userId ? await gatherUsageData(supabase, userId, userTimezone) : null
+    
+    // Fetch comprehensive brand context data (leads, outreach, recommendations, etc.)
+    const brandContextData = await gatherBrandContextData(supabase, brandId, userId || '')
 
     // Calculate aggregated metrics using the same logic as the dashboard
     const analysis = analyzeCampaignData(campaignArray, [], [], dailyStatsArray, shopifyData)
@@ -687,6 +693,8 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
       metaInsightsData,
       brandOptimizations,
       availableReports,
+      usageData,
+      brandContextData,
       analysis,
       dateRange: {
         from: fromDate,
@@ -1763,8 +1771,47 @@ ${analysisData.dateRange?.from === analysisData.dateRange?.to && analysisData.sh
 
 ${analysisData.shopifyData?.orders?.length === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
 
+=== TOOL USAGE & AVAILABILITY ===
+${analysisData.usageData ? `
+CREATIVE STUDIO: ${analysisData.usageData.creativeStudio.remaining}/${analysisData.usageData.creativeStudio.limit} ${analysisData.usageData.creativeStudio.limitType} uses remaining ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+OUTREACH TOOL: ${analysisData.usageData.outreachTool.remaining}/${analysisData.usageData.outreachTool.limit} ${analysisData.usageData.outreachTool.limitType} uses remaining ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+AI CONSULTANT: ${analysisData.usageData.aiConsultant.remaining}/${analysisData.usageData.aiConsultant.limit} ${analysisData.usageData.aiConsultant.limitType} uses remaining ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+BRAND REPORT: ${analysisData.usageData.brandReport.remaining}/${analysisData.usageData.brandReport.limit} ${analysisData.usageData.brandReport.limitType} uses remaining ${analysisData.usageData.brandReport.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+LEAD GENERATOR: ${analysisData.usageData.leadGenerator.remaining}/${analysisData.usageData.leadGenerator.limit} ${analysisData.usageData.leadGenerator.limitType} uses remaining ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+MARKETING ASSISTANT: ${analysisData.usageData.marketingAssistant.remaining}/${analysisData.usageData.marketingAssistant.limit} ${analysisData.usageData.marketingAssistant.limitType} uses remaining ${analysisData.usageData.marketingAssistant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
+When users ask what they should do or what tools to use, reference these usage limits and suggest available tools.
+` : 'Usage data not available'}
 
+=== BRAND CONTEXT & ACTIVITY ===
+${analysisData.brandContextData ? `
+LEADS & OUTREACH:
+• Total Leads: ${analysisData.brandContextData.summary.leads.total} (${analysisData.brandContextData.summary.leads.recent} in last 30 days)
+• Outreach Campaigns: ${analysisData.brandContextData.summary.outreach.totalCampaigns} total, ${analysisData.brandContextData.summary.outreach.activeCampaigns} active
+${analysisData.brandContextData.summary.leads.total > 0 ? '• User has leads available for outreach campaigns' : '• No leads yet - suggest using Lead Generator'}
+
+MARKETING ASSISTANT RECOMMENDATIONS:
+• Total Recommendations: ${analysisData.brandContextData.summary.recommendations.total}
+• Active Recommendations: ${analysisData.brandContextData.summary.recommendations.active}
+• Applied Recommendations: ${analysisData.brandContextData.summary.recommendations.applied}
+${analysisData.brandContextData.summary.recommendations.active > 0 ? '• User has active optimization recommendations available in Marketing Assistant' : '• No active recommendations - suggest running Marketing Assistant weekly analysis'}
+
+AD CREATIVES:
+• Total Generated Creatives: ${analysisData.brandContextData.summary.creatives.total}
+• Recent Creatives (30 days): ${analysisData.brandContextData.summary.creatives.recent}
+${analysisData.brandContextData.summary.creatives.total > 0 ? '• User has generated ad creatives in Creative Studio' : '• No creatives generated yet - suggest using Ad Creative Studio'}
+
+BRAND HEALTH:
+• Health Reports Generated: ${analysisData.brandContextData.summary.healthReports.total}
+${analysisData.brandContextData.summary.healthReports.lastReportDate ? `• Last Report: ${new Date(analysisData.brandContextData.summary.healthReports.lastReportDate).toLocaleDateString()}` : '• No health reports generated yet'}
+
+When users ask what to do next or need recommendations:
+- If they have active Marketing Assistant recommendations, suggest reviewing and applying them
+- If they have leads but no outreach campaigns, suggest starting an outreach campaign
+- If they haven't used Creative Studio, suggest generating ad creatives
+- If Marketing Assistant is available (weekly limit), suggest running it for fresh insights
+- Reference specific numbers from this context to make recommendations personalized
+` : 'Brand context data not available'}
 
 
 
@@ -2241,6 +2288,294 @@ async function gatherAvailableReports(supabase: any, brandId: string) {
   } catch (error) {
     console.error('[AI Marketing Consultant] Error gathering available reports:', error)
     return []
+  }
+}
+
+// Function to gather usage data for all features to provide context about available tools
+async function gatherUsageData(supabase: any, userId: string, userTimezone: string = 'America/Chicago') {
+  try {
+    console.log(`[AI Marketing Consultant] Fetching usage data for user ${userId}...`)
+
+    const now = new Date()
+    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`
+
+    // Calculate start of week (Monday)
+    const dayOfWeek = localNow.getDay()
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+    const startOfWeekLocal = new Date(localNow)
+    startOfWeekLocal.setDate(localNow.getDate() - daysToSubtract)
+    startOfWeekLocal.setHours(0, 0, 0, 0)
+
+    // Fetch all usage records from ai_feature_usage table
+    const { data: allUsageData, error } = await supabase
+      .from('ai_feature_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.log(`[AI Marketing Consultant] Error fetching usage data:`, error)
+      return null
+    }
+
+    // Calculate usage counts for each feature
+    const usageCounts: any = {
+      // Daily limits
+      creativeStudio: { daily: 0, limit: 20, limitType: 'daily' },
+      outreachTool: { daily: 0, limit: 25, limitType: 'daily' },
+      aiConsultant: { daily: 0, limit: 15, limitType: 'daily' },
+      brandReport: { daily: 0, limit: 2, limitType: 'daily' },
+      
+      // Weekly limits
+      leadGenerator: { weekly: 0, limit: 50, limitType: 'weekly' },
+      marketingAssistant: { weekly: 0, limit: 1, limitType: 'weekly' }
+    }
+
+    // Process usage records
+    allUsageData?.forEach((record: any) => {
+      const recordDate = new Date(record.created_at)
+      const recordLocalDate = new Date(recordDate.toLocaleString('en-US', { timeZone: userTimezone }))
+      const recordLocalDateStr = `${recordLocalDate.getFullYear()}-${String(recordLocalDate.getMonth() + 1).padStart(2, '0')}-${String(recordLocalDate.getDate()).padStart(2, '0')}`
+      
+      const isToday = recordLocalDateStr === localToday
+      const isThisWeek = recordLocalDate >= startOfWeekLocal
+
+      // Map feature types to usage counts
+      if (record.feature_type === 'creative_generation' && isToday) {
+        usageCounts.creativeStudio.daily++
+      } else if (record.feature_type === 'outreach_messages' && isToday) {
+        usageCounts.outreachTool.daily++
+      } else if (record.feature_type === 'ai_consultant_chat' && isToday) {
+        usageCounts.aiConsultant.daily++
+      } else if (record.feature_type === 'brand_report' && isToday) {
+        usageCounts.brandReport.daily++
+      } else if (record.feature_type === 'lead_gen_enrichment' && isThisWeek) {
+        usageCounts.leadGenerator.weekly++
+      } else if (record.feature_type === 'marketing_analysis' && isThisWeek) {
+        usageCounts.marketingAssistant.weekly++
+      }
+    })
+
+    // Calculate remaining uses
+    const usageStatus = {
+      creativeStudio: {
+        used: usageCounts.creativeStudio.daily,
+        remaining: Math.max(0, usageCounts.creativeStudio.limit - usageCounts.creativeStudio.daily),
+        limit: usageCounts.creativeStudio.limit,
+        limitType: 'daily',
+        available: usageCounts.creativeStudio.daily < usageCounts.creativeStudio.limit
+      },
+      outreachTool: {
+        used: usageCounts.outreachTool.daily,
+        remaining: Math.max(0, usageCounts.outreachTool.limit - usageCounts.outreachTool.daily),
+        limit: usageCounts.outreachTool.limit,
+        limitType: 'daily',
+        available: usageCounts.outreachTool.daily < usageCounts.outreachTool.limit
+      },
+      aiConsultant: {
+        used: usageCounts.aiConsultant.daily,
+        remaining: Math.max(0, usageCounts.aiConsultant.limit - usageCounts.aiConsultant.daily),
+        limit: usageCounts.aiConsultant.limit,
+        limitType: 'daily',
+        available: usageCounts.aiConsultant.daily < usageCounts.aiConsultant.limit
+      },
+      brandReport: {
+        used: usageCounts.brandReport.daily,
+        remaining: Math.max(0, usageCounts.brandReport.limit - usageCounts.brandReport.daily),
+        limit: usageCounts.brandReport.limit,
+        limitType: 'daily',
+        available: usageCounts.brandReport.daily < usageCounts.brandReport.limit
+      },
+      leadGenerator: {
+        used: usageCounts.leadGenerator.weekly,
+        remaining: Math.max(0, usageCounts.leadGenerator.limit - usageCounts.leadGenerator.weekly),
+        limit: usageCounts.leadGenerator.limit,
+        limitType: 'weekly',
+        available: usageCounts.leadGenerator.weekly < usageCounts.leadGenerator.limit
+      },
+      marketingAssistant: {
+        used: usageCounts.marketingAssistant.weekly,
+        remaining: Math.max(0, usageCounts.marketingAssistant.limit - usageCounts.marketingAssistant.weekly),
+        limit: usageCounts.marketingAssistant.limit,
+        limitType: 'weekly',
+        available: usageCounts.marketingAssistant.weekly < usageCounts.marketingAssistant.limit
+      }
+    }
+
+    console.log(`[AI Marketing Consultant] Usage status calculated:`, usageStatus)
+    return usageStatus
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error gathering usage data:', error)
+    return null
+  }
+}
+
+// Function to gather comprehensive brand context data (leads, outreach, recommendations, etc.)
+async function gatherBrandContextData(supabase: any, brandId: string, userId: string) {
+  try {
+    console.log(`[AI Marketing Consultant] Fetching comprehensive brand context for brand ${brandId}...`)
+
+    // Fetch leads associated with this brand
+    const { data: leads, error: leadsError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(100) // Limit to most recent 100 leads
+
+    if (leadsError) {
+      console.log(`[AI Marketing Consultant] Error fetching leads:`, leadsError)
+    }
+
+    // Fetch outreach campaigns for this brand
+    const { data: outreachCampaigns, error: outreachError } = await supabase
+      .from('outreach_campaigns')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (outreachError) {
+      console.log(`[AI Marketing Consultant] Error fetching outreach campaigns:`, outreachError)
+    }
+
+    // Fetch marketing assistant recommendations (AI campaign recommendations)
+    const { data: marketingRecommendations, error: recommendationsError } = await supabase
+      .from('ai_campaign_recommendations')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (recommendationsError) {
+      console.log(`[AI Marketing Consultant] Error fetching marketing recommendations:`, recommendationsError)
+    }
+
+    // Fetch generated ad creatives for this brand
+    const { data: adCreatives, error: creativesError } = await supabase
+      .from('generated_ad_creatives')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (creativesError) {
+      console.log(`[AI Marketing Consultant] Error fetching ad creatives:`, creativesError)
+    }
+
+    // Fetch brand health reports
+    const { data: healthReports, error: healthError } = await supabase
+      .from('brand_health_reports')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (healthError) {
+      console.log(`[AI Marketing Consultant] Error fetching health reports:`, healthError)
+    }
+
+    // Fetch AI usage tracking for this brand
+    const { data: aiUsageTracking, error: usageTrackingError } = await supabase
+      .from('ai_usage_tracking')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('last_used_at', { ascending: false })
+
+    if (usageTrackingError) {
+      console.log(`[AI Marketing Consultant] Error fetching AI usage tracking:`, usageTrackingError)
+    }
+
+    // Fetch Meta ad insights for detailed ad performance
+    const { data: metaAdInsights, error: adInsightsError } = await supabase
+      .from('meta_ad_daily_insights')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('date', { ascending: false })
+      .limit(100)
+
+    if (adInsightsError) {
+      console.log(`[AI Marketing Consultant] Error fetching Meta ad insights:`, adInsightsError)
+    }
+
+    // Calculate summary statistics
+    const contextSummary = {
+      leads: {
+        total: leads?.length || 0,
+        recent: leads?.filter((l: any) => {
+          const leadDate = new Date(l.created_at)
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+          return leadDate >= thirtyDaysAgo
+        }).length || 0
+      },
+      outreach: {
+        totalCampaigns: outreachCampaigns?.length || 0,
+        activeCampaigns: outreachCampaigns?.filter((c: any) => c.status === 'active').length || 0
+      },
+      recommendations: {
+        total: marketingRecommendations?.length || 0,
+        active: marketingRecommendations?.filter((r: any) => {
+          const expiresAt = new Date(r.expires_at)
+          return expiresAt > new Date()
+        }).length || 0,
+        applied: marketingRecommendations?.filter((r: any) => r.status === 'applied').length || 0
+      },
+      creatives: {
+        total: adCreatives?.length || 0,
+        recent: adCreatives?.filter((c: any) => {
+          const creativeDate = new Date(c.created_at)
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+          return creativeDate >= thirtyDaysAgo
+        }).length || 0
+      },
+      healthReports: {
+        total: healthReports?.length || 0,
+        lastReportDate: healthReports?.[0]?.created_at || null
+      },
+      aiUsage: {
+        features: aiUsageTracking?.map((u: any) => ({
+          feature: u.feature_type,
+          lastUsed: u.last_used_at,
+          usageCount: u.usage_count,
+          dailyCount: u.daily_usage_count
+        })) || []
+      }
+    }
+
+    console.log(`[AI Marketing Consultant] Brand context summary:`, contextSummary)
+
+    return {
+      leads: leads || [],
+      outreachCampaigns: outreachCampaigns || [],
+      marketingRecommendations: marketingRecommendations || [],
+      adCreatives: adCreatives || [],
+      healthReports: healthReports || [],
+      aiUsageTracking: aiUsageTracking || [],
+      metaAdInsights: metaAdInsights || [],
+      summary: contextSummary
+    }
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error gathering brand context data:', error)
+    return {
+      leads: [],
+      outreachCampaigns: [],
+      marketingRecommendations: [],
+      adCreatives: [],
+      healthReports: [],
+      aiUsageTracking: [],
+      metaAdInsights: [],
+      summary: {
+        leads: { total: 0, recent: 0 },
+        outreach: { totalCampaigns: 0, activeCampaigns: 0 },
+        recommendations: { total: 0, active: 0, applied: 0 },
+        creatives: { total: 0, recent: 0 },
+        healthReports: { total: 0, lastReportDate: null },
+        aiUsage: { features: [] }
+      }
+    }
   }
 }
 
