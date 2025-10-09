@@ -273,10 +273,10 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     messages: [
       {
         role: 'system',
-        content: `You are a marketing analytics AI assistant. Analyze the provided brand performance data and generate EXACTLY 5 actionable insights based ONLY on the data that is actually available.
+        content: `You are a marketing analytics AI assistant. Analyze the provided brand performance data and generate actionable insights based ONLY on the data that is actually available.
 
 CRITICAL RULES:
-1. Generate EXACTLY 5 insights, no more, no less
+1. GOAL: Generate 5 insights if possible, but if limited data is available, generate 2-4 insights (minimum 2)
 2. ONLY generate insights for data that actually exists in the provided dataset
 3. Each insight should be SPECIFIC and NAME-DRIVEN (use actual ad names, demographics, campaigns, etc.)
 4. Focus on ACTIONABLE findings with real numbers and metrics
@@ -356,15 +356,15 @@ EXAMPLE - Generate 5 diverse insights from available data:
   {"type": "top_campaign", "label": "Top Campaign", "value": "Holiday Collection", "metric": "2.8x ROAS, $890 spent", "icon": "🚀", "platform": "meta"}
 ]
 
-Return ONLY valid JSON array with exactly 5 insights, no explanation text.`
+Return ONLY valid JSON array with 2-5 insights (aim for 5, but minimum 2), no explanation text.`
       },
       {
         role: 'user',
-        content: `Analyze this brand's performance data and generate exactly 5 actionable insights:
+        content: `Analyze this brand's performance data and generate 2-5 actionable insights (aim for 5 if data supports it):
 
 ${JSON.stringify(dataSummary, null, 2)}
 
-Return exactly 5 insights in this JSON format:
+Return 2-5 insights in this JSON format:
 [
   {
     "type": "insight_type_here",
@@ -400,7 +400,7 @@ Return exactly 5 insights in this JSON format:
     // Parse AI response
     let insights = JSON.parse(aiResponse)
     
-    // Ensure we have exactly 5 insights
+    // Ensure we have an array
     if (!Array.isArray(insights)) {
       console.error('[Quick Insights AI] ❌ AI did not return an array')
       return []
@@ -411,19 +411,25 @@ Return exactly 5 insights in this JSON format:
       insight.type && insight.label && insight.value && insight.metric && insight.icon
     ).slice(0, 5) // Take only first 5
 
-    // NO FALLBACKS - If AI doesn't return exactly 5 valid insights, return empty
-    if (insights.length < 5) {
-      console.error(`[Quick Insights AI] ❌ AI returned only ${insights.length} insights, expected 5. Returning empty.`)
+    // Goal is 5 insights, but accept 2-4 if that's all the data supports
+    // Only fail if we have less than 2 valid insights
+    if (insights.length < 2) {
+      console.error(`[Quick Insights AI] ❌ AI returned only ${insights.length} insight(s), need at least 2. Returning empty.`)
       return []
     }
 
-    console.log(`[Quick Insights AI] ✅ Returning ${insights.length} insights:`, insights.map((i: any) => i.type))
+    if (insights.length < 5) {
+      console.log(`[Quick Insights AI] ⚠️ Returning ${insights.length} insights (goal is 5, but accepting partial results)`)
+    } else {
+      console.log(`[Quick Insights AI] ✅ Returning ${insights.length} insights:`, insights.map((i: any) => i.type))
+    }
+    
     return insights
 
   } catch (parseError) {
     console.error('[Quick Insights AI] ❌ Failed to parse AI response:', parseError)
     console.error('[Quick Insights AI] Raw response:', aiResponse)
-    // NO FALLBACKS - Return empty array if parsing fails
+    // Return empty array if parsing fails
     return []
   }
 }
