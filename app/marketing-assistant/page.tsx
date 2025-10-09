@@ -182,6 +182,46 @@ export default function MarketingAssistantPage() {
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
+  // Smooth progress animation
+  useEffect(() => {
+    if (!isLoadingPage && !loading && !isRefreshingData) return
+    
+    let progressInterval: NodeJS.Timeout
+    let currentProgress = 0
+    
+    // Smooth progress increment
+    progressInterval = setInterval(() => {
+      currentProgress += 1
+      
+      // Update progress
+      setLoadingProgress(Math.min(currentProgress, 95))
+      
+      // Update phase based on progress thresholds
+      if (currentProgress >= 85) {
+        setLoadingPhase('Finalizing your dashboard')
+      } else if (currentProgress >= 70) {
+        setLoadingPhase('Calculating performance trends')
+      } else if (currentProgress >= 50) {
+        setLoadingPhase('Preparing insights dashboard')
+      } else if (currentProgress >= 30) {
+        setLoadingPhase('Generating AI recommendations')
+      } else if (currentProgress >= 10) {
+        setLoadingPhase('Analyzing campaign performance')
+      } else {
+        setLoadingPhase('Connecting to your campaigns')
+      }
+      
+      // Stop at 95% and wait for actual loading to complete
+      if (currentProgress >= 95) {
+        clearInterval(progressInterval)
+      }
+    }, 100) // Update every 100ms for smooth animation
+    
+    return () => {
+      clearInterval(progressInterval)
+    }
+  }, [isLoadingPage, loading, isRefreshingData])
+
   // Check if brand has advertising platforms connected (by checking for campaigns)
   useEffect(() => {
     const checkPlatformConnections = async () => {
@@ -363,16 +403,7 @@ export default function MarketingAssistantPage() {
         setLoading(true)
       }
       
-      // Initialize loading progress
-      setLoadingProgress(0)
-      setLoadingPhase('Initializing Marketing Assistant')
-    
     try {
-      // Phase 1: Connect to campaigns (10%)
-      setLoadingProgress(10)
-      setLoadingPhase('Connecting to your campaigns')
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
       // FIRST: Ensure data exists for the analysis period (check for gaps and trigger sync if needed)
       const { previousSunday, lastSunday } = getSundayToSundayDates()
       const startDate = previousSunday.toISOString().split('T')[0]
@@ -410,29 +441,15 @@ export default function MarketingAssistantPage() {
         // Continue anyway - we'll work with whatever data exists
       }
       
-      // Phase 2: Analyze performance (30%)
-      setLoadingProgress(30)
-      setLoadingPhase('Analyzing campaign performance')
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
       // Now load recommendations with ensured data
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
-      
-      // Phase 3: Generate recommendations (50%)
-      setLoadingProgress(50)
-      setLoadingPhase('Generating AI recommendations')
-      await new Promise(resolve => setTimeout(resolve, 300))
       
       // Load widgets based on context:
       // - On button click: Load ALL widgets
       // - On page refresh with viewed recommendations: Load ALL widgets (persist the analysis)
       // - On page refresh without viewed recommendations: Load ONLY timeline for week tracking
       if (forceRefresh) {
-        // Phase 4: Prepare insights (70%)
-        setLoadingProgress(70)
-        setLoadingPhase('Preparing insights dashboard')
-        
         // Load all widgets when button is clicked - force regenerate insights
         await Promise.all([
           loadKPIMetrics(),
@@ -441,20 +458,11 @@ export default function MarketingAssistantPage() {
           loadWeeklyProgress(),
           loadOptimizationTimeline()
         ])
-        
-        // Phase 5: Calculate trends (85%)
-        setLoadingProgress(85)
-        setLoadingPhase('Calculating performance trends')
-        await new Promise(resolve => setTimeout(resolve, 300))
       } else if (loadedRecommendations && loadedRecommendations.length > 0) {
         // Check if user has already run analysis this week
         const hasRunAnalysis = selectedBrandId && localStorage.getItem(`recommendationsViewed_${selectedBrandId}`) === 'true'
         
         if (hasRunAnalysis) {
-          // Phase 4: Prepare insights (70%)
-          setLoadingProgress(70)
-          setLoadingPhase('Preparing insights dashboard')
-          
           // User already ran analysis - load all widgets with cached data
       await Promise.all([
             loadKPIMetrics(),
@@ -463,24 +471,13 @@ export default function MarketingAssistantPage() {
             loadWeeklyProgress(),
             loadOptimizationTimeline()
           ])
-          
-          // Phase 5: Calculate trends (85%)
-          setLoadingProgress(85)
-          setLoadingPhase('Calculating performance trends')
-          await new Promise(resolve => setTimeout(resolve, 300))
         } else {
           // User hasn't run analysis yet - only load timeline for week tracking
-          setLoadingProgress(70)
           await loadOptimizationTimeline()
         }
       }
       
-      // Phase 6: Finalize (95%)
-      setLoadingProgress(95)
-      setLoadingPhase('Finalizing your dashboard')
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      // Complete (100%)
+      // Complete (100%) - this will trigger the loading screen to disappear
       setLoadingProgress(100)
     } catch (error) {
     } finally {
