@@ -1019,7 +1019,7 @@ export default function HomePage() {
                 ].map((plan, index) => (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-visible ${
                       plan.popular 
                         ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
                         : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
@@ -1027,7 +1027,7 @@ export default function HomePage() {
                   >
                     {/* Most Popular Badge - Top Center */}
                     {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
                         <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
                           Most Popular
                         </span>
@@ -1035,12 +1035,11 @@ export default function HomePage() {
                     )}
 
                     {/* Launch Special Badge - Corner Ribbon Style */}
-                    <div className="absolute -top-2 -right-2 z-10 overflow-hidden">
-                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-6 py-2 shadow-xl transform rotate-12 translate-x-3 -translate-y-1">
-                        <div className="text-[9px] font-bold uppercase tracking-wide leading-tight text-center">Launch</div>
-                        <div className="text-[11px] font-black leading-tight text-center whitespace-nowrap">
-                          <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
-                          <span className="ml-1">-{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
+                    <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-10">
+                      <div className="absolute top-2 right-2 bg-gradient-to-br from-green-500 to-green-600 text-white px-8 py-1.5 shadow-xl transform rotate-45 origin-top-right">
+                        <div className="text-[8px] font-bold uppercase tracking-wide leading-tight text-center whitespace-nowrap">Launch</div>
+                        <div className="text-[9px] font-black leading-tight text-center whitespace-nowrap">
+                          -{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
                         </div>
                       </div>
                     </div>
