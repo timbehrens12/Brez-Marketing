@@ -1019,7 +1019,7 @@ export default function HomePage() {
                 ].map((plan, index) => (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-visible ${
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
                         ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
                         : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
@@ -1027,25 +1027,16 @@ export default function HomePage() {
                   >
                     {/* Most Popular Badge - Top Center */}
                     {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                         <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
                           Most Popular
                         </span>
                       </div>
                     )}
 
-                    {/* Launch Special Badge - Corner Ribbon Style */}
-                    <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-10">
-                      <div className="absolute top-2 right-2 bg-gradient-to-br from-green-500 to-green-600 text-white px-8 py-1.5 shadow-xl transform rotate-45 origin-top-right">
-                        <div className="text-[8px] font-bold uppercase tracking-wide leading-tight text-center whitespace-nowrap">Launch</div>
-                        <div className="text-[9px] font-black leading-tight text-center whitespace-nowrap">
-                          -{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
-                        </div>
-                      </div>
-                    </div>
-
-                      <div className="p-6 flex flex-col h-full">
-                        <div className="flex items-center gap-3 mb-6">
+                    <div className="p-6 flex flex-col h-full">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
                             <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                           </div>
@@ -1054,24 +1045,34 @@ export default function HomePage() {
                             <p className="text-white/60 text-xs mt-1">{plan.description}</p>
                           </div>
                         </div>
-                        <div className="mb-6">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white">
-                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
-                            </span>
-                            <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
-                          </div>
-                          {billingInterval === 'weekly' && (
-                            <div className="flex flex-col gap-1 mt-2">
-                              <span className="text-xs text-white/50">
-                                ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
-                                Billed weekly
-                              </span>
+                        <div className="text-right flex-shrink-0">
+                          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2 py-1 rounded-md shadow-lg border border-green-400/50">
+                            <div className="text-[8px] font-bold uppercase tracking-wide leading-tight">Launch Special</div>
+                            <div className="text-[10px] font-black leading-tight mt-0.5">
+                              <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
+                              <span className="ml-1">-{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
                             </div>
-                          )}
+                          </div>
                         </div>
+                      </div>
+                      <div className="mb-6">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-black text-white">
+                            ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
+                          </span>
+                          <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
+                        </div>
+                        {billingInterval === 'weekly' && (
+                          <div className="flex flex-col gap-1 mt-2">
+                            <span className="text-xs text-white/50">
+                              ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
+                            </span>
+                            <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
+                              Billed weekly
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Usage Limits */}
                       <div className="flex-1">
