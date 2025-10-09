@@ -182,38 +182,36 @@ export default function MarketingAssistantPage() {
   )
   // Note: Performance trends filter by platform in their rendering logic already
 
-  // Smooth progress animation - slower and more realistic
+  // Smooth progress animation - fast for UI loading
   useEffect(() => {
     if (!isLoadingPage && !loading && !isRefreshingData) return
     
     let progressInterval: NodeJS.Timeout
     let currentProgress = 0
     
-    // Smooth progress increment - much slower to match actual loading time
+    // Fast progress increment for quick UI loading
     progressInterval = setInterval(() => {
-      currentProgress += 0.5 // Increment by 0.5% for slower, smoother animation
+      currentProgress += 2 // Increment by 2% for faster animation
       
-      // Update progress (cap at 90% to leave room for actual loading)
-      setLoadingProgress(Math.min(Math.round(currentProgress), 90))
+      // Update progress (cap at 95% to leave room for actual loading completion)
+      setLoadingProgress(Math.min(currentProgress, 95))
       
       // Update phase based on progress thresholds
-      if (currentProgress >= 70) {
-        setLoadingPhase('Calculating performance trends')
+      if (currentProgress >= 75) {
+        setLoadingPhase('Finalizing dashboard')
       } else if (currentProgress >= 50) {
-        setLoadingPhase('Preparing insights dashboard')
-      } else if (currentProgress >= 30) {
-        setLoadingPhase('Generating AI recommendations')
-      } else if (currentProgress >= 10) {
-        setLoadingPhase('Analyzing campaign performance')
+        setLoadingPhase('Loading insights')
+      } else if (currentProgress >= 25) {
+        setLoadingPhase('Analyzing data')
       } else {
-        setLoadingPhase('Connecting to your campaigns')
+        setLoadingPhase('Connecting to campaigns')
       }
       
-      // Stop at 90% and wait for actual loading to complete
-      if (currentProgress >= 90) {
+      // Stop at 95% and wait for actual loading to complete
+      if (currentProgress >= 95) {
         clearInterval(progressInterval)
       }
-    }, 200) // Update every 200ms (slower than before)
+    }, 50) // Update every 50ms for fast animation (2.5 seconds to reach 95%)
     
     return () => {
       clearInterval(progressInterval)
@@ -387,8 +385,11 @@ export default function MarketingAssistantPage() {
   const loadDashboardData = async (forceRefresh = false) => {
     if (!selectedBrandId) return
     
+    console.log(`[Marketing Assistant] loadDashboardData called with forceRefresh=${forceRefresh}`)
+    
       // If force refresh, clear ALL state first and show unified loading
       if (forceRefresh) {
+        console.log('[Marketing Assistant] Force refresh mode - will sync fresh data')
         setIsRefreshingData(true)
         setLoading(true)
         setOptimizationCards([])
@@ -398,6 +399,7 @@ export default function MarketingAssistantPage() {
         setTrends(null)
       } else {
         // For initial load, use the page loading state
+        console.log('[Marketing Assistant] Normal load mode - using existing data')
         setLoading(true)
       }
       
@@ -405,7 +407,7 @@ export default function MarketingAssistantPage() {
       // ONLY sync fresh data when user explicitly requests it (forceRefresh = true)
       // On normal page loads, just use existing data
       if (forceRefresh) {
-        console.log('[Marketing Assistant] Force refresh - syncing fresh data from Meta API')
+        console.log('[Marketing Assistant] Syncing fresh data from Meta API...')
         const { previousSunday, lastSunday } = getSundayToSundayDates()
         const startDate = previousSunday.toISOString().split('T')[0]
         const endDate = lastSunday.toISOString().split('T')[0]
@@ -438,7 +440,7 @@ export default function MarketingAssistantPage() {
           console.error('[Marketing Assistant] Error syncing data:', syncError)
         }
       } else {
-        console.log('[Marketing Assistant] Normal load - using existing data (no sync)')
+        console.log('[Marketing Assistant] Skipping data sync - loading UI with existing data')
       }
       
       // Now load recommendations
@@ -830,31 +832,23 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          {/* Loading phases checklist - synced with percentage (each dot = ~16.67%) */}
+          {/* Loading phases checklist - 4 dots synced with percentage (25%, 50%, 75%, 100%) */}
           <div className="text-left space-y-2 text-sm text-gray-400">
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 0 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 17 ? 'bg-[#FF2A2A]' : loadingProgress >= 0 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Connecting to your campaigns</span>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 25 ? 'bg-[#FF2A2A]' : loadingProgress >= 0 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Connecting to campaigns</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 17 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 33 ? 'bg-[#FF2A2A]' : loadingProgress >= 17 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Analyzing campaign performance</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 33 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 33 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Generating AI recommendations</span>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 25 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 25 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Analyzing data</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 67 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Preparing insights dashboard</span>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 75 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Loading insights</span>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 67 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 83 ? 'bg-[#FF2A2A]' : loadingProgress >= 67 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Calculating performance trends</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 83 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 83 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Finalizing your dashboard</span>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 75 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 75 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Finalizing dashboard</span>
             </div>
           </div>
           
