@@ -1025,6 +1025,17 @@ export default function HomePage() {
                         : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
                   >
+                    {/* Launch Special Badge - Top Right */}
+                    <div className="absolute -top-2 -right-2 z-10">
+                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-3 py-1.5 rounded-lg shadow-lg border-2 border-green-400/50">
+                        <div className="text-[10px] font-bold uppercase tracking-wide">Launch Special</div>
+                        <div className="text-xs font-black">
+                          <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
+                          <span className="ml-1">Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                         <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
@@ -1050,14 +1061,13 @@ export default function HomePage() {
                             </span>
                             <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-lg text-white/50 line-through">
-                              ${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}
-                            </span>
-                            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                              SAVE ${billingInterval === 'weekly' ? Math.round((plan.originalPrice - plan.price) * 1.10 / 4) : (plan.originalPrice - plan.price)}
-                            </span>
-                          </div>
+                          {billingInterval === 'weekly' && (
+                            <div className="flex flex-col gap-1 mt-2">
+                              <span className="text-xs text-white/50">
+                                ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
+                              </span>
+                            </div>
+                          )}
                         </div>
                       
                       {/* Usage Limits */}
