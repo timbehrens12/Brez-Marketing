@@ -145,6 +145,8 @@ export default function MarketingAssistantPage() {
   
   // State
   const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Marketing Assistant')
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null)
   const [actionKPIs, setActionKPIs] = useState<ActionKPIs | null>(null)
   const [optimizationCards, setOptimizationCards] = useState<OptimizationCard[]>([])
@@ -360,8 +362,17 @@ export default function MarketingAssistantPage() {
         // For initial load, use the page loading state
         setLoading(true)
       }
+      
+      // Initialize loading progress
+      setLoadingProgress(0)
+      setLoadingPhase('Initializing Marketing Assistant')
     
     try {
+      // Phase 1: Connect to campaigns (10%)
+      setLoadingProgress(10)
+      setLoadingPhase('Connecting to your campaigns')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
       // FIRST: Ensure data exists for the analysis period (check for gaps and trigger sync if needed)
       const { previousSunday, lastSunday } = getSundayToSundayDates()
       const startDate = previousSunday.toISOString().split('T')[0]
@@ -399,15 +410,29 @@ export default function MarketingAssistantPage() {
         // Continue anyway - we'll work with whatever data exists
       }
       
+      // Phase 2: Analyze performance (30%)
+      setLoadingProgress(30)
+      setLoadingPhase('Analyzing campaign performance')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
       // Now load recommendations with ensured data
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
+      
+      // Phase 3: Generate recommendations (50%)
+      setLoadingProgress(50)
+      setLoadingPhase('Generating AI recommendations')
+      await new Promise(resolve => setTimeout(resolve, 300))
       
       // Load widgets based on context:
       // - On button click: Load ALL widgets
       // - On page refresh with viewed recommendations: Load ALL widgets (persist the analysis)
       // - On page refresh without viewed recommendations: Load ONLY timeline for week tracking
       if (forceRefresh) {
+        // Phase 4: Prepare insights (70%)
+        setLoadingProgress(70)
+        setLoadingPhase('Preparing insights dashboard')
+        
         // Load all widgets when button is clicked - force regenerate insights
         await Promise.all([
           loadKPIMetrics(),
@@ -416,11 +441,20 @@ export default function MarketingAssistantPage() {
           loadWeeklyProgress(),
           loadOptimizationTimeline()
         ])
+        
+        // Phase 5: Calculate trends (85%)
+        setLoadingProgress(85)
+        setLoadingPhase('Calculating performance trends')
+        await new Promise(resolve => setTimeout(resolve, 300))
       } else if (loadedRecommendations && loadedRecommendations.length > 0) {
         // Check if user has already run analysis this week
         const hasRunAnalysis = selectedBrandId && localStorage.getItem(`recommendationsViewed_${selectedBrandId}`) === 'true'
         
         if (hasRunAnalysis) {
+          // Phase 4: Prepare insights (70%)
+          setLoadingProgress(70)
+          setLoadingPhase('Preparing insights dashboard')
+          
           // User already ran analysis - load all widgets with cached data
       await Promise.all([
             loadKPIMetrics(),
@@ -429,11 +463,25 @@ export default function MarketingAssistantPage() {
             loadWeeklyProgress(),
             loadOptimizationTimeline()
           ])
+          
+          // Phase 5: Calculate trends (85%)
+          setLoadingProgress(85)
+          setLoadingPhase('Calculating performance trends')
+          await new Promise(resolve => setTimeout(resolve, 300))
         } else {
           // User hasn't run analysis yet - only load timeline for week tracking
+          setLoadingProgress(70)
           await loadOptimizationTimeline()
         }
       }
+      
+      // Phase 6: Finalize (95%)
+      setLoadingProgress(95)
+      setLoadingPhase('Finalizing your dashboard')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Complete (100%)
+      setLoadingProgress(100)
     } catch (error) {
     } finally {
       // Always clear loading states when done
@@ -735,7 +783,7 @@ export default function MarketingAssistantPage() {
 
   if (isLoadingPage || loading || isRefreshingData) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -766,53 +814,59 @@ export default function MarketingAssistantPage() {
             Marketing Assistant
           </h1>
           
-          {/* Dynamic loading phase with animated dots */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px] flex items-center justify-center gap-1">
-            <span>{isRefreshingData ? 'Updating Analysis' : 'Preparing AI insights'}</span>
-            <span className="flex gap-0.5">
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-            </span>
+          {/* Dynamic loading phase */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            {isRefreshingData ? 'Updating Analysis' : loadingPhase}
           </p>
           
-          {/* Progressive loading bar */}
-          <div className="w-full max-w-md mx-auto mb-8">
-            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#FF2A2A] via-[#FF5A5A] to-[#FF2A2A] rounded-full animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]"></div>
+          {/* Progress bar */}
+          <div className="w-full max-w-md mx-auto mb-6">
+            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+              <span>Progress</span>
+              <span>{loadingProgress}%</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
             </div>
           </div>
           
-          {/* Loading steps */}
-          <div className="space-y-2 text-sm text-gray-400">
-            <div className="flex items-center justify-center gap-2 animate-pulse">
-              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+          {/* Loading phases checklist */}
+          <div className="text-left space-y-2 text-sm text-gray-400">
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Connecting to your campaigns</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Analyzing campaign performance</span>
             </div>
-            <div className="flex items-center justify-center gap-2 animate-pulse" style={{ animationDelay: '500ms' }}>
-              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Generating AI recommendations</span>
             </div>
-            <div className="flex items-center justify-center gap-2 animate-pulse" style={{ animationDelay: '1000ms' }}>
-              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Preparing insights dashboard</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Calculating performance trends</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Finalizing your dashboard</span>
             </div>
           </div>
           
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
-            This may take a moment on first load...
-            </div>
-            </div>
-            
-        {/* Add shimmer animation keyframes */}
-        <style jsx>{`
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-        `}</style>
+            Building your AI-powered marketing insights...
           </div>
+        </div>
+      </div>
     )
   }
 
