@@ -189,9 +189,9 @@ export default function MarketingAssistantPage() {
     let progressInterval: NodeJS.Timeout
     let currentProgress = 0
     
-    // Smooth progress increment - slower for more realistic feel
+    // Smooth progress increment - much slower to match actual loading time
     progressInterval = setInterval(() => {
-      currentProgress += 0.5 // Increment by 0.5% instead of 1%
+      currentProgress += 0.5 // Increment by 0.5% for slower, smoother animation
       
       // Update progress (cap at 90% to leave room for actual loading)
       setLoadingProgress(Math.min(Math.round(currentProgress), 90))
@@ -402,51 +402,46 @@ export default function MarketingAssistantPage() {
       }
       
     try {
-      // Jump to 90% when starting actual data loading
-      setLoadingProgress(90)
-      setLoadingPhase('Finalizing your dashboard')
-      
-      // FIRST: Ensure data exists for the analysis period (check for gaps and trigger sync if needed)
-      const { previousSunday, lastSunday } = getSundayToSundayDates()
-      const startDate = previousSunday.toISOString().split('T')[0]
-      const endDate = lastSunday.toISOString().split('T')[0]
-      
-      console.log(`[Marketing Assistant] Ensuring data exists from ${startDate} to ${endDate}`)
-      
-      try {
-        const ensureDataResponse = await fetch('/api/marketing-assistant/ensure-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brandId: selectedBrandId,
-            startDate,
-            endDate,
-            platform: 'meta'
-          })
-        })
+      // ONLY sync fresh data when user explicitly requests it (forceRefresh = true)
+      // On normal page loads, just use existing data
+      if (forceRefresh) {
+        console.log('[Marketing Assistant] Force refresh - syncing fresh data from Meta API')
+        const { previousSunday, lastSunday } = getSundayToSundayDates()
+        const startDate = previousSunday.toISOString().split('T')[0]
+        const endDate = lastSunday.toISOString().split('T')[0]
         
-        if (ensureDataResponse.ok) {
-          const ensureDataResult = await ensureDataResponse.json()
-          console.log('[Marketing Assistant] Data sync result:', ensureDataResult)
+        try {
+          const ensureDataResponse = await fetch('/api/marketing-assistant/ensure-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandId: selectedBrandId,
+              startDate,
+              endDate,
+              platform: 'meta'
+            })
+          })
           
-          // If sync was triggered, wait for it to complete
-          // Meta API sync takes time, especially for multiple days
-          if (ensureDataResult.syncTriggered) {
-            const days = ensureDataResult.dateRange?.days || 7
-            const waitTime = Math.min(days * 1000, 10000) // 1 second per day, max 10 seconds
-            console.log(`[Marketing Assistant] Fresh data synced from Meta API (${ensureDataResult.recordCount || 0} records), waiting ${waitTime}ms...`)
-            await new Promise(resolve => setTimeout(resolve, waitTime))
+          if (ensureDataResponse.ok) {
+            const ensureDataResult = await ensureDataResponse.json()
+            console.log('[Marketing Assistant] Data sync result:', ensureDataResult)
+            
+            // If sync was triggered, wait for it to complete
+            if (ensureDataResult.syncTriggered) {
+              const days = ensureDataResult.dateRange?.days || 7
+              const waitTime = Math.min(days * 1000, 10000)
+              console.log(`[Marketing Assistant] Fresh data synced from Meta API (${ensureDataResult.recordCount || 0} records), waiting ${waitTime}ms...`)
+              await new Promise(resolve => setTimeout(resolve, waitTime))
+            }
           }
+        } catch (syncError) {
+          console.error('[Marketing Assistant] Error syncing data:', syncError)
         }
-      } catch (syncError) {
-        console.error('[Marketing Assistant] Error checking/syncing data:', syncError)
-        // Continue anyway - we'll work with whatever data exists
+      } else {
+        console.log('[Marketing Assistant] Normal load - using existing data (no sync)')
       }
       
-      // Progress to 95% after data sync
-      setLoadingProgress(95)
-      
-      // Now load recommendations with ensured data
+      // Now load recommendations
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
