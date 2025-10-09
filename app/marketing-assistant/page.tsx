@@ -362,7 +362,41 @@ export default function MarketingAssistantPage() {
       }
     
     try {
-      // First load recommendations
+      // FIRST: Ensure data exists for the analysis period (check for gaps and trigger sync if needed)
+      const { previousSunday, lastSunday } = getSundayToSundayDates()
+      const startDate = previousSunday.toISOString().split('T')[0]
+      const endDate = lastSunday.toISOString().split('T')[0]
+      
+      console.log(`[Marketing Assistant] Ensuring data exists from ${startDate} to ${endDate}`)
+      
+      try {
+        const ensureDataResponse = await fetch('/api/marketing-assistant/ensure-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brandId: selectedBrandId,
+            startDate,
+            endDate,
+            platform: 'meta'
+          })
+        })
+        
+        if (ensureDataResponse.ok) {
+          const ensureDataResult = await ensureDataResponse.json()
+          console.log('[Marketing Assistant] Data sync check result:', ensureDataResult)
+          
+          // If sync was triggered, wait a moment for it to complete
+          if (ensureDataResult.syncTriggered) {
+            console.log('[Marketing Assistant] Sync triggered for missing data, waiting 3 seconds...')
+            await new Promise(resolve => setTimeout(resolve, 3000))
+          }
+        }
+      } catch (syncError) {
+        console.error('[Marketing Assistant] Error checking/syncing data:', syncError)
+        // Continue anyway - we'll work with whatever data exists
+      }
+      
+      // Now load recommendations with ensured data
       // Pass forceRefresh to tell API to generate new recommendations if clicked "Update Recommendations"
       const loadedRecommendations = await loadOptimizationRecommendations(forceRefresh)
       
@@ -1001,7 +1035,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
              {/* Optimization Progress - Premium Radial Gauge */}
-             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0 flex flex-col">
+             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1010,7 +1044,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative px-2.5 pt-2.5 pb-2.5 flex flex-col overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+              <CardContent className="relative px-2.5 pt-2.5 pb-2.5">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
