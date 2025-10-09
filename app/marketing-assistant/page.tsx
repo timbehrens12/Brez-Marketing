@@ -766,16 +766,52 @@ export default function MarketingAssistantPage() {
             Marketing Assistant
           </h1>
           
-          {/* Dynamic loading phase */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            {isRefreshingData ? 'Updating Analysis' : 'Preparing AI insights'}
+          {/* Dynamic loading phase with animated dots */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px] flex items-center justify-center gap-1">
+            <span>{isRefreshingData ? 'Updating Analysis' : 'Preparing AI insights'}</span>
+            <span className="flex gap-0.5">
+              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+            </span>
           </p>
+          
+          {/* Progressive loading bar */}
+          <div className="w-full max-w-md mx-auto mb-8">
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#FF2A2A] via-[#FF5A5A] to-[#FF2A2A] rounded-full animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]"></div>
+            </div>
+          </div>
+          
+          {/* Loading steps */}
+          <div className="space-y-2 text-sm text-gray-400">
+            <div className="flex items-center justify-center gap-2 animate-pulse">
+              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+              <span>Analyzing campaign performance</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 animate-pulse" style={{ animationDelay: '500ms' }}>
+              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+              <span>Generating AI recommendations</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 animate-pulse" style={{ animationDelay: '1000ms' }}>
+              <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full"></div>
+              <span>Preparing insights dashboard</span>
+            </div>
+          </div>
           
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
-            Analyzing your campaigns and generating recommendations...
+            This may take a moment on first load...
             </div>
             </div>
+            
+        {/* Add shimmer animation keyframes */}
+        <style jsx>{`
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
           </div>
     )
   }
