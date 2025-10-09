@@ -1915,97 +1915,136 @@ export default function DashboardPage() {
     <>
       {/* Show action center loading overlay when agency tab is loading - covers main content area only, respects sidebar - only on initial load */}
       {activeTab === "agency" && showLoadingOverlay && (
-        <div className="fixed top-0 bottom-0 right-0 bg-[#0B0B0B] z-40 transition-all duration-300 ease-in-out"
+        <div className="fixed top-0 bottom-0 right-0 bg-[#0B0B0B] z-40 transition-all duration-300 ease-in-out flex items-center justify-center overflow-hidden"
              style={{
                left: `${sidebarWidth}px`, // Dynamic positioning based on actual sidebar width
              }}>
-          <div className="w-full h-full flex flex-col items-center justify-center">
-            {/* Background pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0" style={{
-                backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-                backgroundSize: '20px 20px'
-              }}></div>
-            </div>
-            
-            <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-              {/* Main loading icon */}
-              <div className="w-20 h-20 mx-auto mb-8 relative">
-                <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
-                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-                  {agencySettings.agency_logo_url && (
-                    <img 
-                      src={agencySettings.agency_logo_url} 
-                      alt={`${agencySettings.agency_name} Logo`} 
-                      className="w-12 h-12 object-contain rounded" 
-                    />
-                  )}
-                </div>
-              </div>
+          {/* Animated background gradient mesh */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#1a0a0a] to-[#0A0A0A] animate-gradient"></div>
+          
+          {/* Animated grid overlay */}
+          <div className="absolute inset-0 opacity-[0.03]">
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+          </div>
+          
+          {/* Glassmorphic card */}
+          <div className="relative z-10 w-full max-w-lg mx-4">
+            <div className="relative backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-2xl p-12 shadow-2xl">
+              {/* Gradient border glow */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#FF2A2A]/20 via-transparent to-purple-500/20 opacity-50 blur-xl"></div>
               
-              {/* Loading title */}
-              <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-                Dashboard
-              </h1>
-              
-              {/* Dynamic loading phase */}
-              <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-                {loadingPhase}
-              </p>
-              
-              {/* Progress bar */}
-              <div className="w-full max-w-md mx-auto mb-6">
-                <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                  <span>Progress</span>
-                  <span>{loadingProgress}%</span>
-                </div>
-                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${loadingProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              {/* Loading phases checklist - synced to progression percentages */}
-              <div className="text-left space-y-2 text-sm text-gray-400">
-                <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 20 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}>
-                    {loadingProgress >= 20 && <Check className="w-2.5 h-2.5 text-white" />}
+              <div className="relative z-10 text-center">
+                {/* Enhanced spinner with glow */}
+                <div className="relative w-24 h-24 mx-auto mb-8">
+                  {/* Pulsing glow ring */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#FF2A2A]/30 to-purple-500/30 blur-2xl animate-pulse"></div>
+                  
+                  {/* Spinner */}
+                  <div className="relative w-24 h-24">
+                    <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FF2A2A] border-r-[#FF2A2A]/50 animate-spin"></div>
+                    
+                    {/* Logo container */}
+                    <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm flex items-center justify-center">
+                      {agencySettings.agency_logo_url && (
+                        <img 
+                          src={agencySettings.agency_logo_url} 
+                          alt={`${agencySettings.agency_name} Logo`} 
+                          className="w-14 h-14 object-contain" 
+                        />
+                      )}
+                    </div>
                   </div>
-                  <span>Loading workspace data</span>
                 </div>
-                <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}>
-                    {loadingProgress >= 40 && <Check className="w-2.5 h-2.5 text-white" />}
+                
+                {/* Title with gradient */}
+                <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white to-gray-400 bg-clip-text text-transparent mb-4 tracking-tight">
+                  Dashboard
+                </h1>
+                
+                {/* Subtitle */}
+                <p className="text-lg text-gray-300 mb-8 font-medium min-h-[28px]">
+                  {loadingPhase}
+                </p>
+                
+                {/* Progress bar */}
+                <div className="mb-8">
+                  <div className="flex justify-between text-sm text-gray-400 mb-3">
+                    <span>Progress</span>
+                    <span className="font-mono">{loadingProgress}%</span>
                   </div>
-                  <span>Generating action items</span>
-                </div>
-                <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}>
-                    {loadingProgress >= 60 && <Check className="w-2.5 h-2.5 text-white" />}
+                  <div className="relative h-2.5 bg-white/5 rounded-full overflow-hidden backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+                    <div 
+                      className="h-full bg-gradient-to-r from-[#FF2A2A] via-[#ff4444] to-[#FF2A2A] rounded-full transition-all duration-500 ease-out shadow-lg shadow-[#FF2A2A]/50"
+                      style={{ width: `${loadingProgress}%` }}
+                    ></div>
                   </div>
-                  <span>Analyzing brand performance</span>
                 </div>
-                <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}>
-                    {loadingProgress >= 80 && <Check className="w-2.5 h-2.5 text-white" />}
+                
+                {/* Phase indicators */}
+                <div className="space-y-3 text-left">
+                  <div className={`flex items-center gap-3 transition-all duration-300 ${loadingProgress >= 10 ? 'text-gray-200 scale-105' : 'text-gray-500'}`}>
+                    <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 20 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 10 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
+                      {loadingProgress >= 20 && (
+                        <>
+                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
+                          <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm">Loading workspace data</span>
                   </div>
-                  <span>Processing automation tools</span>
-                </div>
-                <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 90 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 90 ? 'bg-white/60' : 'bg-white/20'}`}>
-                    {loadingProgress >= 95 && <Check className="w-2.5 h-2.5 text-white" />}
+                  <div className={`flex items-center gap-3 transition-all duration-300 ${loadingProgress >= 30 ? 'text-gray-200 scale-105' : 'text-gray-500'}`}>
+                    <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 40 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 30 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
+                      {loadingProgress >= 40 && (
+                        <>
+                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
+                          <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm">Generating action items</span>
                   </div>
-                  <span>Preparing dashboard</span>
+                  <div className={`flex items-center gap-3 transition-all duration-300 ${loadingProgress >= 50 ? 'text-gray-200 scale-105' : 'text-gray-500'}`}>
+                    <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 60 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 50 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
+                      {loadingProgress >= 60 && (
+                        <>
+                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
+                          <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm">Analyzing brand performance</span>
+                  </div>
+                  <div className={`flex items-center gap-3 transition-all duration-300 ${loadingProgress >= 70 ? 'text-gray-200 scale-105' : 'text-gray-500'}`}>
+                    <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 80 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 70 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
+                      {loadingProgress >= 80 && (
+                        <>
+                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
+                          <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm">Processing automation tools</span>
+                  </div>
+                  <div className={`flex items-center gap-3 transition-all duration-300 ${loadingProgress >= 90 ? 'text-gray-200 scale-105' : 'text-gray-500'}`}>
+                    <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 95 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 90 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
+                      {loadingProgress >= 95 && (
+                        <>
+                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
+                          <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm">Preparing dashboard</span>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Subtle loading tip */}
-              <div className="mt-8 text-xs text-gray-500 italic">
-                Initializing your comprehensive agency management dashboard...
+                
+                {/* Bottom text */}
+                <div className="mt-8 text-xs text-gray-500 italic">
+                  Initializing your comprehensive agency management dashboard...
+                </div>
               </div>
             </div>
           </div>

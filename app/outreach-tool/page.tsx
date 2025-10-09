@@ -1028,45 +1028,60 @@ export default function OutreachToolPage() {
   // Show loading state with enhanced progress display
   if (isLoadingPage) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex items-center justify-center relative overflow-hidden">
+        {/* Animated background gradient mesh */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#1a0a0a] to-[#0A0A0A] animate-gradient"></div>
+        
+        {/* Animated grid overlay */}
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
         </div>
         
-        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Main loading icon */}
-          <div className="w-20 h-20 mx-auto mb-8 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings.agency_logo_url && (
-                <img 
-                  src={agencySettings.agency_logo_url} 
-                  alt={`${agencySettings.agency_name} Logo`} 
-                  className="w-12 h-12 object-contain rounded" 
-                />
-              )}
+        {/* Glassmorphic card */}
+        <div className="relative z-10 w-full max-w-lg mx-4">
+          <div className="relative backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-2xl p-12 shadow-2xl">
+            {/* Gradient border glow */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#FF2A2A]/20 via-transparent to-purple-500/20 opacity-50 blur-xl"></div>
+            
+            <div className="relative z-10 text-center">
+              {/* Enhanced spinner with glow */}
+              <div className="relative w-24 h-24 mx-auto mb-8">
+                {/* Pulsing glow ring */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#FF2A2A]/30 to-purple-500/30 blur-2xl animate-pulse"></div>
+                
+                {/* Spinner */}
+                <div className="relative w-24 h-24">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FF2A2A] border-r-[#FF2A2A]/50 animate-spin"></div>
+                  
+                  {/* Logo container */}
+                  <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm flex items-center justify-center">
+                    {agencySettings.agency_logo_url && (
+                      <img 
+                        src={agencySettings.agency_logo_url} 
+                        alt={`${agencySettings.agency_name} Logo`} 
+                        className="w-14 h-14 object-contain" 
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Title with gradient */}
+              <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white to-gray-400 bg-clip-text text-transparent mb-4 tracking-tight">
+                Outreach Tool
+              </h1>
+              
+              {/* Subtitle */}
+              <p className="text-lg text-gray-300 mb-8 font-medium">
+                Preparing outreach campaigns
+              </p>
+              
+              {/* Bottom text */}
+              <div className="text-sm text-gray-400 italic">
+                Building your personalized outreach dashboard...
+              </div>
             </div>
-          </div>
-          
-          {/* Loading title */}
-          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Outreach Tool
-          </h1>
-          
-          {/* Dynamic loading phase */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            Preparing outreach campaigns
-          </p>
-          
-          {/* Subtle loading tip */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Building your personalized outreach dashboard...
           </div>
         </div>
         
