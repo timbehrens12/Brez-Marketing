@@ -1038,7 +1038,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
              {/* Optimization Progress - Premium Radial Gauge */}
-             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1047,7 +1047,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative px-2.5 pt-2.5 pb-2.5">
+              <CardContent className="relative px-2.5 pt-2.5 pb-2.5 overflow-y-auto flex-1">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -1332,9 +1332,6 @@ export default function MarketingAssistantPage() {
                 })()}
               </CardContent>
             </Card>
-            
-            {/* Spacer to push content and fill remaining space */}
-            <div className="flex-1"></div>
                 </div>
 
             {/* Middle Column - Main Work Area - Scrollable */}
