@@ -1016,8 +1016,15 @@ export default function HomePage() {
                     limitations: [],
                     whiteLabel: true
                   }
-                ].map((plan, index) => (
-                  <div
+                ].map((plan, index) => {
+                  const isWeekly = billingInterval === 'weekly'
+                  const weeklyPrice = Math.round(plan.price * 1.10 / 4)
+                  const weeklyEquivalent = Math.round(plan.price * 1.10)
+                  const launchOriginal = isWeekly ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice
+                  const savingsPercent = Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
+
+                  return (
+                    <div
                     key={plan.name}
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
@@ -1034,9 +1041,19 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <div className="p-6 flex flex-col h-full">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
+                    {/* Launch Special Badge - Floating Pill */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <div className="inline-flex flex-col items-end gap-1 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white px-3 py-1.5 shadow-[0_6px_16px_rgba(0,0,0,.35)] border border-white/15">
+                        <span className="text-[9px] font-black uppercase tracking-[0.18em] leading-none">Launch Special</span>
+                        <span className="text-[10px] font-mono font-semibold leading-none whitespace-nowrap">
+                          <span className="line-through opacity-80">${launchOriginal}</span>
+                          <span className="ml-1 font-black">-{savingsPercent}%</span>
+                        </span>
+                      </div>
+                    </div>
+
+                      <div className="p-6 flex flex-col h-full">
+                        <div className="flex items-center gap-3 mb-6">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
                             <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                           </div>
@@ -1045,34 +1062,24 @@ export default function HomePage() {
                             <p className="text-white/60 text-xs mt-1">{plan.description}</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2 py-1 rounded-md shadow-lg border border-green-400/50">
-                            <div className="text-[8px] font-bold uppercase tracking-wide leading-tight">Launch Special</div>
-                            <div className="text-[10px] font-black leading-tight mt-0.5">
-                              <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
-                              <span className="ml-1">-{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
+                        <div className="mb-6">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">
+                              ${isWeekly ? weeklyPrice : plan.price}
+                            </span>
+                            <span className="text-white/40 text-sm">/{isWeekly ? 'wk' : 'mo'}</span>
+                          </div>
+                          {isWeekly && (
+                            <div className="flex flex-col gap-1 mt-2">
+                              <span className="text-xs text-white/50">
+                                ≈ ${weeklyEquivalent}/mo equivalent
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
+                                Billed weekly
+                              </span>
                             </div>
-                          </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="mb-6">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-black text-white">
-                            ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
-                          </span>
-                          <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
-                        </div>
-                        {billingInterval === 'weekly' && (
-                          <div className="flex flex-col gap-1 mt-2">
-                            <span className="text-xs text-white/50">
-                              ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
-                            </span>
-                            <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
-                              Billed weekly
-                            </span>
-                          </div>
-                        )}
-                      </div>
                       
                       {/* Usage Limits */}
                       <div className="flex-1">
@@ -1160,7 +1167,8 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                    )
+                })
               </div>
 
               {/* Contact Sales */}
