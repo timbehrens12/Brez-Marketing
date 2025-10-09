@@ -2411,8 +2411,6 @@ export default function MarketingAssistantPage() {
                         </div>
                       </div>
                     )}
-                      </div>
-                    )}
                   </div>
                 )
               })()}
