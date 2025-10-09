@@ -2169,8 +2169,8 @@ export default function MarketingAssistantPage() {
 
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col lg:ml-0 ml-16">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:pl-20">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl w-full max-w-[95vw] lg:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
@@ -2298,15 +2298,15 @@ export default function MarketingAssistantPage() {
 
                     {/* Selected Week Details */}
                     {selectedWeek && (
-                      <div className="bg-[#0f0f0f] border border-[#FF2A2A]/50 rounded-lg p-6">
-                        <div className="flex items-center justify-between mb-6">
+                      <div className="bg-[#0f0f0f] border border-[#FF2A2A]/50 rounded-lg p-4 sm:p-6">
+                        <div className="flex items-center justify-between mb-4">
                           <div>
-                            <h3 className="text-white font-bold text-xl">Week {selectedWeekIndex! + 1} Details</h3>
-                            <p className="text-gray-400 text-sm">{selectedWeek.week}</p>
+                            <h3 className="text-white font-bold text-lg sm:text-xl">Week {selectedWeekIndex! + 1} Details</h3>
+                            <p className="text-gray-400 text-xs sm:text-sm">{selectedWeek.week}</p>
                           </div>
                           <button
                             onClick={() => setSelectedWeekIndex(null)}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="text-gray-400 hover:text-white transition-colors p-1"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2314,9 +2314,9 @@ export default function MarketingAssistantPage() {
                           </button>
                         </div>
 
-                          <div className="grid grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {/* Left Column: Performance Metrics & Goals */}
-                            <div className="space-y-6">
+                            <div className="space-y-4">
                               {/* Performance Metrics */}
                               <div>
                                 <h4 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
@@ -2325,39 +2325,30 @@ export default function MarketingAssistantPage() {
                                   </svg>
                                   Performance Metrics
                                 </h4>
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Spend</span>
-                                <span className="text-white font-bold text-lg">${selectedWeek.spend?.toFixed(2) || '0.00'}</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">Spend</span>
+                                <span className="text-white font-bold text-sm">${selectedWeek.spend?.toFixed(2) || '0.00'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Revenue</span>
-                                <span className="text-emerald-400 font-bold text-lg">${selectedWeek.revenue?.toFixed(2) || '0.00'}</span>
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">Revenue</span>
+                                <span className="text-emerald-400 font-bold text-sm">${selectedWeek.revenue?.toFixed(2) || '0.00'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">ROAS</span>
-                                <div className="text-right">
-                                  <div className="text-white font-bold text-lg">{selectedWeek.roas?.toFixed(2) || '0.00'}x</div>
-                                  {selectedWeek.roasChange !== 0 && (
-                                    <div className={`text-xs font-medium ${
-                                      selectedWeek.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'
-                                    }`}>
-                                      {selectedWeek.roasChange > 0 ? '+' : ''}{selectedWeek.roasChange}%
-                                    </div>
-                                  )}
-                                </div>
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">ROAS</span>
+                                <span className="text-white font-bold text-sm">{selectedWeek.roas?.toFixed(2) || '0.00'}x</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Impressions</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.impressions?.toLocaleString() || '0'}</span>
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">CTR</span>
+                                <span className="text-white font-bold text-sm">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Clicks</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.clicks?.toLocaleString() || '0'}</span>
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">Impressions</span>
+                                <span className="text-white font-bold text-sm">{selectedWeek.impressions?.toLocaleString() || '0'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">CTR</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</span>
+                              <div className="flex justify-between items-center p-2.5 bg-[#0A0A0A] rounded-lg">
+                                <span className="text-gray-400 text-xs">Clicks</span>
+                                <span className="text-white font-bold text-sm">{selectedWeek.clicks?.toLocaleString() || '0'}</span>
                               </div>
                             </div>
                               </div>
@@ -2373,21 +2364,18 @@ export default function MarketingAssistantPage() {
                                 {selectedWeek.goals && selectedWeek.goals.length > 0 ? (
                                   <div className="space-y-2">
                                     {selectedWeek.goals.map((goal: any, goalIndex: number) => (
-                                      <div key={goalIndex} className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                                        <div className="flex items-start gap-2 mb-2">
+                                      <div key={goalIndex} className="p-2.5 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                                        <div className="flex items-start gap-2">
                                           <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1.5 flex-shrink-0"></div>
-                                          <div className="flex-1">
-                                            <p className="text-white font-medium text-sm mb-1">{goal.title}</p>
-                                            <p className="text-gray-400 text-xs">{goal.description}</p>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                              <p className="text-white font-medium text-xs truncate">{goal.title}</p>
+                                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#FF2A2A]/20 text-[#FF2A2A] flex-shrink-0">
+                                                {goal.type}
+                                              </span>
+                                            </div>
+                                            <p className="text-gray-400 text-xs leading-tight line-clamp-2">{goal.description}</p>
                                           </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#FF2A2A]/20 text-[#FF2A2A]">
-                                            {goal.type}
-                                          </span>
-                                          <span className="text-gray-500 text-xs">
-                                            {new Date(goal.created_at).toLocaleDateString()}
-                                          </span>
                                         </div>
                                       </div>
                                     ))}
