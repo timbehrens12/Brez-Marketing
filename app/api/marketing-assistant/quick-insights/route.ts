@@ -217,10 +217,10 @@ async function generateAIInsights(brandId: string, fromDate: string, toDate: str
     messages: [
       {
         role: 'system',
-        content: `You are a marketing analytics AI assistant. Analyze the provided brand performance data and generate EXACTLY 3 actionable insights based ONLY on the data that is actually available.
+        content: `You are a marketing analytics AI assistant. Analyze the provided brand performance data and generate EXACTLY 5 actionable insights based ONLY on the data that is actually available.
 
 CRITICAL RULES:
-1. Generate EXACTLY 3 insights, no more, no less
+1. Generate EXACTLY 5 insights, no more, no less
 2. ONLY generate insights for data that actually exists in the provided dataset
 3. Each insight should be SPECIFIC and NAME-DRIVEN (use actual ad names, demographics, campaigns, etc.)
 4. Focus on ACTIONABLE findings with real numbers and metrics
@@ -232,7 +232,7 @@ CRITICAL RULES:
    - icon: Single emoji that represents the insight
    - platform: "meta" or "google" or "tiktok" depending on data source
 
-WHAT TO GENERATE INSIGHTS FOR (choose 3 from available data):
+WHAT TO GENERATE INSIGHTS FOR (choose 5 from available data):
 
 **IF top_ads EXISTS AND HAS DATA:**
 - Generate insight about the best performing ad creative
@@ -291,22 +291,24 @@ CRITICAL DATA USAGE RULES:
 - The "value" field MUST contain the actual name from the data, not a generic description
 - If ad_name is null or empty, use "Unnamed Ad #{ad_id}"
 
-EXAMPLE - If only ads and demographics have data:
+EXAMPLE - Generate 5 diverse insights from available data:
 [
   {"type": "top_ad", "label": "Top Ad", "value": "Summer Sale 2025", "metric": "3.2% CTR, $450 spent", "icon": "📈", "platform": "meta"},
   {"type": "top_demographic", "label": "Top Audience", "value": "25-34", "metric": "4.1% CTR, $280 spent", "icon": "👥", "platform": "meta"},
-  {"type": "high_engagement", "label": "High CTR", "value": "Brand Awareness Campaign", "metric": "5.2% CTR, 12K views", "icon": "🎯", "platform": "meta"}
+  {"type": "high_engagement", "label": "High CTR", "value": "Brand Awareness Campaign", "metric": "5.2% CTR, 12K views", "icon": "🎯", "platform": "meta"},
+  {"type": "cost_efficiency", "label": "Best CPC", "value": "Retargeting Campaign", "metric": "$0.45 CPC, $120 spent", "icon": "💰", "platform": "meta"},
+  {"type": "top_campaign", "label": "Top Campaign", "value": "Holiday Collection", "metric": "2.8x ROAS, $890 spent", "icon": "🚀", "platform": "meta"}
 ]
 
-Return ONLY valid JSON array with exactly 3 insights, no explanation text.`
+Return ONLY valid JSON array with exactly 5 insights, no explanation text.`
       },
       {
         role: 'user',
-        content: `Analyze this brand's performance data and generate exactly 3 actionable insights:
+        content: `Analyze this brand's performance data and generate exactly 5 actionable insights:
 
 ${JSON.stringify(dataSummary, null, 2)}
 
-Return exactly 3 insights in this JSON format:
+Return exactly 5 insights in this JSON format:
 [
   {
     "type": "insight_type_here",
@@ -411,8 +413,8 @@ Return exactly 3 insights in this JSON format:
         }
       ]
       
-      // Add fallbacks until we have 3
-      while (insights.length < 3 && fallbacks.length > 0) {
+      // Add fallbacks until we have 5
+      while (insights.length < 5 && fallbacks.length > 0) {
         insights.push(fallbacks.shift())
       }
     }
@@ -424,29 +426,51 @@ Return exactly 3 insights in this JSON format:
     console.error('[Quick Insights AI] ❌ Failed to parse AI response:', parseError)
     console.error('[Quick Insights AI] Raw response:', aiResponse)
     
-    // Return basic fallback insights if AI fails
+    // Return basic fallback insights if AI fails (5 insights)
     if (performanceData.summary.totalSpend > 0) {
+      const totalClicks = performanceData.summary.totalClicks || 0
+      const avgCPC = totalClicks > 0 ? performanceData.summary.totalSpend / totalClicks : 0
+      
       return [
         {
           type: 'total_spend',
           label: 'Total Investment',
           value: `$${performanceData.summary.totalSpend.toFixed(2)}`,
-          metric: 'last 30 days',
-          icon: '💰'
+          metric: 'this week',
+          icon: '💰',
+          platform: 'meta'
         },
         {
           type: 'total_reach',
           label: 'Total Reach',
           value: `${(performanceData.summary.totalImpressions / 1000).toFixed(1)}K`,
           metric: 'impressions',
-          icon: '👁️'
+          icon: '👁️',
+          platform: 'meta'
         },
         {
           type: 'avg_ctr',
           label: 'Average CTR',
           value: `${performanceData.summary.averageCTR.toFixed(2)}%`,
           metric: 'click-through rate',
-          icon: '📈'
+          icon: '📈',
+          platform: 'meta'
+        },
+        {
+          type: 'total_clicks',
+          label: 'Total Clicks',
+          value: `${totalClicks.toLocaleString()}`,
+          metric: 'this week',
+          icon: '🖱️',
+          platform: 'meta'
+        },
+        {
+          type: 'avg_cpc',
+          label: 'Average CPC',
+          value: `$${avgCPC.toFixed(2)}`,
+          metric: 'cost per click',
+          icon: '💵',
+          platform: 'meta'
         }
       ]
     }
