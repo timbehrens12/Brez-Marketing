@@ -383,12 +383,15 @@ export default function MarketingAssistantPage() {
         
         if (ensureDataResponse.ok) {
           const ensureDataResult = await ensureDataResponse.json()
-          console.log('[Marketing Assistant] Data sync check result:', ensureDataResult)
+          console.log('[Marketing Assistant] Data sync result:', ensureDataResult)
           
-          // If sync was triggered, wait a moment for it to complete
+          // If sync was triggered, wait for it to complete
+          // Meta API sync takes time, especially for multiple days
           if (ensureDataResult.syncTriggered) {
-            console.log('[Marketing Assistant] Sync triggered for missing data, waiting 3 seconds...')
-            await new Promise(resolve => setTimeout(resolve, 3000))
+            const days = ensureDataResult.dateRange?.days || 7
+            const waitTime = Math.min(days * 1000, 10000) // 1 second per day, max 10 seconds
+            console.log(`[Marketing Assistant] Fresh data synced from Meta API (${ensureDataResult.recordCount || 0} records), waiting ${waitTime}ms...`)
+            await new Promise(resolve => setTimeout(resolve, waitTime))
           }
         }
       } catch (syncError) {

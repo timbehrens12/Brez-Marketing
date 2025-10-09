@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 /**
- * Ensures data exists for the specified date range
- * Checks for gaps in daily data and triggers sync if needed
+ * Ensures COMPLETE and FRESH data exists for the specified date range
+ * Always pulls fresh data from Meta API to handle:
+ * - Completely missing days
+ * - Incomplete days (e.g., synced at 10am, missing rest of day)
+ * - Stale data that needs refreshing
+ * 
+ * This mimics the dashboard's approach of always pulling fresh data
  */
 export async function POST(request: NextRequest) {
   try {
@@ -28,88 +27,59 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[Ensure Data] Checking data for brand ${brandId} from ${startDate} to ${endDate}`)
+    console.log(`[Ensure Data] Syncing fresh data for brand ${brandId} from ${startDate} to ${endDate}`)
 
-    // Get all dates in the range
-    const dateRange = getDateRange(startDate, endDate)
-    console.log(`[Ensure Data] Expected ${dateRange.length} days of data`)
+    // Calculate days between start and end
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
-    // Check which dates have data
-    const { data: existingData } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select('date')
-      .eq('brand_id', brandId)
-      .gte('date', startDate)
-      .lte('date', endDate)
+    console.log(`[Ensure Data] Date range covers ${daysDiff} days`)
 
-    const existingDates = new Set(existingData?.map(d => d.date) || [])
-    const missingDates = dateRange.filter(date => !existingDates.has(date))
-
-    console.log(`[Ensure Data] Found data for ${existingDates.size} days`)
-    console.log(`[Ensure Data] Missing data for ${missingDates.length} days:`, missingDates)
-
-    if (missingDates.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'All data present',
-        missingDates: [],
-        syncTriggered: false
-      })
-    }
-
-    // Get Meta connection for this brand
-    const { data: connection } = await supabase
-      .from('platform_connections')
-      .select('id, access_token, ad_account_id')
-      .eq('brand_id', brandId)
-      .eq('platform', 'meta')
-      .eq('status', 'connected')
-      .single()
-
-    if (!connection) {
-      console.log(`[Ensure Data] No Meta connection found for brand ${brandId}`)
-      return NextResponse.json({
-        success: false,
-        message: 'No Meta connection found',
-        missingDates,
-        syncTriggered: false
-      })
-    }
-
-    // Trigger backfill for missing dates
-    console.log(`[Ensure Data] Triggering backfill for ${missingDates.length} missing dates`)
-    
+    // Use Meta resync API to pull fresh data directly from Meta
+    // This handles ALL cases: missing days, incomplete days, and stale data
     try {
-      const backfillResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/meta/sync-daily-stats`,
+      const resyncResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/meta/resync`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             brandId,
-            connectionId: connection.id,
-            startDate: missingDates[0], // Earliest missing date
-            endDate: missingDates[missingDates.length - 1], // Latest missing date
-            force: true // Force sync even if recently synced
+            days: daysDiff + 7, // Add buffer to ensure we get all data
+            refresh_cache: true, // Always refresh - don't use cache
+            force_refresh: true  // Force refresh even if recently synced
           })
         }
       )
 
-      const backfillResult = await backfillResponse.json()
+      if (!resyncResponse.ok) {
+        const errorData = await resyncResponse.json()
+        console.error('[Ensure Data] Resync failed:', errorData)
+        return NextResponse.json({
+          success: false,
+          message: 'Failed to sync data from Meta',
+          syncTriggered: true,
+          error: errorData.error || 'Unknown error'
+        })
+      }
+
+      const resyncResult = await resyncResponse.json()
+      console.log(`[Ensure Data] Successfully synced ${resyncResult.count || 0} records from Meta`)
       
       return NextResponse.json({
         success: true,
-        message: `Triggered backfill for ${missingDates.length} missing dates`,
-        missingDates,
+        message: `Successfully synced ${resyncResult.count || 0} records from Meta for ${daysDiff} days`,
         syncTriggered: true,
-        syncResult: backfillResult
+        recordCount: resyncResult.count || 0,
+        dateRange: { startDate, endDate, days: daysDiff }
       })
+
     } catch (syncError) {
-      console.error('[Ensure Data] Error triggering sync:', syncError)
+      console.error('[Ensure Data] Error during Meta resync:', syncError)
       return NextResponse.json({
         success: false,
-        message: 'Failed to trigger sync',
-        missingDates,
+        message: 'Failed to sync data from Meta',
         syncTriggered: false,
         error: syncError instanceof Error ? syncError.message : 'Unknown error'
       })
@@ -122,21 +92,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-/**
- * Generate array of dates between start and end (inclusive)
- */
-function getDateRange(startDate: string, endDate: string): string[] {
-  const dates: string[] = []
-  const current = new Date(startDate)
-  const end = new Date(endDate)
-
-  while (current <= end) {
-    dates.push(current.toISOString().split('T')[0])
-    current.setDate(current.getDate() + 1)
-  }
-
-  return dates
 }
 
