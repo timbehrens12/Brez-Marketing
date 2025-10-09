@@ -289,6 +289,7 @@ function Ribbon({ children }: { children: React.ReactNode }) {
 export default function HomePage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [activePreview, setActivePreview] = useState('analytics')
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'weekly'>('monthly')
 
   const scrollToPricing = () => {
     const pricingSection = document.getElementById('pricing')
@@ -863,6 +864,24 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
+              {/* Billing Toggle */}
+              <div className="flex items-center justify-center gap-4 mt-8 mb-8">
+                <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'weekly' : 'monthly')}
+                  className="relative w-14 h-7 bg-white/10 rounded-full border border-white/20 transition-colors hover:bg-white/15"
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'weekly' ? 'translate-x-7' : 'translate-x-0'}`} />
+                </button>
+                <span className={`text-sm font-medium transition-colors ${billingInterval === 'weekly' ? 'text-white' : 'text-white/50'}`}>
+                  Weekly
+                  <span className="ml-2 text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold">
+                    Lower upfront
+                  </span>
+                </span>
+              </div>
 
               <div className="grid lg:grid-cols-5 gap-6 items-start">
                 {[
@@ -1024,18 +1043,29 @@ export default function HomePage() {
                         <div className="mb-6">
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white">
-                              ${plan.price}
+                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.25 / 4) : plan.price}
                             </span>
-                            <span className="text-white/40 text-sm">/mo</span>
+                            <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-lg text-white/50 line-through">
-                              ${plan.originalPrice}
-                            </span>
-                            <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                              Save ${plan.originalPrice - plan.price}
-                            </span>
-                          </div>
+                          {billingInterval === 'weekly' ? (
+                            <div className="flex flex-col gap-1 mt-1">
+                              <span className="text-xs text-white/50">
+                                ≈ ${Math.round(plan.price * 1.25)}/mo equivalent
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
+                                Billed weekly
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-lg text-white/50 line-through">
+                                ${plan.originalPrice}
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
+                                Save ${plan.originalPrice - plan.price}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       
                       {/* Usage Limits */}
