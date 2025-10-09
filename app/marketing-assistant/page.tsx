@@ -2223,39 +2223,39 @@ export default function MarketingAssistantPage() {
 
                 return (
                   <div className="flex flex-col h-full">
-                    {/* Compact Timeline Bar at Top */}
-                    <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4 mb-4 flex-shrink-0">
-                      <div className="flex items-center justify-between mb-3">
-                        {/* Summary Stats - Inline */}
-                        <div className="flex items-center gap-6">
+                    {/* Ultra-Compact Timeline Bar at Top */}
+                    <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-3 mb-3 flex-shrink-0">
+                      <div className="flex items-center justify-between mb-2">
+                        {/* Summary Stats - Inline & Compact */}
+                        <div className="flex items-center gap-4">
                           <div>
-                            <div className="text-gray-400 text-[10px] uppercase tracking-wide">Weeks Active</div>
-                            <div className="text-white text-lg font-bold">{weeksWithOptimizations}</div>
+                            <div className="text-gray-400 text-[9px] uppercase tracking-wide">Weeks Active</div>
+                            <div className="text-white text-base font-bold">{weeksWithOptimizations}</div>
                           </div>
-                          <div className="h-8 w-px bg-[#333]"></div>
+                          <div className="h-6 w-px bg-[#333]"></div>
                           <div>
-                            <div className="text-gray-400 text-[10px] uppercase tracking-wide">Optimizations</div>
-                            <div className="text-[#FF2A2A] text-lg font-bold">{timeline.stats.totalOptimizations}</div>
+                            <div className="text-gray-400 text-[9px] uppercase tracking-wide">Optimizations</div>
+                            <div className="text-[#FF2A2A] text-base font-bold">{timeline.stats.totalOptimizations}</div>
                           </div>
-                          <div className="h-8 w-px bg-[#333]"></div>
+                          <div className="h-6 w-px bg-[#333]"></div>
                           <div>
-                            <div className="text-gray-400 text-[10px] uppercase tracking-wide">Avg ROAS</div>
-                            <div className="text-emerald-400 text-lg font-bold">
+                            <div className="text-gray-400 text-[9px] uppercase tracking-wide">Avg ROAS</div>
+                            <div className="text-emerald-400 text-base font-bold">
                               {timeline.stats.avgRoas > 0 ? `${timeline.stats.avgRoas.toFixed(2)}x` : 'N/A'}
                             </div>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Compact Timeline Bar with Scroll Controls */}
+                      {/* Ultra-Compact Timeline Bar with Scroll Controls */}
                       <div className="relative">
                         {/* Left Scroll Button */}
                         {timelineScrollOffset > 0 && (
                           <button
                             onClick={() => setTimelineScrollOffset(Math.max(0, timelineScrollOffset - 8))}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-1.5 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-1 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
                           >
-                            <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                           </button>
@@ -2265,17 +2265,17 @@ export default function MarketingAssistantPage() {
                         {timelineScrollOffset + 8 < timeline.weeks.length && (
                           <button
                             onClick={() => setTimelineScrollOffset(Math.min(timeline.weeks.length - 8, timelineScrollOffset + 8))}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-1.5 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-1 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
                           >
-                            <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>
                         )}
                         
-                        <div className="relative py-8 px-10">
-                          {/* Horizontal Line */}
-                          <div className="absolute top-1/2 left-10 right-10 h-0.5 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
+                        <div className="relative py-4 px-8">
+                          {/* Horizontal Line - Thinner */}
+                          <div className="absolute top-1/2 left-8 right-8 h-px bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
                           
                           {/* Week Markers */}
                           <div className="relative flex justify-between items-center">
@@ -2290,31 +2290,31 @@ export default function MarketingAssistantPage() {
                         
                             return (
                               <div key={weekNum} className="flex flex-col items-center group">
-                                {/* Marker Dot - Smaller */}
+                                {/* Marker Dot - Even Smaller */}
                                 <button
                                   onClick={() => isClickable && setSelectedWeekIndex(index)}
                                   disabled={!isClickable}
                                   title={isClickable ? `Week ${weekNum}` : 'No data yet'}
-                                  className={`w-4 h-4 rounded-full border-2 transition-all ${
-                                    isClickable ? 'hover:scale-125 hover:shadow-lg hover:shadow-[#FF2A2A]/50 cursor-pointer' : 'cursor-not-allowed opacity-40'
+                                  className={`w-3 h-3 rounded-full border-2 transition-all ${
+                                    isClickable ? 'hover:scale-150 hover:shadow-lg hover:shadow-[#FF2A2A]/50 cursor-pointer' : 'cursor-not-allowed opacity-40'
                                   } ${
                                     isSelected
-                                      ? 'bg-[#FF2A2A] border-[#FF2A2A] ring-2 ring-[#FF2A2A]/30 scale-110'
+                                      ? 'bg-[#FF2A2A] border-[#FF2A2A] ring-2 ring-[#FF2A2A]/30 scale-125'
                                       : isCurrentWeek
                                       ? 'bg-[#FF2A2A] border-[#1A1A1A]'
                                       : hasOptimizations
                                       ? 'bg-[#FF2A2A]/50 border-[#1A1A1A]'
                                       : 'bg-[#444] border-[#1A1A1A]'
-                                  } relative z-10 mb-4`}
+                                  } relative z-10 mb-2`}
                                 >
                                   {hasOptimizations && (
-                                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-[#1A1A1A]"></div>
+                                    <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full border border-[#1A1A1A]"></div>
                                   )}
                                 </button>
                                 
-                                {/* Week Label - Compact */}
-                                <div className="mt-1 text-center">
-                                  <div className={`text-[10px] font-bold ${
+                                {/* Week Label - Minimal */}
+                                <div className="mt-0.5 text-center">
+                                  <div className={`text-[9px] font-bold ${
                                     isSelected || isCurrentWeek ? 'text-[#FF2A2A]' : 'text-gray-400'
                                   }`}>
                                     W{weekNum}
