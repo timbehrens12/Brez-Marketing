@@ -155,6 +155,7 @@ export default function MarketingAssistantPage() {
   const [loading, setLoading] = useState(true)
   const [showDetailedTimeline, setShowDetailedTimeline] = useState(false)
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null)
+  const [timelineScrollOffset, setTimelineScrollOffset] = useState(0)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [simulationData, setSimulationData] = useState<any>(null)
@@ -2178,12 +2179,13 @@ export default function MarketingAssistantPage() {
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-1">Performance Timeline</h2>
-                <p className="text-gray-400 text-sm">Click any milestone to view detailed breakdown</p>
+                <p className="text-gray-400 text-sm">Review your optimization journey week by week</p>
               </div>
               <button
                 onClick={() => {
                   setShowDetailedTimeline(false)
                   setSelectedWeekIndex(null)
+                  setTimelineScrollOffset(0)
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
@@ -2197,7 +2199,13 @@ export default function MarketingAssistantPage() {
             <div className="flex-1 overflow-y-auto p-6">
               {(() => {
                 const timeline = optimizationTimeline || { weeks: [], stats: { totalOptimizations: 0, avgRoas: 0 } }
-                const selectedWeek = selectedWeekIndex !== null ? timeline.weeks[selectedWeekIndex] : null
+                
+                // Calculate weeks with optimizations
+                const weeksWithOptimizations = timeline.weeks.filter((week: any) => week.optimizationsApplied > 0).length
+                
+                // Auto-select current week (index 0) if nothing is selected
+                const effectiveSelectedIndex = selectedWeekIndex !== null ? selectedWeekIndex : 0
+                const selectedWeek = timeline.weeks.length > 0 ? timeline.weeks[effectiveSelectedIndex] : null
                 
                 if (timeline.weeks.length === 0) {
                   return (
@@ -2218,8 +2226,8 @@ export default function MarketingAssistantPage() {
                     {/* Summary Stats */}
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4">
-                        <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Weeks</div>
-                        <div className="text-white text-2xl font-bold">{timeline.weeks.length}</div>
+                        <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Weeks Active</div>
+                        <div className="text-white text-2xl font-bold">{weeksWithOptimizations}</div>
                       </div>
                       <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-4">
                         <div className="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Optimizations</div>
@@ -2236,21 +2244,47 @@ export default function MarketingAssistantPage() {
                     {/* Horizontal Timeline Bar */}
                     <div className="bg-[#0f0f0f] border border-[#333] rounded-lg p-6">
                       <h3 className="text-white font-semibold text-lg mb-2">Timeline Overview</h3>
-                      <p className="text-gray-400 text-sm mb-6">Click any week dot to view detailed breakdown</p>
+                      <p className="text-gray-400 text-sm mb-6">Scroll through your optimization history</p>
                       
-                      {/* Timeline Bar */}
-                      <div className="relative py-20">
-                        {/* Horizontal Line - Gray throughout, not red at the end */}
-                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
+                      {/* Timeline Bar with Scroll Controls */}
+                      <div className="relative">
+                        {/* Left Scroll Button */}
+                        {timelineScrollOffset > 0 && (
+                          <button
+                            onClick={() => setTimelineScrollOffset(Math.max(0, timelineScrollOffset - 8))}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-2 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
+                          >
+                            <svg className="w-6 h-6 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                        )}
                         
-                        {/* Week Markers */}
-                        <div className="relative flex justify-between items-center">
-                          {timeline.weeks.map((week: any, index: number) => {
+                        {/* Right Scroll Button */}
+                        {timelineScrollOffset + 8 < timeline.weeks.length && (
+                          <button
+                            onClick={() => setTimelineScrollOffset(Math.min(timeline.weeks.length - 8, timelineScrollOffset + 8))}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A1A1A] border border-[#FF2A2A]/50 rounded-full p-2 hover:bg-[#FF2A2A]/20 transition-colors shadow-lg"
+                          >
+                            <svg className="w-6 h-6 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        )}
+                        
+                        <div className="relative py-20 px-12">
+                          {/* Horizontal Line */}
+                          <div className="absolute top-1/2 left-12 right-12 h-1 bg-gradient-to-r from-[#333] to-[#444] transform -translate-y-1/2 z-0"></div>
+                          
+                          {/* Week Markers */}
+                          <div className="relative flex justify-between items-center">
+                            {timeline.weeks.slice(timelineScrollOffset, timelineScrollOffset + 8).map((week: any, displayIndex: number) => {
+                              const index = timelineScrollOffset + displayIndex
                             const weekNum = index + 1
                             const hasOptimizations = week.optimizationsApplied > 0
                             const hasData = week.spend > 0 || week.impressions > 0 || hasOptimizations || week.goals?.length > 0
                             const isCurrentWeek = weekNum === 1 // Only Week 1 is current
-                            const isSelected = selectedWeekIndex === index
+                            const isSelected = effectiveSelectedIndex === index
                             const isClickable = hasData
                             const isFutureWeek = weekNum > 1 && !hasData
                         
@@ -2296,10 +2330,11 @@ export default function MarketingAssistantPage() {
                             )
                           })}
                         </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Selected Week Details */}
+                    {/* Selected Week Details - Always Show */}
                     {selectedWeek && (
                       <div className="bg-[#0f0f0f] border border-[#FF2A2A]/50 rounded-lg overflow-hidden">
                         {/* Header */}
@@ -2307,20 +2342,12 @@ export default function MarketingAssistantPage() {
                           <div>
                             <h3 className="text-white font-bold text-xl flex items-center gap-2">
                               <span className="w-8 h-8 bg-[#FF2A2A] rounded-full flex items-center justify-center text-sm">
-                                W{selectedWeekIndex! + 1}
+                                W{effectiveSelectedIndex + 1}
                               </span>
-                              Week {selectedWeekIndex! + 1} Breakdown
+                              Week {effectiveSelectedIndex + 1} Breakdown
                             </h3>
                             <p className="text-gray-400 text-sm ml-10">{selectedWeek.week}</p>
                           </div>
-                          <button
-                            onClick={() => setSelectedWeekIndex(null)}
-                            className="text-gray-400 hover:text-white transition-colors"
-                          >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
                         </div>
                         
                         <div className="p-4 space-y-4">
