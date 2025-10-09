@@ -1036,9 +1036,9 @@ export default function HomePage() {
 
                     {/* Launch Special Badge - Top Right */}
                     <div className="absolute top-4 right-4 z-10">
-                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2.5 py-1.5 rounded-lg shadow-lg border-2 border-green-400/50">
+                      <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-2.5 py-1 rounded-md shadow-lg border border-green-400/50">
                         <div className="text-[9px] font-bold uppercase tracking-wide leading-tight">Launch Special</div>
-                        <div className="text-[11px] font-black leading-tight mt-0.5">
+                        <div className="text-[10px] font-black leading-tight mt-0.5">
                           <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
                           <span className="ml-1">-{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
                         </div>
@@ -1062,19 +1062,13 @@ export default function HomePage() {
                             </span>
                             <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-                          {billingInterval === 'weekly' ? (
+                          {billingInterval === 'weekly' && (
                             <div className="flex flex-col gap-1 mt-2">
                               <span className="text-xs text-white/50">
                                 ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
                               </span>
                               <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
                                 Billed weekly
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="mt-2">
-                              <span className="text-xs text-white/50">
-                                Billed monthly
                               </span>
                             </div>
                           )}
