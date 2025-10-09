@@ -1001,7 +1001,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
              {/* Optimization Progress - Premium Radial Gauge */}
-             <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0 flex-1">
+             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0 flex-1 flex flex-col">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1010,7 +1010,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative px-2.5 pt-2.5 pb-0 flex flex-col">
+              <CardContent className="relative px-2.5 pt-2.5 pb-2.5 flex flex-col flex-1 overflow-y-auto min-h-0">
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
@@ -2348,30 +2348,73 @@ export default function MarketingAssistantPage() {
                           <div className="bg-[#0A0A0A] rounded-lg p-3 border border-[#333]">
                             <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wide">📊 Performance Metrics</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">Spend</div>
-                                <div className="text-white font-bold">${selectedWeek.spend?.toFixed(2) || '0.00'}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">Revenue</div>
-                                <div className="text-emerald-400 font-bold">${selectedWeek.revenue?.toFixed(2) || '0.00'}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">ROAS</div>
-                                <div className="text-[#FF2A2A] font-bold">{selectedWeek.roas?.toFixed(2) || '0.00'}x</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">CTR</div>
-                                <div className="text-white font-bold">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">Impressions</div>
-                                <div className="text-white font-bold text-sm">{selectedWeek.impressions?.toLocaleString() || '0'}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-gray-400 text-[10px] uppercase mb-1">Clicks</div>
-                                <div className="text-white font-bold text-sm">{selectedWeek.clicks?.toLocaleString() || '0'}</div>
-                              </div>
+                              {(() => {
+                                // Get previous week for comparison
+                                const previousWeek = effectiveSelectedIndex < timeline.weeks.length - 1 ? timeline.weeks[effectiveSelectedIndex + 1] : null
+                                
+                                // Calculate changes
+                                const calculateChange = (current: number, previous: number) => {
+                                  if (!previous || previous === 0) return null
+                                  const change = ((current - previous) / previous) * 100
+                                  return change
+                                }
+                                
+                                const spendChange = previousWeek ? calculateChange(selectedWeek.spend || 0, previousWeek.spend || 0) : null
+                                const revenueChange = previousWeek ? calculateChange(selectedWeek.revenue || 0, previousWeek.revenue || 0) : null
+                                const roasChange = previousWeek ? calculateChange(selectedWeek.roas || 0, previousWeek.roas || 0) : null
+                                const ctrChange = previousWeek ? calculateChange(selectedWeek.ctr || 0, previousWeek.ctr || 0) : null
+                                const impressionsChange = previousWeek ? calculateChange(selectedWeek.impressions || 0, previousWeek.impressions || 0) : null
+                                const clicksChange = previousWeek ? calculateChange(selectedWeek.clicks || 0, previousWeek.clicks || 0) : null
+                                
+                                const ChangeIndicator = ({ change }: { change: number | null }) => {
+                                  if (change === null) return null
+                                  const isPositive = change > 0
+                                  const isNegative = change < 0
+                                  
+                                  return (
+                                    <div className={`text-[9px] font-semibold mt-0.5 flex items-center justify-center gap-0.5 ${
+                                      isPositive ? 'text-emerald-400' : isNegative ? 'text-red-400' : 'text-gray-500'
+                                    }`}>
+                                      {isPositive ? '↑' : isNegative ? '↓' : '→'} {Math.abs(change).toFixed(1)}%
+                                    </div>
+                                  )
+                                }
+                                
+                                return (
+                                  <>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">Spend</div>
+                                      <div className="text-white font-bold">${selectedWeek.spend?.toFixed(2) || '0.00'}</div>
+                                      <ChangeIndicator change={spendChange} />
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">Revenue</div>
+                                      <div className="text-emerald-400 font-bold">${selectedWeek.revenue?.toFixed(2) || '0.00'}</div>
+                                      <ChangeIndicator change={revenueChange} />
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">ROAS</div>
+                                      <div className="text-[#FF2A2A] font-bold">{selectedWeek.roas?.toFixed(2) || '0.00'}x</div>
+                                      <ChangeIndicator change={roasChange} />
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">CTR</div>
+                                      <div className="text-white font-bold">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</div>
+                                      <ChangeIndicator change={ctrChange} />
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">Impressions</div>
+                                      <div className="text-white font-bold text-sm">{selectedWeek.impressions?.toLocaleString() || '0'}</div>
+                                      <ChangeIndicator change={impressionsChange} />
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-gray-400 text-[10px] uppercase mb-1">Clicks</div>
+                                      <div className="text-white font-bold text-sm">{selectedWeek.clicks?.toLocaleString() || '0'}</div>
+                                      <ChangeIndicator change={clicksChange} />
+                                    </div>
+                                  </>
+                                )
+                              })()}
                             </div>
                           </div>
 
