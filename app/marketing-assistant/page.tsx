@@ -948,8 +948,8 @@ export default function MarketingAssistantPage() {
          {/* MAIN GRID LAYOUT - Fixed Height Container */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4 max-w-[1920px] mx-auto h-[calc(100vh-200px)]">
             
-             {/* Left Rail - Fixed Height Column (No Scroll) */}
-            <div className="col-span-1 xl:col-span-3 flex flex-col gap-2.5 min-w-0 h-full overflow-hidden">
+             {/* Left Rail - Fixed Height Column with Scroll */}
+            <div className="col-span-1 xl:col-span-3 flex flex-col gap-2.5 min-w-0 h-full overflow-y-auto pr-1">
             
             {/* Quick Actions Card - Compact */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
@@ -1001,7 +1001,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
              {/* Optimization Progress - Premium Radial Gauge */}
-             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0 flex-1 flex flex-col">
+             <Card className="relative bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0 flex flex-col">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1010,7 +1010,7 @@ export default function MarketingAssistantPage() {
       </div>
               </CardHeader>
               
-              <CardContent className="relative px-2.5 pt-2.5 pb-2.5 flex flex-col flex-1 overflow-y-auto min-h-0">
+              <CardContent className="relative px-2.5 pt-2.5 pb-2.5 flex flex-col overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                 {loading && !weeklyProgress && (
                   <div className="text-center py-8 text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-white mx-auto mb-2"></div>
