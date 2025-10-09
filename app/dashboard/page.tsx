@@ -1919,12 +1919,13 @@ export default function DashboardPage() {
              style={{
                left: `${sidebarWidth}px`, // Dynamic positioning based on actual sidebar width
              }}>
-          {/* Animated background gradient mesh */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#1a0a0a] to-[#0A0A0A] animate-gradient"></div>
-          
-          {/* Animated grid overlay */}
-          <div className="absolute inset-0 opacity-[0.03]">
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+          {/* Background pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+              backgroundSize: '20px 20px'
+            }}></div>
           </div>
           
           {/* Glassmorphic card */}
