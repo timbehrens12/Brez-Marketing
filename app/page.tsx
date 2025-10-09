@@ -1024,21 +1024,16 @@ export default function HomePage() {
                         <div className="mb-6">
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white">
-                              ${billingInterval === 'yearly' ? Math.round(plan.price * 0.9) : plan.price}
+                              ${plan.price}
                             </span>
                             <span className="text-white/40 text-sm">/mo</span>
                           </div>
-                          {billingInterval === 'yearly' && (
-                            <div className="text-xs text-white/50 mt-1">
-                              Billed ${Math.round(plan.price * 0.9 * 12)}/year
-                            </div>
-                          )}
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-lg text-white/50 line-through">
-                              ${billingInterval === 'yearly' ? plan.price : plan.originalPrice}
+                              ${plan.originalPrice}
                             </span>
                             <span className="text-xs px-2 py-1 bg-[var(--brand-red)]/20 text-[var(--brand-red)] border border-[var(--brand-red)]/30 rounded-full font-bold uppercase tracking-wide">
-                              Save ${billingInterval === 'yearly' ? Math.round(plan.price * 0.1) : (plan.originalPrice - plan.price)}
+                              Save ${plan.originalPrice - plan.price}
                             </span>
                           </div>
                         </div>
