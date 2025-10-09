@@ -11,6 +11,7 @@ import BrandSelector from "@/components/BrandSelector"
 import OverlaidBrandLogos from "@/components/OverlaidBrandLogos"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useAgency } from "@/contexts/AgencyContext"
+import { useSidebar } from "@/context/SidebarContext"
 
 import { useState, useEffect } from "react"
 import {
@@ -94,6 +95,7 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
+  const { setIsExpanded } = useSidebar()
 
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
@@ -158,11 +160,8 @@ export function Sidebar({ className }: SidebarProps) {
   
   // Dispatch custom events when sidebar expansion state changes (including initial state)
   useEffect(() => {
-    const event = new CustomEvent('sidebarStateChange', {
-      detail: { expanded: showExpanded, width: showExpanded ? 256 : 80 }
-    })
-    window.dispatchEvent(event)
-  }, [showExpanded])
+    setIsExpanded(showExpanded)
+  }, [showExpanded, setIsExpanded])
   
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {

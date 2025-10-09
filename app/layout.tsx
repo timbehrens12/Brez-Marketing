@@ -11,6 +11,7 @@ import { ConditionalFooter } from "@/components/ConditionalFooter"
 import { ConditionalLayout } from "@/components/ConditionalLayout"
 import { ClerkProvider } from '@clerk/nextjs'
 import { AuthenticatedProviders } from '@/components/AuthenticatedProviders'
+import { SidebarProvider } from "@/context/SidebarContext"
 
 // Extend Window interface for console override tracking
 declare global {
@@ -523,18 +524,20 @@ export default function RootLayout({
             }}
           >
             <AuthenticatedProviders>
-              <div className="flex min-h-screen relative">
-                
-                <ConditionalSidebar />
-                <div className="flex-1 flex flex-col relative z-10">
-                  <ConditionalLayout>
-                    <div className="flex-1">
-                      {children}
-                    </div>
-                  </ConditionalLayout>
-                  <ConditionalFooter />
+              <SidebarProvider>
+                <div className="flex min-h-screen relative">
+                  
+                  <ConditionalSidebar />
+                  <div className="flex-1 flex flex-col relative z-10">
+                    <ConditionalLayout>
+                      <div className="flex-1">
+                        {children}
+                      </div>
+                    </ConditionalLayout>
+                    <ConditionalFooter />
+                  </div>
                 </div>
-              </div>
+              </SidebarProvider>
             </AuthenticatedProviders>
           </ClerkProvider>
           {/* <Toaster /> */}

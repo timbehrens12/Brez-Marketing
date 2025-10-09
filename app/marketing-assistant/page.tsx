@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import Image from 'next/image'
 import { useAuth } from '@clerk/nextjs'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAgency } from '@/contexts/AgencyContext'
+import { useSidebar } from "@/context/SidebarContext"
 
 // Components
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -140,6 +141,7 @@ export default function MarketingAssistantPage() {
   const { userId } = useAuth()
   const { selectedBrandId } = useBrandContext()
   const { agencySettings } = useAgency()
+  const { isExpanded: isSidebarExpanded } = useSidebar()
   
   // State
   const [isLoadingPage, setIsLoadingPage] = useState(true)
@@ -169,6 +171,7 @@ export default function MarketingAssistantPage() {
   const [nextUpdateText, setNextUpdateText] = useState<string>('')
   const [hasAdPlatforms, setHasAdPlatforms] = useState<boolean>(false)
   const [isCheckingPlatforms, setIsCheckingPlatforms] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Filter data based on selected platforms (client-side filtering for display only)
   const filteredOptimizations = optimizationCards.filter(card => 
@@ -2169,7 +2172,7 @@ export default function MarketingAssistantPage() {
 
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
-        <div className="fixed inset-y-0 left-16 right-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6">
+        <div className={`fixed inset-y-0 right-0 ${isSidebarExpanded ? 'left-64' : 'left-20'} bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 transition-all duration-300 ease-in-out`}>
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
