@@ -289,7 +289,7 @@ function Ribbon({ children }: { children: React.ReactNode }) {
 export default function HomePage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [activePreview, setActivePreview] = useState('analytics')
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'weekly'>('monthly')
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'weekly'>('weekly')
 
   const scrollToPricing = () => {
     const pricingSection = document.getElementById('pricing')
@@ -1043,14 +1043,14 @@ export default function HomePage() {
                         <div className="mb-6">
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white">
-                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.25 / 4) : plan.price}
+                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
                             </span>
                             <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
                           {billingInterval === 'weekly' ? (
                             <div className="flex flex-col gap-1 mt-1">
                               <span className="text-xs text-white/50">
-                                ≈ ${Math.round(plan.price * 1.25)}/mo equivalent
+                                ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
                               </span>
                               <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
                                 Billed weekly
@@ -1086,13 +1086,13 @@ export default function HomePage() {
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Lead Generation</span>
                               <span className={`font-semibold text-xs whitespace-nowrap ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
-                                {plan.leadGen === 0 ? "None" : `${plan.leadGen}/month`}
+                                {plan.leadGen === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.leadGen / 4)}/week` : `${plan.leadGen}/month`}
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Outreach Messages</span>
                               <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
-                                {plan.outreach === 0 ? "None" : `${plan.outreach}/month`}
+                                {plan.outreach === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.outreach / 4)}/week` : `${plan.outreach}/month`}
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
@@ -1101,7 +1101,9 @@ export default function HomePage() {
                             </div>
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Creative Generation</span>
-                              <span className="text-white font-semibold text-xs whitespace-nowrap">{plan.creativeGen}/month</span>
+                              <span className="text-white font-semibold text-xs whitespace-nowrap">
+                                {billingInterval === 'weekly' ? `${Math.round(plan.creativeGen / 4)}/week` : `${plan.creativeGen}/month`}
+                              </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Custom AI Campaign Optimization</span>
