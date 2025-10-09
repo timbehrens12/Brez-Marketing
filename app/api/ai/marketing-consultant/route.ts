@@ -1771,16 +1771,25 @@ ${analysisData.dateRange?.from === analysisData.dateRange?.to && analysisData.sh
 
 ${analysisData.shopifyData?.orders?.length === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
 
-=== TOOL USAGE & AVAILABILITY ===
+=== TOOL USAGE & AVAILABILITY (BEGINNER TIER) ===
 ${analysisData.usageData ? `
-CREATIVE STUDIO: ${analysisData.usageData.creativeStudio.remaining}/${analysisData.usageData.creativeStudio.limit} ${analysisData.usageData.creativeStudio.limitType} uses remaining ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
-OUTREACH TOOL: ${analysisData.usageData.outreachTool.remaining}/${analysisData.usageData.outreachTool.limit} ${analysisData.usageData.outreachTool.limitType} uses remaining ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
-AI CONSULTANT: ${analysisData.usageData.aiConsultant.remaining}/${analysisData.usageData.aiConsultant.limit} ${analysisData.usageData.aiConsultant.limitType} uses remaining ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
-BRAND REPORT: ${analysisData.usageData.brandReport.remaining}/${analysisData.usageData.brandReport.limit} ${analysisData.usageData.brandReport.limitType} uses remaining ${analysisData.usageData.brandReport.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
-LEAD GENERATOR: ${analysisData.usageData.leadGenerator.remaining}/${analysisData.usageData.leadGenerator.limit} ${analysisData.usageData.leadGenerator.limitType} uses remaining ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
-MARKETING ASSISTANT: ${analysisData.usageData.marketingAssistant.remaining}/${analysisData.usageData.marketingAssistant.limit} ${analysisData.usageData.marketingAssistant.limitType} uses remaining ${analysisData.usageData.marketingAssistant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+CREATIVE STUDIO (25/month): ${analysisData.usageData.creativeStudio.monthlyUsed}/${analysisData.usageData.creativeStudio.monthlyLimit} used this month (${analysisData.usageData.creativeStudio.weeklyUsed}/${analysisData.usageData.creativeStudio.weeklyLimit} this week) ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-When users ask what they should do or what tools to use, reference these usage limits and suggest available tools.
+OUTREACH TOOL (250/month): ${analysisData.usageData.outreachTool.monthlyUsed}/${analysisData.usageData.outreachTool.monthlyLimit} used this month (${analysisData.usageData.outreachTool.weeklyUsed}/${analysisData.usageData.outreachTool.weeklyLimit} this week) ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+
+LEAD GENERATOR (100/month): ${analysisData.usageData.leadGenerator.monthlyUsed}/${analysisData.usageData.leadGenerator.monthlyLimit} used this month (${analysisData.usageData.leadGenerator.weeklyUsed}/${analysisData.usageData.leadGenerator.weeklyLimit} this week) ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+
+AI CONSULTANT (10/day): ${analysisData.usageData.aiConsultant.used}/${analysisData.usageData.aiConsultant.limit} used today ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+
+BRAND REPORT (Daily): ${analysisData.usageData.brandReport.used}/${analysisData.usageData.brandReport.limit} used today ${analysisData.usageData.brandReport.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+
+MARKETING ASSISTANT (Weekly): ${analysisData.usageData.marketingAssistant.used}/${analysisData.usageData.marketingAssistant.limit} used this week ${analysisData.usageData.marketingAssistant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+
+When users ask what they should do or what tools to use:
+- Show them BOTH monthly total and weekly usage (e.g., "You've used 12 of your 100 monthly leads, with 3 of your 25 weekly leads used this week")
+- Explain that limits reset weekly (Mondays) and monthly (1st of month)
+- Suggest available tools based on remaining usage
+- If they hit weekly limit, tell them when it resets (next Monday)
 ` : 'Usage data not available'}
 
 === BRAND CONTEXT & ACTIVITY ===
@@ -2325,18 +2334,25 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
       return null
     }
 
-    // Calculate usage counts for each feature
+    // Calculate usage counts for each feature - BEGINNER TIER LIMITS
     const usageCounts: any = {
       // Daily limits
-      creativeStudio: { daily: 0, limit: 20, limitType: 'daily' },
-      outreachTool: { daily: 0, limit: 25, limitType: 'daily' },
-      aiConsultant: { daily: 0, limit: 15, limitType: 'daily' },
-      brandReport: { daily: 0, limit: 2, limitType: 'daily' },
+      aiConsultant: { daily: 0, limit: 10, limitType: 'daily' }, // 10/day per pricing
+      brandReport: { daily: 0, limit: 1, limitType: 'daily' }, // 1 daily report
+      
+      // Weekly + Monthly limits (display as monthly, enforce weekly)
+      creativeStudio: { weekly: 0, monthly: 0, weeklyLimit: 6, monthlyLimit: 25, limitType: 'weekly+monthly' }, // 25/month (6/week)
+      outreachTool: { weekly: 0, monthly: 0, weeklyLimit: 62, monthlyLimit: 250, limitType: 'weekly+monthly' }, // 250/month (62/week)
+      leadGenerator: { weekly: 0, monthly: 0, weeklyLimit: 25, monthlyLimit: 100, limitType: 'weekly+monthly' }, // 100/month (25/week)
       
       // Weekly limits
-      leadGenerator: { weekly: 0, limit: 50, limitType: 'weekly' },
-      marketingAssistant: { weekly: 0, limit: 1, limitType: 'weekly' }
+      marketingAssistant: { weekly: 0, limit: 1, limitType: 'weekly' } // 1/week per pricing
     }
+
+    // Calculate start of month
+    const startOfMonthLocal = new Date(localNow)
+    startOfMonthLocal.setDate(1)
+    startOfMonthLocal.setHours(0, 0, 0, 0)
 
     // Process usage records
     allUsageData?.forEach((record: any) => {
@@ -2346,38 +2362,50 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
       
       const isToday = recordLocalDateStr === localToday
       const isThisWeek = recordLocalDate >= startOfWeekLocal
+      const isThisMonth = recordLocalDate >= startOfMonthLocal
 
       // Map feature types to usage counts
-      if (record.feature_type === 'creative_generation' && isToday) {
-        usageCounts.creativeStudio.daily++
-      } else if (record.feature_type === 'outreach_messages' && isToday) {
-        usageCounts.outreachTool.daily++
+      if (record.feature_type === 'creative_generation') {
+        if (isThisWeek) usageCounts.creativeStudio.weekly++
+        if (isThisMonth) usageCounts.creativeStudio.monthly++
+      } else if (record.feature_type === 'outreach_messages') {
+        if (isThisWeek) usageCounts.outreachTool.weekly++
+        if (isThisMonth) usageCounts.outreachTool.monthly++
       } else if (record.feature_type === 'ai_consultant_chat' && isToday) {
         usageCounts.aiConsultant.daily++
       } else if (record.feature_type === 'brand_report' && isToday) {
         usageCounts.brandReport.daily++
-      } else if (record.feature_type === 'lead_gen_enrichment' && isThisWeek) {
-        usageCounts.leadGenerator.weekly++
+      } else if (record.feature_type === 'lead_gen_enrichment') {
+        if (isThisWeek) usageCounts.leadGenerator.weekly++
+        if (isThisMonth) usageCounts.leadGenerator.monthly++
       } else if (record.feature_type === 'marketing_analysis' && isThisWeek) {
         usageCounts.marketingAssistant.weekly++
       }
     })
 
-    // Calculate remaining uses
+    // Calculate remaining uses - BEGINNER TIER
     const usageStatus = {
       creativeStudio: {
-        used: usageCounts.creativeStudio.daily,
-        remaining: Math.max(0, usageCounts.creativeStudio.limit - usageCounts.creativeStudio.daily),
-        limit: usageCounts.creativeStudio.limit,
-        limitType: 'daily',
-        available: usageCounts.creativeStudio.daily < usageCounts.creativeStudio.limit
+        weeklyUsed: usageCounts.creativeStudio.weekly,
+        monthlyUsed: usageCounts.creativeStudio.monthly,
+        weeklyRemaining: Math.max(0, usageCounts.creativeStudio.weeklyLimit - usageCounts.creativeStudio.weekly),
+        monthlyRemaining: Math.max(0, usageCounts.creativeStudio.monthlyLimit - usageCounts.creativeStudio.monthly),
+        weeklyLimit: usageCounts.creativeStudio.weeklyLimit,
+        monthlyLimit: usageCounts.creativeStudio.monthlyLimit,
+        limitType: 'monthly',
+        available: usageCounts.creativeStudio.weekly < usageCounts.creativeStudio.weeklyLimit && 
+                   usageCounts.creativeStudio.monthly < usageCounts.creativeStudio.monthlyLimit
       },
       outreachTool: {
-        used: usageCounts.outreachTool.daily,
-        remaining: Math.max(0, usageCounts.outreachTool.limit - usageCounts.outreachTool.daily),
-        limit: usageCounts.outreachTool.limit,
-        limitType: 'daily',
-        available: usageCounts.outreachTool.daily < usageCounts.outreachTool.limit
+        weeklyUsed: usageCounts.outreachTool.weekly,
+        monthlyUsed: usageCounts.outreachTool.monthly,
+        weeklyRemaining: Math.max(0, usageCounts.outreachTool.weeklyLimit - usageCounts.outreachTool.weekly),
+        monthlyRemaining: Math.max(0, usageCounts.outreachTool.monthlyLimit - usageCounts.outreachTool.monthly),
+        weeklyLimit: usageCounts.outreachTool.weeklyLimit,
+        monthlyLimit: usageCounts.outreachTool.monthlyLimit,
+        limitType: 'monthly',
+        available: usageCounts.outreachTool.weekly < usageCounts.outreachTool.weeklyLimit && 
+                   usageCounts.outreachTool.monthly < usageCounts.outreachTool.monthlyLimit
       },
       aiConsultant: {
         used: usageCounts.aiConsultant.daily,
@@ -2394,11 +2422,15 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
         available: usageCounts.brandReport.daily < usageCounts.brandReport.limit
       },
       leadGenerator: {
-        used: usageCounts.leadGenerator.weekly,
-        remaining: Math.max(0, usageCounts.leadGenerator.limit - usageCounts.leadGenerator.weekly),
-        limit: usageCounts.leadGenerator.limit,
-        limitType: 'weekly',
-        available: usageCounts.leadGenerator.weekly < usageCounts.leadGenerator.limit
+        weeklyUsed: usageCounts.leadGenerator.weekly,
+        monthlyUsed: usageCounts.leadGenerator.monthly,
+        weeklyRemaining: Math.max(0, usageCounts.leadGenerator.weeklyLimit - usageCounts.leadGenerator.weekly),
+        monthlyRemaining: Math.max(0, usageCounts.leadGenerator.monthlyLimit - usageCounts.leadGenerator.monthly),
+        weeklyLimit: usageCounts.leadGenerator.weeklyLimit,
+        monthlyLimit: usageCounts.leadGenerator.monthlyLimit,
+        limitType: 'monthly',
+        available: usageCounts.leadGenerator.weekly < usageCounts.leadGenerator.weeklyLimit && 
+                   usageCounts.leadGenerator.monthly < usageCounts.leadGenerator.monthlyLimit
       },
       marketingAssistant: {
         used: usageCounts.marketingAssistant.weekly,

@@ -28,27 +28,32 @@ export interface AIUsageStatus {
 
 export interface AIFeatureLimits {
   dailyLimit?: number
+  weeklyLimit?: number
+  monthlyLimit?: number
   cooldownHours?: number
   requiresPreviousRecommendations?: boolean
 }
 
-// Define limits for each AI feature
+// Define limits for each AI feature - BEGINNER TIER ($97/mo)
+// Based on pricing widget: 100 leads/mo, 250 outreach/mo, 10 chatbot/day, 25 creatives/mo
 const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
   campaign_recommendations: {
-    cooldownHours: 24, // 24-hour cooldown (weekly)
+    weeklyLimit: 1, // Weekly campaign optimization (as shown in pricing)
+    cooldownHours: 24,
     requiresPreviousRecommendations: true
   },
   health_report: {
     dailyLimit: 3 // 3 health reports per day
   },
   ai_consultant_chat: {
-    dailyLimit: 15 // 15 chat messages per day
+    dailyLimit: 10 // 10/day as shown in pricing widget
   },
   marketing_analysis: {
-    dailyLimit: 1 // 1 weekly marketing assistant analysis (tracked for analytics, not enforced)
+    weeklyLimit: 1 // 1 weekly marketing assistant analysis (Weekly as shown in pricing)
   },
   brand_report: {
-    dailyLimit: 2 // 1 daily + 1 monthly report per month (tracked for analytics, not enforced)
+    dailyLimit: 1, // 1 daily report
+    monthlyLimit: 1 // 1 monthly report per month
   },
   creative_analysis: {
     dailyLimit: 10 // 10 creative analyses per day
@@ -69,16 +74,20 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 30 // 30 enhanced analyses per day
   },
   creative_generation: {
-    dailyLimit: 20 // 20 creative generations per day
+    weeklyLimit: 6, // 25/month ÷ 4 weeks = ~6/week
+    monthlyLimit: 25 // 25/month as shown in pricing widget
   },
   lead_gen_enrichment: {
-    dailyLimit: 100 // 100 lead enrichments per day
+    weeklyLimit: 25, // 100/month ÷ 4 weeks = 25/week
+    monthlyLimit: 100 // 100/month as shown in pricing widget
   },
   lead_gen_ecommerce: {
-    dailyLimit: 50 // 50 ecommerce lead generations per day
+    weeklyLimit: 25, // Same as lead_gen_enrichment
+    monthlyLimit: 100
   },
   outreach_messages: {
-    dailyLimit: 100 // 100 outreach messages per day
+    weeklyLimit: 62, // 250/month ÷ 4 weeks = ~62/week
+    monthlyLimit: 250 // 250/month as shown in pricing widget
   }
 }
 
@@ -94,86 +103,128 @@ export class AIUsageService {
       const limits = AI_FEATURE_LIMITS[featureType]
       const now = new Date()
 
-      // Get existing usage record (per brand, shared between all users)
-      const { data: usage, error } = await this.supabase
-        .from('ai_usage_tracking')
-        .select('*')
-        .eq('brand_id', brandId)
-        .eq('feature_type', featureType)
-        .single()
+      // Calculate week and month boundaries
+      const today = getCurrentLocalDateString()
+      const currentWeekStart = this.getWeekStart(now) // Monday
+      const currentMonthStart = this.getMonthStart(now) // 1st of month
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error checking AI usage:', error)
+      // Get usage from ai_feature_usage table (tracks all usage)
+      const { data: allUsage, error: usageError } = await this.supabase
+        .from('ai_feature_usage')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('feature_type', featureType)
+        .order('created_at', { ascending: false })
+
+      if (usageError) {
+        console.error('Error checking AI usage:', usageError)
         return { canUse: false, reason: 'Database error' }
       }
 
-      // If no usage record exists, user can use the feature
-      if (!usage) {
-        return { 
-          canUse: true, 
-          remainingUses: limits.dailyLimit || 0 
-        }
-      }
+      // Calculate usage counts for different periods
+      const dailyUsage = allUsage?.filter(u => {
+        const usageDate = new Date(u.created_at).toISOString().split('T')[0]
+        return usageDate === today
+      }).length || 0
 
-      // Check cooldown for features that have it
-      if (limits.cooldownHours) {
-        const cooldownEnd = new Date(usage.last_used_at)
+      const weeklyUsage = allUsage?.filter(u => {
+        const usageDate = new Date(u.created_at)
+        return usageDate >= currentWeekStart
+      }).length || 0
+
+      const monthlyUsage = allUsage?.filter(u => {
+        const usageDate = new Date(u.created_at)
+        return usageDate >= currentMonthStart
+      }).length || 0
+
+      console.log(`[AI Usage] ${featureType} - Daily: ${dailyUsage}, Weekly: ${weeklyUsage}, Monthly: ${monthlyUsage}`)
+
+      // Check cooldown for features that have it (e.g., campaign_recommendations)
+      if (limits.cooldownHours && allUsage && allUsage.length > 0) {
+        const lastUsage = allUsage[0]
+        const cooldownEnd = new Date(lastUsage.created_at)
         cooldownEnd.setHours(cooldownEnd.getHours() + limits.cooldownHours)
         
         if (now < cooldownEnd) {
           return {
             canUse: false,
             cooldownUntil: cooldownEnd,
-            lastUsed: new Date(usage.last_used_at),
+            lastUsed: new Date(lastUsage.created_at),
             reason: `Feature is on cooldown. Available again in ${Math.ceil((cooldownEnd.getTime() - now.getTime()) / (1000 * 60 * 60))} hours.`
           }
         }
       }
 
-      // Check daily limits for features that have them
-      if (limits.dailyLimit) {
-        const today = getCurrentLocalDateString()
-        // Handle both string and Date types from database
-        const usageDate = usage.daily_usage_date instanceof Date 
-          ? usage.daily_usage_date.toISOString().split('T')[0]
-          : usage.daily_usage_date.toString()
-        
-        // Reset daily count if it's a new day
-        if (usageDate !== today) {
-          return { 
-            canUse: true, 
-            remainingUses: limits.dailyLimit - 1 
-          }
-        }
-        
-        // Check if daily limit exceeded
-        if (usage.daily_usage_count >= limits.dailyLimit) {
-          return {
-            canUse: false,
-            remainingUses: 0,
-            reason: `Daily limit of ${limits.dailyLimit} uses reached. Resets tomorrow.`
-          }
-        }
-        
-        const remaining = limits.dailyLimit - usage.daily_usage_count
-        console.log(`[AI Usage] Daily limit check: ${usage.daily_usage_count}/${limits.dailyLimit}, remaining: ${remaining}`)
-        console.log(`[AI Usage] Full usage object:`, usage)
-        console.log(`[AI Usage] Returning:`, { canUse: true, remainingUses: remaining })
-        return { 
-          canUse: true, 
-          remainingUses: remaining 
+      // Check monthly limit first (if exists)
+      if (limits.monthlyLimit && monthlyUsage >= limits.monthlyLimit) {
+        return {
+          canUse: false,
+          remainingUses: 0,
+          reason: `Monthly limit of ${limits.monthlyLimit} uses reached. Resets on the 1st of next month.`
         }
       }
 
+      // Check weekly limit (if exists)
+      if (limits.weeklyLimit && weeklyUsage >= limits.weeklyLimit) {
+        const daysUntilMonday = (8 - now.getDay()) % 7 || 7
+        return {
+          canUse: false,
+          remainingUses: 0,
+          reason: `Weekly limit of ${limits.weeklyLimit} uses reached. Resets Monday (in ${daysUntilMonday} days).`
+        }
+      }
+
+      // Check daily limit (if exists)
+      if (limits.dailyLimit && dailyUsage >= limits.dailyLimit) {
+        return {
+          canUse: false,
+          remainingUses: 0,
+          reason: `Daily limit of ${limits.dailyLimit} uses reached. Resets tomorrow.`
+        }
+      }
+
+      // Calculate remaining uses based on the most restrictive limit
+      let remainingUses = 999 // Default high number
+      
+      if (limits.dailyLimit) {
+        remainingUses = Math.min(remainingUses, limits.dailyLimit - dailyUsage)
+      }
+      if (limits.weeklyLimit) {
+        remainingUses = Math.min(remainingUses, limits.weeklyLimit - weeklyUsage)
+      }
+      if (limits.monthlyLimit) {
+        remainingUses = Math.min(remainingUses, limits.monthlyLimit - monthlyUsage)
+      }
+
+      console.log(`[AI Usage] ${featureType} - Remaining uses: ${remainingUses}`)
+      
       return { 
         canUse: true, 
-        remainingUses: limits.dailyLimit || 0 
+        remainingUses: Math.max(0, remainingUses)
       }
 
     } catch (error) {
       console.error('Error in checkUsageStatus:', error)
       return { canUse: false, reason: 'Service error' }
     }
+  }
+
+  // Helper: Get start of current week (Monday)
+  private getWeekStart(date: Date): Date {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+    d.setDate(diff)
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
+
+  // Helper: Get start of current month
+  private getMonthStart(date: Date): Date {
+    const d = new Date(date)
+    d.setDate(1)
+    d.setHours(0, 0, 0, 0)
+    return d
   }
 
   async logUsage(params: {
