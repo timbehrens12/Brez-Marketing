@@ -2170,7 +2170,7 @@ export default function MarketingAssistantPage() {
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6">
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col ml-16 lg:ml-0">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl w-[calc(100%-5rem)] sm:w-[calc(100%-6rem)] lg:w-full lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
