@@ -2169,8 +2169,8 @@ export default function MarketingAssistantPage() {
 
       {/* Detailed Timeline Modal */}
       {showDetailedTimeline && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col lg:ml-0 ml-16">
+        <div className="fixed inset-0 lg:left-64 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] rounded-xl border border-[#333] shadow-2xl w-full max-w-[calc(100vw-80px)] sm:max-w-[calc(100vw-100px)] lg:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-[#333] flex items-center justify-between">
               <div>
@@ -2298,162 +2298,114 @@ export default function MarketingAssistantPage() {
 
                     {/* Selected Week Details */}
                     {selectedWeek && (
-                      <div className="bg-[#0f0f0f] border border-[#FF2A2A]/50 rounded-lg p-6">
-                        <div className="flex items-center justify-between mb-6">
+                      <div className="bg-[#0f0f0f] border border-[#FF2A2A]/50 rounded-lg overflow-hidden">
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-[#FF2A2A]/10 to-transparent p-4 border-b border-[#FF2A2A]/30 flex items-center justify-between">
                           <div>
-                            <h3 className="text-white font-bold text-xl">Week {selectedWeekIndex! + 1} Details</h3>
-                            <p className="text-gray-400 text-sm">{selectedWeek.week}</p>
+                            <h3 className="text-white font-bold text-xl flex items-center gap-2">
+                              <span className="w-8 h-8 bg-[#FF2A2A] rounded-full flex items-center justify-center text-sm">
+                                W{selectedWeekIndex! + 1}
+                              </span>
+                              Week {selectedWeekIndex! + 1} Breakdown
+                            </h3>
+                            <p className="text-gray-400 text-sm ml-10">{selectedWeek.week}</p>
                           </div>
                           <button
                             onClick={() => setSelectedWeekIndex(null)}
                             className="text-gray-400 hover:text-white transition-colors"
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         </div>
+                        
+                        <div className="p-4 space-y-4">
 
-                          <div className="grid grid-cols-2 gap-6">
-                            {/* Left Column: Performance Metrics & Goals */}
-                            <div className="space-y-6">
-                              {/* Performance Metrics */}
-                              <div>
-                                <h4 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                                  <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                  </svg>
-                                  Performance Metrics
-                                </h4>
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Spend</span>
-                                <span className="text-white font-bold text-lg">${selectedWeek.spend?.toFixed(2) || '0.00'}</span>
+                          {/* Performance Metrics - Single Row */}
+                          <div className="bg-[#0A0A0A] rounded-lg p-3 border border-[#333]">
+                            <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wide">📊 Performance Metrics</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">Spend</div>
+                                <div className="text-white font-bold">${selectedWeek.spend?.toFixed(2) || '0.00'}</div>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Revenue</span>
-                                <span className="text-emerald-400 font-bold text-lg">${selectedWeek.revenue?.toFixed(2) || '0.00'}</span>
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">Revenue</div>
+                                <div className="text-emerald-400 font-bold">${selectedWeek.revenue?.toFixed(2) || '0.00'}</div>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">ROAS</span>
-                                <div className="text-right">
-                                  <div className="text-white font-bold text-lg">{selectedWeek.roas?.toFixed(2) || '0.00'}x</div>
-                                  {selectedWeek.roasChange !== 0 && (
-                                    <div className={`text-xs font-medium ${
-                                      selectedWeek.roasChange > 0 ? 'text-emerald-400' : 'text-red-400'
-                                    }`}>
-                                      {selectedWeek.roasChange > 0 ? '+' : ''}{selectedWeek.roasChange}%
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">ROAS</div>
+                                <div className="text-[#FF2A2A] font-bold">{selectedWeek.roas?.toFixed(2) || '0.00'}x</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">CTR</div>
+                                <div className="text-white font-bold">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">Impressions</div>
+                                <div className="text-white font-bold text-sm">{selectedWeek.impressions?.toLocaleString() || '0'}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-gray-400 text-[10px] uppercase mb-1">Clicks</div>
+                                <div className="text-white font-bold text-sm">{selectedWeek.clicks?.toLocaleString() || '0'}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Goals for This Week */}
+                          <div className="bg-[#0A0A0A] rounded-lg p-3 border border-[#333]">
+                            <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wide">🎯 Goals Set ({selectedWeek.goals?.length || 0})</h4>
+                            {selectedWeek.goals && selectedWeek.goals.length > 0 ? (
+                              <div className="space-y-2">
+                                {selectedWeek.goals.map((goal: any, goalIndex: number) => (
+                                  <div key={goalIndex} className="flex items-start gap-2 p-2 bg-[#1A1A1A] rounded">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FF2A2A]/20 text-[#FF2A2A] flex-shrink-0 uppercase mt-0.5">
+                                      {goal.type}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-white font-medium text-sm">{goal.title}</p>
+                                      <p className="text-gray-400 text-xs mt-0.5">{goal.description}</p>
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Impressions</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.impressions?.toLocaleString() || '0'}</span>
-                              </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">Clicks</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.clicks?.toLocaleString() || '0'}</span>
-                              </div>
-                              <div className="flex justify-between items-center p-3 bg-[#0A0A0A] rounded-lg">
-                                <span className="text-gray-400">CTR</span>
-                                <span className="text-white font-bold text-lg">{selectedWeek.ctr?.toFixed(2) || '0.00'}%</span>
-                              </div>
-                            </div>
-                              </div>
-
-                              {/* Goals for This Week */}
-                              <div>
-                                <h4 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                                  <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                  </svg>
-                                  Goals Set ({selectedWeek.goals?.length || 0})
-                                </h4>
-                                {selectedWeek.goals && selectedWeek.goals.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {selectedWeek.goals.map((goal: any, goalIndex: number) => (
-                                      <div key={goalIndex} className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                                        <div className="flex items-start gap-2 mb-2">
-                                          <div className="w-1.5 h-1.5 bg-[#FF2A2A] rounded-full mt-1.5 flex-shrink-0"></div>
-                                          <div className="flex-1">
-                                            <p className="text-white font-medium text-sm mb-1">{goal.title}</p>
-                                            <p className="text-gray-400 text-xs">{goal.description}</p>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#FF2A2A]/20 text-[#FF2A2A]">
-                                            {goal.type}
-                                          </span>
-                                          <span className="text-gray-500 text-xs">
-                                            {new Date(goal.created_at).toLocaleDateString()}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    ))}
                                   </div>
-                                ) : (
-                                  <div className="p-6 bg-[#0A0A0A] rounded-lg border border-[#333] text-center">
-                                    <svg className="w-8 h-8 text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                    <p className="text-gray-500 text-sm">No goals set yet</p>
-                                  </div>
-                                )}
+                                ))}
                               </div>
-                            </div>
+                            ) : (
+                              <p className="text-gray-500 text-sm text-center py-4">No goals set yet</p>
+                            )}
+                          </div>
 
-                            {/* Right Column: Optimizations Applied */}
-                            <div>
-                            <h4 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                              <svg className="w-4 h-4 text-[#FF2A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Optimizations Applied ({selectedWeek.optimizationsApplied})
-                            </h4>
+                          {/* Optimizations Applied */}
+                          <div className="bg-[#0A0A0A] rounded-lg p-3 border border-[#333]">
+                            <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wide">✅ Optimizations Applied ({selectedWeek.optimizationsApplied})</h4>
                             {selectedWeek.optimizationsApplied > 0 ? (
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 {selectedWeek.actions?.map((action: any, actionIndex: number) => (
-                                  <div key={actionIndex} className="p-4 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                                    <div className="flex items-start gap-3 mb-3">
-                                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full mt-2 flex-shrink-0"></div>
-                                      <div className="flex-1">
-                                        <p className="text-white font-medium mb-1">{action.title}</p>
-                                        <p className="text-gray-400 text-sm">{action.description}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                        action.category === 'budget'
-                                          ? 'bg-blue-500/20 text-blue-400'
-                                          : action.category === 'targeting'
-                                          ? 'bg-purple-500/20 text-purple-400'
-                                          : action.category === 'creative'
-                                          ? 'bg-pink-500/20 text-pink-400'
-                                          : 'bg-gray-500/20 text-gray-400'
-                                      }`}>
-                                        {action.category}
-                                      </span>
-                                      <span className="text-gray-500 text-xs">
-                                        {new Date(action.created_at).toLocaleDateString()}
-                                      </span>
+                                  <div key={actionIndex} className="flex items-start gap-2 p-2 bg-[#1A1A1A] rounded">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 uppercase mt-0.5 ${
+                                      action.category === 'budget'
+                                        ? 'bg-blue-500/20 text-blue-400'
+                                        : action.category === 'targeting'
+                                        ? 'bg-purple-500/20 text-purple-400'
+                                        : action.category === 'creative'
+                                        ? 'bg-pink-500/20 text-pink-400'
+                                        : 'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {action.category}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-white font-medium text-sm">{action.title}</p>
+                                      <p className="text-gray-400 text-xs mt-0.5">{action.description}</p>
                                     </div>
                                   </div>
                                 )) || (
-                                  <div className="p-4 bg-[#0A0A0A] rounded-lg border border-[#333] text-center">
-                                    <p className="text-gray-400">
-                                      {selectedWeek.optimizationsApplied} optimization{selectedWeek.optimizationsApplied !== 1 ? 's' : ''} applied this week
-                                    </p>
-                                  </div>
+                                  <p className="text-gray-400 text-sm text-center py-4">
+                                    {selectedWeek.optimizationsApplied} optimization{selectedWeek.optimizationsApplied !== 1 ? 's' : ''} applied
+                                  </p>
                                 )}
                               </div>
                             ) : (
-                              <div className="p-8 bg-[#0A0A0A] rounded-lg border border-[#333] text-center">
-                                <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                </svg>
-                                <p className="text-gray-500">No optimizations applied yet</p>
-                              </div>
+                              <p className="text-gray-500 text-sm text-center py-4">No optimizations applied yet</p>
                             )}
                           </div>
                         </div>
