@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { getMondayToMondayRange } from '@/lib/date-utils'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
+import { MetaSyncValidator } from '@/lib/services/meta-sync-validator'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -150,6 +151,32 @@ export async function GET(request: NextRequest) {
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    }
+
+    // AUTO-SYNC CHECK: Ensure we have fresh data before generating recommendations
+    // Only check if data hasn't been updated in the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const { data: recentCampaignData } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('created_at')
+      .eq('brand_id', brandId)
+      .gte('created_at', oneHourAgo.toISOString())
+      .limit(1)
+    
+    if (!recentCampaignData || recentCampaignData.length === 0) {
+      console.log('[Recommendations API] No recent data updates, running auto-sync check...')
+      try {
+        const metaSyncValidator = new MetaSyncValidator(supabase)
+        const syncResult = await metaSyncValidator.checkAndAutoSync(brandId)
+        if (syncResult.syncTriggered) {
+          console.log(`[Recommendations API] Auto-sync completed: ${syncResult.message}`)
+        }
+      } catch (syncError) {
+        console.warn('[Recommendations API] Auto-sync warning (non-blocking):', syncError)
+        // Don't fail the request if sync validation fails
+      }
+    } else {
+      console.log('[Recommendations API] Recent data found, skipping auto-sync')
     }
 
     // Get campaigns that have data in the date range (regardless of current status)
