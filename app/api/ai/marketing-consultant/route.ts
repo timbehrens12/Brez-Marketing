@@ -1786,30 +1786,36 @@ When users ask what they should do or what tools to use, reference these usage l
 === BRAND CONTEXT & ACTIVITY ===
 ${analysisData.brandContextData ? `
 LEADS & OUTREACH:
-• Total Leads: ${analysisData.brandContextData.summary.leads.total} (${analysisData.brandContextData.summary.leads.recent} in last 30 days)
+• Total Leads in Outreach: ${analysisData.brandContextData.summary.outreach.totalLeads}
+• Pending Leads (need outreach): ${analysisData.brandContextData.summary.outreach.pendingLeads}
+• Contacted Leads: ${analysisData.brandContextData.summary.outreach.contactedLeads}
+• Responded Leads: ${analysisData.brandContextData.summary.outreach.respondedLeads}
+• Qualified Leads: ${analysisData.brandContextData.summary.outreach.qualifiedLeads}
+• Signed Leads: ${analysisData.brandContextData.summary.outreach.signedLeads}
 • Outreach Campaigns: ${analysisData.brandContextData.summary.outreach.totalCampaigns} total, ${analysisData.brandContextData.summary.outreach.activeCampaigns} active
-${analysisData.brandContextData.summary.leads.total > 0 ? '• User has leads available for outreach campaigns' : '• No leads yet - suggest using Lead Generator'}
+${analysisData.brandContextData.summary.outreach.pendingLeads > 0 ? `• ${analysisData.brandContextData.summary.outreach.pendingLeads} leads are waiting for outreach messages` : ''}
 
 MARKETING ASSISTANT RECOMMENDATIONS:
-• Total Recommendations: ${analysisData.brandContextData.summary.recommendations.total}
-• Active Recommendations: ${analysisData.brandContextData.summary.recommendations.active}
+• Total Active Recommendations: ${analysisData.brandContextData.summary.recommendations.total}
 • Applied Recommendations: ${analysisData.brandContextData.summary.recommendations.applied}
-${analysisData.brandContextData.summary.recommendations.active > 0 ? '• User has active optimization recommendations available in Marketing Assistant' : '• No active recommendations - suggest running Marketing Assistant weekly analysis'}
+• Pending Recommendations: ${analysisData.brandContextData.summary.recommendations.pending}
+${analysisData.brandContextData.summary.recommendations.pending > 0 ? `• ${analysisData.brandContextData.summary.recommendations.pending} recommendations waiting to be applied` : ''}
 
 AD CREATIVES:
 • Total Generated Creatives: ${analysisData.brandContextData.summary.creatives.total}
 • Recent Creatives (30 days): ${analysisData.brandContextData.summary.creatives.recent}
-${analysisData.brandContextData.summary.creatives.total > 0 ? '• User has generated ad creatives in Creative Studio' : '• No creatives generated yet - suggest using Ad Creative Studio'}
 
-BRAND HEALTH:
-• Health Reports Generated: ${analysisData.brandContextData.summary.healthReports.total}
-${analysisData.brandContextData.summary.healthReports.lastReportDate ? `• Last Report: ${new Date(analysisData.brandContextData.summary.healthReports.lastReportDate).toLocaleDateString()}` : '• No health reports generated yet'}
+BRAND REPORTS:
+• Daily Report: ${analysisData.brandContextData.summary.brandReports.dailyAvailable ? '✓ AVAILABLE' : (analysisData.brandContextData.summary.brandReports.dailyUsedToday ? '✗ Already used today' : '✗ Not available yet (available after 6:30 AM)')}
+• Monthly Report: ${analysisData.brandContextData.summary.brandReports.monthlyAvailable ? '✓ AVAILABLE' : '✗ Already used this month'}
+${analysisData.brandContextData.summary.brandReports.lastReportDate ? `• Last Report: ${new Date(analysisData.brandContextData.summary.brandReports.lastReportDate).toLocaleDateString()}` : ''}
 
 When users ask what to do next or need recommendations:
-- If they have active Marketing Assistant recommendations, suggest reviewing and applying them
-- If they have leads but no outreach campaigns, suggest starting an outreach campaign
-- If they haven't used Creative Studio, suggest generating ad creatives
+- If they ask about brand reports, tell them the EXACT availability status from above
+- If they have pending leads, suggest using Outreach Tool to contact them
+- If they have pending Marketing Assistant recommendations, suggest reviewing and applying them
 - If Marketing Assistant is available (weekly limit), suggest running it for fresh insights
+- If Creative Studio has uses available, suggest generating ad creatives
 - Reference specific numbers from this context to make recommendations personalized
 ` : 'Brand context data not available'}
 
@@ -2416,17 +2422,27 @@ async function gatherBrandContextData(supabase: any, brandId: string, userId: st
   try {
     console.log(`[AI Marketing Consultant] Fetching comprehensive brand context for brand ${brandId}...`)
 
-    // Fetch leads associated with this brand
-    const { data: leads, error: leadsError } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('brand_id', brandId)
-      .order('created_at', { ascending: false })
-      .limit(100) // Limit to most recent 100 leads
+    // Fetch campaign leads with their status (this is what outreach tool uses)
+    const { data: campaignLeads, error: campaignLeadsError } = await supabase
+      .from('campaign_leads')
+      .select(`
+        *,
+        lead:leads(*),
+        campaign:outreach_campaigns(*)
+      `)
+      .eq('campaign.brand_id', brandId)
+      .order('added_at', { ascending: false })
 
-    if (leadsError) {
-      console.log(`[AI Marketing Consultant] Error fetching leads:`, leadsError)
+    if (campaignLeadsError) {
+      console.log(`[AI Marketing Consultant] Error fetching campaign leads:`, campaignLeadsError)
     }
+
+    // Count leads by status
+    const pendingLeads = campaignLeads?.filter((cl: any) => cl.status === 'pending') || []
+    const contactedLeads = campaignLeads?.filter((cl: any) => cl.status === 'contacted') || []
+    const respondedLeads = campaignLeads?.filter((cl: any) => cl.status === 'responded') || []
+    const qualifiedLeads = campaignLeads?.filter((cl: any) => cl.status === 'qualified') || []
+    const signedLeads = campaignLeads?.filter((cl: any) => cl.status === 'signed') || []
 
     // Fetch outreach campaigns for this brand
     const { data: outreachCampaigns, error: outreachError } = await supabase
@@ -2434,7 +2450,6 @@ async function gatherBrandContextData(supabase: any, brandId: string, userId: st
       .select('*')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
-      .limit(50)
 
     if (outreachError) {
       console.log(`[AI Marketing Consultant] Error fetching outreach campaigns:`, outreachError)
@@ -2445,8 +2460,8 @@ async function gatherBrandContextData(supabase: any, brandId: string, userId: st
       .from('ai_campaign_recommendations')
       .select('*')
       .eq('brand_id', brandId)
+      .gt('expires_at', new Date().toISOString()) // Only active (not expired)
       .order('created_at', { ascending: false })
-      .limit(20)
 
     if (recommendationsError) {
       console.log(`[AI Marketing Consultant] Error fetching marketing recommendations:`, recommendationsError)
@@ -2464,63 +2479,63 @@ async function gatherBrandContextData(supabase: any, brandId: string, userId: st
       console.log(`[AI Marketing Consultant] Error fetching ad creatives:`, creativesError)
     }
 
-    // Fetch brand health reports
-    const { data: healthReports, error: healthError } = await supabase
-      .from('brand_health_reports')
+    // Fetch brand reports for this brand
+    const { data: brandReports, error: reportsError } = await supabase
+      .from('brand_reports')
       .select('*')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
       .limit(10)
 
-    if (healthError) {
-      console.log(`[AI Marketing Consultant] Error fetching health reports:`, healthError)
+    if (reportsError) {
+      console.log(`[AI Marketing Consultant] Error fetching brand reports:`, reportsError)
     }
 
-    // Fetch AI usage tracking for this brand
-    const { data: aiUsageTracking, error: usageTrackingError } = await supabase
-      .from('ai_usage_tracking')
-      .select('*')
-      .eq('brand_id', brandId)
-      .order('last_used_at', { ascending: false })
-
-    if (usageTrackingError) {
-      console.log(`[AI Marketing Consultant] Error fetching AI usage tracking:`, usageTrackingError)
-    }
-
-    // Fetch Meta ad insights for detailed ad performance
-    const { data: metaAdInsights, error: adInsightsError } = await supabase
-      .from('meta_ad_daily_insights')
-      .select('*')
-      .eq('brand_id', brandId)
-      .order('date', { ascending: false })
-      .limit(100)
-
-    if (adInsightsError) {
-      console.log(`[AI Marketing Consultant] Error fetching Meta ad insights:`, adInsightsError)
-    }
+    // Check brand report availability (database-only, no localStorage)
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    
+    // Check if daily report was generated today
+    const dailyReportToday = brandReports?.find((report: any) => {
+      const reportDate = new Date(report.created_at).toISOString().split('T')[0]
+      const isManual = report.snapshot_time === 'manual'
+      const isDaily = report.period === 'today'
+      return isManual && isDaily && reportDate === today
+    })
+    
+    // Check if monthly report was generated this month
+    const monthlyReportThisMonth = brandReports?.find((report: any) => {
+      const reportDate = new Date(report.created_at)
+      const reportMonthKey = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}`
+      const isMonthly = report.period === 'month'
+      return isMonthly && reportMonthKey === currentMonthKey
+    })
+    
+    // Check time restrictions for daily reports (after 6:30 AM)
+    const currentHour = now.getHours()
+    const currentMinutes = now.getMinutes()
+    const isAfter630AM = currentHour > 6 || (currentHour === 6 && currentMinutes >= 30)
+    
+    const dailyReportAvailable = isAfter630AM && !dailyReportToday
+    const monthlyReportAvailable = !monthlyReportThisMonth
 
     // Calculate summary statistics
     const contextSummary = {
-      leads: {
-        total: leads?.length || 0,
-        recent: leads?.filter((l: any) => {
-          const leadDate = new Date(l.created_at)
-          const thirtyDaysAgo = new Date()
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-          return leadDate >= thirtyDaysAgo
-        }).length || 0
-      },
       outreach: {
+        totalLeads: campaignLeads?.length || 0,
+        pendingLeads: pendingLeads.length,
+        contactedLeads: contactedLeads.length,
+        respondedLeads: respondedLeads.length,
+        qualifiedLeads: qualifiedLeads.length,
+        signedLeads: signedLeads.length,
         totalCampaigns: outreachCampaigns?.length || 0,
         activeCampaigns: outreachCampaigns?.filter((c: any) => c.status === 'active').length || 0
       },
       recommendations: {
         total: marketingRecommendations?.length || 0,
-        active: marketingRecommendations?.filter((r: any) => {
-          const expiresAt = new Date(r.expires_at)
-          return expiresAt > new Date()
-        }).length || 0,
-        applied: marketingRecommendations?.filter((r: any) => r.status === 'applied').length || 0
+        applied: marketingRecommendations?.filter((r: any) => r.status === 'applied').length || 0,
+        pending: marketingRecommendations?.filter((r: any) => r.status === 'pending').length || 0
       },
       creatives: {
         total: adCreatives?.length || 0,
@@ -2531,49 +2546,39 @@ async function gatherBrandContextData(supabase: any, brandId: string, userId: st
           return creativeDate >= thirtyDaysAgo
         }).length || 0
       },
-      healthReports: {
-        total: healthReports?.length || 0,
-        lastReportDate: healthReports?.[0]?.created_at || null
-      },
-      aiUsage: {
-        features: aiUsageTracking?.map((u: any) => ({
-          feature: u.feature_type,
-          lastUsed: u.last_used_at,
-          usageCount: u.usage_count,
-          dailyCount: u.daily_usage_count
-        })) || []
+      brandReports: {
+        total: brandReports?.length || 0,
+        lastReportDate: brandReports?.[0]?.created_at || null,
+        dailyAvailable: dailyReportAvailable,
+        monthlyAvailable: monthlyReportAvailable,
+        dailyUsedToday: !!dailyReportToday,
+        monthlyUsedThisMonth: !!monthlyReportThisMonth
       }
     }
 
     console.log(`[AI Marketing Consultant] Brand context summary:`, contextSummary)
 
     return {
-      leads: leads || [],
+      campaignLeads: campaignLeads || [],
       outreachCampaigns: outreachCampaigns || [],
       marketingRecommendations: marketingRecommendations || [],
       adCreatives: adCreatives || [],
-      healthReports: healthReports || [],
-      aiUsageTracking: aiUsageTracking || [],
-      metaAdInsights: metaAdInsights || [],
+      brandReports: brandReports || [],
       summary: contextSummary
     }
   } catch (error) {
     console.error('[AI Marketing Consultant] Error gathering brand context data:', error)
     return {
-      leads: [],
+      campaignLeads: [],
       outreachCampaigns: [],
       marketingRecommendations: [],
       adCreatives: [],
-      healthReports: [],
-      aiUsageTracking: [],
-      metaAdInsights: [],
+      brandReports: [],
       summary: {
-        leads: { total: 0, recent: 0 },
-        outreach: { totalCampaigns: 0, activeCampaigns: 0 },
-        recommendations: { total: 0, active: 0, applied: 0 },
+        outreach: { totalLeads: 0, pendingLeads: 0, contactedLeads: 0, respondedLeads: 0, qualifiedLeads: 0, signedLeads: 0, totalCampaigns: 0, activeCampaigns: 0 },
+        recommendations: { total: 0, applied: 0, pending: 0 },
         creatives: { total: 0, recent: 0 },
-        healthReports: { total: 0, lastReportDate: null },
-        aiUsage: { features: [] }
+        brandReports: { total: 0, lastReportDate: null, dailyAvailable: false, monthlyAvailable: false, dailyUsedToday: false, monthlyUsedThisMonth: false }
       }
     }
   }
