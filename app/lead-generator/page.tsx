@@ -1031,34 +1031,6 @@ export default function LeadGeneratorPage() {
     return `any moment now (Sunday night at midnight)`
   }
 
-  const getCountdownToMondayMidnight = () => {
-    // Calculate next Monday 12am in user's local timezone
-    const now = new Date()
-    const nextMonday = new Date()
-    
-    // Set to next Monday at midnight
-    const daysUntilMonday = (8 - now.getDay()) % 7 || 7 // 0 = Sunday, so we want next Monday
-    nextMonday.setDate(now.getDate() + daysUntilMonday)
-    nextMonday.setHours(0, 0, 0, 0)
-    
-    const msUntilReset = nextMonday.getTime() - now.getTime()
-    const days = Math.floor(msUntilReset / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((msUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
-    
-    // If more than 24 hours, show days countdown
-    if (msUntilReset > 24 * 60 * 60 * 1000) {
-      return `${days} day${days === 1 ? '' : 's'}`
-    }
-    
-    // If less than 24 hours, show hours and minutes
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-    
-    // Always show minutes, never "any moment"
-    return `${minutes}m`
-  }
 
   const getTimeUntilMidnight = () => {
     const now = new Date()
@@ -1950,87 +1922,6 @@ export default function LeadGeneratorPage() {
           {/* Lead Search Panel */}
           <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl xl:col-span-2 flex flex-col">
             <CardContent className="space-y-6 pt-6">
-              {/* Usage Statistics Panel */}
-            <Card className="mb-6 bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-gray-400" />
-                  Daily Usage & Limits
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoadingUsage ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
-                    <span className="ml-2 text-gray-400">Loading usage data...</span>
-                  </div>
-                ) : usageData ? (
-                  <>
-                    {/* Weekly Generation Status */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Weekly Generation Status</span>
-                        <span className="text-sm text-gray-500">resets mondays - {getCountdownToMondayMidnight()}</span>
-                      </div>
-                      
-                      {/* Subtle status indicator */}
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-[#2A2A2A] border border-[#333]">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            usageData.remaining <= 0 ? 'bg-[#2A2A2A]' : 'bg-white'
-                          }`}></div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-300">
-                              {usageData.remaining <= 0 ? 'Monthly limit reached' : 'Generation available'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {usageData.remaining <= 0 && usageData.used > 0 ? `Resets on the 1st of each month` : 
-                               usageData.remaining <= 0 ? 'Monthly limit reached' : 'Ready to find leads'}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {usageData.remaining > 0 && (
-                          <div className="text-right">
-                            <div className="text-xs font-medium text-white bg-red-600 px-2 py-1 rounded-full">
-                              Ready
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Monthly Usage Counter */}
-                    <div className="pt-3 border-t border-[#333]">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-white">{usageData.used}/{usageData.limit}</div>
-                        <div className="text-xs text-gray-500">Used this month</div>
-                      </div>
-                    </div>
-
-                    {/* System Limits */}
-                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#333]">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-white">{usageData.leadsPerNiche}</div>
-                        <div className="text-xs text-gray-500">Leads per Niche</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-gray-300">{usageData.maxNichesPerSearch}</div>
-                        <div className="text-xs text-gray-500">Max Niches</div>
-                      </div>
-                    </div>
-
-
-
-                  </>
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    Unable to load usage data
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-
               {/* Business Type Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
@@ -2400,7 +2291,7 @@ export default function LeadGeneratorPage() {
                 ) : (usageData?.remaining ?? 0) <= 0 ? (
                   <>
                     <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">Weekly Limit - resets Mondays - {getCountdownToMondayMidnight()}</span>
+                    <span className="truncate">Monthly Limit Reached - Resets on the 1st</span>
                   </>
                 ) : (
                   <>
