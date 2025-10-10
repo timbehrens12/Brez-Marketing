@@ -23,19 +23,19 @@ export default function MatrixHero({
     resize();
     window.addEventListener("resize", resize);
 
-    // Animation settings
-    const chars = "01AI▮▯▰▱░▒▓█";
-    const fontSize = 14;
-    const speed = 40; // ms per frame
+    // Animation settings - optimized for quality
+    const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ01234567890ABCDEFZ$+-*/=%\"'#&_(),.;:?!\\|{}<>[]^~";
+    const fontSize = 16;
+    const speed = 50; // ms per frame (slower, smoother)
     let columns = Math.floor(window.innerWidth / fontSize);
-    let drops = new Array(columns).fill(1);
+    let drops = new Array(columns).fill(0).map(() => Math.random() * -100); // stagger start positions
 
     // ---- Phase control ----
     // Phase 0: intro bar drop (one bright horizontal bar scans down once)
     // Phase 1: soft matrix rain
     let phase: 0 | 1 = 0;
-    let introY = -fontSize; // starting above the top
-    const introOpacity = 0.7; // brightness of the intro bar
+    let introY = -fontSize * 3; // starting higher above the top
+    const introOpacity = 0.85; // brighter intro bar
 
     // Respect reduced motion
     const prefersReduced =
@@ -44,39 +44,66 @@ export default function MatrixHero({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const drawIntro = () => {
-      // fade previous frame slightly darker
-      ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+      // fade previous frame - smoother trail
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // full row of characters at introY
-      ctx.fillStyle = `rgba(255, 0, 60, ${introOpacity})`;
-      ctx.font = `${fontSize}px monospace`;
+      // full row of characters at introY with glow effect
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "rgba(255, 42, 42, 0.8)";
+      ctx.fillStyle = `rgba(255, 42, 42, ${introOpacity})`;
+      ctx.font = `bold ${fontSize}px "Courier New", monospace`;
 
       for (let i = 0; i < columns; i++) {
         const text = chars[Math.floor(Math.random() * chars.length)];
         ctx.fillText(text, i * fontSize, introY);
       }
 
-      introY += 6; // drop speed
-      if (introY > window.innerHeight + fontSize) {
-        // switch to rain
+      ctx.shadowBlur = 0; // reset shadow
+
+      introY += 4; // slower drop speed
+      if (introY > window.innerHeight + fontSize * 2) {
+        // switch to rain with smooth transition
         phase = 1;
       }
     };
 
     const drawRain = () => {
-      // slightly darker trail than intro
-      ctx.fillStyle = "rgba(0, 0, 0, 0.30)";
+      // darker trail for subtle background effect
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "rgba(255, 0, 60, 0.5)"; // dimmer code
-      ctx.font = `${fontSize}px monospace`;
+      ctx.font = `${fontSize}px "Courier New", monospace`;
 
       for (let i = 0; i < drops.length; i++) {
         const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > window.innerHeight && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
+        const y = drops[i] * fontSize;
+        
+        // Brightest character at the head
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(255, 42, 42, 0.6)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.fillText(text, i * fontSize, y);
+        
+        // Draw fading trail
+        for (let j = 1; j < 8; j++) {
+          const trailY = y - j * fontSize;
+          if (trailY > 0) {
+            const opacity = Math.max(0.1, 0.6 - j * 0.08);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = `rgba(255, 42, 42, ${opacity})`;
+            const trailChar = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(trailChar, i * fontSize, trailY);
+          }
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        // Reset drop when it goes off screen (increased reset frequency)
+        if (drops[i] * fontSize > window.innerHeight && Math.random() > 0.95) {
+          drops[i] = 0;
+        }
+        drops[i] += 0.5; // slower fall speed
       }
     };
 
@@ -93,7 +120,7 @@ export default function MatrixHero({
         const newCols = Math.floor(window.innerWidth / fontSize);
         if (newCols !== columns) {
           columns = newCols;
-          drops = new Array(columns).fill(1);
+          drops = new Array(columns).fill(0).map(() => Math.random() * -100);
         }
 
         if (phase === 0 && !prefersReduced) {
@@ -120,7 +147,7 @@ export default function MatrixHero({
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
       {/* Dark overlay filter to keep it background-y */}
-      <div className="absolute inset-0 bg-black/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-black/50 pointer-events-none" />
 
       {/* Hero content (passed as children) */}
       <div className="relative z-10">
