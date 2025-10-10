@@ -1058,7 +1058,7 @@ export default function HomePage() {
                     key={plan.name}
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-visible ${
                       plan.popular 
-                        ? 'border-[4px] border-[var(--brand-red)]/60 shadow-[0_0_40px_rgba(255,42,42,.3)] mt-6' 
+                        ? 'border-[4px] border-[var(--brand-red)]/60 shadow-[0_0_40px_rgba(255,42,42,.3)]' 
                         : 'border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
                     style={{
