@@ -1043,34 +1043,25 @@ export default function HomePage() {
                             <p className="text-white/60 text-xs mt-1">{plan.description}</p>
                           </div>
                         </div>
-                        <div className="mb-6 flex items-start gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-4xl font-black text-white">
-                                ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
-                              </span>
-                              <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
-                            </div>
-                            {billingInterval === 'weekly' && (
-                              <div className="flex flex-col gap-1 mt-2">
-                                <span className="text-xs text-white/50">
-                                  ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
-                                </span>
-                                <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
-                                  Billed weekly
-                                </span>
-                              </div>
-                            )}
+                        <div className="mb-6">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">
+                              ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10 / 4) : plan.price}
+                            </span>
+                            <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
-
-                          {/* Launch Special Badge - To the right of price */}
-                          <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/40 rounded-lg px-2.5 py-2 text-center min-w-[85px]">
-                            <div className="text-[8px] font-bold uppercase tracking-wider text-green-400 mb-0.5">🎉 Launch</div>
-                            <div className="text-[8px] font-bold uppercase tracking-wider text-green-400 -mt-1">Special</div>
-                            <div className="text-[9px] font-black text-white mt-1">
-                              <div className="line-through opacity-60">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</div>
-                              <div className="text-yellow-300 mt-0.5">Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</div>
-                            </div>
+                          <div className="flex flex-col gap-0.5 mt-1">
+                            <span className="text-xs text-white/50">
+                              ≈ ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10) : plan.originalPrice}/mo <span className="line-through">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
+                            </span>
+                            {billingInterval === 'weekly' && (
+                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
+                                Billed weekly
+                              </span>
+                            )}
+                            <span className="text-[10px] text-green-400 font-semibold">
+                              🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
+                            </span>
                           </div>
                         </div>
                       
