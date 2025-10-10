@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Zap, Shield, Users, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail, ArrowRight, Check, Target } from "lucide-react"
+import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail, ArrowRight, Check, Target, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -894,7 +894,7 @@ export default function HomePage() {
                     price: 67,
                     originalPrice: 97,
                     popular: false,
-                    icon: Users,
+                    icon: User,
                     brands: 1,
                     teamMembers: null,
                     leadGen: 0,
@@ -969,7 +969,7 @@ export default function HomePage() {
                     price: 697,
                     originalPrice: 997,
                     popular: false,
-                    icon: Zap,
+                    icon: Globe,
                     brands: 15,
                     teamMembers: 3,
                     leadGen: 750,
@@ -995,7 +995,7 @@ export default function HomePage() {
                     price: 1337,
                     originalPrice: 1997,
                     popular: false,
-                    icon: Award,
+                    icon: Building2,
                     brands: 25,
                     teamMembers: 10,
                     leadGen: 2500,
