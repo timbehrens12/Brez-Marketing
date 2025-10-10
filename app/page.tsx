@@ -1266,7 +1266,7 @@ export default function HomePage() {
 
           {/* Main dashboard footer with background matching simple footer */}
           <div className="bg-black/40 [&_footer]:!bg-black/40 [&_footer]:!bg-none">
-            <Footer />
+            <Footer centered />
           </div>
         </div>
       </div>

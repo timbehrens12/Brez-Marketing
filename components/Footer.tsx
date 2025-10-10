@@ -15,9 +15,9 @@ import dynamic from 'next/dynamic'
 // Suppress hydration warnings for this component
 const FooterContent = dynamic(() => Promise.resolve(FooterContentComponent), {
   ssr: false
-})
+}) as React.ComponentType<{ centered?: boolean }>
 
-function FooterContentComponent() {
+function FooterContentComponent({ centered = false }: { centered?: boolean }) {
   // Use a static year or suppress hydration warning
   const [currentYear, setCurrentYear] = useState(2025)
   
@@ -90,28 +90,38 @@ function FooterContentComponent() {
         backgroundAttachment: 'fixed'
       }}
     >
-      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="text-white flex-shrink-0">
-              <img 
-                src="https://i.imgur.com/j4AQPxj.png" 
-                alt="[bm] dashboard" 
-                className="h-8 w-auto flex-shrink-0"
-              />
+      <div className={`max-w-screen-xl mx-auto flex flex-col ${centered ? 'lg:flex-col items-center text-center' : 'lg:flex-row justify-between items-center'} gap-4`}>
+        {!centered && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="text-white flex-shrink-0">
+                <img 
+                  src="https://i.imgur.com/j4AQPxj.png" 
+                  alt="[bm] dashboard" 
+                  className="h-8 w-auto flex-shrink-0"
+                />
+              </div>
+              <span className="text-sm text-zinc-400 whitespace-nowrap">
+                © {currentYear} Brez Marketing. All rights reserved.
+              </span>
             </div>
+            
+            {/* Version indicator */}
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+                {versionString}
+              </span>
+            </div>
+          </div>
+        )}
+        
+        {centered && (
+          <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-400 whitespace-nowrap">
               © {currentYear} Brez Marketing. All rights reserved.
             </span>
           </div>
-          
-          {/* Version indicator */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
-              {versionString}
-            </span>
-          </div>
-        </div>
+        )}
         
         <div className="flex items-center justify-center lg:justify-end gap-1 lg:gap-2 xl:gap-3 overflow-hidden">
           {/* Direct Feedback Button */}
@@ -164,19 +174,28 @@ function FooterContentComponent() {
           </a>
         </div>
         
-        {/* Version indicator for mobile */}
-        <div className="sm:hidden flex items-center justify-center w-full">
-          <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
-            {versionString}
-          </span>
-        </div>
+        {/* Version indicator */}
+        {!centered && (
+          <div className="sm:hidden flex items-center justify-center w-full">
+            <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+              {versionString}
+            </span>
+          </div>
+        )}
+        {centered && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+              {versionString}
+            </span>
+          </div>
+        )}
       </div>
     </footer>
   )
 }
 
-export function Footer() {
+export function Footer({ centered = false }: { centered?: boolean }) {
   return (
-    <FooterContent />
+    <FooterContent centered={centered} />
   )
 } 
