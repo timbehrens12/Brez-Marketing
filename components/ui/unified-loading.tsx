@@ -114,7 +114,7 @@ export function UnifiedLoading({
   if (variant === "minimal") {
     return (
       <div className={cn("flex items-center justify-center", className)}>
-        <Loader2 className={cn("animate-spin text-[#FF2A2A]", sizeClasses[size])} />
+        <Loader2 className={cn("animate-spin text-white", sizeClasses[size])} />
       </div>
     )
   }
@@ -127,7 +127,7 @@ export function UnifiedLoading({
       )}>
         <div className="text-center">
           {renderLogo()}
-          <Loader2 className={cn("animate-spin text-[#FF2A2A] mx-auto mb-4", sizeClasses[size])} />
+          <Loader2 className={cn("animate-spin text-white mx-auto mb-4", sizeClasses[size])} />
           {message && (
             <p className={cn("text-white mb-2 font-medium", messageTextClasses[size])}>
               {message}
@@ -150,7 +150,7 @@ export function UnifiedLoading({
         className
       )}>
         {showLogo && renderLogo()}
-        <Loader2 className={cn("animate-spin text-[#FF2A2A] mb-4", sizeClasses[size])} />
+        <Loader2 className={cn("animate-spin text-white mb-4", sizeClasses[size])} />
         {message && (
           <p className={cn("text-white text-center mb-2 font-medium", messageTextClasses[size])}>
             {message}
@@ -169,7 +169,7 @@ export function UnifiedLoading({
   return (
     <div className={cn("flex flex-col items-center justify-center py-8", className)}>
       {showLogo && renderLogo()}
-      <Loader2 className={cn("animate-spin text-[#FF2A2A] mb-4", sizeClasses[size])} />
+      <Loader2 className={cn("animate-spin text-white mb-4", sizeClasses[size])} />
       {message && (
         <p className={cn("text-white text-center mb-2 font-medium", messageTextClasses[size])}>
           {message}

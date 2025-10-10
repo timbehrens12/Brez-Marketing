@@ -188,7 +188,7 @@ export function Sidebar({ className }: SidebarProps) {
           `)}")`,
           backgroundRepeat: 'repeat',
           backgroundSize: '40px 40px',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'scroll'
         }}
       >
         {/* Logo Section */}
@@ -279,7 +279,7 @@ export function Sidebar({ className }: SidebarProps) {
           `)}")`,
           backgroundRepeat: 'repeat',
           backgroundSize: '40px 40px',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'scroll'
         }}
       >
         {/* Pin Button - only show when expanded */}
@@ -437,11 +437,11 @@ export function Sidebar({ className }: SidebarProps) {
 
                         <div className={cn(
                           "overflow-hidden transition-all duration-300 ease-out",
-                          showExpanded ? "flex-1 opacity-100" : "w-0 opacity-0"
+                          showExpanded ? "w-40 opacity-100" : "w-0 opacity-0"
                         )}>
-                          <div className="ml-3">
+                          <div className="ml-3 w-40">
                             <div className="flex items-center justify-between h-5">
-                              <p className="text-sm font-medium whitespace-nowrap">{item.name}</p>
+                              <p className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</p>
                               <div className="flex items-center gap-2 flex-shrink-0">
                               {isComingSoon && (
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
@@ -450,7 +450,7 @@ export function Sidebar({ className }: SidebarProps) {
                               )}
                               </div>
                             </div>
-                            <p className="text-xs text-gray-500 whitespace-nowrap h-4 leading-4">{item.description}</p>
+                            <p className="text-[10px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis h-4 leading-4">{item.description}</p>
                           </div>
                         </div>
                       </div>
