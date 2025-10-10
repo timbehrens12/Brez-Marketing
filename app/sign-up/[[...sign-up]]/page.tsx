@@ -10,7 +10,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333] relative z-10">
         <div className="mb-8 text-center">
           <img 
-            src="/brez-marketing-logo-scale-2.0.png" 
+            src="https://i.imgur.com/yd4HXMu.png" 
             alt="Brez Logo" 
             className="h-20 w-auto object-contain mx-auto mb-6" 
           />
