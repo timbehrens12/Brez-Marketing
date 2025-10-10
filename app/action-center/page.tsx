@@ -204,6 +204,10 @@ export default function ActionCenterPage() {
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(false)
   
+  // Tier limits and usage
+  const [tierLimits, setTierLimits] = useState<any>(null)
+  const [tierUsage, setTierUsage] = useState<any>(null)
+  
   // Reset navigating state on unmount to prevent stale state
   useEffect(() => {
     return () => {
@@ -254,7 +258,7 @@ export default function ActionCenterPage() {
       const supabase = await getSupabaseClient()
       
       // Load user data in parallel
-      const [leadsResponse, campaignsResponse, usageResponse, agencyResponse] = await Promise.all([
+      const [leadsResponse, campaignsResponse, usageResponse, agencyResponse, tierResponse, usageCountsResponse] = await Promise.all([
         // Get user's leads count
         supabase
           .from('leads')
@@ -278,7 +282,17 @@ export default function ActionCenterPage() {
           .from('agency_settings')
           .select('agency_name, agency_logo_url')
           .eq('user_id', userId)
-          .single()
+          .single(),
+        
+        // Get tier limits
+        supabase.rpc('get_user_tier_limits', { p_user_id: userId }),
+        
+        // Get AI usage counts
+        fetch('/api/ai/usage-counts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        }).then(res => res.json())
       ])
 
       // Handle leads count
@@ -307,6 +321,21 @@ export default function ActionCenterPage() {
       } else {
         setAgencySettingsState(agencyResponse.data)
         console.log('[Action Center] Agency settings:', agencyResponse.data)
+      }
+
+      // Handle tier limits
+      if (tierResponse.error) {
+        console.error('[Action Center] Error loading tier limits:', tierResponse.error)
+      } else {
+        const limits = tierResponse.data?.[0]
+        setTierLimits(limits)
+        console.log('[Action Center] Tier limits:', limits)
+      }
+
+      // Handle usage counts
+      if (usageCountsResponse) {
+        setTierUsage(usageCountsResponse)
+        console.log('[Action Center] Usage counts:', usageCountsResponse)
       }
 
     } catch (error) {
@@ -552,7 +581,24 @@ export default function ActionCenterPage() {
 
   const getStatusBadge = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
-      // User-dependent tools - show agency logo with status
+      // User-dependent tools - show agency logo with tier-based usage
+      let usageText = 'Loading...'
+      let usageColor = 'text-gray-400'
+      
+      if (tierLimits && tierUsage) {
+        if (tool.id === 'lead-generator') {
+          const used = tierUsage.leadGenerator?.monthly || 0
+          const limit = tierLimits.lead_gen_monthly || 0
+          usageText = limit === 0 ? 'Locked' : `${used}/${limit} used this month`
+          usageColor = limit === 0 ? 'text-red-400' : used >= limit ? 'text-red-400' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+        } else if (tool.id === 'outreach-tool') {
+          const used = tierUsage.outreachTool?.monthly || 0
+          const limit = tierLimits.outreach_messages_monthly || 0
+          usageText = limit === 0 ? 'Locked' : `${used}/${limit} used this month`
+          usageColor = limit === 0 ? 'text-red-400' : used >= limit ? 'text-red-400' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+        }
+      }
+      
       return (
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -574,14 +620,13 @@ export default function ActionCenterPage() {
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">User Dependent</span>
-            <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
-              {tool.status === 'available' ? 'Available' : 
-                tool.dependencyType === 'brand' && (!selectedBrandId || brands.length === 0) 
-                  ? 'Connect Brand First' 
-                  : 'Weekly Limit Reached'
-              }
+            <span className="text-xs text-gray-400">
+              {tierLimits?.tier ? tierLimits.display_name : 'Agency Dependent'}
             </span>
+            <span className={`text-xs font-medium ${usageColor}`}>
+              {usageText}
+            </span>
+            <span className="text-[10px] text-gray-500">Resets Tomorrow • 7h 39m</span>
           </div>
         </div>
       )
