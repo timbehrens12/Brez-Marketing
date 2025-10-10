@@ -837,6 +837,8 @@ export default function SettingsPage() {
   const { agencySettings, updateAgencySettings, isLoading: agencyLoading } = useAgency()
   const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [activeTab, setActiveTab] = useState('agency-branding')
+  const [userTier, setUserTier] = useState<string | null>(null)
+  const [tierLimits, setTierLimits] = useState<any>(null)
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [isAddBrandDialogOpen, setIsAddBrandDialogOpen] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
@@ -887,6 +889,29 @@ export default function SettingsPage() {
   const [editCustomNiche, setEditCustomNiche] = useState("")
   const [showEditCustomNicheInput, setShowEditCustomNicheInput] = useState(false)
 
+  // Fetch user tier on mount
+  useEffect(() => {
+    const fetchTier = async () => {
+      if (!user?.id) return
+      
+      try {
+        const response = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'white_label' })
+        })
+        
+        const data = await response.json()
+        setUserTier(data.currentTier)
+        setTierLimits(data)
+      } catch (error) {
+        console.error('Error fetching tier:', error)
+      }
+    }
+    
+    fetchTier()
+  }, [user?.id])
+
   // Sync temp agency name with context when agency settings change
   useEffect(() => {
     console.log('📥 Agency settings loaded:', {
@@ -895,12 +920,27 @@ export default function SettingsPage() {
       hasSignature: !!agencySettings.signature_image,
       signatureLength: agencySettings.signature_image?.length
     })
-    setTempAgencyName(agencySettings.agency_name)
+    
+    // For DTC tier, force Scale 2.0 branding
+    if (userTier === 'dtc_owner') {
+      setTempAgencyName('Scale 2.0 Dashboard')
+      // Auto-save if the name or logo is different
+      if (agencySettings.agency_name !== 'Scale 2.0 Dashboard' || 
+          agencySettings.agency_logo_url !== 'https://i.imgur.com/j4AQPxj.png') {
+        updateAgencySettings({
+          agency_name: 'Scale 2.0 Dashboard',
+          agency_logo_url: 'https://i.imgur.com/j4AQPxj.png'
+        })
+      }
+    } else {
+      setTempAgencyName(agencySettings.agency_name)
+    }
+    
     setTempSignatureName(agencySettings.signature_name || '')
     // Only reset removal flags
     setRemoveLogo(false)
     setRemoveSignature(false)
-  }, [agencySettings.agency_name, agencySettings.signature_name])
+  }, [agencySettings.agency_name, agencySettings.signature_name, userTier])
 
   // Clear logo preview when saved logo is available in agencySettings
   useEffect(() => {
@@ -1868,21 +1908,30 @@ export default function SettingsPage() {
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
                             <Label className="text-base font-medium text-white">Agency Name</Label>
-                            <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30 text-xs">
-                              Required
-                            </Badge>
+                            {userTier === 'dtc_owner' ? (
+                              <Badge variant="outline" className="bg-[#FF2A2A]/10 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                Locked - DTC Owner
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30 text-xs">
+                                Required
+                              </Badge>
+                            )}
                           </div>
                           <div className="relative">
                           <Input 
-                            value={tempAgencyName}
-                            onChange={(e) => setTempAgencyName(e.target.value)}
-                            onBlur={handleSaveAgencySettings}
+                            value={userTier === 'dtc_owner' ? 'Scale 2.0 Dashboard' : tempAgencyName}
+                            onChange={(e) => userTier !== 'dtc_owner' && setTempAgencyName(e.target.value)}
+                            onBlur={userTier !== 'dtc_owner' ? handleSaveAgencySettings : undefined}
                             placeholder="Enter your agency name"
                             className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
-                            disabled={agencyLoading || isSavingAgency}
+                            disabled={agencyLoading || isSavingAgency || userTier === 'dtc_owner'}
                           />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              {tempAgencyName && (
+                              {userTier === 'dtc_owner' ? (
+                                <Lock className="w-4 h-4 text-[#FF2A2A]" />
+                              ) : tempAgencyName && (
                                 <div className="w-5 h-5 rounded-full bg-gray-500/20 flex items-center justify-center">
                                   <Check className="w-3 h-3 text-gray-400" />
                                 </div>
@@ -1895,23 +1944,60 @@ export default function SettingsPage() {
                             </p>
                             <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#333]">
                               <p className="text-white font-medium">
-                                {tempAgencyName || "Your Agency Name"}
+                                {userTier === 'dtc_owner' ? 'Scale 2.0 Dashboard' : tempAgencyName || "Your Agency Name"}
                               </p>
                               <p className="text-gray-400 text-sm">Marketing Dashboard Report</p>
                             </div>
                           </div>
+                          {userTier === 'dtc_owner' && (
+                            <div className="bg-[#FF2A2A]/10 border border-[#FF2A2A]/30 rounded-xl p-3">
+                              <p className="text-sm text-[#FF2A2A]">
+                                <strong>White Label Not Available:</strong> Upgrade to Beginner tier or higher to customize your agency branding.
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         {/* Agency Logo */}
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
                             <Label className="text-base font-medium text-white">Agency Logo</Label>
-                            <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30 text-xs">
-                              Optional
-                            </Badge>
+                            {userTier === 'dtc_owner' ? (
+                              <Badge variant="outline" className="bg-[#FF2A2A]/10 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                Locked - DTC Owner
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30 text-xs">
+                                Optional
+                              </Badge>
+                            )}
                           </div>
                           
-                          {(agencySettings.agency_logo_url || logoPreview) && !removeLogo ? (
+                          {userTier === 'dtc_owner' ? (
+                            <div className="space-y-3">
+                              <div className="relative">
+                                <div className="w-full h-36 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center p-4 overflow-hidden">
+                                  <img 
+                                    src="https://i.imgur.com/j4AQPxj.png" 
+                                    alt="Scale 2.0 Dashboard Logo (Locked)" 
+                                    className="max-w-full max-h-full object-contain"
+                                  />
+                                </div>
+                                <div className="absolute top-2 right-2">
+                                  <div className="bg-[#FF2A2A]/20 border border-[#FF2A2A]/30 rounded-lg px-2 py-1 flex items-center gap-1">
+                                    <Lock className="w-3 h-3 text-[#FF2A2A]" />
+                                    <span className="text-xs text-[#FF2A2A] font-medium">Locked</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-[#FF2A2A]/10 border border-[#FF2A2A]/30 rounded-xl p-3">
+                                <p className="text-sm text-[#FF2A2A]">
+                                  <strong>Logo Customization Locked:</strong> This is the default Scale 2.0 Dashboard logo. Upgrade to customize.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (agencySettings.agency_logo_url || logoPreview) && !removeLogo ? (
                             <div className="space-y-3">
                               <div className="relative group">
                                 <div className="w-full h-36 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center p-4 overflow-hidden">
