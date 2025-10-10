@@ -1080,10 +1080,10 @@ export default function HomePage() {
 
                       <div className="p-6 flex flex-col h-full">
                         {/* Fixed height header for alignment */}
-                        <div className="flex items-center gap-3 mb-6 min-h-[60px]">
+                        <div className={`flex items-center gap-3 mb-6 ${plan.name === "Multi-Brand" ? "min-h-[50px]" : "min-h-[60px]"}`}>
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 flex-shrink-0">
                             {plan.icon === "custom" ? (
-                              <img src={plan.customIconPath} alt={plan.name} className="w-6 h-6" style={{ filter: 'brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7426%) hue-rotate(357deg) brightness(102%) contrast(116%)' }} />
+                              <img src={plan.customIconPath} alt={plan.name} className="w-8 h-8" style={{ filter: 'brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7426%) hue-rotate(357deg) brightness(102%) contrast(116%)' }} />
                             ) : (
                               <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                             )}
