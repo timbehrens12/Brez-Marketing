@@ -328,7 +328,7 @@ export default function HomePage() {
 
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Header */}
-           <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10 relative">
+           <header className="py-6 sticky top-0 z-20 relative">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto -ml-6" />
              </div>
