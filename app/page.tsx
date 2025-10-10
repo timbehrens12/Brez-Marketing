@@ -1026,20 +1026,20 @@ export default function HomePage() {
                     }`}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
                         <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
                           Most Popular
                         </span>
                       </div>
                     )}
 
-                    {/* Launch Special Badge - Angled in top right corner */}
-                    <div className="absolute top-0 right-0 overflow-hidden w-32 h-32 pointer-events-none z-[5]">
-                      <div className="absolute top-6 -right-8 w-40 bg-gradient-to-br from-green-500 to-green-600 text-white text-center shadow-lg transform rotate-45 py-1.5">
-                        <div className="text-[9px] font-bold uppercase tracking-wider">Launch Special</div>
+                    {/* Launch Special Badge - Ribbon outside top right corner */}
+                    <div className="absolute -top-0 -right-0 overflow-hidden w-28 h-28 pointer-events-none z-10">
+                      <div className="absolute top-4 -right-7 w-36 bg-gradient-to-br from-green-500 to-green-600 text-white text-center shadow-xl transform rotate-45 py-1.5 border-b-2 border-green-700/50">
+                        <div className="text-[8px] font-bold uppercase tracking-wider">Launch Special</div>
                         <div className="text-[10px] font-black">
                           <span className="line-through opacity-75">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
-                          <span className="mx-1 text-yellow-300">{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
+                          <span className="mx-0.5 text-yellow-300">{Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%</span>
                         </div>
                       </div>
                     </div>
