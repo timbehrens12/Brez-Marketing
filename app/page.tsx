@@ -879,9 +879,9 @@ export default function HomePage() {
                   <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'monthly' ? 'translate-x-7' : 'translate-x-0'}`} />
                 </button>
                 <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
-                  10% cheaper
+                  Monthly
                   <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
-                    Monthly
+                    10% cheaper
                   </span>
                 </span>
               </div>
