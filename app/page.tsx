@@ -951,7 +951,7 @@ export default function HomePage() {
                   },
                   {
                     name: "Beginner", 
-                    description: "First freelance clients",
+                    description: "First freelance client",
                     price: 97,
                     originalPrice: 147,
                     popular: true,
