@@ -1151,13 +1151,13 @@ export default function HomePage() {
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Lead Generation</span>
                               <span className={`font-semibold text-xs whitespace-nowrap ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
-                                {plan.leadGen === 0 ? "None" : `${plan.leadGen}/month`}
+                                {plan.leadGen === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.leadGen / 4)}/week` : `${plan.leadGen}/month`}
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Outreach Messages</span>
                               <span className={`font-semibold text-xs whitespace-nowrap ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
-                                {plan.outreach === 0 ? "None" : `${plan.outreach}/month`}
+                                {plan.outreach === 0 ? "None" : billingInterval === 'weekly' ? `${Math.round(plan.outreach / 4)}/week` : `${plan.outreach}/month`}
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
@@ -1167,7 +1167,7 @@ export default function HomePage() {
                             <div className="flex justify-between items-center gap-4">
                               <span className="text-white/70 text-xs">Creative Generation</span>
                               <span className="text-white font-semibold text-xs whitespace-nowrap">
-                                {plan.creativeGen}/month
+                                {billingInterval === 'weekly' ? `${Math.round(plan.creativeGen / 4)}/week` : `${plan.creativeGen}/month`}
                               </span>
                             </div>
                             <div className="flex justify-between items-center gap-4">
