@@ -1981,11 +1981,11 @@ export default function LeadGeneratorPage() {
                           }`}></div>
                           <div>
                             <div className="text-sm font-medium text-gray-300">
-                              {usageData.remaining <= 0 ? 'Weekly limit reached' : 'Generation available'}
+                              {usageData.remaining <= 0 ? 'Monthly limit reached' : 'Generation available'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {usageData.remaining <= 0 && usageData.used > 0 ? `resets mondays - ${getCountdownToMondayMidnight()}` : 
-                               usageData.remaining <= 0 ? 'Weekly limit reached' : 'Ready to find leads'}
+                              {usageData.remaining <= 0 && usageData.used > 0 ? `Resets on the 1st of each month` : 
+                               usageData.remaining <= 0 ? 'Monthly limit reached' : 'Ready to find leads'}
                             </div>
                           </div>
                         </div>
@@ -2000,11 +2000,11 @@ export default function LeadGeneratorPage() {
                       </div>
                     </div>
 
-                    {/* Weekly Usage Counter */}
+                    {/* Monthly Usage Counter */}
                     <div className="pt-3 border-t border-[#333]">
                       <div className="text-center">
                         <div className="text-lg font-semibold text-white">{usageData.used}/{usageData.limit}</div>
-                        <div className="text-xs text-gray-500">Used this week</div>
+                        <div className="text-xs text-gray-500">Used this month {usageData.tierName ? `(${usageData.tierName})` : ''}</div>
                       </div>
                     </div>
 
