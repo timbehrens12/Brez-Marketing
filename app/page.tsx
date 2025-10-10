@@ -12,6 +12,47 @@ import { VideoBackground } from "@/components/VideoBackground"
 
 const BRAND_RED = "#FF2A2A"
 
+// Custom Tier Icons
+const PersonIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+    <circle cx="12" cy="7" r="4" />
+    <path d="M6 21v-2c0-2.21 1.79-4 4-4h4c2.21 0 4 1.79 4 4v2" strokeWidth="2" stroke="currentColor" fill="none"/>
+  </svg>
+)
+
+const StairsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+    <path d="M3 21h4v-4h4v-4h4v-4h4V5h2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
+const GrowthIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+    <path d="M3 21h18" strokeLinecap="round"/>
+    <path d="M6 17h2v4H6zM10 13h2v8h-2zM14 9h2v12h-2zM18 5h2v16h-2z" fill="currentColor"/>
+    <circle cx="19" cy="5" r="2" fill="currentColor"/>
+    <path d="M14 9l5-4" strokeLinecap="round"/>
+  </svg>
+)
+
+const TeamIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+    <circle cx="12" cy="8" r="3"/>
+    <circle cx="6" cy="10" r="2.5"/>
+    <circle cx="18" cy="10" r="2.5"/>
+    <path d="M12 12c-2.21 0-4 1.79-4 4v2h8v-2c0-2.21-1.79-4-4-4z"/>
+    <path d="M2 18v-1.5c0-1.38 1.12-2.5 2.5-2.5h1c.28 0 .5.22.5.5v3.5H2z" opacity="0.7"/>
+    <path d="M22 18v-1.5c0-1.38-1.12-2.5-2.5-2.5h-1c-.28 0-.5.22-.5.5v3.5h4z" opacity="0.7"/>
+  </svg>
+)
+
+const BuildingIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+    <path d="M3 21h8V9H3v12zm2-10h4v2H5v-2zm0 4h4v2H5v-2z"/>
+    <path d="M13 3v18h8V3h-8zm2 16h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2z"/>
+  </svg>
+)
+
 // Interactive Slider Plan Recommendation Widget
 function BrandCountWidget() {
   const [sliderValue, setSliderValue] = useState(0)
@@ -890,7 +931,7 @@ export default function HomePage() {
                     price: 67,
                     originalPrice: 97,
                     popular: false,
-                    icon: User,
+                    icon: PersonIcon,
                     brands: 1,
                     teamMembers: null,
                     leadGen: 0,
@@ -915,7 +956,7 @@ export default function HomePage() {
                     price: 97,
                     originalPrice: 147,
                     popular: true,
-                    icon: Rocket,
+                    icon: StairsIcon,
                     brands: 1,
                     teamMembers: null,
                     leadGen: 100,
@@ -940,7 +981,7 @@ export default function HomePage() {
                     price: 397,
                     originalPrice: 597,
                     popular: false,
-                    icon: TrendingUp,
+                    icon: GrowthIcon,
                     brands: 5,
                     teamMembers: 1,
                     leadGen: 300,
@@ -965,7 +1006,7 @@ export default function HomePage() {
                     price: 697,
                     originalPrice: 997,
                     popular: false,
-                    icon: Globe,
+                    icon: TeamIcon,
                     brands: 15,
                     teamMembers: 3,
                     leadGen: 750,
@@ -991,7 +1032,7 @@ export default function HomePage() {
                     price: 1337,
                     originalPrice: 1997,
                     popular: false,
-                    icon: Building2,
+                    icon: BuildingIcon,
                     brands: 25,
                     teamMembers: 10,
                     leadGen: 2500,
@@ -1021,28 +1062,13 @@ export default function HomePage() {
                         : 'border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
                     style={{
-                      background: plan.popular 
-                        ? 'linear-gradient(135deg, rgba(139,0,0,0.15) 0%, rgba(0,0,0,0.95) 50%, rgba(139,0,0,0.15) 100%)' 
-                        : 'linear-gradient(135deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.98) 50%, rgba(30,30,30,0.95) 100%)',
-                      backgroundImage: plan.popular
-                        ? `
-                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,42,42,0.03) 2px, rgba(255,42,42,0.03) 4px),
-                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,42,42,0.03) 2px, rgba(255,42,42,0.03) 4px),
-                          repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,42,42,0.02) 3px, rgba(255,42,42,0.02) 6px),
-                          repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,42,42,0.02) 3px, rgba(255,42,42,0.02) 6px),
-                          radial-gradient(circle at 20% 30%, rgba(255,42,42,0.08), transparent 40%),
-                          radial-gradient(circle at 80% 70%, rgba(255,42,42,0.08), transparent 40%),
-                          linear-gradient(135deg, rgba(139,0,0,0.15) 0%, rgba(0,0,0,0.95) 50%, rgba(139,0,0,0.15) 100%)
-                        `
-                        : `
-                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
-                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
-                          repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 6px),
-                          repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 6px),
-                          radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03), transparent 50%),
-                          radial-gradient(circle at 70% 80%, rgba(255,255,255,0.03), transparent 50%),
-                          linear-gradient(135deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.98) 50%, rgba(30,30,30,0.95) 100%)
-                        `
+                      backgroundImage: `
+                        linear-gradient(${plan.popular ? 'rgba(255,42,42,0.12)' : 'rgba(0,0,0,0.75)'}, ${plan.popular ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.9)'}),
+                        url('https://i.imgur.com/wvL3Rqy.jpg')
+                      `,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundBlendMode: 'multiply'
                     }}
                   >
                     {plan.popular && (
