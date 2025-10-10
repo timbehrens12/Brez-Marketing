@@ -388,7 +388,7 @@ export default function HomePage() {
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-xs justify-center lg:justify-start">
                   <TagBadge tone="dark">SOC Compliant</TagBadge>
                   <TagBadge tone="dark">Cancel Anytime</TagBadge>
-                  <TagBadge tone="dark">30-Day Guarantee</TagBadge>
+                  <TagBadge tone="dark">Transparent Pricing</TagBadge>
                 </div>
               </div>
 
