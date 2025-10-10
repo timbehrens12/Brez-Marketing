@@ -124,7 +124,7 @@ function BrandCountWidget() {
     <div 
       className="border border-white/15 rounded-2xl p-8 overflow-hidden"
       style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.80), rgba(0,0,0,0.92)), url('/crinkled-paper.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundBlendMode: 'multiply'
@@ -175,7 +175,7 @@ function BrandCountWidget() {
       <div 
         className="border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(139,0,0,0.30), rgba(0,0,0,0.80)), url('/crinkled-paper.png')`,
+          backgroundImage: `linear-gradient(rgba(139,0,0,0.25), rgba(0,0,0,0.88)), url('/crinkled-paper.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundBlendMode: 'multiply'
@@ -366,12 +366,20 @@ export default function HomePage() {
             <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-[#1a1a1a] via-[#252525] to-[#1a1a1a] border border-gray-600/50 rounded-full mb-5 shadow-lg">
-                  <div className="relative flex items-center justify-center flex-shrink-0">
+                <div 
+                  className="inline-flex items-center gap-3 px-6 py-3 border border-gray-600/50 rounded-full mb-5 shadow-lg overflow-hidden relative"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(26,26,26,0.90), rgba(0,0,0,0.95)), url('/crinkled-paper.png')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundBlendMode: 'multiply'
+                  }}
+                >
+                  <div className="relative flex items-center justify-center flex-shrink-0 z-10">
                     <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
                     <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap">
+                  <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap z-10 relative">
                     LAUNCH SPECIAL - 30% OFF - Early access pricing ends soon
                   </span>
                 </div>
@@ -701,7 +709,7 @@ export default function HomePage() {
                 <div 
                   className="border border-red-500/30 rounded-2xl p-8 overflow-hidden"
                   style={{
-                    backgroundImage: `linear-gradient(rgba(139,0,0,0.35), rgba(80,0,0,0.50)), url('/crinkled-paper.png')`,
+                    backgroundImage: `linear-gradient(rgba(139,0,0,0.30), rgba(0,0,0,0.88)), url('/crinkled-paper.png')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundBlendMode: 'multiply'
@@ -742,7 +750,7 @@ export default function HomePage() {
                 <div 
                   className="border border-green-500/30 rounded-2xl p-8 overflow-hidden"
                   style={{
-                    backgroundImage: `linear-gradient(rgba(0,100,0,0.30), rgba(0,60,0,0.45)), url('/crinkled-paper.png')`,
+                    backgroundImage: `linear-gradient(rgba(0,80,0,0.25), rgba(0,0,0,0.88)), url('/crinkled-paper.png')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundBlendMode: 'multiply'
@@ -914,7 +922,7 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <div className="grid lg:grid-cols-5 gap-6 items-start">
+              <div className="grid lg:grid-cols-5 gap-6 items-stretch">
                 {[
                   {
                     name: "DTC Owner",
@@ -947,7 +955,8 @@ export default function HomePage() {
                     price: 97,
                     originalPrice: 147,
                     popular: true,
-                    icon: Zap,
+                    icon: "custom",
+                    customIconPath: "/beginner-icon.svg",
                     brands: 1,
                     teamMembers: null,
                     leadGen: 100,
@@ -1047,22 +1056,22 @@ export default function HomePage() {
                 ].map((plan, index) => (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-hidden ${
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-visible ${
                       plan.popular 
-                        ? 'border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3)]' 
+                        ? 'border-[4px] border-[var(--brand-red)]/60 shadow-[0_0_40px_rgba(255,42,42,.3)] mt-6' 
                         : 'border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
                     style={{
                       backgroundImage: plan.popular
-                        ? `linear-gradient(rgba(255,42,42,0.15), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`
-                        : `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.90)), url('/crinkled-paper.png')`,
+                        ? `linear-gradient(rgba(255,42,42,0.12), rgba(0,0,0,0.92)), url('/crinkled-paper.png')`
+                        : `linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('/crinkled-paper.png')`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       backgroundBlendMode: 'multiply'
                     }}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
                         <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
                           Most Popular
                         </span>
@@ -1073,7 +1082,11 @@ export default function HomePage() {
                         {/* Fixed height header for alignment */}
                         <div className="flex items-center gap-3 mb-6 min-h-[60px]">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 flex-shrink-0">
-                            <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
+                            {plan.icon === "custom" ? (
+                              <img src={plan.customIconPath} alt={plan.name} className="w-6 h-6" style={{ filter: 'brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7426%) hue-rotate(357deg) brightness(102%) contrast(116%)' }} />
+                            ) : (
+                              <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
+                            )}
                           </div>
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-white leading-tight">{plan.name}</h3>
