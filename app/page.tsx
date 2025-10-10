@@ -1113,7 +1113,7 @@ export default function HomePage() {
                                 <span className="text-xs text-white/40">
                                   <span className="line-through">${Math.round(plan.originalPrice * 1.10 / 4)}/wk</span> before discount
                                 </span>
-                                <span className="text-[10px] text-green-400 font-semibold">
+                                <span className="text-[10px] text-green-300 font-semibold">
                                   🎉 Launch Special - Save 30%
                                 </span>
                                 <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
@@ -1125,7 +1125,7 @@ export default function HomePage() {
                                 <span className="text-xs text-white/40">
                                   <span className="line-through">${plan.originalPrice}/mo</span> before discount
                                 </span>
-                                <span className="text-[10px] text-green-400 font-semibold">
+                                <span className="text-[10px] text-green-300 font-semibold">
                                   🎉 Launch Special - Save 30%
                                 </span>
                               </>
