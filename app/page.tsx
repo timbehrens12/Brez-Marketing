@@ -121,7 +121,15 @@ function BrandCountWidget() {
   const currentOption = options[sliderValue]
 
   return (
-    <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8">
+    <div 
+      className="border border-white/15 rounded-2xl p-8 overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundBlendMode: 'multiply'
+      }}
+    >
       {/* Question */}
       <h3 className="text-2xl font-bold text-white mb-8 text-center">How many brands do you currently manage?</h3>
 
@@ -164,7 +172,15 @@ function BrandCountWidget() {
       </div>
 
       {/* Enhanced Recommendation Card */}
-      <div className="bg-gradient-to-br from-red-900/30 via-black/80 to-red-900/30 border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)]">
+      <div 
+        className="border-[3px] border-[var(--brand-red)]/40 rounded-2xl p-8 mb-6 transition-all duration-300 shadow-[0_0_30px_rgba(255,42,42,0.15)] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(139,0,0,0.30), rgba(0,0,0,0.80)), url('/crinkled-paper.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'multiply'
+        }}
+      >
         {/* Header Section */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
@@ -682,7 +698,15 @@ export default function HomePage() {
 
               <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 {/* Individual Tool Costs */}
-                <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8 crinkle-effect">
+                <div 
+                  className="border border-red-500/30 rounded-2xl p-8 overflow-hidden"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(139,0,0,0.35), rgba(80,0,0,0.50)), url('/crinkled-paper.png')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundBlendMode: 'multiply'
+                  }}
+                >
                   <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
                   <div className="space-y-3">
                     {[
@@ -715,7 +739,15 @@ export default function HomePage() {
                 </div>
 
                 {/* Our Platform Cost */}
-                <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8 crinkle-effect">
+                <div 
+                  className="border border-green-500/30 rounded-2xl p-8 overflow-hidden"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0,100,0,0.30), rgba(0,60,0,0.45)), url('/crinkled-paper.png')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundBlendMode: 'multiply'
+                  }}
+                >
                   <h4 className="text-xl font-bold mb-6 text-center text-green-300">Brez Marketing Platform</h4>
                   <div className="text-center mb-8">
                     <div className="text-6xl font-black text-green-300 mb-2">$67</div>
