@@ -1304,6 +1304,16 @@ export default function HomePage() {
         .font-oswald { font-family: Oswald, Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol'; }
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
+        /* Custom red text selection */
+        ::selection {
+          background-color: #FF2A2A;
+          color: #ffffff;
+        }
+        ::-moz-selection {
+          background-color: #FF2A2A;
+          color: #ffffff;
+        }
+
         /* anims (kept, just tuned) */
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
