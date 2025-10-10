@@ -2090,13 +2090,43 @@ export default function SettingsPage() {
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center shadow-lg">
                           <Shield className="w-4 h-4 text-white" />
                         </div>
-                        <div>
-                          <CardTitle className="text-xl font-bold text-white">Digital Signature</CardTitle>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl font-bold text-white">Digital Signature</CardTitle>
+                            {userTier === 'dtc_owner' && (
+                              <Badge variant="outline" className="bg-[#FF2A2A]/10 text-[#FF2A2A] border-[#FF2A2A]/30 text-xs flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                Locked
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-gray-400 text-sm">Professional signature for client contracts and agreements</p>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-6">
+                      {userTier === 'dtc_owner' ? (
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 bg-gradient-to-br from-[#333] to-[#222] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg relative">
+                            <Shield className="w-8 h-8 text-gray-400" />
+                            <div className="absolute -top-1 -right-1">
+                              <div className="w-6 h-6 rounded-full bg-[#FF2A2A] flex items-center justify-center">
+                                <Lock className="w-3 h-3 text-white" />
+                              </div>
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-semibold text-white mb-2">Digital Signature Not Available</h3>
+                          <p className="text-gray-400 text-sm mb-4 max-w-md mx-auto">
+                            Digital signatures are used for Lead Generation and Outreach contracts. Since DTC Owner tier doesn't have access to these features, digital signatures are not available.
+                          </p>
+                          <div className="bg-[#FF2A2A]/10 border border-[#FF2A2A]/30 rounded-xl p-4 max-w-lg mx-auto">
+                            <p className="text-sm text-[#FF2A2A]">
+                              <strong>Upgrade to Beginner tier or higher</strong> to access Lead Generation, Outreach Tool, and Digital Signatures.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Signature Name */}
                         <div className="space-y-3">
@@ -2241,6 +2271,8 @@ export default function SettingsPage() {
                           )}
                         </div>
                       </div>
+                      </>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
