@@ -256,6 +256,10 @@ export default function LeadGeneratorPage() {
   const [activeTab, setActiveTab] = useState('search')
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const [isLoadingPage, setIsLoadingPage] = useState(true)
+  
+  // Lead generation allocation state
+  const [totalLeadsToGenerate, setTotalLeadsToGenerate] = useState(25)
+  const [nicheAllocation, setNicheAllocation] = useState<Record<string, number>>({})
   const { agencySettings } = useAgency()
   const [showFilters, setShowFilters] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -608,6 +612,21 @@ export default function LeadGeneratorPage() {
     setSelectedNiches([])
   }, [businessType])
 
+  // Auto-distribute leads evenly when niches change
+  useEffect(() => {
+    if (selectedNiches.length > 0) {
+      const perNiche = Math.floor(totalLeadsToGenerate / selectedNiches.length)
+      const remainder = totalLeadsToGenerate % selectedNiches.length
+      const newAllocation: Record<string, number> = {}
+      selectedNiches.forEach((nicheId, idx) => {
+        newAllocation[nicheId] = perNiche + (idx < remainder ? 1 : 0)
+      })
+      setNicheAllocation(newAllocation)
+    } else {
+      setNicheAllocation({})
+    }
+  }, [selectedNiches, totalLeadsToGenerate])
+
   // Auto-clear leads when leaving the page
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -774,7 +793,24 @@ export default function LeadGeneratorPage() {
     }
 
     if (!usageData || usageData.remaining <= 0) {
-      toast.error(`Weekly limit reached. resets mondays - ${getCountdownToMondayMidnight()}`)
+      toast.error(`Monthly limit reached. Resets on the 1st of each month`)
+      return
+    }
+
+    // Validate allocation
+    const allocatedTotal = Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0)
+    if (allocatedTotal !== totalLeadsToGenerate) {
+      toast.error('Lead allocation must equal total leads to generate')
+      return
+    }
+
+    if (totalLeadsToGenerate <= 0) {
+      toast.error('Please specify how many leads to generate')
+      return
+    }
+
+    if (totalLeadsToGenerate > usageData.remaining) {
+      toast.error(`Cannot generate ${totalLeadsToGenerate} leads. Only ${usageData.remaining} remaining this month.`)
       return
     }
 
@@ -817,7 +853,9 @@ export default function LeadGeneratorPage() {
             userId,
             ...(selectedBrandId && { brandId: selectedBrandId }),
             localDate,
-            localStartOfDayUTC
+            localStartOfDayUTC,
+            totalLeadsToGenerate,
+            nicheAllocation
           }
         : {
             businessType,
@@ -831,7 +869,9 @@ export default function LeadGeneratorPage() {
             ...(selectedBrandId && { brandId: selectedBrandId }),
             userId,
             localDate,
-            localStartOfDayUTC
+            localStartOfDayUTC,
+            totalLeadsToGenerate,
+            nicheAllocation
           }
       
       const response = await fetch(apiEndpoint, {
@@ -2011,27 +2051,97 @@ export default function LeadGeneratorPage() {
               )}
             </div>
 
-            {/* Selected Niches Display */}
+            {/* Selected Niches Display with Custom Allocation */}
             {selectedNiches.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-400">
-                  Selected Niches ({selectedNiches.length}/5 max) - 25 leads total
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedNiches.map(nicheId => {
-                    const niche = niches.find(n => n.id === nicheId)
-                    return niche ? (
-                      <Badge key={nicheId} variant="secondary" className="bg-[#1A1A1A] border border-[#2A2A2A] text-gray-300">
-                        {niche.name}
-                      </Badge>
-                    ) : null
-                  })}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-gray-400">
+                    Selected Niches ({selectedNiches.length}/5 max)
+                  </Label>
+                  <div className="text-sm text-gray-500">
+                    {usageData?.remaining || 0} leads remaining this month
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {selectedNiches.length === 1 
-                    ? "25 leads from 1 niche" 
-                    : `${Math.floor(25 / selectedNiches.length)} leads per niche (${25} total)`
-                  }
+                
+                {/* Total Leads Input */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-300">Total Leads to Generate</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max={usageData?.remaining || 100}
+                    value={totalLeadsToGenerate}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0
+                      setTotalLeadsToGenerate(Math.min(val, usageData?.remaining || 100))
+                      // Auto-distribute evenly when total changes
+                      const perNiche = Math.floor(val / selectedNiches.length)
+                      const remainder = val % selectedNiches.length
+                      const newAllocation: Record<string, number> = {}
+                      selectedNiches.forEach((nicheId, idx) => {
+                        newAllocation[nicheId] = perNiche + (idx < remainder ? 1 : 0)
+                      })
+                      setNicheAllocation(newAllocation)
+                    }}
+                    className="bg-[#1A1A1A] border-[#333] text-white"
+                    placeholder="Enter number of leads"
+                  />
+                  <div className="text-xs text-gray-500">
+                    Max {usageData?.remaining || 100} leads (monthly limit)
+                  </div>
+                </div>
+
+                {/* Per-Niche Allocation */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-300">Leads Per Niche</Label>
+                  <div className="space-y-2">
+                    {selectedNiches.map(nicheId => {
+                      const niche = niches.find(n => n.id === nicheId)
+                      return niche ? (
+                        <div key={nicheId} className="flex items-center gap-3 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-3">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-300">{niche.name}</div>
+                          </div>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={totalLeadsToGenerate}
+                            value={nicheAllocation[nicheId] || 0}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0
+                              setNicheAllocation(prev => ({
+                                ...prev,
+                                [nicheId]: Math.min(val, totalLeadsToGenerate)
+                              }))
+                            }}
+                            className="w-24 bg-[#2A2A2A] border-[#333] text-white text-center"
+                          />
+                          <span className="text-xs text-gray-500 w-16">leads</span>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                  
+                  {/* Allocation Summary */}
+                  <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Allocated:</span>
+                      <span className={`font-medium ${
+                        Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0) === totalLeadsToGenerate
+                          ? 'text-green-400'
+                          : Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0) > totalLeadsToGenerate
+                          ? 'text-red-400'
+                          : 'text-yellow-400'
+                      }`}>
+                        {Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0)} / {totalLeadsToGenerate}
+                      </span>
+                    </div>
+                    {Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0) !== totalLeadsToGenerate && (
+                      <div className="text-xs text-yellow-400">
+                        ⚠️ Allocation must equal total leads
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

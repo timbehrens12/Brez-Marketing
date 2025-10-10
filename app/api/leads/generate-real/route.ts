@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return addSecurityHeaders(validatedData)
     }
     
-    const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = validatedData
+    const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC, totalLeadsToGenerate, nicheAllocation } = validatedData
 
     // NOTE: Rate limiting is handled by tier-based weekly limits (lines 94-104)
     // No need for Redis rate limiting since subscription tiers already control usage
@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
 
     // console.log('Found niches:', nicheData?.length || 0)
 
-    // Calculate total leads that will be generated (25 per generation)
-    const totalLeadsToGenerate = TOTAL_LEADS_PER_GENERATION
+    // Calculate total leads that will be generated - use custom amount or default
+    const finalTotalLeads = totalLeadsToGenerate || TOTAL_LEADS_PER_GENERATION
     
     // console.log(`Starting lead generation for ${niches.length} niches × ${TOTAL_LEADS_PER_GENERATION} leads`)
 
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     try {
       // Add timeout wrapper for the entire lead generation process (75 seconds)
       const result = await Promise.race([
-        findRealBusinesses(nicheData, location, totalLeadsToGenerate, niches.length),
+        findRealBusinesses(nicheData, location, finalTotalLeads, niches.length, nicheAllocation),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Lead generation timeout - process took too long')), 75000)
         )
@@ -412,7 +412,7 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       niche_id: nicheId,
       last_used_at: new Date().toISOString(),
-      leads_generated: TOTAL_LEADS_PER_GENERATION
+      leads_generated: nicheAllocation && nicheAllocation[nicheId] ? nicheAllocation[nicheId] : Math.floor(finalTotalLeads / niches.length)
     }))
 
     const { error: nicheUsageUpdateError } = await supabase
@@ -430,12 +430,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       leads: insertedLeads,
-      message: realLeads.length === totalLeadsToGenerate 
-        ? `Found ${savedCount} real businesses (${TOTAL_LEADS_PER_GENERATION} per generation) with AI-enriched contact data`
-        : `Found ${savedCount} real businesses out of ${totalLeadsToGenerate} attempted. Some businesses may have been skipped due to timeouts, server errors, or data quality issues.`,
+      message: realLeads.length === finalTotalLeads 
+        ? `Found ${savedCount} real businesses (${finalTotalLeads} leads) with AI-enriched contact data`
+        : `Found ${savedCount} real businesses out of ${finalTotalLeads} attempted. Some businesses may have been skipped due to timeouts, server errors, or data quality issues.`,
       generatedBy: 'Google Places API + ChatGPT Website Enrichment',
-      leadsPerGeneration: TOTAL_LEADS_PER_GENERATION,
-      attempted: totalLeadsToGenerate,
+      leadsPerGeneration: finalTotalLeads,
+      attempted: finalTotalLeads,
       successful: realLeads.length,
       saved: savedCount,
 
@@ -456,10 +456,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function findRealBusinesses(niches: any[], location: any, maxResults: number, nicheCount: number) {
+async function findRealBusinesses(niches: any[], location: any, maxResults: number, nicheCount: number, nicheAllocation?: Record<string, number>) {
   const foundBusinesses: any[] = []
   
-  // Calculate leads per niche - distribute 25 leads across all niches
+  // Calculate leads per niche - use custom allocation if provided, otherwise distribute evenly
   const baseLeadsPerNiche = Math.floor(maxResults / nicheCount)
   const extraLeads = maxResults % nicheCount
   
@@ -509,8 +509,10 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
   
   // Process niches in parallel for faster execution
   const nichePromises = niches.map(async (niche, nicheIndex) => {
-    // This niche gets extra leads if it's one of the first few
-    const resultsPerNiche = baseLeadsPerNiche + (nicheIndex < extraLeads ? 1 : 0)
+    // Use custom allocation if provided, otherwise distribute evenly
+    const resultsPerNiche = nicheAllocation && nicheAllocation[niche.id] 
+      ? nicheAllocation[niche.id] 
+      : baseLeadsPerNiche + (nicheIndex < extraLeads ? 1 : 0)
     try {
       // console.log(`Searching for ${niche.name} businesses in ${location.city}, ${location.state}`)
       
