@@ -866,22 +866,22 @@ export default function HomePage() {
 
               {/* Billing Toggle */}
               <div className="flex items-center justify-center gap-4 mt-8 mb-8">
-                <span className={`text-sm font-medium transition-colors ${billingInterval === 'weekly' ? 'text-white' : 'text-white/50'}`}>
-                  Weekly
-                  <span className="ml-2 text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold">
-                    Lower upfront
-                  </span>
-                </span>
-                <button
-                  onClick={() => setBillingInterval(billingInterval === 'weekly' ? 'monthly' : 'weekly')}
-                  className="relative w-14 h-7 bg-white/10 rounded-full border border-white/20 transition-colors hover:bg-white/15"
-                >
-                  <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'monthly' ? 'translate-x-7' : 'translate-x-0'}`} />
-                </button>
                 <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
                   Monthly
                   <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
                     10% cheaper
+                  </span>
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'weekly' : 'monthly')}
+                  className="relative w-14 h-7 bg-white/10 rounded-full border border-white/20 transition-colors hover:bg-white/15"
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'weekly' ? 'translate-x-7' : 'translate-x-0'}`} />
+                </button>
+                <span className={`text-sm font-medium transition-colors ${billingInterval === 'weekly' ? 'text-white' : 'text-white/50'}`}>
+                  Weekly
+                  <span className="ml-2 text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold">
+                    Lower upfront
                   </span>
                 </span>
               </div>
