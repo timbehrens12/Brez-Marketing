@@ -4,7 +4,7 @@ import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocke
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { GridOverlay } from "@/components/GridOverlay"
+import MatrixHero from "@/components/MatrixHero"
 import Link from "next/link"
 import { useState } from "react"
 import { Footer } from "@/components/Footer"
@@ -317,15 +317,10 @@ export default function HomePage() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Oswald:wght@600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
       <div
-        className="min-h-screen bg-[#0B0B0B] text-white overflow-x-hidden"
+        className="min-h-screen bg-black text-white overflow-x-hidden"
         style={{ fontFamily: 'JetBrains Mono, monospace' }}
       >
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <GridOverlay />
-          {/* subtle radial glow */}
-          <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.12),transparent_60%)]" />
-        </div>
-
+        <MatrixHero>
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 relative">
@@ -1301,6 +1296,7 @@ export default function HomePage() {
             </div>
           </footer>
         </div>
+        </MatrixHero>
       </div>
 
       <style>{`
