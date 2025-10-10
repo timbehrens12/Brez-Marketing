@@ -1135,14 +1135,14 @@ export default function AdCreativeStudioPage() {
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
-  // Weekly usage system - 85 generations per week (universal)
-  const WEEKLY_LIMIT = 25
+  // Monthly usage system - tier-based limits
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
-    limit: WEEKLY_LIMIT,
-    remaining: WEEKLY_LIMIT,
-    weekStartDate: ''
+    limit: 25, // Default, will be overridden by tier limits
+    remaining: 25,
+    monthStartDate: '',
+    tierName: ''
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const [deletingCreativeId, setDeletingCreativeId] = useState<string | null>(null)
@@ -1422,18 +1422,20 @@ export default function AdCreativeStudioPage() {
         // Fallback to default if API fails
         setUsageData({
           current: 0,
-          limit: 50,
-          remaining: 50,
-          weekStartDate: getCurrentWeekStart()
+          limit: 25,
+          remaining: 25,
+          monthStartDate: new Date().toISOString().split('T')[0].slice(0, 8) + '01',
+          tierName: 'Unknown'
         })
       }
     } catch (error) {
       // Silent error handling - fallback to default
       setUsageData({
         current: 0,
-        limit: 75,
-        remaining: 75,
-        weekStartDate: getCurrentWeekStart()
+        limit: 25,
+        remaining: 25,
+        monthStartDate: new Date().toISOString().split('T')[0].slice(0, 8) + '01',
+        tierName: 'Unknown'
       })
     } finally {
       setIsLoadingUsage(false)
@@ -1496,7 +1498,7 @@ export default function AdCreativeStudioPage() {
 
   // Custom instructions are cleared manually in navigation buttons
 
-  const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
+  const usagePercentage = (usageData.current / usageData.limit) * 100
 
   // Function to refresh usage count from database
   const refreshUsage = async () => {
@@ -5871,19 +5873,19 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 {/* Weekly Usage Display */}
                 <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 w-[240px] h-[100px]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-300 text-sm font-medium">WEEKLY USAGE</span>
+                    <span className="text-gray-300 text-sm font-medium">MONTHLY USAGE</span>
                     <span className="text-sm text-gray-400">
-                      {usageData.current}/{WEEKLY_LIMIT}
+                      {usageData.current}/{usageData.limit}
                     </span>
                   </div>
                   <div className="w-full bg-[#333] rounded-full h-2 mb-2">
-                    <div
+                    <div 
                       className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min((usageData.current / WEEKLY_LIMIT) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((usageData.current / usageData.limit) * 100, 100)}%` }}
                     ></div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {WEEKLY_LIMIT - usageData.current} remaining this week
+                    {usageData.remaining} remaining this month {usageData.tierName ? `(${usageData.tierName})` : ''}
                   </p>
                 </div>
 

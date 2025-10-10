@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
-const WEEKLY_CREATIVE_LIMIT = 25
+const DEFAULT_MONTHLY_LIMIT = 25
 const USAGE_FEATURE_TYPE = 'creative_generation'
+
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -47,30 +53,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Check weekly usage limits
+    // Get user's tier limits
+    const { data: tierData, error: tierError } = await supabaseAdmin.rpc('get_user_tier_limits', {
+      p_user_id: userId
+    })
+    
+    const tierLimits = tierData?.[0]
+    const monthlyLimit = tierLimits?.creative_gen_monthly || DEFAULT_MONTHLY_LIMIT
+    
+    // Check monthly usage limits (changed from weekly)
     const supabase = createClient()
     
     // Get user's timezone from request header or default to America/Chicago
     const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago'
     
-    // Calculate the start of the week (Monday) in the user's local timezone
-    // Then query for all records created since that time
+    // Calculate the start of the current month
     const now = new Date()
     const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
-    const dayOfWeek = localNow.getDay()
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // Monday = 0 days back
     
-    const startOfWeekLocal = new Date(localNow)
-    startOfWeekLocal.setDate(localNow.getDate() - daysToSubtract)
-    startOfWeekLocal.setHours(0, 0, 0, 0)
+    const startOfMonthLocal = new Date(localNow.getFullYear(), localNow.getMonth(), 1)
+    startOfMonthLocal.setHours(0, 0, 0, 0)
     
-    const startOfNextWeekLocal = new Date(startOfWeekLocal)
-    startOfNextWeekLocal.setDate(startOfWeekLocal.getDate() + 7)
+    const startOfNextMonthLocal = new Date(localNow.getFullYear(), localNow.getMonth() + 1, 1)
+    startOfNextMonthLocal.setHours(0, 0, 0, 0)
     
-    console.log(`[Creative Usage] User timezone: ${userTimezone}, Local now: ${localNow.toISOString()}, Week starts: ${startOfWeekLocal.toISOString()}`)
+    console.log(`[Creative Usage] User timezone: ${userTimezone}, Local now: ${localNow.toISOString()}, Month starts: ${startOfMonthLocal.toISOString()}`)
     
-    // Fetch ALL usage records and filter in JavaScript based on local time
-    // This is more reliable than timezone conversion in the query
+    // Get monthly usage from ai_usage_tracking
+    const { data: monthlyUsageData, error: monthlyError } = await supabaseAdmin
+      .from('ai_usage_tracking')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('feature_type', USAGE_FEATURE_TYPE)
+      .gte('monthly_usage_month', startOfMonthLocal.toISOString().split('T')[0])
+    
+    const currentMonthlyUsage = monthlyUsageData?.reduce((sum, record) => sum + (record.monthly_usage_count || 0), 0) || 0
+    
+    // Also get legacy data for backwards compatibility
     const { data: allUsageData, error: usageError } = await supabase
       .from('ai_feature_usage')
       .select('*')
@@ -83,24 +102,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
     }
     
-    // Filter records that fall within this week in user's local timezone
-    const usageData = allUsageData?.filter(record => {
-      const recordDate = new Date(record.created_at)
-      const recordLocalDate = new Date(recordDate.toLocaleString('en-US', { timeZone: userTimezone }))
-      return recordLocalDate >= startOfWeekLocal && recordLocalDate < startOfNextWeekLocal
-    }) || []
-    
-    console.log(`[Creative Usage] Total records: ${allUsageData?.length}, This week (local): ${usageData.length}`)
-
-    const currentWeeklyUsage = usageData.length
+    console.log(`[Creative Usage] Monthly usage: ${currentMonthlyUsage}, Limit: ${monthlyLimit}`)
     
     return NextResponse.json({
       usage: {
-        current: currentWeeklyUsage,
-        limit: WEEKLY_CREATIVE_LIMIT,
-        remaining: WEEKLY_CREATIVE_LIMIT - currentWeeklyUsage,
-        weekStartDate: startOfWeekLocal.toISOString().split('T')[0],
-        resetsAt: startOfNextWeekLocal.toISOString()
+        current: currentMonthlyUsage,
+        limit: monthlyLimit,
+        remaining: Math.max(0, monthlyLimit - currentMonthlyUsage),
+        monthStartDate: startOfMonthLocal.toISOString().split('T')[0],
+        resetsAt: startOfNextMonthLocal.toISOString(),
+        tierName: tierLimits?.display_name || 'Unknown'
       }
     })
     
