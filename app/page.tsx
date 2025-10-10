@@ -1051,16 +1051,30 @@ export default function HomePage() {
                             <span className="text-white/40 text-sm">/{billingInterval === 'weekly' ? 'wk' : 'mo'}</span>
                           </div>
                           <div className="flex flex-col gap-0.5 mt-1">
-                            <span className="text-xs text-white/50">
-                              ≈ ${billingInterval === 'weekly' ? Math.round(plan.price * 1.10) : plan.originalPrice}/mo <span className="line-through">${billingInterval === 'weekly' ? Math.round(plan.originalPrice * 1.10 / 4) : plan.originalPrice}</span>
-                            </span>
-                            <span className="text-[10px] text-green-400 font-semibold">
-                              🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
-                            </span>
-                            {billingInterval === 'weekly' && (
-                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
-                                Billed weekly
-                              </span>
+                            {billingInterval === 'weekly' ? (
+                              <>
+                                <span className="text-xs text-white/50">
+                                  ≈ ${Math.round(plan.price * 1.10)}/mo equivalent
+                                </span>
+                                <span className="text-xs text-white/40">
+                                  <span className="line-through">${Math.round(plan.originalPrice * 1.10 / 4)}/wk</span> before discount
+                                </span>
+                                <span className="text-[10px] text-green-400 font-semibold">
+                                  🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
+                                  Billed weekly
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-xs text-white/40">
+                                  <span className="line-through">${plan.originalPrice}/mo</span> before discount
+                                </span>
+                                <span className="text-[10px] text-green-400 font-semibold">
+                                  🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
+                                </span>
+                              </>
                             )}
                           </div>
                         </div>
