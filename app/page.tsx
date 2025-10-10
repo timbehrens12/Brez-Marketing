@@ -1022,8 +1022,8 @@ export default function HomePage() {
                     }`}
                     style={{
                       backgroundImage: plan.popular
-                        ? `linear-gradient(rgba(255,42,42,0.15), rgba(0,0,0,0.85)), url('https://i.imgur.com/YqVZ8Kf.jpg')`
-                        : `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.90)), url('https://i.imgur.com/YqVZ8Kf.jpg')`,
+                        ? `linear-gradient(rgba(255,42,42,0.15), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`
+                        : `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.90)), url('/crinkled-paper.png')`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       backgroundBlendMode: 'multiply'
