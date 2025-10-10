@@ -7,10 +7,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Security Configuration
+// Security Configuration (per-hour limits still apply for rate limiting)
 const SECURITY_LIMITS = {
-  MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
-  MAX_MESSAGES_PER_DAY: 25,       // Max 25 messages per day per user
+  MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user (rate limit)
+  DEFAULT_MONTHLY_LIMIT: 250,     // Default monthly limit
   MAX_MESSAGES_PER_LEAD: 3,       // Max 3 messages per lead (prevent spam to same person)
   COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
 }
@@ -26,11 +26,38 @@ export async function GET(request: NextRequest) {
       }, { status: 401 })
     }
 
+    // Get user's tier limits
+    const { data: tierData, error: tierError } = await supabase.rpc('get_user_tier_limits', {
+      p_user_id: userId
+    })
+    
+    const tierLimits = tierData?.[0]
+    const monthlyLimit = tierLimits?.outreach_messages_monthly || SECURITY_LIMITS.DEFAULT_MONTHLY_LIMIT
+    
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     
     // Get user's timezone from request header or default to Central Time
     const userTimezone = request.headers.get('x-user-timezone') || 'America/Chicago'
+    
+    // Calculate start of current month
+    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+    const startOfMonth = new Date(localNow.getFullYear(), localNow.getMonth(), 1)
+    startOfMonth.setHours(0, 0, 0, 0)
+    
+    // Calculate start of next month (for reset)
+    const startOfNextMonth = new Date(localNow.getFullYear(), localNow.getMonth() + 1, 1)
+    startOfNextMonth.setHours(0, 0, 0, 0)
+    
+    // Get monthly usage from ai_usage_tracking
+    const { data: monthlyUsageData, error: monthlyError } = await supabase
+      .from('ai_usage_tracking')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('feature_type', 'outreach_messages')
+      .gte('monthly_usage_month', startOfMonth.toISOString().split('T')[0])
+    
+    const monthlyCount = monthlyUsageData?.reduce((sum, record) => sum + (record.monthly_usage_count || 0), 0) || 0
     
     // Use centralized ai_usage_logs table for outreach tracking
     // This ensures consistency with other AI features
@@ -43,7 +70,6 @@ export async function GET(request: NextRequest) {
 
     // Get daily usage using timezone-aware filtering
     // Calculate today's date in user's timezone
-    const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
     const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`
     
     console.log(`[Outreach Usage] Checking usage for ${localToday} in timezone ${userTimezone}`)
@@ -104,9 +130,16 @@ export async function GET(request: NextRequest) {
         },
         daily: {
           used: dailyCount,
-          limit: SECURITY_LIMITS.MAX_MESSAGES_PER_DAY,
-          remaining: Math.max(0, SECURITY_LIMITS.MAX_MESSAGES_PER_DAY - dailyCount),
+          limit: monthlyLimit, // Changed from hardcoded daily limit to tier-based monthly limit
+          remaining: Math.max(0, monthlyLimit - monthlyCount), // Use monthly count for remaining
           resetsAt: nextDayReset.toISOString()
+        },
+        monthly: {
+          used: monthlyCount,
+          limit: monthlyLimit,
+          remaining: Math.max(0, monthlyLimit - monthlyCount),
+          resetsAt: startOfNextMonth.toISOString(),
+          tierName: tierLimits?.display_name || 'Unknown'
         },
         cost: {
           daily: dailyCost.toFixed(2)
