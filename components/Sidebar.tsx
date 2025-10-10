@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2, MessageCircle } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2, MessageCircle, Lock } from "lucide-react"
 import { useAuth, useClerk, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
@@ -96,6 +96,43 @@ export function Sidebar({ className }: SidebarProps) {
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
   const { setIsExpanded } = useSidebar()
+
+  // Track locked features based on tier
+  const [lockedFeatures, setLockedFeatures] = useState<Record<string, boolean>>({})
+  
+  // Check tier access for features
+  useEffect(() => {
+    async function checkFeatureAccess() {
+      if (!userId) return
+      
+      try {
+        // Check Lead Generator access
+        const leadGenResponse = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'lead_generation' })
+        })
+        const leadGenData = await leadGenResponse.json()
+        
+        // Check Outreach Tool access
+        const outreachResponse = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'outreach_tool' })
+        })
+        const outreachData = await outreachResponse.json()
+        
+        setLockedFeatures({
+          '/lead-generator': !leadGenData.allowed,
+          '/outreach-tool': !outreachData.allowed
+        })
+      } catch (error) {
+        console.error('Error checking feature access:', error)
+      }
+    }
+    
+    checkFeatureAccess()
+  }, [userId])
 
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
@@ -412,6 +449,7 @@ export function Sidebar({ className }: SidebarProps) {
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const isComingSoon = item.comingSoon ?? false;
+              const isLocked = lockedFeatures[item.href] || false;
               
               const linkElement = (
                 <Link
@@ -423,6 +461,7 @@ export function Sidebar({ className }: SidebarProps) {
                     ? "bg-[#2A2A2A] text-white shadow-[0_0_20px_rgba(255,42,42,0.4),inset_0_0_20px_rgba(255,42,42,0.1)]" 
                     : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
                     isComingSoon && "cursor-not-allowed opacity-60",
+                    isLocked && "opacity-50",
                     showExpanded ? "px-3 py-3" : "p-3 justify-center"
                   )}
                   onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
@@ -433,7 +472,12 @@ export function Sidebar({ className }: SidebarProps) {
                     )}
                     <div className="flex items-center w-full">
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
-                        <item.icon className="h-6 w-6 flex-shrink-0" />
+                        <div className="relative">
+                          <item.icon className="h-6 w-6 flex-shrink-0" />
+                          {isLocked && (
+                            <Lock className="h-3 w-3 absolute -bottom-1 -right-1 text-[#FF2A2A]" />
+                          )}
+                        </div>
 
                         <div className={cn(
                           "overflow-hidden transition-all duration-300 ease-out",
@@ -447,6 +491,9 @@ export function Sidebar({ className }: SidebarProps) {
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
                                   Soon
                                 </span>
+                              )}
+                              {isLocked && (
+                                  <Lock className="h-3 w-3 text-[#FF2A2A]" />
                               )}
                               </div>
                             </div>

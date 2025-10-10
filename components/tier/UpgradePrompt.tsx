@@ -52,16 +52,22 @@ export function UpgradePrompt({
 
   const content = (
     <div className={`${fullPage ? 'min-h-screen' : ''} flex items-center justify-center bg-[#0B0B0B] ${fullPage ? 'p-8' : ''}`}>
-      <Card className="max-w-2xl w-full bg-[#1A1A1A] border-[#2A2A2A] p-8 md:p-12">
-        {/* Lock Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[#FF2A2A]/20 blur-2xl rounded-full"></div>
-            <div className="relative p-6 bg-[#2A2A2A] rounded-full border-2 border-[#FF2A2A]/30">
-              <Lock className="w-12 h-12 text-[#FF2A2A]" />
+      {/* Glassmorphic card with red aura - matching loading pages */}
+      <div className="relative z-10 w-full max-w-2xl mx-4">
+        <div className="relative border border-white/10 rounded-2xl p-8 md:p-12 shadow-2xl shadow-[#FF2A2A]/20 bg-[#1f1f1f]">
+          {/* Red aura glow around the card */}
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#FF2A2A]/20 via-[#FF2A2A]/30 to-[#FF2A2A]/20 blur-xl -z-10"></div>
+          
+          <div className="relative z-10">
+            {/* Lock Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#FF2A2A]/20 blur-2xl rounded-full"></div>
+                <div className="relative p-6 bg-[#2A2A2A] rounded-full border-2 border-[#FF2A2A]/30">
+                  <Lock className="w-12 h-12 text-[#FF2A2A]" />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
         {/* Title */}
         <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
@@ -160,11 +166,13 @@ export function UpgradePrompt({
           </Link>
         </div>
 
-        {/* Help Text */}
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Questions? <Link href="/help" className="text-[#FF2A2A] hover:underline">Contact Support</Link>
-        </p>
-      </Card>
+            {/* Help Text */}
+            <p className="text-center text-gray-500 text-sm mt-6">
+              Questions? <Link href="/help" className="text-[#FF2A2A] hover:underline">Contact Support</Link>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 
