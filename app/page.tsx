@@ -367,7 +367,8 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
                 <div 
-                  className="inline-flex items-center gap-3 px-6 py-3 border border-gray-600/50 rounded-full mb-5 shadow-lg overflow-hidden relative bg-gray-700/40"
+                  className="inline-flex items-center gap-3 px-6 py-3 border border-gray-600/50 rounded-full mb-5 shadow-lg overflow-hidden relative"
+                  style={{ backgroundColor: '#6d6d6e' }}
                 >
                   <div className="relative flex items-center justify-center flex-shrink-0 z-10">
                     <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
