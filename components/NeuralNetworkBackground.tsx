@@ -32,11 +32,12 @@ export function NeuralNetworkBackground() {
       canvas.style.width = `${innerWidth}px`
       canvas.style.height = `${innerHeight}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.globalCompositeOperation = "lighter"
     }
 
     const createNodes = () => {
       const { innerWidth, innerHeight } = window
-      const density = Math.min(Math.max((innerWidth * innerHeight) / 25000, 24), 72)
+      const density = Math.round(Math.min(Math.max((innerWidth * innerHeight) / 26000, 32), 96))
       const nodes: Node[] = []
 
       for (let i = 0; i < density; i++) {
@@ -48,8 +49,8 @@ export function NeuralNetworkBackground() {
           baseX,
           baseY,
           angleOffset: Math.random() * Math.PI * 2,
-          speed: 0.2 + Math.random() * 0.6,
-          radius: 1.2 + Math.random() * 1.2
+          speed: 0.15 + Math.random() * 0.5,
+          radius: 1.4 + Math.random() * 1.4
         })
       }
 
@@ -73,26 +74,28 @@ export function NeuralNetworkBackground() {
       lastTime = time
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.save()
+      ctx.globalCompositeOperation = "lighter"
 
       const nodes = nodesRef.current
-      const connectionDistance = Math.min(Math.max(window.innerWidth / 10, 160), 260)
+      const connectionDistance = Math.min(Math.max(window.innerWidth / 6, 180), 320)
 
       nodes.forEach((node, index) => {
-        const t = time * 0.0004 * node.speed + node.angleOffset
-        node.x = node.baseX + Math.cos(t) * 18
-        node.y = node.baseY + Math.sin(t * 1.3) * 18
+        const t = time * 0.00035 * node.speed + node.angleOffset
+        node.x = node.baseX + Math.cos(t) * 22
+        node.y = node.baseY + Math.sin(t * 1.4) * 22
 
         for (let j = index + 1; j < nodes.length; j++) {
           const other = nodes[j]
           const dx = node.x - other.x
           const dy = node.y - other.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+          const distance = Math.hypot(dx, dy)
 
           if (distance < connectionDistance) {
-            const alpha = 0.25 * (1 - distance / connectionDistance)
+            const alpha = 0.4 * (1 - distance / connectionDistance)
             ctx.beginPath()
             ctx.strokeStyle = `rgba(255, 42, 42, ${alpha.toFixed(3)})`
-            ctx.lineWidth = 0.6
+            ctx.lineWidth = 0.8
             ctx.moveTo(node.x, node.y)
             ctx.lineTo(other.x, other.y)
             ctx.stroke()
@@ -102,13 +105,14 @@ export function NeuralNetworkBackground() {
 
       nodes.forEach((node) => {
         ctx.beginPath()
-        ctx.fillStyle = `rgba(255, 42, 42, 0.55)`
-        ctx.shadowColor = `rgba(255, 42, 42, 0.15)`
-        ctx.shadowBlur = 6
+        ctx.fillStyle = "rgba(255, 42, 42, 0.75)"
+        ctx.shadowColor = "rgba(255, 42, 42, 0.25)"
+        ctx.shadowBlur = 10
         ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2)
         ctx.fill()
-        ctx.shadowBlur = 0
       })
+
+      ctx.restore()
 
       animationRef.current = requestAnimationFrame(animate)
     }
@@ -126,7 +130,7 @@ export function NeuralNetworkBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-10 pointer-events-none"
+      className="fixed inset-0 z-0 pointer-events-none"
       aria-hidden="true"
     />
   )
