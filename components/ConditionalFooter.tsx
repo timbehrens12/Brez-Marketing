@@ -69,15 +69,42 @@ export function ConditionalFooter() {
     return () => observer.disconnect()
   }, [])
 
-  // Hide footer only on landing page and full-screen loading pages
-  // Don't hide on dashboard pages that have widget loading states
-  const isDashboardPage = pathname.startsWith('/dashboard') || 
-                          pathname.startsWith('/analytics') || 
-                          pathname.startsWith('/action-center') ||
-                          pathname.startsWith('/shopify') ||
-                          pathname.startsWith('/settings')
+  // Define pages where footer SHOULD appear (whitelist approach)
+  const footerPages = [
+    '/dashboard',
+    '/settings',
+    '/help',
+    '/terms',
+    '/privacy',
+    '/data-security',
+    '/join',
+    '/join-agency'
+  ]
   
-  if (pathname === '/' || (isLoadingPage && !isDashboardPage)) {
+  // Define pages where footer should NOT appear (action/tool pages)
+  const noFooterPages = [
+    '/marketing-assistant',
+    '/ai-marketing-consultant',
+    '/brand-report',
+    '/ad-creative-studio',
+    '/lead-generator',
+    '/outreach-tool',
+    '/analytics',
+    '/action-center',
+    '/shopify',
+    '/customers',
+    '/orders',
+    '/critical-brands',
+    '/ai-dashboard',
+    '/onboarding'
+  ]
+  
+  // Check if current path should hide footer
+  const shouldHideFooter = noFooterPages.some(page => pathname.startsWith(page)) || 
+                           (isLoadingPage && !pathname.startsWith('/dashboard')) ||
+                           pathname === '/'
+  
+  if (shouldHideFooter) {
     return null
   }
 
