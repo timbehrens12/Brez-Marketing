@@ -1253,21 +1253,53 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Simple footer section before main footer */}
+          {/* Footer section with logo and links */}
           <footer className="py-12 border-t border-white/10 bg-black/40">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
-              <p className="text-white/55 text-sm font-mono">
-                © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
-                Trusted by brand scalers worldwide • Cancel anytime
-              </p>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Logo and copyright - centered */}
+              <div className="text-center mb-6">
+                <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
+                <p className="text-white/55 text-sm font-mono">
+                  © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
+                  Trusted by brand scalers worldwide • Cancel anytime
+                </p>
+              </div>
+              
+              {/* Links row - centered */}
+              <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
+                <button 
+                  onClick={() => window.open('https://form.typeform.com/to/ohOKhC39', '_blank')}
+                  className="text-zinc-400 hover:text-zinc-300 transition-colors"
+                >
+                  Feedback
+                </button>
+                <span className="text-zinc-600">•</span>
+                <a href="/terms" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                  Terms of Service
+                </a>
+                <span className="text-zinc-600">•</span>
+                <a href="/privacy" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                  Privacy Policy
+                </a>
+                <span className="text-zinc-600">•</span>
+                <a href="/data-security" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                  Data Security
+                </a>
+                <span className="text-zinc-600">•</span>
+                <a href="https://www.instagram.com/brezmarketing/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                  Instagram
+                </a>
+                <span className="text-zinc-600">•</span>
+                <a href="https://brezmarketingdashboard.com" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                  Website
+                </a>
+                <span className="text-zinc-600">•</span>
+                <span className="text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+                  v0.1.0.8375
+                </span>
+              </div>
             </div>
           </footer>
-
-          {/* Main dashboard footer with background matching simple footer */}
-          <div className="bg-black/40 [&_footer]:!bg-black/40 [&_footer]:!bg-none">
-            <Footer centered />
-          </div>
         </div>
       </div>
 
