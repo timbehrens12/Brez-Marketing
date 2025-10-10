@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { GridOverlay } from "@/components/GridOverlay"
 import Link from "next/link"
 import { useState } from "react"
+import { Footer } from "@/components/Footer"
 
 const BRAND_RED = "#FF2A2A"
 
@@ -1255,15 +1256,7 @@ export default function HomePage() {
           </section>
 
           {/* Footer */}
-          <footer className="py-12 border-t border-white/10 bg-black/40">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
-              <p className="text-white/55 text-sm font-mono">
-                © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
-                Trusted by brand scalers worldwide • Cancel anytime
-              </p>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
 
