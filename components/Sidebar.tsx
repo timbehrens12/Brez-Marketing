@@ -393,9 +393,9 @@ export function Sidebar({ className }: SidebarProps) {
                 </div>
                 
                 {/* Agency name and brand icons column - Fixed height container */}
-                <div className="flex-1 min-w-0 flex flex-col h-10 justify-center overflow-hidden">
+                <div className="flex-1 min-w-0 flex flex-col h-10 justify-center overflow-hidden pr-2">
                   <div className="h-4 overflow-hidden">
-                    <h3 className="text-xs font-semibold text-white leading-tight whitespace-nowrap">
+                    <h3 className="text-xs font-semibold text-white leading-tight truncate">
                       {agencyLoading ? (
                         <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
                       ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
