@@ -4561,7 +4561,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         {messageUsage?.monthly ? `${messageUsage.monthly.limit}` : messageUsage ? `${messageUsage.daily.limit}` : '...'}
                       </div>
                       <div className="text-xs text-gray-400">
-                        Monthly Limit {messageUsage?.monthly?.tierName ? `(${messageUsage.monthly.tierName})` : ''}
+                        Monthly Limit
                       </div>
                     </div>
                   </div>

@@ -471,6 +471,7 @@ export default function AIMarketingConsultant(
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   const [remainingUses, setRemainingUses] = useState<number | null>(null)
+  const [dailyLimit, setDailyLimit] = useState<number>(10) // Default to 10, will be updated from API
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
 
@@ -661,12 +662,15 @@ I can help with literally anything marketing-related for your brand - performanc
 
           if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
             setRemainingUses(data.remainingUses)
+            if (data.dailyLimit !== undefined) {
+              setDailyLimit(data.dailyLimit)
+            }
             if (data.remainingUses <= 0) {
               setIsLimitReached(true)
             }
             
             // Cache the usage data for dashboard sync
-            const usedCount = Math.max(0, 15 - data.remainingUses)
+            const usedCount = Math.max(0, data.dailyLimit - data.remainingUses)
             try {
               localStorage.setItem(`ai-consultant-usage-${user?.id}`, JSON.stringify({
                 date: new Date().toDateString(),
@@ -1155,7 +1159,7 @@ I can help with literally anything marketing-related for your brand - performanc
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 shadow-sm">
                   <MessageCircle className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-medium text-white">
-                    {remainingUses <= 0 ? '15/15 used today' : `${15 - remainingUses}/15 used today`}
+                    {remainingUses <= 0 ? `${dailyLimit}/${dailyLimit} used today` : `${dailyLimit - remainingUses}/${dailyLimit} used today`}
                   </span>
                 </div>
               )}

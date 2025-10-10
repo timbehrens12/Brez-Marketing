@@ -261,7 +261,13 @@ const openai = new OpenAI({
 // Unified usage tracking - all usage now recorded in ai_feature_usage table
 async function checkCombinedUsage(userId: string, featureType: string, supabase: any, userTimezone: string = 'America/Chicago') {
   try {
-    const dailyLimit = 15 // Same limit for both modes
+    // Get tier-based daily limit
+    const { data: tierData, error: tierError } = await supabase.rpc('get_user_tier_limits', {
+      p_user_id: userId
+    })
+    
+    const tierLimits = tierData?.[0]
+    const dailyLimit = tierLimits?.ai_chats_daily || 10 // Default to 10 if tier not found
     
     // Calculate start of today in user's timezone
     const now = new Date()
@@ -301,13 +307,15 @@ async function checkCombinedUsage(userId: string, featureType: string, supabase:
       return {
         canUse: false,
         remainingUses: 0,
+        dailyLimit,
         reason: `Daily limit of ${dailyLimit} uses reached. Resets tomorrow.`
       }
     }
     
     return {
       canUse: true,
-      remainingUses: remaining
+      remainingUses: remaining,
+      dailyLimit
     }
   } catch (error) {
     console.error('Error in checkCombinedUsage:', error)
@@ -544,7 +552,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       response,
-      remainingUses: updatedStatus.remainingUses ?? 14, // Default to 14 if undefined
+      remainingUses: updatedStatus.remainingUses ?? 9, // Default to 9 if undefined (10-1)
+      dailyLimit: updatedStatus.dailyLimit || 10, // Include tier-based limit
       timestamp: new Date().toISOString(),
       debug: {
         updatedStatus,

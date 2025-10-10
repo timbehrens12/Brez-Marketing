@@ -2004,7 +2004,7 @@ export default function LeadGeneratorPage() {
                     <div className="pt-3 border-t border-[#333]">
                       <div className="text-center">
                         <div className="text-lg font-semibold text-white">{usageData.used}/{usageData.limit}</div>
-                        <div className="text-xs text-gray-500">Used this month {usageData.tierName ? `(${usageData.tierName})` : ''}</div>
+                        <div className="text-xs text-gray-500">Used this month</div>
                       </div>
                     </div>
 

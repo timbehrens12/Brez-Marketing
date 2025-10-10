@@ -5885,7 +5885,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     ></div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {usageData.remaining} remaining this month {usageData.tierName ? `(${usageData.tierName})` : ''}
+                    {usageData.remaining} remaining this month
                   </p>
                 </div>
 
