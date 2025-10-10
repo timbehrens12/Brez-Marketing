@@ -4,10 +4,11 @@ import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocke
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import MatrixBackground from "@/components/MatrixBackground"
+import { GridOverlay } from "@/components/GridOverlay"
 import Link from "next/link"
 import { useState } from "react"
 import { Footer } from "@/components/Footer"
+import { NeuralNetworkBackground } from "@/components/NeuralNetworkBackground"
 
 const BRAND_RED = "#FF2A2A"
 
@@ -320,7 +321,7 @@ export default function HomePage() {
         className="min-h-screen bg-[#0B0B0B] text-white overflow-x-hidden"
         style={{ fontFamily: 'JetBrains Mono, monospace' }}
       >
-        <MatrixBackground />
+        <NeuralNetworkBackground />
 
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Header */}
