@@ -1930,9 +1930,9 @@ export default function DashboardPage() {
           
           {/* Glassmorphic card */}
           <div className="relative z-10 w-full max-w-lg mx-4">
-            <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border border-white/10 rounded-2xl p-12 shadow-2xl">
-              {/* Subtle red glow */}
-              <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(600px_200px_at_50%_50%,rgba(255,42,42,.08),transparent)]"></div>
+            <div className="relative backdrop-blur-xl bg-black/80 border border-white/10 rounded-2xl p-12 shadow-2xl shadow-[#FF2A2A]/20">
+              {/* Red aura glow around the card */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#FF2A2A]/20 via-[#FF2A2A]/30 to-[#FF2A2A]/20 blur-xl"></div>
               
               <div className="relative z-10 text-center">
                 {/* Enhanced spinner with glow */}
@@ -1989,7 +1989,6 @@ export default function DashboardPage() {
                     <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 20 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 10 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
                       {loadingProgress >= 20 && (
                         <>
-                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
                           <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                         </>
                       )}
@@ -2000,7 +1999,6 @@ export default function DashboardPage() {
                     <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 40 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 30 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
                       {loadingProgress >= 40 && (
                         <>
-                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
                           <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                         </>
                       )}
@@ -2011,7 +2009,6 @@ export default function DashboardPage() {
                     <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 60 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 50 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
                       {loadingProgress >= 60 && (
                         <>
-                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
                           <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                         </>
                       )}
@@ -2022,7 +2019,6 @@ export default function DashboardPage() {
                     <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 80 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 70 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
                       {loadingProgress >= 80 && (
                         <>
-                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
                           <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                         </>
                       )}
@@ -2033,7 +2029,6 @@ export default function DashboardPage() {
                     <div className={`relative w-5 h-5 rounded-full transition-all duration-300 ${loadingProgress >= 95 ? 'bg-gradient-to-br from-[#FF2A2A] to-[#ff4444] scale-110' : loadingProgress >= 90 ? 'bg-white/20 scale-105' : 'bg-white/5'}`}>
                       {loadingProgress >= 95 && (
                         <>
-                          <div className="absolute inset-0 rounded-full bg-[#FF2A2A]/30 blur-md animate-pulse"></div>
                           <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                         </>
                       )}

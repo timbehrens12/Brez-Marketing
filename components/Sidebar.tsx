@@ -188,7 +188,7 @@ export function Sidebar({ className }: SidebarProps) {
           `)}")`,
           backgroundRepeat: 'repeat',
           backgroundSize: '40px 40px',
-          backgroundAttachment: 'scroll'
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Logo Section */}
@@ -266,7 +266,7 @@ export function Sidebar({ className }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
-          background: `rgba(128,128,128,0.15)`,
+          background: `#1a1a1a`,
           backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
             <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -279,7 +279,7 @@ export function Sidebar({ className }: SidebarProps) {
           `)}")`,
           backgroundRepeat: 'repeat',
           backgroundSize: '40px 40px',
-          backgroundAttachment: 'scroll'
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Pin Button - only show when expanded */}
