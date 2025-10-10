@@ -33,6 +33,7 @@ import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { useAgency } from "@/contexts/AgencyContext"
 import { GridOverlay } from '@/components/GridOverlay'
+import { UpgradePrompt } from '@/components/tier/UpgradePrompt'
 
 interface Lead {
   id: string
@@ -146,6 +147,37 @@ export default function OutreachToolPage() {
   const { userId, getToken } = useAuth()
   const { agencySettings } = useAgency()
   const { selectedBrandId } = useBrandContext()
+  
+  // Tier access check
+  const [tierCheckLoading, setTierCheckLoading] = useState(true)
+  const [hasAccess, setHasAccess] = useState(false)
+  const [tierAccessData, setTierAccessData] = useState<any>(null)
+  
+  // Check tier access on mount
+  useEffect(() => {
+    async function checkTierAccess() {
+      if (!userId) return
+      
+      try {
+        const response = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'outreach_tool' })
+        })
+        
+        const data = await response.json()
+        setHasAccess(data.allowed)
+        setTierAccessData(data)
+      } catch (error) {
+        console.error('Error checking tier access:', error)
+        setHasAccess(true) // Fail open for now
+      } finally {
+        setTierCheckLoading(false)
+      }
+    }
+    
+    checkTierAccess()
+  }, [userId])
   
   // Unified Supabase client function
   const getSupabaseClient = async () => {
@@ -2889,6 +2921,29 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   }
 
   const filteredLeads = applyFilters(campaignLeads)
+
+  // Show loading while checking tier access
+  if (tierCheckLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF2A2A]" />
+      </div>
+    )
+  }
+
+  // Show upgrade prompt if no access
+  if (!hasAccess && tierAccessData) {
+    return (
+      <UpgradePrompt
+        feature="Outreach CRM"
+        reason={tierAccessData.reason || 'Outreach CRM is not available on your current plan'}
+        currentTier={tierAccessData.currentTier}
+        recommendedTier={tierAccessData.recommendedTier}
+        limit={tierAccessData.limit}
+        fullPage={true}
+      />
+    )
+  }
 
   if (isLoading) {
   return (
