@@ -1265,7 +1265,7 @@ export default function HomePage() {
           </footer>
 
           {/* Main dashboard footer with background matching simple footer */}
-          <div className="bg-black/40">
+          <div className="bg-black/40 [&_footer]:!bg-black/40 [&_footer]:!bg-none">
             <Footer />
           </div>
         </div>
