@@ -1771,25 +1771,26 @@ ${analysisData.dateRange?.from === analysisData.dateRange?.to && analysisData.sh
 
 ${analysisData.shopifyData?.orders?.length === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
 
-=== TOOL USAGE & AVAILABILITY (BEGINNER TIER) ===
+=== TOOL USAGE & AVAILABILITY (USER'S TIER) ===
 ${analysisData.usageData ? `
-CREATIVE STUDIO (25/month): ${analysisData.usageData.creativeStudio.monthlyUsed}/${analysisData.usageData.creativeStudio.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+CREATIVE STUDIO: ${analysisData.usageData.creativeStudio.monthlyUsed}/${analysisData.usageData.creativeStudio.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-OUTREACH TOOL (250/month): ${analysisData.usageData.outreachTool.monthlyUsed}/${analysisData.usageData.outreachTool.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+OUTREACH TOOL: ${analysisData.usageData.outreachTool.monthlyUsed}/${analysisData.usageData.outreachTool.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-LEAD GENERATOR (100/month): ${analysisData.usageData.leadGenerator.monthlyUsed}/${analysisData.usageData.leadGenerator.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+LEAD GENERATOR: ${analysisData.usageData.leadGenerator.monthlyUsed}/${analysisData.usageData.leadGenerator.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-AI CONSULTANT (10/day): ${analysisData.usageData.aiConsultant.used}/${analysisData.usageData.aiConsultant.limit} used today ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+AI CONSULTANT: ${analysisData.usageData.aiConsultant.used}/${analysisData.usageData.aiConsultant.limit} used today (Daily limit) ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-BRAND REPORT (Daily): ${analysisData.usageData.brandReport.used}/${analysisData.usageData.brandReport.limit} used today ${analysisData.usageData.brandReport.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+BRAND REPORT: ${analysisData.usageData.brandReport.used}/${analysisData.usageData.brandReport.limit} used today (Daily limit) ${analysisData.usageData.brandReport.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-MARKETING ASSISTANT (Weekly): ${analysisData.usageData.marketingAssistant.used}/${analysisData.usageData.marketingAssistant.limit} used this week ${analysisData.usageData.marketingAssistant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+MARKETING ASSISTANT: ${analysisData.usageData.marketingAssistant.used}/${analysisData.usageData.marketingAssistant.limit} used this week ${analysisData.usageData.marketingAssistant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
 When users ask what they should do or what tools to use:
-- Show them BOTH monthly total and weekly usage (e.g., "You've used 12 of your 100 monthly leads, with 3 of your 25 weekly leads used this week")
-- Explain that limits reset weekly (Mondays) and monthly (1st of month)
+- Show them their current usage and limits for each tool
+- All monthly limits (Creative Studio, Outreach, Lead Gen) reset on the 1st of each month
+- Daily limits reset at midnight
+- Weekly limits reset on Mondays
 - Suggest available tools based on remaining usage
-- If they hit weekly limit, tell them when it resets (next Monday)
 ` : 'Usage data not available'}
 
 === BRAND CONTEXT & ACTIVITY ===
@@ -2311,6 +2312,14 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
   try {
     console.log(`[AI Marketing Consultant] Fetching usage data for user ${userId}...`)
 
+    // Get user's tier limits
+    const { data: tierData, error: tierError } = await supabase.rpc('get_user_tier_limits', {
+      p_user_id: userId
+    })
+    
+    const tierLimits = tierData?.[0]
+    console.log(`[AI Marketing Consultant] User tier limits:`, tierLimits)
+
     const now = new Date()
     const localNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
     const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`
@@ -2334,18 +2343,18 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
       return null
     }
 
-    // Calculate usage counts for each feature - BEGINNER TIER LIMITS
+    // Calculate usage counts for each feature - TIER-BASED LIMITS
     const usageCounts: any = {
       // Daily limits
-      aiConsultant: { daily: 0, limit: 10, limitType: 'daily' }, // 10/day per pricing
-      brandReport: { daily: 0, limit: 1, limitType: 'daily' }, // 1 daily report
+      aiConsultant: { daily: 0, limit: tierLimits?.ai_chats_daily || 10, limitType: 'daily' },
+      brandReport: { daily: 0, limit: 1, limitType: 'daily' }, // 1 daily report (consistent across tiers)
       
-      // Weekly + Monthly limits (display as monthly, enforce weekly)
-      creativeStudio: { weekly: 0, monthly: 0, weeklyLimit: 6, monthlyLimit: 25, limitType: 'weekly+monthly' }, // 25/month (6/week)
-      outreachTool: { weekly: 0, monthly: 0, weeklyLimit: 62, monthlyLimit: 250, limitType: 'weekly+monthly' }, // 250/month (62/week)
-      leadGenerator: { weekly: 0, monthly: 0, weeklyLimit: 25, monthlyLimit: 100, limitType: 'weekly+monthly' }, // 100/month (25/week)
+      // Monthly limits
+      creativeStudio: { monthly: 0, monthlyLimit: tierLimits?.creative_gen_monthly || 25, limitType: 'monthly' },
+      outreachTool: { monthly: 0, monthlyLimit: tierLimits?.outreach_messages_monthly || 250, limitType: 'monthly' },
+      leadGenerator: { monthly: 0, monthlyLimit: tierLimits?.lead_gen_monthly || 100, limitType: 'monthly' },
       
-      // Weekly limits
+      // Weekly limits (unchanged)
       marketingAssistant: { weekly: 0, limit: 1, limitType: 'weekly' } // 1/week per pricing
     }
 
@@ -2364,19 +2373,16 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
       const isThisWeek = recordLocalDate >= startOfWeekLocal
       const isThisMonth = recordLocalDate >= startOfMonthLocal
 
-      // Map feature types to usage counts
+      // Map feature types to usage counts (now using monthly tracking for monthly features)
       if (record.feature_type === 'creative_generation') {
-        if (isThisWeek) usageCounts.creativeStudio.weekly++
         if (isThisMonth) usageCounts.creativeStudio.monthly++
       } else if (record.feature_type === 'outreach_messages') {
-        if (isThisWeek) usageCounts.outreachTool.weekly++
         if (isThisMonth) usageCounts.outreachTool.monthly++
       } else if (record.feature_type === 'ai_consultant_chat' && isToday) {
         usageCounts.aiConsultant.daily++
       } else if (record.feature_type === 'brand_report' && isToday) {
         usageCounts.brandReport.daily++
-      } else if (record.feature_type === 'lead_gen_enrichment') {
-        if (isThisWeek) usageCounts.leadGenerator.weekly++
+      } else if (record.feature_type === 'lead_gen_enrichment' || record.feature_type === 'lead_gen_ecommerce') {
         if (isThisMonth) usageCounts.leadGenerator.monthly++
       } else if (record.feature_type === 'marketing_analysis' && isThisWeek) {
         usageCounts.marketingAssistant.weekly++
