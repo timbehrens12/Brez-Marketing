@@ -347,7 +347,15 @@ export default function HomePage() {
              </div>
               <div className="absolute right-28 sm:right-32 lg:right-36 top-1/2 -translate-y-1/2 flex items-center gap-3">
                <Link href="/dashboard">
-                 <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
+                 <Button 
+                   className="text-white border border-white/20 hover:brightness-110 relative overflow-hidden"
+                   style={{
+                     backgroundImage: `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`,
+                     backgroundSize: 'cover',
+                     backgroundPosition: 'center',
+                     backgroundBlendMode: 'multiply'
+                   }}
+                 >
                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                  </Button>
                </Link>
