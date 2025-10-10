@@ -677,7 +677,7 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <TagBadge tone="red" className="mb-4">COST BREAKDOWN</TagBadge>
-                <h3 className="text-3xl font-black mb-4">Replace $1,538/month in Tool Costs</h3>
+                <h3 className="text-3xl font-black mb-4">Replace $647/month in Tool Costs</h3>
                 <p className="text-white/70 text-lg max-w-3xl mx-auto">
                   Here's what you'd pay for these tools separately vs. our all-in-one platform
                 </p>
@@ -695,25 +695,23 @@ export default function HomePage() {
                       { tool: "Jasper AI (Content & Creatives)", cost: 59 },
                       { tool: "ChatGPT Plus (AI Assistant)", cost: 20 },
                       { tool: "Canva Pro (Design)", cost: 13 },
-                      { tool: "Google Workspace (Reports & Docs)", cost: 12 },
-                      { tool: "Meta Ads Manager (Free but time-intensive)", cost: 0 },
-                      { tool: "Manual Reporting (10hrs/mo × $89/hr)", cost: 890 }
+                      { tool: "Google Workspace (Reports & Docs)", cost: 12 }
                     ].map((item, i) => (
                       <div key={i} className="flex justify-between items-center text-sm">
                         <span className="text-white/80">{item.tool}</span>
-                        <span className="text-white font-mono">{item.cost === 0 ? 'Free*' : `$${item.cost}/mo`}</span>
+                        <span className="text-white font-mono">${item.cost}/mo</span>
                       </div>
                     ))}
                     <div className="pt-4 mt-4 border-t border-red-500/30">
                       <div className="flex justify-between items-center font-bold text-lg">
                         <span className="text-red-300">TOTAL MONTHLY COST</span>
-                        <span className="text-red-300 text-2xl">$1,537/mo</span>
+                        <span className="text-red-300 text-2xl">$647/mo</span>
                       </div>
                       <div className="text-center mt-2 text-red-200 text-sm">
-                        = $18,444/year
+                        = $7,764/year
                       </div>
                       <div className="text-center mt-2 text-red-200/60 text-xs">
-                        *Plus your time cost
+                        Plus countless hours managing multiple platforms
                       </div>
                     </div>
                   </div>
@@ -731,7 +729,7 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-green-300 mb-1">95%</div>
+                        <div className="text-3xl font-bold text-green-300 mb-1">90%</div>
                         <div className="text-green-200 text-sm">Cost Savings</div>
                       </div>
                     </div>
@@ -762,8 +760,8 @@ export default function HomePage() {
                 <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4 mb-8">
                   <TrendingDown className="w-6 h-6 text-green-400" />
                   <div>
-                    <div className="text-green-300 font-bold text-lg">Save $1,470+ per month</div>
-                    <div className="text-green-200 text-sm">That's $17,640+ per year in tool costs alone</div>
+                    <div className="text-green-300 font-bold text-lg">Save $580+ per month</div>
+                    <div className="text-green-200 text-sm">That's $6,960+ per year in tool costs alone</div>
                   </div>
                 </div>
                 <div>
