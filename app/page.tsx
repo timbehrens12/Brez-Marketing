@@ -1,13 +1,12 @@
 "use client"
 
-import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail, ArrowRight, Check, Target, Building2 } from "lucide-react"
+import { X, Zap, Shield, Users, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail, ArrowRight, Check, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { GridOverlay } from "@/components/GridOverlay"
 import Link from "next/link"
 import { useState } from "react"
-import { Footer } from "@/components/Footer"
 
 const BRAND_RED = "#FF2A2A"
 
@@ -677,7 +676,7 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <TagBadge tone="red" className="mb-4">COST BREAKDOWN</TagBadge>
-                <h3 className="text-3xl font-black mb-4">Replace $647/month in Tool Costs</h3>
+                <h3 className="text-3xl font-black mb-4">Replace $1,538/month in Tool Costs</h3>
                 <p className="text-white/70 text-lg max-w-3xl mx-auto">
                   Here's what you'd pay for these tools separately vs. our all-in-one platform
                 </p>
@@ -695,23 +694,25 @@ export default function HomePage() {
                       { tool: "Jasper AI (Content & Creatives)", cost: 59 },
                       { tool: "ChatGPT Plus (AI Assistant)", cost: 20 },
                       { tool: "Canva Pro (Design)", cost: 13 },
-                      { tool: "Google Workspace (Reports & Docs)", cost: 12 }
+                      { tool: "Google Workspace (Reports & Docs)", cost: 12 },
+                      { tool: "Meta Ads Manager (Free but time-intensive)", cost: 0 },
+                      { tool: "Manual Reporting (10hrs/mo × $89/hr)", cost: 890 }
                     ].map((item, i) => (
                       <div key={i} className="flex justify-between items-center text-sm">
                         <span className="text-white/80">{item.tool}</span>
-                        <span className="text-white font-mono">${item.cost}/mo</span>
+                        <span className="text-white font-mono">{item.cost === 0 ? 'Free*' : `$${item.cost}/mo`}</span>
                       </div>
                     ))}
                     <div className="pt-4 mt-4 border-t border-red-500/30">
                       <div className="flex justify-between items-center font-bold text-lg">
                         <span className="text-red-300">TOTAL MONTHLY COST</span>
-                        <span className="text-red-300 text-2xl">$647/mo</span>
+                        <span className="text-red-300 text-2xl">$1,537/mo</span>
                       </div>
                       <div className="text-center mt-2 text-red-200 text-sm">
-                        = $7,764/year
+                        = $18,444/year
                       </div>
                       <div className="text-center mt-2 text-red-200/60 text-xs">
-                        Plus countless hours managing multiple platforms
+                        *Plus your time cost
                       </div>
                     </div>
                   </div>
@@ -729,7 +730,7 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-green-300 mb-1">90%</div>
+                        <div className="text-3xl font-bold text-green-300 mb-1">95%</div>
                         <div className="text-green-200 text-sm">Cost Savings</div>
                       </div>
                     </div>
@@ -760,8 +761,8 @@ export default function HomePage() {
                 <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4 mb-8">
                   <TrendingDown className="w-6 h-6 text-green-400" />
                   <div>
-                    <div className="text-green-300 font-bold text-lg">Save $580+ per month</div>
-                    <div className="text-green-200 text-sm">That's $6,960+ per year in tool costs alone</div>
+                    <div className="text-green-300 font-bold text-lg">Save $1,470+ per month</div>
+                    <div className="text-green-200 text-sm">That's $17,640+ per year in tool costs alone</div>
                   </div>
                 </div>
                 <div>
@@ -867,9 +868,9 @@ export default function HomePage() {
               <div className="flex items-center justify-center gap-4 mt-8 mb-8">
                 <span className={`text-sm font-medium transition-colors ${billingInterval === 'weekly' ? 'text-white' : 'text-white/50'}`}>
                   Weekly
-                </span>
-                <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold">
-                  Lower upfront
+                  <span className="ml-2 text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold">
+                    Lower upfront
+                  </span>
                 </span>
                 <button
                   onClick={() => setBillingInterval(billingInterval === 'weekly' ? 'monthly' : 'weekly')}
@@ -877,11 +878,11 @@ export default function HomePage() {
                 >
                   <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'monthly' ? 'translate-x-7' : 'translate-x-0'}`} />
                 </button>
-                <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
-                  10% cheaper
-                </span>
                 <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
-                  Monthly
+                  10% cheaper
+                  <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
+                    Monthly
+                  </span>
                 </span>
               </div>
 
@@ -893,7 +894,7 @@ export default function HomePage() {
                     price: 67,
                     originalPrice: 97,
                     popular: false,
-                    icon: User,
+                    icon: Users,
                     brands: 1,
                     teamMembers: null,
                     leadGen: 0,
@@ -968,7 +969,7 @@ export default function HomePage() {
                     price: 697,
                     originalPrice: 997,
                     popular: false,
-                    icon: Globe,
+                    icon: Zap,
                     brands: 15,
                     teamMembers: 3,
                     leadGen: 750,
@@ -994,7 +995,7 @@ export default function HomePage() {
                     price: 1337,
                     originalPrice: 1997,
                     popular: false,
-                    icon: Building2,
+                    icon: Award,
                     brands: 25,
                     teamMembers: 10,
                     leadGen: 2500,
@@ -1253,43 +1254,16 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Final CTA */}
-          <section className="py-20 sm:py-28 relative">
-            <div className="absolute inset-x-0 -top-6 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 font-oswald">
-                READY TO <span className="relative inline-block">
-                  <span className="text-white font-black relative z-10">SCALE</span>
-                  <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
-                </span><br />
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(90deg,#fff,rgba(255,255,255,.5))]">LIKE A PRO?</span>
-              </h2>
-              <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10 font-mono">
-                Join the growing community of brand scalers who have transformed their businesses with our platform. Start scaling today and see the difference professional tools make.
+          {/* Footer */}
+          <footer className="py-12 border-t border-white/10 bg-black/40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
+              <p className="text-white/55 text-sm font-mono">
+                © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
+                Trusted by brand scalers worldwide • Cancel anytime
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
-                <Button 
-                  onClick={scrollToPricing}
-                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
-                >
-                  Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 backdrop-blur px-6 py-6">
-                  <MessageSquare className="mr-2 h-5 w-5" /> Talk to Sales
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-white/75">
-                <div className="flex items-center justify-center gap-3"><Shield className="w-5 h-5" /> SOC 2 Compliant</div>
-                <div className="flex items-center justify-center gap-3"><Award className="w-5 h-5" /> 99.9% Uptime</div>
-                <div className="flex items-center justify-center gap-3"><Clock className="w-5 h-5" /> 24/7 Support</div>
-              </div>
             </div>
-          </section>
-
-          {/* Footer with dark background to match landing page */}
-          <div className="bg-[#0B0B0B]">
-            <Footer />
-          </div>
+          </footer>
         </div>
       </div>
 
