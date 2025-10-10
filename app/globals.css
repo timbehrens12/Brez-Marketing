@@ -60,6 +60,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Custom red text selection */
+  ::selection {
+    background-color: #FF2A2A;
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background-color: #FF2A2A;
+    color: #ffffff;
+  }
 }
 
 /* Brand Report Improvements */
