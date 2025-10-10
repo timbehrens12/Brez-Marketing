@@ -272,6 +272,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     aiConsultant: {},
     creativeStudio: {}
   })
+  
+  // Tier limits and usage
+  const [tierLimits, setTierLimits] = useState<any>(null)
+  const [tierUsage, setTierUsage] = useState<any>(null)
 
   // Refresh functionality with cooldown
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
@@ -550,10 +554,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const supabase = await getSupabaseClient()
 
       // Use direct queries for counts - these work fine
-      const [leadsResponse, campaignsResponse, usageResponse] = await Promise.all([
+      const [leadsResponse, campaignsResponse, usageResponse, tierResponse, usageCountsResponse] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
         supabase.from('outreach_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-        supabase.from('user_usage').select('*').eq('user_id', userId)
+        supabase.from('user_usage').select('*').eq('user_id', userId),
+        supabase.rpc('get_user_tier_limits', { p_user_id: userId }),
+        fetch('/api/ai/usage-counts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        }).then(res => res.json())
       ])
 
       // Get outreach message usage via API to avoid client-side Supabase query issues
@@ -616,6 +626,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         })
       } else {
 
+      }
+
+      // Handle tier limits
+      if (!tierResponse.error && tierResponse.data) {
+        const limits = tierResponse.data?.[0]
+        setTierLimits(limits)
+        console.log('[AgencyActionCenter] Tier limits:', limits)
+      }
+
+      // Handle usage counts
+      if (usageCountsResponse) {
+        setTierUsage(usageCountsResponse)
+        console.log('[AgencyActionCenter] Usage counts:', usageCountsResponse)
       }
 
     } catch (error) {
@@ -1500,51 +1523,59 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">Agency Dependent</span>
+            <span className="text-xs text-gray-400">
+              {tierLimits?.display_name || 'Agency Dependent'}
+            </span>
             <span className={`text-xs font-medium ${(() => {
+                if (!tierLimits || !tierUsage) return 'text-gray-400'
+                
                 if (tool.id === 'lead-generator') {
-                  const used = toolUsageData.leadGenerator[userId || ''] || 0
-                  const limit = 1
-                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
+                  const used = tierUsage.leadGenerator?.monthly || 0
+                  const limit = tierLimits.lead_gen_monthly || 0
+                  if (limit === 0) return 'text-[#FF2A2A]'
+                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
                 if (tool.id === 'outreach-tool') {
-                  const used = toolUsageData.outreachTool[userId || ''] || 0
-                  const limit = 25
-                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
+                  const used = tierUsage.outreachTool?.monthly || 0
+                  const limit = tierLimits.outreach_messages_monthly || 0
+                  if (limit === 0) return 'text-[#FF2A2A]'
+                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
                 if (tool.id === 'ai-consultant') {
-                  const used = toolUsageData.aiConsultant[userId || ''] || 0
-                  const limit = 15
-                  return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
+                  const used = tierUsage.aiConsultant?.daily || 0
+                  const limit = tierLimits.ai_chats_daily || 0
+                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
-                                  if (tool.id === 'creative-studio') {
-                    const used = toolUsageData.creativeStudio[userId || ''] || 0
-                    const limit = 50
-                    return used >= limit ? 'text-[#FF2A2A]' : 'text-green-400'
-                  }
+                if (tool.id === 'creative-studio') {
+                  const used = tierUsage.creativeStudio?.monthly || 0
+                  const limit = tierLimits.creative_gen_monthly || 0
+                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+                }
                 return tool.status === 'available' ? 'text-green-400' : 'text-[#FF2A2A]'
               })()}`}>
               {(() => {
+                if (!tierLimits || !tierUsage) return 'Loading...'
+                
                 if (tool.id === 'lead-generator') {
-                  const used = toolUsageData.leadGenerator[userId || ''] || 0
-                  const limit = 1
-                  return `${used}/${limit} used this week`
+                  const used = tierUsage.leadGenerator?.monthly || 0
+                  const limit = tierLimits.lead_gen_monthly || 0
+                  return limit === 0 ? 'Locked' : `${used}/${limit} used this month`
                 }
                 if (tool.id === 'outreach-tool') {
-                  const used = toolUsageData.outreachTool[userId || ''] || 0
-                  const limit = 25
-                  return `${used}/${limit} used today`
+                  const used = tierUsage.outreachTool?.monthly || 0
+                  const limit = tierLimits.outreach_messages_monthly || 0
+                  return limit === 0 ? 'Locked' : `${used}/${limit} used this month`
                 }
                 if (tool.id === 'ai-consultant') {
-                  const used = toolUsageData.aiConsultant[userId || ''] || 0
-                  const limit = 15
+                  const used = tierUsage.aiConsultant?.daily || 0
+                  const limit = tierLimits.ai_chats_daily || 0
                   return `${used}/${limit} used today`
                 }
-                                  if (tool.id === 'creative-studio') {
-                    const used = toolUsageData.creativeStudio[userId || ''] || 0
-                    const limit = 25
-                    return `${used}/${limit} used this week`
-                  }
+                if (tool.id === 'creative-studio') {
+                  const used = tierUsage.creativeStudio?.monthly || 0
+                  const limit = tierLimits.creative_gen_monthly || 0
+                  return `${used}/${limit} used this month`
+                }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
               })()}
             </span>
