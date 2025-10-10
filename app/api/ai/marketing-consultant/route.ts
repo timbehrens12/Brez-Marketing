@@ -5,6 +5,10 @@ import OpenAI from 'openai'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
 import { getCurrentLocalDateString } from '@/lib/utils/timezone'
 
+// Disable caching for this API route - usage data must be real-time
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Smart date range parsing from natural language and conversation history
 function parseeDateRangeFromPrompt(prompt: string, conversationHistory: any[] = []): { from?: string, to?: string, days?: number } | null {
   const lowerPrompt = prompt.toLowerCase()
