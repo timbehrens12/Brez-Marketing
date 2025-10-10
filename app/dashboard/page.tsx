@@ -1930,7 +1930,7 @@ export default function DashboardPage() {
           
           {/* Glassmorphic card */}
           <div className="relative z-10 w-full max-w-lg mx-4">
-            <div className="relative backdrop-blur-xl bg-black/80 border border-white/10 rounded-2xl p-12 shadow-2xl shadow-[#FF2A2A]/20">
+            <div className="relative backdrop-blur-xl border border-white/10 rounded-2xl p-12 shadow-2xl shadow-[#FF2A2A]/20" style={{ backgroundColor: '#1f1f1f' }}>
               {/* Red aura glow around the card */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#FF2A2A]/20 via-[#FF2A2A]/30 to-[#FF2A2A]/20 blur-xl"></div>
               
