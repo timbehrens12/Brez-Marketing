@@ -304,7 +304,7 @@ export default function HomePage() {
   const dashboardPreviews = [
     { id: 'analytics', title: 'Analytics', icon: BarChart3 },
     { id: 'leads', title: 'Lead Gen', icon: Search },
-    { id: 'creatives', title: 'Creatives', icon: Palette },
+                  { id: 'creatives', title: 'Creative Generator', icon: Palette },
     { id: 'report', title: 'Brand Report', icon: FileText },
     { id: 'chatbot', title: 'Chatbot', icon: Bot },
     { id: 'assistant', title: 'AI Assistant', icon: Brain },
@@ -358,7 +358,7 @@ export default function HomePage() {
                     <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
                   </div>
                   <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap">
-                    LAUNCH SPECIAL - Early access pricing ends soon
+                    LAUNCH SPECIAL - 30% OFF - Early access pricing ends soon
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
@@ -879,9 +879,9 @@ export default function HomePage() {
                   <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--brand-red)] rounded-full transition-transform ${billingInterval === 'monthly' ? 'translate-x-7' : 'translate-x-0'}`} />
                 </button>
                 <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-white' : 'text-white/50'}`}>
-                  Monthly
+                  10% cheaper
                   <span className="ml-2 text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full font-bold">
-                    10% cheaper
+                    Monthly
                   </span>
                 </span>
               </div>
@@ -1060,7 +1060,7 @@ export default function HomePage() {
                                   <span className="line-through">${Math.round(plan.originalPrice * 1.10 / 4)}/wk</span> before discount
                                 </span>
                                 <span className="text-[10px] text-green-400 font-semibold">
-                                  🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
+                                  🎉 Launch Special - Save 30%
                                 </span>
                                 <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
                                   Billed weekly
@@ -1072,7 +1072,7 @@ export default function HomePage() {
                                   <span className="line-through">${plan.originalPrice}/mo</span> before discount
                                 </span>
                                 <span className="text-[10px] text-green-400 font-semibold">
-                                  🎉 Launch Special - Save {Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)}%
+                                  🎉 Launch Special - Save 30%
                                 </span>
                               </>
                             )}
