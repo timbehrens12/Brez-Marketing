@@ -367,13 +367,7 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
                 <div 
-                  className="inline-flex items-center gap-3 px-6 py-3 border border-gray-600/50 rounded-full mb-5 shadow-lg overflow-hidden relative"
-                  style={{
-                    backgroundImage: `linear-gradient(rgba(26,26,26,0.90), rgba(0,0,0,0.95)), url('/crinkled-paper.png')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundBlendMode: 'multiply'
-                  }}
+                  className="inline-flex items-center gap-3 px-6 py-3 border border-gray-600/50 rounded-full mb-5 shadow-lg overflow-hidden relative bg-gray-700/40"
                 >
                   <div className="relative flex items-center justify-center flex-shrink-0 z-10">
                     <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
@@ -1113,7 +1107,7 @@ export default function HomePage() {
                                 <span className="text-xs text-white/40">
                                   <span className="line-through">${Math.round(plan.originalPrice * 1.10 / 4)}/wk</span> before discount
                                 </span>
-                                <span className="text-[10px] px-2 py-1 bg-gray-500/20 text-gray-300 border border-gray-500/30 rounded-full font-semibold">
+                                <span className="text-[10px] text-green-400 font-semibold">
                                   🎉 Launch Special - Save 30%
                                 </span>
                                 <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full font-bold uppercase tracking-wide inline-block w-fit">
@@ -1125,7 +1119,7 @@ export default function HomePage() {
                                 <span className="text-xs text-white/40">
                                   <span className="line-through">${plan.originalPrice}/mo</span> before discount
                                 </span>
-                                <span className="text-[10px] px-2 py-1 bg-gray-500/20 text-gray-300 border border-gray-500/30 rounded-full font-semibold">
+                                <span className="text-[10px] text-green-400 font-semibold">
                                   🎉 Launch Special - Save 30%
                                 </span>
                               </>
