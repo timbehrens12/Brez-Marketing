@@ -1773,11 +1773,11 @@ ${analysisData.shopifyData?.orders?.length === 0 && analysisData.shopifyData ? '
 
 === TOOL USAGE & AVAILABILITY (BEGINNER TIER) ===
 ${analysisData.usageData ? `
-CREATIVE STUDIO (25/month): ${analysisData.usageData.creativeStudio.monthlyUsed}/${analysisData.usageData.creativeStudio.monthlyLimit} used this month (${analysisData.usageData.creativeStudio.weeklyUsed}/${analysisData.usageData.creativeStudio.weeklyLimit} this week) ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+CREATIVE STUDIO (25/month): ${analysisData.usageData.creativeStudio.monthlyUsed}/${analysisData.usageData.creativeStudio.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.creativeStudio.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-OUTREACH TOOL (250/month): ${analysisData.usageData.outreachTool.monthlyUsed}/${analysisData.usageData.outreachTool.monthlyLimit} used this month (${analysisData.usageData.outreachTool.weeklyUsed}/${analysisData.usageData.outreachTool.weeklyLimit} this week) ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+OUTREACH TOOL (250/month): ${analysisData.usageData.outreachTool.monthlyUsed}/${analysisData.usageData.outreachTool.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.outreachTool.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
-LEAD GENERATOR (100/month): ${analysisData.usageData.leadGenerator.monthlyUsed}/${analysisData.usageData.leadGenerator.monthlyLimit} used this month (${analysisData.usageData.leadGenerator.weeklyUsed}/${analysisData.usageData.leadGenerator.weeklyLimit} this week) ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
+LEAD GENERATOR (100/month): ${analysisData.usageData.leadGenerator.monthlyUsed}/${analysisData.usageData.leadGenerator.monthlyLimit} used this month (Resets 1st) ${analysisData.usageData.leadGenerator.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
 AI CONSULTANT (10/day): ${analysisData.usageData.aiConsultant.used}/${analysisData.usageData.aiConsultant.limit} used today ${analysisData.usageData.aiConsultant.available ? '✓ AVAILABLE' : '✗ LIMIT REACHED'}
 
@@ -2386,26 +2386,18 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
     // Calculate remaining uses - BEGINNER TIER
     const usageStatus = {
       creativeStudio: {
-        weeklyUsed: usageCounts.creativeStudio.weekly,
         monthlyUsed: usageCounts.creativeStudio.monthly,
-        weeklyRemaining: Math.max(0, usageCounts.creativeStudio.weeklyLimit - usageCounts.creativeStudio.weekly),
         monthlyRemaining: Math.max(0, usageCounts.creativeStudio.monthlyLimit - usageCounts.creativeStudio.monthly),
-        weeklyLimit: usageCounts.creativeStudio.weeklyLimit,
         monthlyLimit: usageCounts.creativeStudio.monthlyLimit,
         limitType: 'monthly',
-        available: usageCounts.creativeStudio.weekly < usageCounts.creativeStudio.weeklyLimit && 
-                   usageCounts.creativeStudio.monthly < usageCounts.creativeStudio.monthlyLimit
+        available: usageCounts.creativeStudio.monthly < usageCounts.creativeStudio.monthlyLimit
       },
       outreachTool: {
-        weeklyUsed: usageCounts.outreachTool.weekly,
         monthlyUsed: usageCounts.outreachTool.monthly,
-        weeklyRemaining: Math.max(0, usageCounts.outreachTool.weeklyLimit - usageCounts.outreachTool.weekly),
         monthlyRemaining: Math.max(0, usageCounts.outreachTool.monthlyLimit - usageCounts.outreachTool.monthly),
-        weeklyLimit: usageCounts.outreachTool.weeklyLimit,
         monthlyLimit: usageCounts.outreachTool.monthlyLimit,
         limitType: 'monthly',
-        available: usageCounts.outreachTool.weekly < usageCounts.outreachTool.weeklyLimit && 
-                   usageCounts.outreachTool.monthly < usageCounts.outreachTool.monthlyLimit
+        available: usageCounts.outreachTool.monthly < usageCounts.outreachTool.monthlyLimit
       },
       aiConsultant: {
         used: usageCounts.aiConsultant.daily,
@@ -2422,15 +2414,11 @@ async function gatherUsageData(supabase: any, userId: string, userTimezone: stri
         available: usageCounts.brandReport.daily < usageCounts.brandReport.limit
       },
       leadGenerator: {
-        weeklyUsed: usageCounts.leadGenerator.weekly,
         monthlyUsed: usageCounts.leadGenerator.monthly,
-        weeklyRemaining: Math.max(0, usageCounts.leadGenerator.weeklyLimit - usageCounts.leadGenerator.weekly),
         monthlyRemaining: Math.max(0, usageCounts.leadGenerator.monthlyLimit - usageCounts.leadGenerator.monthly),
-        weeklyLimit: usageCounts.leadGenerator.weeklyLimit,
         monthlyLimit: usageCounts.leadGenerator.monthlyLimit,
         limitType: 'monthly',
-        available: usageCounts.leadGenerator.weekly < usageCounts.leadGenerator.weeklyLimit && 
-                   usageCounts.leadGenerator.monthly < usageCounts.leadGenerator.monthlyLimit
+        available: usageCounts.leadGenerator.monthly < usageCounts.leadGenerator.monthlyLimit
       },
       marketingAssistant: {
         used: usageCounts.marketingAssistant.weekly,

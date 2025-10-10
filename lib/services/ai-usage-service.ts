@@ -74,20 +74,16 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 30 // 30 enhanced analyses per day
   },
   creative_generation: {
-    weeklyLimit: 6, // 25/month ÷ 4 weeks = ~6/week
-    monthlyLimit: 25 // 25/month as shown in pricing widget
+    monthlyLimit: 25 // 25/month as shown in pricing widget (resets 1st of month)
   },
   lead_gen_enrichment: {
-    weeklyLimit: 25, // 100/month ÷ 4 weeks = 25/week
-    monthlyLimit: 100 // 100/month as shown in pricing widget
+    monthlyLimit: 100 // 100/month as shown in pricing widget (resets 1st of month)
   },
   lead_gen_ecommerce: {
-    weeklyLimit: 25, // Same as lead_gen_enrichment
-    monthlyLimit: 100
+    monthlyLimit: 100 // Same as lead_gen_enrichment (resets 1st of month)
   },
   outreach_messages: {
-    weeklyLimit: 62, // 250/month ÷ 4 weeks = ~62/week
-    monthlyLimit: 250 // 250/month as shown in pricing widget
+    monthlyLimit: 250 // 250/month as shown in pricing widget (resets 1st of month)
   }
 }
 
