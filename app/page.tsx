@@ -1071,14 +1071,18 @@ export default function HomePage() {
                     }}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                        <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
-                          Most Popular
-                        </span>
-                      </div>
+                      <>
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                          <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
+                            Most Popular
+                          </span>
+                        </div>
+                        {/* Extra dark overlay for Beginner card */}
+                        <div className="absolute inset-0 bg-black/40 rounded-2xl pointer-events-none"></div>
+                      </>
                     )}
 
-                      <div className={`p-6 flex flex-col h-full ${plan.name === "Multi-Brand" ? "-mt-2" : ""}`}>
+                      <div className={`p-6 flex flex-col h-full relative z-10 ${plan.name === "Multi-Brand" ? "-mt-2" : ""}`}>
                         {/* Fixed height header for alignment */}
                         <div className="flex items-center gap-3 mb-6 min-h-[60px]">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 flex-shrink-0">
