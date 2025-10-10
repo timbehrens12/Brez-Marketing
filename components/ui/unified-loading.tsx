@@ -125,19 +125,27 @@ export function UnifiedLoading({
         "min-h-screen flex items-center justify-center bg-[#0B0B0B]",
         className
       )}>
-        <div className="text-center">
-          {renderLogo()}
-          <Loader2 className={cn("animate-spin text-[#FF2A2A] mx-auto mb-4", sizeClasses[size])} />
-          {message && (
-            <p className={cn("text-white mb-2 font-medium", messageTextClasses[size])}>
-              {message}
-            </p>
-          )}
-          {subMessage && (
-            <p className={cn("text-gray-400", messageTextClasses[size === "xl" ? "md" : "sm"])}>
-              {subMessage}
-            </p>
-          )}
+        {/* Glassmorphic card with red aura */}
+        <div className="relative z-10 w-full max-w-lg mx-4">
+          <div className="relative border border-white/10 rounded-2xl p-12 shadow-2xl shadow-[#FF2A2A]/20 bg-[#1f1f1f]">
+            {/* Red aura glow around the card */}
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#FF2A2A]/20 via-[#FF2A2A]/30 to-[#FF2A2A]/20 blur-xl -z-10"></div>
+            
+            <div className="relative z-10 text-center">
+              {renderLogo()}
+              <Loader2 className={cn("animate-spin text-[#FF2A2A] mx-auto mb-4", sizeClasses[size])} />
+              {message && (
+                <p className={cn("text-white mb-2 font-medium", messageTextClasses[size])}>
+                  {message}
+                </p>
+              )}
+              {subMessage && (
+                <p className={cn("text-gray-400", messageTextClasses[size === "xl" ? "md" : "sm"])}>
+                  {subMessage}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     )
