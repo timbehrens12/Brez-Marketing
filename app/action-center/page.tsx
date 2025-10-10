@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { UnifiedLoading, pageLoadingConfig } from '@/components/ui/unified-loading'
+import { UniversalLoadingScreen } from '@/components/UniversalLoadingScreen'
 import { useAgency } from '@/contexts/AgencyContext'
 import { GridOverlay } from '@/components/GridOverlay'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -1613,90 +1614,20 @@ export default function ActionCenterPage() {
   // Show progressive loading screen
   if (isDataLoading) {
     return (
-      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
-        </div>
-        
-        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Main loading icon */}
-          <div className="w-20 h-20 mx-auto mb-8 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencyContext?.agency_logo_url && (
-                <img 
-                  src={agencyContext.agency_logo_url} 
-                  alt={`${agencyContext?.agency_name || 'Agency'} Logo`}
-                  className="w-12 h-12 object-contain rounded"
-                />
-              )}
-            </div>
-          </div>
-          
-          {/* Loading title */}
-          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Action Center
-          </h1>
-          
-          {/* Dynamic loading phase */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            {loadingPhase}
-          </p>
-          
-          {/* Progress bar */}
-          <div className="w-full max-w-md mx-auto mb-6">
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-              <span>Progress</span>
-              <span>{loadingProgress}%</span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
-            </div>
-          </div>
-          
-          {/* Loading phases checklist */}
-          <div className="text-left space-y-2 text-sm text-gray-400">
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Connecting to your accounts</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Analyzing your outreach campaigns</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Checking brand performance</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Preparing marketing tools</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Updating notifications</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Finalizing your dashboard</span>
-            </div>
-          </div>
-          
-          {/* Subtle loading tip */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Building your personalized action dashboard...
-          </div>
-        </div>
-      </div>
+      <UniversalLoadingScreen 
+        title="Action Center"
+        loadingPhase={loadingPhase}
+        loadingProgress={loadingProgress}
+        agencyLogo={agencyContext?.agency_logo_url}
+        agencyName={agencyContext?.agency_name}
+        loadingPhases={[
+          { phase: 'Connecting to your accounts...', progressThreshold: 30 },
+          { phase: 'Analyzing your outreach campaigns...', progressThreshold: 50 },
+          { phase: 'Checking brand performance...', progressThreshold: 70 },
+          { phase: 'Preparing marketing tools...', progressThreshold: 85 },
+          { phase: 'Finalizing your dashboard...', progressThreshold: 95 }
+        ]}
+      />
     )
   }
 
