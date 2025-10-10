@@ -4157,9 +4157,8 @@ AVOID REPETITIVE PATTERNS:
         
         {/* Glassmorphic card */}
         <div className="relative z-10 w-full max-w-lg mx-4">
-          <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border border-white/10 rounded-2xl p-12 shadow-2xl">
-            {/* Subtle red glow */}
-            <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(600px_200px_at_50%_50%,rgba(255,42,42,.08),transparent)]"></div>
+          <div className="relative border border-white/10 rounded-2xl p-12 shadow-2xl shadow-[#FF2A2A]/20 bg-[#1f1f1f]">
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#FF2A2A]/20 via-[#FF2A2A]/30 to-[#FF2A2A]/20 blur-xl -z-10"></div>
             
             <div className="relative z-10 text-center">
               {/* Enhanced spinner with glow */}
