@@ -1063,8 +1063,8 @@ export default function HomePage() {
                     }`}
                     style={{
                       backgroundImage: plan.popular
-                        ? `linear-gradient(rgba(255,42,42,0.04), rgba(0,0,0,0.95)), url('/crinkled-paper.png')`
-                        : `linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.90)), url('/crinkled-paper.png')`,
+                        ? `linear-gradient(rgba(255,42,42,0.02), rgba(0,0,0,0.96)), url('/crinkled-paper.png')`
+                        : `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('/crinkled-paper.png')`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       backgroundBlendMode: 'multiply'
@@ -1078,7 +1078,7 @@ export default function HomePage() {
                       </div>
                     )}
 
-                      <div className={`p-6 flex flex-col h-full ${plan.name === "Multi-Brand" ? "-mt-4" : ""}`}>
+                      <div className={`p-6 flex flex-col h-full ${plan.name === "Multi-Brand" ? "-mt-2" : ""}`}>
                         {/* Fixed height header for alignment */}
                         <div className="flex items-center gap-3 mb-6 min-h-[60px]">
                           <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 flex-shrink-0">
