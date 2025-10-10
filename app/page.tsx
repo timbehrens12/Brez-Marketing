@@ -603,7 +603,7 @@ export default function HomePage() {
                       {/* Tag Shape */}
                       <div className="relative mt-8 mx-auto max-w-sm">
                         <div 
-                          className="bg-gradient-to-br from-gray-100 to-gray-300 text-black p-6 pb-8 shadow-[0_8px_16px_rgba(0,0,0,0.3)] transform perspective-1000 rotate-y-2"
+                          className="bg-gradient-to-br from-gray-100 to-gray-300 text-black p-6 pb-8 shadow-[0_8px_16px_rgba(0,0,0,0.3)] transform perspective-1000 rotate-y-2 crinkle-effect"
                           style={{
                             clipPath: 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%)'
                           }}
@@ -653,7 +653,7 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <div className="rounded-2xl border border-white/15 p-8 text-center bg-[linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))]">
+              <div className="rounded-2xl border border-white/15 p-8 text-center bg-[linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))] crinkle-effect">
                 <TagBadge tone="red" className="mb-3">White-Label</TagBadge>
                 <h3 className="text-2xl font-bold mb-3">Your Clients Think It's Your Software</h3>
                 <p className="text-white/80 text-lg max-w-4xl mx-auto font-mono mb-6">
@@ -682,7 +682,7 @@ export default function HomePage() {
 
               <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 {/* Individual Tool Costs */}
-                <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8">
+                <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8 crinkle-effect">
                   <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
                   <div className="space-y-3">
                     {[
@@ -715,7 +715,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Our Platform Cost */}
-                <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8">
+                <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8 crinkle-effect">
                   <h4 className="text-xl font-bold mb-6 text-center text-green-300">Brez Marketing Platform</h4>
                   <div className="text-center mb-8">
                     <div className="text-6xl font-black text-green-300 mb-2">$67</div>
@@ -805,7 +805,7 @@ export default function HomePage() {
                 ].map((feature, i) => (
                   <div
                     key={i}
-                    className="group relative rounded-2xl p-6 border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015))] hover:border-white/30 transition-all"
+                    className="group relative rounded-2xl p-6 border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015))] hover:border-white/30 transition-all crinkle-effect"
                   >
                     <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(500px_200px_at_50%_-10%,rgba(255,42,42,.14),transparent)]" />
                     <div className="relative z-10">
@@ -1303,7 +1303,7 @@ export default function HomePage() {
       <style>{`
         .font-oswald { font-family: Oswald, Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol'; }
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-
+      
         /* Custom red text selection */
         ::selection {
           background-color: #FF2A2A;
@@ -1313,33 +1313,57 @@ export default function HomePage() {
           background-color: #FF2A2A;
           color: #ffffff;
         }
-
+      
+        /* Crinkle/Wrinkle Paper Texture Effect */
+        .crinkle-effect {
+          position: relative;
+        }
+        .crinkle-effect::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background-image: 
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px),
+            repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,.02) 3px, rgba(0,0,0,.02) 6px),
+            repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,.02) 3px, rgba(0,0,0,.02) 6px);
+          background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+          opacity: 0.6;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .crinkle-effect > * {
+          position: relative;
+          z-index: 2;
+        }
+      
         /* anims (kept, just tuned) */
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
-
-
+      
+      
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
         .animate-bar-grow { transform-origin: bottom; animation: bar-grow 1.6s ease-in-out infinite; }
-
+      
         @keyframes draw-line-short { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
         .animate-draw-line-short { stroke-dasharray: 50; stroke-dashoffset: 50; animation: draw-line-short 1.6s ease-in-out infinite; }
-
+      
         @keyframes magnify { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(10px,-5px) scale(1.2); } }
         .animate-magnify { animation: magnify 3s ease-in-out infinite; }
-
+      
         @keyframes typing { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         .animate-typing { animation: typing 1.2s ease-in-out infinite; }
-
+      
         @keyframes scroll-report { from { transform: translateY(0); } to { transform: translateY(-20px); } }
         .animate-scroll-report { animation: scroll-report 3s ease-in-out infinite alternate; }
-
+      
         @keyframes draw-profit-line { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
         .animate-draw-profit-line { stroke-dasharray: 200; animation: draw-profit-line 2s ease-out infinite; }
-
+      
         @keyframes ai-spark { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: .55; } }
         .animate-ai-spark { transform-origin: center; animation: ai-spark 1.5s ease-in-out infinite; }
-
+      
         @keyframes dollar-sign-fade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
         .animate-dollar-sign { animation: dollar-sign-fade 2s ease-in-out infinite; }
         @keyframes send-mail-anim { 0% { transform: translate(0,0); opacity: 1; } 50% { transform: translate(40px,-20px); opacity: 1; } 100% { transform: translate(80px,-40px); opacity: 0; } }
