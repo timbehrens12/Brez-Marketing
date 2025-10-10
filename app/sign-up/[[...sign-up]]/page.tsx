@@ -5,9 +5,9 @@ import { GridOverlay } from "@/components/GridOverlay"
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B] relative">
+    <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B] relative py-12">
       <GridOverlay />
-      <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333] relative z-10">
+      <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333] relative z-10 my-8">
         <div className="mb-8 text-center">
           <img 
             src="https://i.imgur.com/j4AQPxj.png" 
