@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/client'
 import OpenAI from 'openai'
 import { validateRequest, leadGenerationRequestSchema, checkRateLimit, addSecurityHeaders, sanitizeString, sanitizeAIInput } from '@/lib/utils/validation'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
+import { tierEnforcementService } from '@/lib/services/tier-enforcement-service'
 
 const supabase = getSupabaseServiceClient()
 
@@ -39,6 +40,17 @@ export async function POST(request: NextRequest) {
     }
     
     const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC, totalLeadsToGenerate, nicheAllocation } = validatedData
+
+    // Check tier access for lead generation
+    const accessResult = await tierEnforcementService.canAccessFeature(userId, 'lead_generation')
+    if (!accessResult.allowed) {
+      return addSecurityHeaders(NextResponse.json({ 
+        error: accessResult.reason || 'Lead Generation is not available on your current plan',
+        upgradeRequired: true,
+        currentTier: accessResult.currentTier,
+        recommendedTier: accessResult.recommendedTier
+      }, { status: 403 }))
+    }
 
     // NOTE: Rate limiting is handled by tier-based weekly limits (lines 94-104)
     // No need for Redis rate limiting since subscription tiers already control usage

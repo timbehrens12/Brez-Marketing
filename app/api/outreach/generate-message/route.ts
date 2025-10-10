@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
+import { tierEnforcementService } from '@/lib/services/tier-enforcement-service'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -208,6 +209,18 @@ export async function POST(request: NextRequest) {
 
     // Update agencyName with actual value from request - accessible in both try and catch blocks
     agencyName = ai_instructions?.agency_name || brandInfo?.name || 'Your Agency'
+    
+    // 🔒 TIER CHECK: Verify user has access to outreach tool
+    const accessResult = await tierEnforcementService.canAccessFeature(userId, 'outreach_tool')
+    if (!accessResult.allowed) {
+      return NextResponse.json({ 
+        error: accessResult.reason || 'Outreach CRM is not available on your current plan',
+        upgradeRequired: true,
+        currentTier: accessResult.currentTier,
+        recommendedTier: accessResult.recommendedTier,
+        ai_generated: false
+      }, { status: 403 })
+    }
     
     // 🔒 SECURITY: Check rate limits before proceeding
     const leadId = lead.id || `${lead.business_name}_${lead.email || lead.phone || 'unknown'}`
