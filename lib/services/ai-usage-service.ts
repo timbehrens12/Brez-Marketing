@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentLocalDateString, dateToLocalDateString } from '@/lib/utils/timezone'
+import { getUserTierLimits, type Tier } from '@/lib/subscription/tier-access'
 
 export type AIFeatureType = 
   | 'campaign_recommendations' 
@@ -24,6 +25,7 @@ export interface AIUsageStatus {
   cooldownUntil?: Date
   lastUsed?: Date
   reason?: string
+  tier?: Tier
 }
 
 export interface AIFeatureLimits {
@@ -34,9 +36,9 @@ export interface AIFeatureLimits {
   requiresPreviousRecommendations?: boolean
 }
 
-// Define limits for each AI feature - BEGINNER TIER ($97/mo)
-// Based on pricing widget: 100 leads/mo, 250 outreach/mo, 10 chatbot/day, 25 creatives/mo
-const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
+// Define BASE limits for each AI feature (features not tied to tier limits)
+// Tier-specific limits (creative_generation, lead_gen, outreach, ai_consultant_chat) are fetched from database
+const BASE_AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
   campaign_recommendations: {
     weeklyLimit: 1, // Weekly campaign optimization (as shown in pricing)
     cooldownHours: 24,
@@ -46,7 +48,7 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 3 // 3 health reports per day
   },
   ai_consultant_chat: {
-    dailyLimit: 10 // 10/day as shown in pricing widget
+    dailyLimit: 10 // Default (overridden by tier)
   },
   marketing_analysis: {
     weeklyLimit: 1 // 1 weekly marketing assistant analysis (Weekly as shown in pricing)
@@ -74,21 +76,58 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 30 // 30 enhanced analyses per day
   },
   creative_generation: {
-    monthlyLimit: 25 // 25/month as shown in pricing widget (resets 1st of month)
+    monthlyLimit: 25 // Default (overridden by tier)
   },
   lead_gen_enrichment: {
-    monthlyLimit: 100 // 100/month as shown in pricing widget (resets 1st of month)
+    monthlyLimit: 100 // Default (overridden by tier)
   },
   lead_gen_ecommerce: {
-    monthlyLimit: 100 // Same as lead_gen_enrichment (resets 1st of month)
+    monthlyLimit: 100 // Default (overridden by tier)
   },
   outreach_messages: {
-    monthlyLimit: 250 // 250/month as shown in pricing widget (resets 1st of month)
+    monthlyLimit: 250 // Default (overridden by tier)
   }
 }
 
 export class AIUsageService {
   private supabase = createClient()
+
+  /**
+   * Get tier-based limits for a user
+   * Merges base limits with tier-specific limits from database
+   */
+  private async getTierBasedLimits(userId: string, featureType: AIFeatureType): Promise<AIFeatureLimits> {
+    const baseLimits = BASE_AI_FEATURE_LIMITS[featureType]
+    
+    // Get user's tier limits from database
+    const tierLimits = await getUserTierLimits(userId)
+    if (!tierLimits) {
+      console.warn(`[AI Usage] No tier limits found for user ${userId}, using base limits`)
+      return baseLimits
+    }
+
+    // Override base limits with tier-specific limits
+    const limits = { ...baseLimits }
+    
+    switch (featureType) {
+      case 'ai_consultant_chat':
+        limits.dailyLimit = tierLimits.ai_chats_daily
+        break
+      case 'creative_generation':
+        limits.monthlyLimit = tierLimits.creative_gen_monthly
+        break
+      case 'lead_gen_enrichment':
+      case 'lead_gen_ecommerce':
+        limits.monthlyLimit = tierLimits.lead_gen_monthly
+        break
+      case 'outreach_messages':
+        limits.monthlyLimit = tierLimits.outreach_messages_monthly
+        break
+    }
+
+    console.log(`[AI Usage] Tier-based limits for ${featureType}:`, limits)
+    return limits
+  }
 
   async checkUsageStatus(
     brandId: string, 
@@ -96,7 +135,8 @@ export class AIUsageService {
     featureType: AIFeatureType
   ): Promise<AIUsageStatus> {
     try {
-      const limits = AI_FEATURE_LIMITS[featureType]
+      // Get tier-based limits for this user
+      const limits = await this.getTierBasedLimits(userId, featureType)
       const now = new Date()
 
       // Calculate week and month boundaries
@@ -281,7 +321,7 @@ export class AIUsageService {
       }
 
       // Update or insert usage tracking for daily limits
-      const limits = AI_FEATURE_LIMITS[featureType]
+      const limits = await this.getTierBasedLimits(userId, featureType)
       if (limits.dailyLimit) {
         const { data: existingUsage } = await this.supabase
           .from('ai_usage_tracking')
