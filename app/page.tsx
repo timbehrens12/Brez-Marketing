@@ -1015,11 +1015,35 @@ export default function HomePage() {
                 ].map((plan, index) => (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group overflow-hidden ${
                       plan.popular 
-                        ? 'bg-gradient-to-br from-red-900/15 via-black/90 to-red-900/15 border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
-                        : 'bg-gradient-to-br from-red-900/10 via-black/80 to-red-900/10 border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
+                        ? 'border-[4px] border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3)]' 
+                        : 'border-[3px] border-gray-600/40 hover:border-gray-500/60 hover:shadow-[0_0_30px_rgba(255,255,255,.05)]'
                     }`}
+                    style={{
+                      background: plan.popular 
+                        ? 'linear-gradient(135deg, rgba(139,0,0,0.15) 0%, rgba(0,0,0,0.95) 50%, rgba(139,0,0,0.15) 100%)' 
+                        : 'linear-gradient(135deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                      backgroundImage: plan.popular
+                        ? `
+                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,42,42,0.03) 2px, rgba(255,42,42,0.03) 4px),
+                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,42,42,0.03) 2px, rgba(255,42,42,0.03) 4px),
+                          repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,42,42,0.02) 3px, rgba(255,42,42,0.02) 6px),
+                          repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,42,42,0.02) 3px, rgba(255,42,42,0.02) 6px),
+                          radial-gradient(circle at 20% 30%, rgba(255,42,42,0.08), transparent 40%),
+                          radial-gradient(circle at 80% 70%, rgba(255,42,42,0.08), transparent 40%),
+                          linear-gradient(135deg, rgba(139,0,0,0.15) 0%, rgba(0,0,0,0.95) 50%, rgba(139,0,0,0.15) 100%)
+                        `
+                        : `
+                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
+                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
+                          repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 6px),
+                          repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 6px),
+                          radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03), transparent 50%),
+                          radial-gradient(circle at 70% 80%, rgba(255,255,255,0.03), transparent 50%),
+                          linear-gradient(135deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.98) 50%, rgba(30,30,30,0.95) 100%)
+                        `
+                    }}
                   >
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
