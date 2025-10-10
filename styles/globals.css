@@ -88,16 +88,16 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-  
-  /* Custom red text selection */
-  ::selection {
-    background-color: #FF2A2A;
-    color: #ffffff;
-  }
-  ::-moz-selection {
-    background-color: #FF2A2A;
-    color: #ffffff;
-  }
+}
+
+/* Custom red text selection - must be outside @layer for proper specificity */
+::selection {
+  background-color: #FF2A2A !important;
+  color: #ffffff !important;
+}
+::-moz-selection {
+  background-color: #FF2A2A !important;
+  color: #ffffff !important;
 }
 
 /* Fix calendar border and styling issues */
