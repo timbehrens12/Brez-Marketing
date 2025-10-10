@@ -1255,8 +1255,43 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Footer */}
-          <Footer />
+          {/* Final CTA */}
+          <section className="py-20 sm:py-28 relative">
+            <div className="absolute inset-x-0 -top-6 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 font-oswald">
+                READY TO <span className="relative inline-block">
+                  <span className="text-white font-black relative z-10">SCALE</span>
+                  <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                </span><br />
+                <span className="text-transparent bg-clip-text bg-[linear-gradient(90deg,#fff,rgba(255,255,255,.5))]">LIKE A PRO?</span>
+              </h2>
+              <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10 font-mono">
+                Join the growing community of brand scalers who have transformed their businesses with our platform. Start scaling today and see the difference professional tools make.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+                <Button 
+                  onClick={scrollToPricing}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                >
+                  Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 backdrop-blur px-6 py-6">
+                  <MessageSquare className="mr-2 h-5 w-5" /> Talk to Sales
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-white/75">
+                <div className="flex items-center justify-center gap-3"><Shield className="w-5 h-5" /> SOC 2 Compliant</div>
+                <div className="flex items-center justify-center gap-3"><Award className="w-5 h-5" /> 99.9% Uptime</div>
+                <div className="flex items-center justify-center gap-3"><Clock className="w-5 h-5" /> 24/7 Support</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Footer with dark background to match landing page */}
+          <div className="bg-[#0B0B0B]">
+            <Footer />
+          </div>
         </div>
       </div>
 
