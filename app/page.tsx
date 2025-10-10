@@ -915,7 +915,7 @@ export default function HomePage() {
                     price: 97,
                     originalPrice: 147,
                     popular: true,
-                    icon: TrendingUp,
+                    icon: Zap,
                     brands: 1,
                     teamMembers: null,
                     leadGen: 100,
@@ -940,7 +940,7 @@ export default function HomePage() {
                     price: 397,
                     originalPrice: 597,
                     popular: false,
-                    icon: Rocket,
+                    icon: TrendingUp,
                     brands: 5,
                     teamMembers: 1,
                     leadGen: 300,
@@ -1038,13 +1038,14 @@ export default function HomePage() {
                     )}
 
                       <div className="p-6 flex flex-col h-full">
-                        <div className="flex items-center gap-3 mb-6">
-                          <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
+                        {/* Fixed height header for alignment */}
+                        <div className="flex items-center gap-3 mb-6 min-h-[60px]">
+                          <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 flex-shrink-0">
                             <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                           </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                            <p className="text-white/60 text-xs mt-1">{plan.description}</p>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-white leading-tight">{plan.name}</h3>
+                            <p className="text-white/60 text-xs mt-1 leading-tight">{plan.description}</p>
                           </div>
                         </div>
                         <div className="mb-6">
