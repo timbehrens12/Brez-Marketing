@@ -4,8 +4,7 @@ import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocke
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-// import { GridOverlay } from "@/components/GridOverlay"
-import MatrixHero from "@/components/MatrixHero"
+import MatrixBackground from "@/components/MatrixBackground"
 import Link from "next/link"
 import { useState } from "react"
 import { Footer } from "@/components/Footer"
@@ -321,7 +320,7 @@ export default function HomePage() {
         className="min-h-screen bg-[#0B0B0B] text-white overflow-x-hidden"
         style={{ fontFamily: 'JetBrains Mono, monospace' }}
       >
-        <div className="pointer-events-none fixed inset-0 z-0" />
+        <MatrixBackground />
 
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Header */}
@@ -344,8 +343,200 @@ export default function HomePage() {
              </div>
            </header>
 
-          {/* Hero replaced by MatrixHero */}
-          <MatrixHero />
+          {/* Hero */}
+          <section className="py-20 sm:py-28 relative">
+            {/* diagonal divider */}
+            <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
+              <div className="text-center lg:text-left">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-[#1a1a1a] via-[#252525] to-[#1a1a1a] border border-gray-600/50 rounded-full mb-5 shadow-lg">
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full animate-pulse"></div>
+                    <div className="absolute w-3 h-3 bg-[var(--brand-red)] rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-white font-bold tracking-wider text-xs uppercase whitespace-nowrap">
+                    LAUNCH SPECIAL - 30% OFF - Early access pricing ends soon
+                  </span>
+                </div>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
+                  THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1.1em] mx-2" /><br />
+                  FOR SIGNING AND SCALING <span className="relative inline-block">
+                    <span className="text-white font-black relative z-10">FREELANCE</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                  </span> <span className="relative inline-block">
+                    <span className="text-white font-black relative z-10">BRANDSCALING</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                  </span><br />
+                  <span className="text-white font-black">CLIENTS</span>
+                </h1>
+                <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
+                  The complete AI-powered dashboard to find, sign, and deliver results for your first freelance brandscaling clients.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+                  <Button 
+                    onClick={scrollToPricing}
+                    className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                  >
+                    SIGN YOUR FIRST CLIENT <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
+                {/* trust row */}
+                <div className="mt-6 flex flex-wrap items-center gap-3 text-xs justify-center lg:justify-start">
+                  <TagBadge tone="dark">SOC Compliant</TagBadge>
+                  <TagBadge tone="dark">Cancel Anytime</TagBadge>
+                  <TagBadge tone="dark">Transparent Pricing</TagBadge>
+                </div>
+              </div>
+
+              {/* animated preview container (kept) */}
+              <div className="relative h-[28rem]">
+                <div className="absolute inset-0 rounded-2xl border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03))] backdrop-blur-md shadow-[0_20px_80px_rgba(255,42,42,.15)] rotate-2 transition-all duration-500 hover:rotate-0 hover:scale-[1.02]" />
+                <div className="absolute inset-0 bg-[#0F0F10] border border-white/25 rounded-2xl p-6 -rotate-1 transition-all duration-500 hover:rotate-0 hover:scale-[1.02] shadow-2xl flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 bg-[var(--brand-red)] rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    </div>
+                    <div className="text-xs text-white/50">Included Features</div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                    {dashboardPreviews.map(preview => (
+                      <button
+                        key={preview.id}
+                        onMouseEnter={() => setActivePreview(preview.id)}
+                        className={`flex items-center justify-center gap-2 p-2 rounded-md transition-colors duration-200 border ${
+                          activePreview === preview.id ? 'bg-white/10 border-white/30' : 'bg-transparent hover:bg-white/5 border-white/10'
+                        }`}
+                      >
+                        <preview.icon className={`w-4 h-4 ${activePreview === preview.id ? 'text-white' : 'text-white/50'}`} />
+                        <span className={`text-xs font-semibold hidden sm:inline ${activePreview === preview.id ? 'text-white' : 'text-white/60'}`}>{preview.title}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* animated canvases (unchanged logic) */}
+                  <div className="w-full flex-grow bg-white/5 rounded-lg p-4 flex items-center justify-center overflow-hidden">
+                    {activePreview === 'analytics' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-80">
+                        <rect x="10" y="40" width="10" height="15" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.35)" }} />
+                        <rect x="25" y="25" width="10" height="30" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.45)", animationDelay: '0.15s' }} />
+                        <rect x="40" y="35" width="10" height="20" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.55)", animationDelay: '0.3s' }} />
+                        <rect x="55" y="20" width="10" height="35" fill={BRAND_RED} className="animate-bar-grow" style={{ animationDelay: '0.45s' }} />
+                        <rect x="70" y="30" width="10" height="25" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.55)", animationDelay: '0.6s' }} />
+                        <rect x="85" y="15" width="10" height="40" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.45)", animationDelay: '0.75s' }} />
+                        {/* Red accent line */}
+                        <line x1="5" y1="58" x2="95" y2="58" stroke={BRAND_RED} strokeWidth="1" opacity="0.6" />
+                      </svg>
+                    )}
+                    {activePreview === 'teams' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-80">
+                        <circle cx="50" cy="30" r="8" fill={BRAND_RED} />
+                        <circle cx="20" cy="15" r="5" fill="rgba(255,255,255,.3)" />
+                        <circle cx="80" cy="15" r="5" fill="rgba(255,255,255,.3)" />
+                        <circle cx="20" cy="45" r="5" fill="rgba(255,255,255,.3)" />
+                        <circle cx="80" cy="45" r="5" fill="rgba(255,255,255,.3)" />
+                        <line x1="20" y1="15" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" />
+                        <line x1="80" y1="15" x2="50" y2="30" stroke={BRAND_RED} strokeWidth="1.5" className="animate-draw-line-short" style={{ animationDelay: '0.5s' }} />
+                        <line x1="20" y1="45" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" style={{ animationDelay: '1s' }} />
+                        <line x1="80" y1="45" x2="50" y2="30" stroke={BRAND_RED} strokeWidth="1.5" className="animate-draw-line-short" style={{ animationDelay: '1.5s' }} />
+                      </svg>
+                    )}
+                    {activePreview === 'leads' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-80">
+                        <g className="animate-magnify">
+                          <circle cx="40" cy="25" r="12" stroke={BRAND_RED} strokeWidth="2" fill="none" />
+                          <line x1="48" y1="33" x2="55" y2="40" stroke={BRAND_RED} strokeWidth="2" />
+                        </g>
+                        <rect x="20" y="10" width="60" height="40" fill="rgba(255,255,255,.06)" rx="2" />
+                        <line x1="25" y1="20" x2="75" y2="20" stroke="rgba(255,255,255,.35)" strokeWidth="2" />
+                        <line x1="25" y1="30" x2="65" y2="30" stroke={BRAND_RED} strokeWidth="2" opacity="0.6" />
+                        <line x1="25" y1="40" x2="70" y2="40" stroke="rgba(255,255,255,.35)" strokeWidth="2" />
+                        {/* Red lead indicator dots */}
+                        <circle cx="75" cy="20" r="1.5" fill={BRAND_RED} className="animate-ping" />
+                        <circle cx="65" cy="30" r="1.5" fill={BRAND_RED} className="animate-ping" style={{ animationDelay: '0.3s' }} />
+                      </svg>
+                    )}
+                    {activePreview === 'creatives' && (
+                      <div className="w-full h-full grid grid-cols-3 grid-rows-2 gap-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`${i === 2 || i === 4 ? 'bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30' : 'bg-white/15'} rounded animate-fade-in`} 
+                            style={{ animationDelay: `${i * 0.08}s` }} 
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {activePreview === 'report' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-90">
+                        <rect x="10" y="5" width="80" height="50" rx="2" stroke="rgba(255,255,255,.7)" strokeWidth="1" fill="rgba(255,255,255,.06)"/>
+                        <g clipPath="url(#clipReport)">
+                          <g className="animate-scroll-report">
+                            {[10,20,25,30,40,45,50,60,65,70].map((y, i) => (
+                              <rect 
+                                key={i} 
+                                x="15" 
+                                y={y} 
+                                width={i === 0 ? 40 : i % 3 === 0 ? 60 : 70} 
+                                height={i === 0 ? 4 : 2} 
+                                fill={i === 0 || i === 3 ? BRAND_RED : "rgba(255,255,255,.5)"} 
+                                opacity={i === 0 || i === 3 ? "0.8" : "1"}
+                              />
+                            ))}
+                          </g>
+                        </g>
+                        {/* Red report indicator */}
+                        <circle cx="85" cy="10" r="2" fill={BRAND_RED} className="animate-pulse" />
+                        <defs>
+                          <clipPath id="clipReport">
+                            <rect x="10" y="5" width="80" height="50" />
+                          </clipPath>
+                        </defs>
+                      </svg>
+                    )}
+                    {activePreview === 'chatbot' && (
+                      <div className="w-full h-full flex flex-col justify-end p-4 gap-2">
+                        <div className="w-3/4 bg-white/15 rounded-lg p-2 animate-fade-in opacity-0" style={{ animationDelay: '0.3s' }}>
+                          <div className="w-full h-2 bg-white/30 rounded" />
+                        </div>
+                        <div className="w-3/4 bg-gradient-to-r from-red-500/20 to-red-600/10 border border-red-500/30 rounded-lg p-2 self-end flex items-center gap-1 animate-fade-in opacity-0" style={{ animationDelay: '1.2s' }}>
+                          <div className="w-2 h-2 bg-white rounded-full animate-typing" />
+                          <div className="w-2 h-2 bg-white rounded-full animate-typing" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-2 h-2 bg-white rounded-full animate-typing" style={{ animationDelay: '0.4s' }} />
+                        </div>
+                        {/* Red chat indicator */}
+                        <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      </div>
+                    )}
+                    {activePreview === 'assistant' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-90">
+                        <path d="M 10 50 L 30 40 L 50 25 L 70 15 L 90 5" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.5" className="animate-draw-profit-line" />
+                        <g>
+                          <circle cx="30" cy="40" r="3" fill={BRAND_RED} className="animate-ai-spark" style={{ animationDelay: '0.5s' }} />
+                          <circle cx="50" cy="25" r="3" fill={BRAND_RED} className="animate-ai-spark" style={{ animationDelay: '1s' }} />
+                          <circle cx="70" cy="15" r="3" fill={BRAND_RED} className="animate-ai-spark" style={{ animationDelay: '1.5s' }} />
+                        </g>
+                        <text x="92" y="10" fontSize="10" fill="rgba(255,255,255,.7)" className="animate-dollar-sign">$</text>
+                      </svg>
+                    )}
+                    {activePreview === 'outreach' && (
+                      <svg viewBox="0 0 100 60" className="w-full h-full opacity-90">
+                        <g className="animate-send-mail">
+                          <path d="M 10 20 L 10 50 L 90 50 L 90 20" stroke="rgba(255,255,255,.8)" strokeWidth="2" fill="rgba(255,255,255,.06)" />
+                          <path d="M 10 20 L 50 35 L 90 20" fill="none" stroke={BRAND_RED} strokeWidth="2" />
+                        </g>
+                        {/* Red sent indicator */}
+                        <circle cx="85" cy="15" r="2" fill={BRAND_RED} className="animate-ping" />
+                        <circle cx="75" cy="12" r="1.5" fill={BRAND_RED} className="animate-ping" style={{ animationDelay: '0.3s' }} />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Value Proposition */}
           <section className="py-20 sm:py-28 relative">
