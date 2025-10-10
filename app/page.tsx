@@ -1253,7 +1253,18 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Footer with dark background to match landing page */}
+          {/* Simple footer section before main footer */}
+          <footer className="py-12 border-t border-white/10 bg-black/40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
+              <p className="text-white/55 text-sm font-mono">
+                © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
+                Trusted by brand scalers worldwide • Cancel anytime
+              </p>
+            </div>
+          </footer>
+
+          {/* Main dashboard footer with dark background */}
           <div className="bg-[#0B0B0B]">
             <Footer />
           </div>
