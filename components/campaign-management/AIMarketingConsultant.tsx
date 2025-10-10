@@ -623,6 +623,13 @@ I can help with literally anything marketing-related for your brand - performanc
   useEffect(() => {
     // Only run if we have required data and haven't checked this brand yet
     if (user?.id && selectedBrandId && usageCheckedBrandRef.current !== selectedBrandId && !usageCheckRunningRef.current) {
+      // Clear any stale localStorage cache when checking usage for a new session/brand
+      try {
+        localStorage.removeItem(`ai-consultant-usage-${user?.id}`)
+      } catch (error) {
+        console.error('Error clearing usage cache:', error)
+      }
+
       // Skip if we're already at the limit
       if (remainingUses === 0 || isLimitReached) {
         usageCheckedBrandRef.current = selectedBrandId // Mark as checked to prevent re-runs
