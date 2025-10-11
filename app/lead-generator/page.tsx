@@ -1055,6 +1055,25 @@ export default function LeadGeneratorPage() {
     return `${minutes}m`
   }
 
+  const getCountdownToFirstOfMonth = () => {
+    // Calculate 1st of next month at midnight in user's local timezone
+    const now = new Date()
+    const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    firstOfNextMonth.setHours(0, 0, 0, 0)
+    
+    const msUntilReset = firstOfNextMonth.getTime() - now.getTime()
+    const days = Math.floor(msUntilReset / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((msUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    
+    // If more than 1 day, show days countdown
+    if (days > 0) {
+      return `${days} day${days === 1 ? '' : 's'}`
+    }
+    
+    // Just show hours if less than a day
+    return `${hours}h`
+  }
+
   const getTimeUntilMidnight = () => {
     const now = new Date()
     const midnight = new Date(now)
@@ -1968,7 +1987,7 @@ export default function LeadGeneratorPage() {
                         <span className="text-sm text-gray-500">
                           {usageData.billingInterval === 'week' 
                             ? `Resets Mondays - ${getCountdownToMondayMidnight()}` 
-                            : `Resets 1st - ${getCountdownToMondayMidnight()}`}
+                            : `Resets 1st - ${getCountdownToFirstOfMonth()}`}
                         </span>
                       </div>
                       
