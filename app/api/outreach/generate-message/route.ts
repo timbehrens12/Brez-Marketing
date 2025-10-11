@@ -509,15 +509,19 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
     // Track successful usage
     await trackUsage(userId, leadId, messageType, 0.02) // Estimate $0.02 per message
 
-    // Record AI usage in ai_feature_usage (legacy table)
-    if (brandId) {
-      await aiUsageService.recordUsage(brandId, userId, 'outreach_messages', {
+    // Record AI usage in ai_usage_tracking for dashboard counters
+    await aiUsageService.recordUsage(
+      brandId || null,
+      userId,
+      'outreach_messages',
+      {
         leadId,
         messageType,
         businessName: lead.business_name,
         timestamp: new Date().toISOString()
-      })
-    }
+      }
+    )
+    console.log(`✅ Recorded usage to ai_usage_tracking`)
     
     // ALSO log to ai_usage_logs for centralized tracking
     await aiUsageService.logUsage({
