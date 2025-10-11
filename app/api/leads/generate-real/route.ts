@@ -66,67 +66,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 }))
     }
 
-    // Get current date for weekly-based resets - use client's local date
-    const now = new Date()
-    
-    // Calculate start of current week (Monday at 12:00 AM) using user's local timezone
-    const currentDate = new Date(localStartOfDayUTC)
-    const dayOfWeek = currentDate.getDay()
-    const startOfWeek = new Date(currentDate)
-    
-    // Calculate days to subtract to get to Monday
-    // Sunday = 0, Monday = 1, Tuesday = 2, etc.
-    // If Sunday (0), subtract 6 days to get to previous Monday
-    // If Monday (1), subtract 0 days (already Monday)
-    // If Tuesday (2), subtract 1 day to get to Monday, etc.
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-    startOfWeek.setDate(currentDate.getDate() - daysToSubtract)
-    startOfWeek.setHours(0, 0, 0, 0) // Set to midnight
-    
-    // Next reset is next Monday at 12:00 AM (Sunday night at midnight)
-    const startOfNextWeek = new Date(startOfWeek)
-    startOfNextWeek.setDate(startOfWeek.getDate() + 7)
-    startOfNextWeek.setHours(0, 0, 0, 0) // Ensure it's exactly midnight
-
-    // Check user's weekly usage using client's timezone
-    const { data: usageData, error: usageError } = await supabase
-      .from('user_usage')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('date', startOfWeek.toISOString().split('T')[0]) // Start of week
-      .lt('date', startOfNextWeek.toISOString().split('T')[0]) // End of week
-
-    if (usageError) {
-      console.error('Error checking usage:', usageError)
-      return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
-    }
-
-    // Sum up generation count for the week
-    const currentWeeklyUsage = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
-    const leadsGeneratedThisWeek = usageData?.reduce((sum, record) => sum + (record.leads_generated || 0), 0) || 0
-    
-    console.log(`🔢 [Rate Limit Check] Weekly usage: ${currentWeeklyUsage} / ${WEEKLY_GENERATION_LIMIT}`)
-    console.log(`🔢 [Rate Limit Check] Leads generated this week: ${leadsGeneratedThisWeek}`)
-    console.log(`🔢 [Rate Limit Check] Usage data records:`, usageData)
-    
-    // Check if user has exceeded weekly limit
-    if (currentWeeklyUsage >= WEEKLY_GENERATION_LIMIT) {
-      console.error(`❌ [Rate Limit] BLOCKING - ${currentWeeklyUsage} >= ${WEEKLY_GENERATION_LIMIT}`)
-      return NextResponse.json({ 
-        error: `Weekly limit reached. You've used ${currentWeeklyUsage} of ${WEEKLY_GENERATION_LIMIT} generations this week. Resets Sunday night at midnight (Monday 12:00 AM).`,
-        usage: {
-          used: currentWeeklyUsage,
-          limit: WEEKLY_GENERATION_LIMIT,
-          resetsAt: startOfNextWeek.toISOString(),
-          resetsIn: startOfNextWeek.getTime() - now.getTime()
-        }
-      }, { status: 429 })
-    }
-
-    // NICHE COOLDOWN DISABLED - Weekly limit already prevents spam
-    // The weekly generation limit already prevents users from running too many searches
-    // No need for per-niche cooldowns on top of that
-    console.log(`✅ [Rate Limit] Niche cooldown check skipped (disabled - weekly limit sufficient)`)
+    // NOTE: Usage limits are now enforced by tier-based system via AIUsageService
+    // The tier check above (tierEnforcementService) already validates access
+    // Monthly limits are tracked in ai_usage_tracking table and reset on the 1st
+    console.log(`✅ [Tier System] Usage limits enforced by tier-based monthly system`)
 
     if (!process.env.GOOGLE_PLACES_API_KEY) {
       console.error('Google Places API key missing')
@@ -380,43 +323,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Update usage tracking
-    const newGenerationCount = currentWeeklyUsage + 1
-    const newLeadsGenerated = leadsGeneratedThisWeek + savedCount
-
-    const todaysUsage = usageData?.find(record => record.date === localDate)
-    
-    if (todaysUsage) {
-      // Update existing record for today
-      const { error: updateError } = await supabase
-        .from('user_usage')
-        .update({
-          generation_count: (todaysUsage.generation_count || 0) + 1,
-          leads_generated: (todaysUsage.leads_generated || 0) + savedCount,
-          last_generation_at: new Date().toISOString()
-        })
-        .eq('user_id', userId)
-        .eq('date', localDate)
-
-      if (updateError) {
-        console.error('Error updating usage:', updateError)
-      }
-    } else {
-      // Create new record for today
-      const { error: insertUsageError } = await supabase
-        .from('user_usage')
-        .insert({
-          user_id: userId,
-          date: localDate,
-          generation_count: 1,
-          leads_generated: savedCount,
-          last_generation_at: new Date().toISOString()
-        })
-
-      if (insertUsageError) {
-        console.error('Error inserting usage:', insertUsageError)
-      }
-    }
+    // NOTE: Usage tracking is now handled by AIUsageService via ai_usage_tracking table
+    // Monthly limits reset on the 1st of each month
+    // Tier-based limits are enforced before lead generation starts
+    console.log(`✅ [Usage Tracking] Lead generation completed. Saved ${savedCount} leads.`)
 
     // Update niche-specific usage tracking
     const nicheUsageUpdates = niches.map((nicheId: string) => ({
@@ -448,14 +358,7 @@ export async function POST(request: NextRequest) {
       leadsPerGeneration: finalTotalLeads,
       attempted: finalTotalLeads,
       successful: realLeads.length,
-      saved: savedCount,
-
-      usage: {
-        used: newGenerationCount,
-        limit: WEEKLY_GENERATION_LIMIT,
-        leadsGenerated: savedCount,
-        totalLeadsThisWeek: newLeadsGenerated
-      }
+      saved: savedCount
     })
 
   } catch (error) {
