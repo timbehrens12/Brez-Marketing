@@ -2019,11 +2019,15 @@ export default function LeadGeneratorPage() {
                       </div>
                     </div>
 
-                    {/* Monthly Usage Counter */}
+                    {/* Usage Counter */}
                     <div className="pt-3 border-t border-[#333]">
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-white">{usageData.used}/{usageData.limit}</div>
-                        <div className="text-xs text-gray-500">Used this month</div>
+                        <div className="text-lg font-semibold text-white">
+                          {usageData.used}/{usageData.billingInterval === 'week' ? Math.floor(usageData.limit / 4) : usageData.limit}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Used this {usageData.billingInterval === 'week' ? 'week' : 'month'}
+                        </div>
                       </div>
                     </div>
 
@@ -2149,7 +2153,7 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter number of leads"
                   />
                   <div className="text-xs text-gray-500">
-                    Max {usageData?.remaining || 100} leads (monthly limit)
+                    Max {usageData?.remaining || 100} leads ({usageData?.billingInterval === 'week' ? 'weekly' : 'monthly'} limit)
                   </div>
                 </div>
 
