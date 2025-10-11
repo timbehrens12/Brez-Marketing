@@ -4432,21 +4432,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Linkedin className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.instagram_handle!.replace('@', '')
-                            window.open(`https://instagram.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.instagram_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://instagram.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -4462,21 +4465,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Facebook className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.twitter_handle!.replace('@', '')
-                            window.open(`https://twitter.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.twitter_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://twitter.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-gray-300/20 group"
                           title="Open X/Twitter"
                         >
-                          <svg className="h-4 w-4 text-gray-300 group-hover:text-gray-200" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-4 w-4 text-white group-hover:text-gray-300" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                           </svg>
                         </Button>
@@ -5226,21 +5232,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Linkedin className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.instagram_handle!.replace('@', '')
-                            window.open(`https://instagram.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.instagram_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://instagram.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -5256,21 +5265,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Facebook className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.twitter_handle!.replace('@', '')
-                            window.open(`https://twitter.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.twitter_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://twitter.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-gray-300/20 group"
                           title="Open X/Twitter"
                         >
-                          <svg className="h-4 w-4 text-gray-300 group-hover:text-gray-200" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-4 w-4 text-white group-hover:text-gray-300" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                           </svg>
                         </Button>
@@ -6321,21 +6333,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open LinkedIn"
                         >
-                          <Linkedin className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Linkedin className="h-4 w-4 text-blue-500 group-hover:text-blue-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.instagram_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.instagram_handle!.replace('@', '')
-                            window.open(`https://instagram.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.instagram_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://instagram.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-pink-500/20 group"
                           title="Open Instagram"
                         >
-                          <Instagram className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Instagram className="h-4 w-4 text-pink-500 group-hover:text-pink-400" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.facebook_page && (
@@ -6351,21 +6366,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           className="h-8 w-8 p-0 hover:bg-gray-500/20 group"
                           title="Open Facebook"
                         >
-                          <Facebook className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
+                          <Facebook className="h-4 w-4 text-blue-600 group-hover:text-blue-500" />
                         </Button>
                       )}
                       {selectedCampaignLead?.lead?.twitter_handle && (
                         <Button
                           onClick={() => {
-                            const handle = selectedCampaignLead.lead?.twitter_handle!.replace('@', '')
-                            window.open(`https://twitter.com/${handle}`, '_blank')
+                            const handle = selectedCampaignLead.lead?.twitter_handle!
+                            const url = handle.startsWith('http') 
+                              ? handle 
+                              : `https://twitter.com/${handle.replace('@', '')}`
+                            window.open(url, '_blank')
                           }}
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-gray-300/20 group"
                           title="Open X/Twitter"
                         >
-                          <svg className="h-4 w-4 text-gray-300 group-hover:text-gray-200" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-4 w-4 text-white group-hover:text-gray-300" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                           </svg>
                         </Button>
