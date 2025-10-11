@@ -362,13 +362,15 @@ export class AIUsageService {
         console.error('Error recording AI usage:', logError)
       }
 
-      // Update or insert usage tracking for daily limits
+      // Update or insert usage tracking for daily/monthly/weekly limits
       const limits = await this.getTierBasedLimits(userId, featureType)
-      if (limits.dailyLimit) {
+      const currentMonth = now.toISOString().slice(0, 7) // YYYY-MM format
+      
+      if (limits.dailyLimit || limits.weeklyLimit || limits.monthlyLimit) {
         const { data: existingUsage } = await this.supabase
           .from('ai_usage_tracking')
           .select('*')
-          .eq('brand_id', brandId)
+          .eq('user_id', userId)
           .eq('feature_type', featureType)
           .single()
 
@@ -376,21 +378,27 @@ export class AIUsageService {
           // Update existing record
           const existingDate = existingUsage.daily_usage_date instanceof Date 
             ? existingUsage.daily_usage_date.toISOString().split('T')[0]
-            : existingUsage.daily_usage_date.toString()
+            : existingUsage.daily_usage_date?.toString() || ''
+          const existingMonth = existingUsage.monthly_usage_month || ''
           const isNewDay = existingDate !== today
-          const newCount = isNewDay ? 1 : (existingUsage.daily_usage_count || 0) + 1
+          const isNewMonth = existingMonth !== currentMonth
+          
+          const newDailyCount = isNewDay ? 1 : (existingUsage.daily_usage_count || 0) + 1
+          const newMonthlyCount = isNewMonth ? 1 : (existingUsage.monthly_usage_count || 0) + 1
 
-          console.log(`[AI Usage] Recording usage: existingDate=${existingDate}, today=${today}, isNewDay=${isNewDay}, newCount=${newCount}`)
+          console.log(`[AI Usage] Recording usage for ${featureType}: isNewDay=${isNewDay}, isNewMonth=${isNewMonth}, newMonthlyCount=${newMonthlyCount}`)
 
           const { data: updateData, error: updateError } = await this.supabase
             .from('ai_usage_tracking')
             .update({
-              daily_usage_count: newCount,
+              daily_usage_count: newDailyCount,
               daily_usage_date: today,
+              monthly_usage_count: newMonthlyCount,
+              monthly_usage_month: currentMonth,
               last_used_at: now.toISOString(),
               last_used_by: userId
             })
-            .eq('brand_id', brandId)
+            .eq('user_id', userId)
             .eq('feature_type', featureType)
             .select()
 
@@ -401,19 +409,28 @@ export class AIUsageService {
           
           console.log('[AI Usage] Successfully updated usage tracking:', updateData)
         } else {
-          // Create new record (tracking per brand, shared between all users)
-          console.log(`[AI Usage] Creating new usage record for brandId=${brandId}, feature=${featureType}, used by userId=${userId}`)
-          await this.supabase
+          // Create new record (tracking per user)
+          console.log(`[AI Usage] Creating new usage record for userId=${userId}, feature=${featureType}`)
+          const { error: insertError } = await this.supabase
             .from('ai_usage_tracking')
             .insert({
-              user_id: userId, // Store who created the record initially
+              user_id: userId,
               brand_id: brandId,
               feature_type: featureType,
               daily_usage_count: 1,
               daily_usage_date: today,
+              monthly_usage_count: 1,
+              monthly_usage_month: currentMonth,
               last_used_at: now.toISOString(),
               last_used_by: userId
             })
+          
+          if (insertError) {
+            console.error('[AI Usage] Error inserting usage tracking:', insertError)
+            return false
+          }
+          
+          console.log('[AI Usage] Successfully created usage tracking record')
         }
       }
 

@@ -324,13 +324,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Record AI usage for lead gen enrichment
+    console.log(`📊 [Usage Recording] brandId=${brandId}, userId=${userId}, savedCount=${savedCount}`)
     if (brandId) {
-      await aiUsageService.recordUsage(brandId, userId, 'lead_gen_enrichment', {
+      const recordResult = await aiUsageService.recordUsage(brandId, userId, 'lead_gen_enrichment', {
         leadsEnriched: savedCount,
         niches: sanitizedNiches,
         location: sanitizedLocation,
         timestamp: new Date().toISOString()
       })
+      console.log(`✅ [Usage Recording] Result: ${recordResult}`)
+    } else {
+      console.warn(`⚠️ [Usage Recording] Skipped - brandId is undefined/null`)
     }
 
     // NOTE: Usage tracking is now handled by AIUsageService via ai_usage_tracking table
