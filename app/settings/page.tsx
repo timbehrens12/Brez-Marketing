@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
-import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, AlertTriangle, Lock } from "lucide-react"
+import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, AlertTriangle, Lock, CreditCard, TrendingUp, Zap } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -839,6 +839,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('agency-branding')
   const [userTier, setUserTier] = useState<string | null>(null)
   const [tierLimits, setTierLimits] = useState<any>(null)
+  const [subscriptionData, setSubscriptionData] = useState<any>(null)
+  const [usageSummary, setUsageSummary] = useState<any>(null)
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [isAddBrandDialogOpen, setIsAddBrandDialogOpen] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
@@ -891,10 +893,11 @@ export default function SettingsPage() {
 
   // Fetch user tier on mount
   useEffect(() => {
-    const fetchTier = async () => {
+    const fetchTierAndSubscription = async () => {
       if (!user?.id) return
       
       try {
+        // Fetch tier
         const response = await fetch('/api/tier/check-access', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -904,12 +907,26 @@ export default function SettingsPage() {
         const data = await response.json()
         setUserTier(data.currentTier)
         setTierLimits(data)
+
+        // Fetch subscription data
+        const subResponse = await fetch(`/api/subscription/current`)
+        if (subResponse.ok) {
+          const subData = await subResponse.json()
+          setSubscriptionData(subData)
+        }
+
+        // Fetch usage summary
+        const usageResponse = await fetch(`/api/ai/usage-counts`)
+        if (usageResponse.ok) {
+          const usageData = await usageResponse.json()
+          setUsageSummary(usageData)
+        }
       } catch (error) {
-        console.error('Error fetching tier:', error)
+        console.error('Error fetching tier/subscription:', error)
       }
     }
     
-    fetchTier()
+    fetchTierAndSubscription()
   }, [user?.id])
 
   // Sync temp agency name with context when agency settings change
@@ -991,7 +1008,7 @@ export default function SettingsPage() {
       id: 'operator-account',
       label: 'Operator Account',
       icon: Shield,
-      description: 'Your account settings',
+      description: 'Your account and billing settings',
       locked: !isAgencyBrandingComplete(),
       lockReason: 'Complete agency branding setup first'
     },
@@ -2670,6 +2687,128 @@ export default function SettingsPage() {
                       </div>
                       <p className="text-xs text-gray-500">
                         Click your avatar to manage account settings, security, and profile information
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Subscription & Billing Section */}
+                  <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
+                    <CardHeader className="border-b border-[#333]">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-[#ff2a2a]" />
+                        <CardTitle className="text-lg font-semibold text-white">Subscription & Billing</CardTitle>
+                      </div>
+                      <p className="text-sm text-gray-400">Manage your plan and usage</p>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                      {/* Current Plan */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-400">Current Plan</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-xl font-semibold text-white">
+                                {tierLimits?.display_name || 'Loading...'}
+                              </p>
+                              <Badge className="bg-[#ff2a2a]/10 text-[#ff2a2a] border-[#ff2a2a]/20 hover:bg-[#ff2a2a]/20">
+                                {subscriptionData?.billing_interval === 'week' ? 'Weekly' : 'Monthly'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-400">Price</p>
+                            <p className="text-xl font-semibold text-white mt-1">
+                              ${subscriptionData?.price ? (subscriptionData.price / 100).toFixed(2) : '0.00'}
+                              <span className="text-sm text-gray-400">/{subscriptionData?.billing_interval === 'week' ? 'week' : 'month'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {subscriptionData?.next_billing_date && (
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <Calendar className="w-4 h-4" />
+                            <span>Next billing: {new Date(subscriptionData.next_billing_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <Separator className="bg-[#333]" />
+
+                      {/* Usage Overview */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-white">Usage This {subscriptionData?.billing_interval === 'week' ? 'Week' : 'Month'}</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* AI Chatbot */}
+                          <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Zap className="w-4 h-4 text-[#ff2a2a]" />
+                              <p className="text-xs text-gray-400">AI Chatbot</p>
+                            </div>
+                            <p className="text-sm font-semibold text-white">
+                              {usageSummary?.chatbot?.daily?.used || 0}/{tierLimits?.ai_chats_daily || 10}
+                              <span className="text-xs text-gray-400 ml-1">daily</span>
+                            </p>
+                          </div>
+
+                          {/* Creative Gen */}
+                          <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Image className="w-4 h-4 text-[#ff2a2a]" />
+                              <p className="text-xs text-gray-400">Creative Gen</p>
+                            </div>
+                            <p className="text-sm font-semibold text-white">
+                              {usageSummary?.creativeStudio?.monthly?.used || 0}/{tierLimits?.creative_gen_monthly || 25}
+                            </p>
+                          </div>
+
+                          {/* Lead Gen */}
+                          <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="w-4 h-4 text-[#ff2a2a]" />
+                              <p className="text-xs text-gray-400">Lead Gen</p>
+                            </div>
+                            <p className="text-sm font-semibold text-white">
+                              {usageSummary?.leadGenerator?.monthly?.used || 0}/{tierLimits?.lead_gen_monthly || 100}
+                            </p>
+                          </div>
+
+                          {/* Outreach */}
+                          <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                            <div className="flex items-center gap-2 mb-1">
+                              <TrendingUp className="w-4 h-4 text-[#ff2a2a]" />
+                              <p className="text-xs text-gray-400">Outreach</p>
+                            </div>
+                            <p className="text-sm font-semibold text-white">
+                              {usageSummary?.outreachTool?.monthly?.used || 0}/{tierLimits?.outreach_messages_monthly || 250}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-[#333]" />
+
+                      {/* Actions */}
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-[#ff2a2a] bg-[#ff2a2a]/10 text-[#ff2a2a] hover:bg-[#ff2a2a]/20 hover:text-white rounded-xl transition-all duration-300"
+                          onClick={() => window.location.href = '/#pricing'}
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Upgrade Plan
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-[#333] bg-[#1a1a1a] text-gray-300 hover:bg-[#333] hover:text-white rounded-xl transition-all duration-300"
+                          onClick={() => toast.error('Billing portal coming soon!')}
+                        >
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Manage Billing
+                        </Button>
+                      </div>
+
+                      <p className="text-xs text-gray-500 text-center">
+                        Payment processing integration coming soon
                       </p>
                     </CardContent>
                   </Card>
