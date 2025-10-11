@@ -327,7 +327,6 @@ async function recordAgencyModeUsage(userId: string, featureType: string, metada
   try {
     console.log(`[Usage Recording] Attempting to record usage for user ${userId}, feature ${featureType}, mode: ${metadata.mode}`)
     
-    // Record in ai_feature_usage (for detailed tracking)
     const { data, error } = await supabase
       .from('ai_feature_usage')
       .insert({
@@ -344,17 +343,7 @@ async function recordAgencyModeUsage(userId: string, featureType: string, metada
       throw error
     }
 
-    console.log(`[Usage Recording] ✅ Successfully recorded usage in ai_feature_usage:`, data)
-    
-    // ALSO record in ai_usage_tracking (for aggregated usage counts used by dashboard)
-    try {
-      await aiUsageService.recordUsage(userId, featureType, { ...metadata, usageCount: 1 })
-      console.log(`[Usage Recording] ✅ Successfully recorded usage in ai_usage_tracking`)
-    } catch (trackingError) {
-      console.error('[Usage Recording] ⚠️ Failed to record in ai_usage_tracking:', trackingError)
-      // Don't throw - we already recorded in ai_feature_usage
-    }
-    
+    console.log(`[Usage Recording] ✅ Successfully recorded usage:`, data)
     return true
   } catch (error) {
     console.error('[Usage Recording] ❌ Error in recordAgencyModeUsage:', error)
@@ -540,6 +529,18 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     }, supabase)
     console.log(`[AI Marketing] Usage recorded successfully!`)
+    
+    // Record usage in ai_usage_tracking for dashboard counters
+    await aiUsageService.recordUsage({
+      userId,
+      brandId: brandId || null,
+      featureType: 'ai_consultant_chat',
+      metadata: {
+        promptLength: prompt.length,
+        marketingGoal
+      }
+    })
+    console.log(`[AI Marketing] Usage recorded to ai_usage_tracking`)
     
     // ALSO log to ai_usage_logs for centralized tracking
     await aiUsageService.logUsage({
