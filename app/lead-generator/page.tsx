@@ -79,6 +79,7 @@ interface UsageData {
     cooldown_remaining_ms: number
   }>
   cooldownHours: number
+  billingInterval?: 'week' | 'month'
 }
 
 interface LeadFilters {
@@ -818,7 +819,8 @@ export default function LeadGeneratorPage() {
     }
 
     if (!usageData || usageData.remaining <= 0) {
-      toast.error(`Monthly limit reached. Resets on the 1st of each month`)
+      const resetText = usageData?.billingInterval === 'week' ? 'Resets every Monday' : 'Resets on the 1st of each month'
+      toast.error(`Limit reached. ${resetText}`)
       return
     }
 
@@ -1962,8 +1964,12 @@ export default function LeadGeneratorPage() {
                     {/* Weekly Generation Status */}
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Weekly Generation Status</span>
-                        <span className="text-sm text-gray-500">resets mondays - {getCountdownToMondayMidnight()}</span>
+                        <span className="text-sm text-gray-400">Generation Status</span>
+                        <span className="text-sm text-gray-500">
+                          {usageData.billingInterval === 'week' 
+                            ? `Resets Mondays - ${getCountdownToMondayMidnight()}` 
+                            : `Resets 1st - ${getCountdownToMondayMidnight()}`}
+                        </span>
                       </div>
                       
                       {/* Subtle status indicator */}
@@ -1974,11 +1980,12 @@ export default function LeadGeneratorPage() {
                           }`}></div>
                           <div>
                             <div className="text-sm font-medium text-gray-300">
-                              {usageData.remaining <= 0 ? 'Monthly limit reached' : 'Generation available'}
+                              {usageData.remaining <= 0 ? 'Limit reached' : 'Generation available'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {usageData.remaining <= 0 && usageData.used > 0 ? `Resets on the 1st of each month` : 
-                               usageData.remaining <= 0 ? 'Monthly limit reached' : 'Ready to find leads'}
+                              {usageData.remaining <= 0 && usageData.used > 0 ? 
+                                (usageData.billingInterval === 'week' ? 'Resets every Monday' : 'Resets on the 1st of each month') : 
+                               usageData.remaining <= 0 ? 'Limit reached' : 'Ready to find leads'}
                             </div>
                           </div>
                         </div>

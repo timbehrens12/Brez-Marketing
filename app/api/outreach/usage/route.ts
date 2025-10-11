@@ -34,6 +34,15 @@ export async function GET(request: NextRequest) {
     const tierLimits = tierData?.[0]
     const monthlyLimit = tierLimits?.outreach_messages_monthly || SECURITY_LIMITS.DEFAULT_MONTHLY_LIMIT
     
+    // Get user's billing interval
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('billing_interval')
+      .eq('user_id', userId)
+      .single()
+    
+    const billingInterval = subscription?.billing_interval || 'month'
+    
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     
@@ -139,7 +148,8 @@ export async function GET(request: NextRequest) {
           limit: monthlyLimit,
           remaining: Math.max(0, monthlyLimit - monthlyCount),
           resetsAt: startOfNextMonth.toISOString(),
-          tierName: tierLimits?.display_name || 'Unknown'
+          tierName: tierLimits?.display_name || 'Unknown',
+          billingInterval
         },
         cost: {
           daily: dailyCost.toFixed(2)

@@ -4544,7 +4544,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock className="h-4 w-4" />
-                    <span>Resets on the 1st of each month</span>
+                    <span>
+                      {messageUsage?.monthly?.billingInterval === 'week' 
+                        ? 'Resets every Monday' 
+                        : 'Resets on the 1st of each month'}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">

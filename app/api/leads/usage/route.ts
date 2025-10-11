@@ -34,6 +34,15 @@ export async function GET(request: NextRequest) {
     const tierLimits = tierData?.[0]
     const monthlyLimit = tierLimits?.lead_gen_monthly || DEFAULT_MONTHLY_LIMIT
     
+    // Get user's billing interval
+    const { data: subscription } = await supabaseAdmin
+      .from('subscriptions')
+      .select('billing_interval')
+      .eq('user_id', userId)
+      .single()
+    
+    const billingInterval = subscription?.billing_interval || 'month'
+    
     const now = new Date()
     const currentDate = new Date(localStartOfDayUTC)
     
@@ -111,7 +120,8 @@ export async function GET(request: NextRequest) {
         resetsIn: timeUntilReset,
         nicheCooldowns,
         cooldownHours: NICHE_COOLDOWN_HOURS,
-        tierName: tierLimits?.display_name || 'Unknown'
+        tierName: tierLimits?.display_name || 'Unknown',
+        billingInterval
       }
     })
 

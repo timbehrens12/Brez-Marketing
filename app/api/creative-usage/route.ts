@@ -61,6 +61,15 @@ export async function GET(request: NextRequest) {
     const tierLimits = tierData?.[0]
     const monthlyLimit = tierLimits?.creative_gen_monthly || DEFAULT_MONTHLY_LIMIT
     
+    // Get user's billing interval
+    const { data: subscription } = await supabaseAdmin
+      .from('subscriptions')
+      .select('billing_interval')
+      .eq('user_id', userId)
+      .single()
+    
+    const billingInterval = subscription?.billing_interval || 'month'
+    
     // Check monthly usage limits (changed from weekly)
     const supabase = createClient()
     
@@ -111,7 +120,8 @@ export async function GET(request: NextRequest) {
         remaining: Math.max(0, monthlyLimit - currentMonthlyUsage),
         monthStartDate: startOfMonthLocal.toISOString().split('T')[0],
         resetsAt: startOfNextMonthLocal.toISOString(),
-        tierName: tierLimits?.display_name || 'Unknown'
+        tierName: tierLimits?.display_name || 'Unknown',
+        billingInterval
       }
     })
     
