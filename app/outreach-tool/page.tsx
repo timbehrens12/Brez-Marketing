@@ -2409,13 +2409,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     
     switch (platform) {
       case 'instagram':
-        return `https://instagram.com/${handle.replace('@', '')}`
+        return handle.startsWith('http') ? handle : `https://instagram.com/${handle.replace('@', '')}`
       case 'facebook':
         return handle.startsWith('http') ? handle : `https://facebook.com/${handle}`
       case 'linkedin':
         return handle.startsWith('http') ? handle : `https://linkedin.com/in/${handle}`
       case 'twitter':
-        return `https://twitter.com/${handle.replace('@', '')}`
+        return handle.startsWith('http') ? handle : `https://twitter.com/${handle.replace('@', '')}`
       default:
         return undefined
     }
@@ -3713,7 +3713,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
+                                      className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`Instagram: ${campaignLead.lead.instagram_handle}`}
                                   style={{ marginLeft: '0px' }}
@@ -3726,7 +3726,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
+                                      className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`Facebook: ${campaignLead.lead.facebook_page}`}
                                       style={{ marginLeft: campaignLead.lead.instagram_handle ? '-6px' : '0px' }}
@@ -3739,7 +3739,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-gray-400 hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-500/50 hover:z-20"
+                                      className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
                                       style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page) ? '-6px' : '0px' }}
@@ -3752,7 +3752,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                      className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
+                                      className="relative z-10 text-white hover:text-gray-300 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-white/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                   title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
                                       style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page || campaignLead.lead.linkedin_profile) ? '-6px' : '0px' }}
