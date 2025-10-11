@@ -364,7 +364,7 @@ export class AIUsageService {
 
       // Update or insert usage tracking for daily/monthly/weekly limits
       const limits = await this.getTierBasedLimits(userId, featureType)
-      const currentMonth = now.toISOString().slice(0, 7) // YYYY-MM format
+      const currentMonth = now.toISOString().slice(0, 7) + '-01' // First day of month: YYYY-MM-01
       
       if (limits.dailyLimit || limits.weeklyLimit || limits.monthlyLimit) {
         const { data: existingUsage } = await this.supabase
