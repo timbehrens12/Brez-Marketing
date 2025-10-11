@@ -531,15 +531,15 @@ export async function POST(request: NextRequest) {
     console.log(`[AI Marketing] Usage recorded successfully!`)
     
     // Record usage in ai_usage_tracking for dashboard counters
-    await aiUsageService.recordUsage({
+    await aiUsageService.recordUsage(
+      brandId || null,
       userId,
-      brandId: brandId || null,
-      featureType: 'ai_consultant_chat',
-      metadata: {
+      'ai_consultant_chat',
+      {
         promptLength: prompt.length,
         marketingGoal
       }
-    })
+    )
     console.log(`[AI Marketing] Usage recorded to ai_usage_tracking`)
     
     // ALSO log to ai_usage_logs for centralized tracking
