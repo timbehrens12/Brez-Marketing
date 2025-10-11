@@ -276,6 +276,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Tier limits and usage
   const [tierLimits, setTierLimits] = useState<any>(null)
   const [tierUsage, setTierUsage] = useState<any>(null)
+  const [billingInterval, setBillingInterval] = useState<'week' | 'month'>('month')
 
   // Refresh functionality with cooldown
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
@@ -633,6 +634,18 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const limits = tierResponse.data?.[0]
         setTierLimits(limits)
         console.log('[AgencyActionCenter] Tier limits:', limits)
+      }
+
+      // Fetch billing interval
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('billing_interval')
+        .eq('user_id', userId)
+        .single()
+      
+      if (subscription?.billing_interval) {
+        setBillingInterval(subscription.billing_interval)
+        console.log('[AgencyActionCenter] Billing interval:', subscription.billing_interval)
       }
 
       // Handle usage counts
@@ -1489,12 +1502,28 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const getStatusBadge = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
-      // Determine reset type based on tool
+      // Determine reset type based on tool and billing interval
       const getResetInfo = () => {
-        if (tool.id === 'lead-generator') return { type: 'weekly' as const, resetDay: 'Monday' }
-        if (tool.id === 'outreach-tool') return { type: 'daily' as const, resetDay: 'Tomorrow' }
+        // Tier-based features that vary by billing interval
+        if (tool.id === 'lead-generator') {
+          return billingInterval === 'week' 
+            ? { type: 'weekly' as const, resetDay: 'Monday' }
+            : { type: 'monthly' as const, resetDay: '1st' }
+        }
+        if (tool.id === 'outreach-tool') {
+          return billingInterval === 'week'
+            ? { type: 'weekly' as const, resetDay: 'Monday' }
+            : { type: 'monthly' as const, resetDay: '1st' }
+        }
+        if (tool.id === 'creative-studio') {
+          return billingInterval === 'week'
+            ? { type: 'weekly' as const, resetDay: 'Monday' }
+            : { type: 'monthly' as const, resetDay: '1st' }
+        }
+        
+        // Fixed schedule features (don't vary by billing interval)
         if (tool.id === 'ai-consultant') return { type: 'daily' as const, resetDay: 'Tomorrow' }
-        if (tool.id === 'creative-studio') return { type: 'weekly' as const, resetDay: 'Monday' }
+        
         return { type: 'daily' as const, resetDay: 'Tomorrow' }
       }
       
