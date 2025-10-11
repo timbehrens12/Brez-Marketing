@@ -5319,10 +5319,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-400">
-                      {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                      {messageUsage?.monthly 
+                        ? `${messageUsage.monthly.used}/${messageUsage.monthly.billingInterval === 'week' ? Math.floor(messageUsage.monthly.limit / 4) : messageUsage.monthly.limit}`
+                        : '...'}
                     </span>
                     <span className="text-gray-200 font-medium">
-                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                      {messageUsage?.monthly 
+                        ? `${messageUsage.monthly.billingInterval === 'week' 
+                            ? Math.max(0, Math.floor(messageUsage.monthly.limit / 4) - messageUsage.monthly.used)
+                            : messageUsage.monthly.remaining} remaining`
+                        : 'Loading...'}
                     </span>
                   </div>
                 </div>
