@@ -3222,8 +3222,8 @@ ${templateSpecificPrompt}
     }
 
     // Check usage limits
-    if (usageData.current >= WEEKLY_LIMIT) {
-      toast.error(`You've reached your weekly limit of ${WEEKLY_LIMIT} generations. Resets in ${getDaysUntilReset()} days.`)
+    if (usageData.current >= usageData.limit) {
+      toast.error(`You've reached your weekly limit of ${usageData.limit} generations. Resets in ${getDaysUntilReset()} days.`)
       return
     }
 
@@ -3680,8 +3680,8 @@ AVOID REPETITIVE PATTERNS:
     }
 
     // Check usage limits
-    if (usageData.current >= WEEKLY_LIMIT) {
-      toast.error(`You've reached your weekly limit of ${WEEKLY_LIMIT} generations. Resets in ${getDaysUntilReset()} days.`)
+    if (usageData.current >= usageData.limit) {
+      toast.error(`You've reached your weekly limit of ${usageData.limit} generations. Resets in ${getDaysUntilReset()} days.`)
       return
     }
 
@@ -4890,22 +4890,22 @@ AVOID REPETITIVE PATTERNS:
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
+                  usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
+                ) : usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
-                    {usageData.current >= WEEKLY_LIMIT ? (
+                    {usageData.current >= usageData.limit ? (
                       <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-[#FF2A2A]">Library full</span>
@@ -5102,22 +5102,22 @@ AVOID REPETITIVE PATTERNS:
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
+                  usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : 'bg-[#FF2A2A] hover:bg-[#E02424] text-black hover:text-black border-[#FF2A2A] hover:border-[#E02424] hover:scale-105 font-bold'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT}
                             >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
+                ) : usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
-                    {usageData.current >= WEEKLY_LIMIT ? (
+                    {usageData.current >= usageData.limit ? (
                       <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-[#FF2A2A]">Library full</span>
@@ -5464,24 +5464,24 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
+                  usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT || customTemplatePrompt.trim().length < 20}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT || customTemplatePrompt.trim().length < 20}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
+                ) : usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
-                    {usageData.current >= WEEKLY_LIMIT ? (
+                    {usageData.current >= usageData.limit ? (
                       <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-[#FF2A2A]">Library full</span>
@@ -5662,24 +5662,24 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
+                  usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : !exampleCreativeImage
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT || !exampleCreativeImage}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT || !exampleCreativeImage}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
+                ) : usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
-                    {usageData.current >= WEEKLY_LIMIT ? (
+                    {usageData.current >= usageData.limit ? (
                       <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-[#FF2A2A]">Library full</span>
@@ -5795,18 +5795,18 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                   await generateImageFromTemplate(selectedTemplate!)
                 }}
                 className="relative w-full h-full rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
+                ) : usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
-                    {usageData.current >= WEEKLY_LIMIT ? (
+                    {usageData.current >= usageData.limit ? (
                       <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-[#FF2A2A]">Library full</span>
@@ -6404,7 +6404,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                   }
                 }}
                 className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
+                disabled={isGenerating || usageData.current >= usageData.limit || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <>
