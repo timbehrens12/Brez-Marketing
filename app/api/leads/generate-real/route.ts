@@ -51,8 +51,18 @@ export async function POST(request: NextRequest) {
       }, { status: 403 }))
     }
 
-    // NOTE: Rate limiting is handled by tier-based weekly limits (lines 94-104)
-    // No need for Redis rate limiting since subscription tiers already control usage
+    // Check current usage against tier-based limits (monthly or weekly based on billing interval)
+    if (brandId) {
+      const usageStatus = await aiUsageService.checkUsageStatus(brandId, userId, 'lead_gen_enrichment')
+      if (!usageStatus.canUse) {
+        return addSecurityHeaders(NextResponse.json({ 
+          error: usageStatus.reason || 'Monthly lead generation limit reached',
+          remainingUses: usageStatus.remainingUses || 0,
+          upgradeRequired: true
+        }, { status: 429 }))
+      }
+      console.log(`✅ [Usage Check] User has ${usageStatus.remainingUses} leads remaining`)
+    }
     
     // Sanitize inputs
     const sanitizedBusinessType = sanitizeString(businessType, 100)
