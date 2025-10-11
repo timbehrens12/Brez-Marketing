@@ -331,6 +331,22 @@ export class AIUsageService {
       const now = new Date()
       const today = getCurrentLocalDateString() // Use local timezone instead of UTC
 
+      // Insert into ai_feature_usage table (used by checkUsageStatus)
+      const { error: featureUsageError } = await this.supabase
+        .from('ai_feature_usage')
+        .insert({
+          user_id: userId,
+          brand_id: brandId,
+          feature_type: featureType,
+          created_at: now.toISOString()
+        })
+
+      if (featureUsageError) {
+        console.error('[AI Usage] Error recording to ai_feature_usage:', featureUsageError)
+      } else {
+        console.log(`✅ [AI Usage] Recorded usage for ${featureType} in ai_feature_usage table`)
+      }
+
       // Try to insert into ai_usage_logs table (new structure)
       const { error: logError } = await this.supabase
         .from('ai_usage_logs')
