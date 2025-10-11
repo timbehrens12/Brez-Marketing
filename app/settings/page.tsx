@@ -836,7 +836,7 @@ export default function SettingsPage() {
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const { agencySettings, updateAgencySettings, isLoading: agencyLoading } = useAgency()
   const [isLoadingPage, setIsLoadingPage] = useState(false)
-  const [activeTab, setActiveTab] = useState('agency-branding')
+  const [activeTab, setActiveTab] = useState('operator-account')
   const [userTier, setUserTier] = useState<string | null>(null)
   const [tierLimits, setTierLimits] = useState<any>(null)
   const [subscriptionData, setSubscriptionData] = useState<any>(null)
@@ -981,6 +981,14 @@ export default function SettingsPage() {
   // Define navigation items with locking logic
   const navigationItems = [
     {
+      id: 'operator-account',
+      label: 'Operator Account',
+      icon: Shield,
+      description: 'Your account and billing settings',
+      locked: false, // Always accessible
+      lockReason: null
+    },
+    {
       id: 'agency-branding',
       label: 'Agency Branding',
       icon: Building2,
@@ -1005,14 +1013,6 @@ export default function SettingsPage() {
       lockReason: 'Complete agency branding setup first'
     },
     {
-      id: 'operator-account',
-      label: 'Operator Account',
-      icon: Shield,
-      description: 'Your account and billing settings',
-      locked: !isAgencyBrandingComplete(),
-      lockReason: 'Complete agency branding setup first'
-    },
-    {
       id: 'legal-privacy',
       label: 'Legal & Privacy',
       icon: Info,
@@ -1027,12 +1027,13 @@ export default function SettingsPage() {
     const tab = searchParams.get('tab')
     
     // If agency branding is not complete, force user to agency branding tab
-    if (!isAgencyBrandingComplete() && tab !== 'agency-branding' && tab !== 'legal-privacy') {
+    // But allow operator-account and legal-privacy to be accessed
+    if (!isAgencyBrandingComplete() && tab !== 'agency-branding' && tab !== 'legal-privacy' && tab !== 'operator-account') {
       setActiveTab('agency-branding')
       return
     }
     
-    if (tab && ['agency-branding', 'brand-management', 'brand-access', 'operator-account', 'legal-privacy'].includes(tab)) {
+    if (tab && ['operator-account', 'agency-branding', 'brand-management', 'brand-access', 'legal-privacy'].includes(tab)) {
       // Check if the tab is locked
       const tabItem = navigationItems.find(item => item.id === tab)
       if (tabItem && !tabItem.locked) {
