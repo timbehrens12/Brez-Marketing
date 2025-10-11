@@ -2368,14 +2368,6 @@ export default function LeadGeneratorPage() {
             )}
 
             {/* Show warning if too many niches selected */}
-            {selectedNiches.length > 5 && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3">
-                <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                  <AlertTriangle className="h-4 w-4" />
-                  Too many niches selected. Please select no more than 5 niches (you have {selectedNiches.length}).
-                </div>
-              </div>
-            )}
 
             {/* Generate Button */}
             <div className="space-y-2">
@@ -2384,7 +2376,6 @@ export default function LeadGeneratorPage() {
                 disabled={
                   isGenerating || 
                   selectedNiches.length === 0 || 
-                  selectedNiches.length > 5 ||
                   businessType === 'ecommerce' || 
                   (usageData?.remaining ?? 0) <= 0
                 }
@@ -2426,12 +2417,7 @@ export default function LeadGeneratorPage() {
               )}
               {selectedNiches.length === 0 && (
                 <div className="text-xs text-center text-gray-400">
-                  Select 1-5 niches to generate leads
-                </div>
-              )}
-              {selectedNiches.length > 5 && (
-                <div className="text-xs text-center text-red-400">
-                  Too many niches selected (max 5)
+                  Select niches to generate leads
                 </div>
               )}
               
