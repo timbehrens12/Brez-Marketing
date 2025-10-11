@@ -1561,14 +1561,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'lead-generator') {
                   const used = tierUsage.leadGenerator?.monthly || 0
                   const limit = tierLimits.lead_gen_monthly || 0
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
                   if (limit === 0) return 'text-[#FF2A2A]'
-                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+                  return used >= displayLimit ? 'text-[#FF2A2A]' : used >= displayLimit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
                 if (tool.id === 'outreach-tool') {
                   const used = tierUsage.outreachTool?.monthly || 0
                   const limit = tierLimits.outreach_messages_monthly || 0
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
                   if (limit === 0) return 'text-[#FF2A2A]'
-                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+                  return used >= displayLimit ? 'text-[#FF2A2A]' : used >= displayLimit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
                 if (tool.id === 'ai-consultant') {
                   const used = tierUsage.aiConsultant?.daily || 0
@@ -1578,7 +1580,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'creative-studio') {
                   const used = tierUsage.creativeStudio?.monthly || 0
                   const limit = tierLimits.creative_gen_monthly || 0
-                  return used >= limit ? 'text-[#FF2A2A]' : used >= limit * 0.8 ? 'text-yellow-400' : 'text-green-400'
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
+                  return used >= displayLimit ? 'text-[#FF2A2A]' : used >= displayLimit * 0.8 ? 'text-yellow-400' : 'text-green-400'
                 }
                 return tool.status === 'available' ? 'text-green-400' : 'text-[#FF2A2A]'
               })()}`}>
@@ -1588,12 +1591,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'lead-generator') {
                   const used = tierUsage.leadGenerator?.monthly || 0
                   const limit = tierLimits.lead_gen_monthly || 0
-                  return limit === 0 ? 'Locked' : `${used}/${limit} used this month`
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
+                  const period = billingInterval === 'week' ? 'week' : 'month'
+                  return limit === 0 ? 'Locked' : `${used}/${displayLimit} used this ${period}`
                 }
                 if (tool.id === 'outreach-tool') {
                   const used = tierUsage.outreachTool?.monthly || 0
                   const limit = tierLimits.outreach_messages_monthly || 0
-                  return limit === 0 ? 'Locked' : `${used}/${limit} used this month`
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
+                  const period = billingInterval === 'week' ? 'week' : 'month'
+                  return limit === 0 ? 'Locked' : `${used}/${displayLimit} used this ${period}`
                 }
                 if (tool.id === 'ai-consultant') {
                   const used = tierUsage.aiConsultant?.daily || 0
@@ -1603,7 +1610,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'creative-studio') {
                   const used = tierUsage.creativeStudio?.monthly || 0
                   const limit = tierLimits.creative_gen_monthly || 0
-                  return `${used}/${limit} used this month`
+                  const displayLimit = billingInterval === 'week' ? Math.floor(limit / 4) : limit
+                  const period = billingInterval === 'week' ? 'week' : 'month'
+                  return `${used}/${displayLimit} used this ${period}`
                 }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
               })()}

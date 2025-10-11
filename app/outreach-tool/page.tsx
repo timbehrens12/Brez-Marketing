@@ -4557,21 +4557,29 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div className="text-2xl font-bold text-white">
                         {messageUsage?.monthly ? `${messageUsage.monthly.used}` : messageUsage ? `${messageUsage.daily.used}` : '...'}
                       </div>
-                      <div className="text-xs text-gray-400">Used This Month</div>
+                      <div className="text-xs text-gray-400">
+                        Used This {messageUsage?.monthly?.billingInterval === 'week' ? 'Week' : 'Month'}
+                      </div>
                     </div>
                     <div className="text-gray-500">/</div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-300">
-                        {messageUsage?.monthly ? `${messageUsage.monthly.limit}` : messageUsage ? `${messageUsage.daily.limit}` : '...'}
+                        {messageUsage?.monthly 
+                          ? (messageUsage.monthly.billingInterval === 'week' ? Math.floor(messageUsage.monthly.limit / 4) : messageUsage.monthly.limit)
+                          : messageUsage ? `${messageUsage.daily.limit}` : '...'}
                       </div>
                       <div className="text-xs text-gray-400">
-                        Monthly Limit
+                        {messageUsage?.monthly?.billingInterval === 'week' ? 'Weekly' : 'Monthly'} Limit
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold text-gray-200">
-                      {messageUsage?.monthly ? `${messageUsage.monthly.remaining}` : messageUsage ? `${messageUsage.daily.remaining}` : '...'}
+                      {messageUsage?.monthly 
+                        ? (messageUsage.monthly.billingInterval === 'week' 
+                            ? Math.max(0, Math.floor(messageUsage.monthly.limit / 4) - messageUsage.monthly.used)
+                            : messageUsage.monthly.remaining)
+                        : messageUsage ? `${messageUsage.daily.remaining}` : '...'}
                     </div>
                     <div className="text-xs text-gray-400">Remaining</div>
                   </div>
@@ -4580,7 +4588,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="w-full bg-[#2A2A2A] rounded-full h-2">
                     <div 
                       className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${messageUsage?.monthly ? (messageUsage.monthly.used / messageUsage.monthly.limit) * 100 : messageUsage ? (messageUsage.daily.used / messageUsage.daily.limit) * 100 : 0}%` }}
+                      style={{ width: `${messageUsage?.monthly 
+                        ? (messageUsage.monthly.used / (messageUsage.monthly.billingInterval === 'week' ? Math.floor(messageUsage.monthly.limit / 4) : messageUsage.monthly.limit)) * 100 
+                        : messageUsage ? (messageUsage.daily.used / messageUsage.daily.limit) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>

@@ -5870,22 +5870,24 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
             {/* Weekly Usage and Library Buttons */}
             <div className="flex justify-center">
               <div className="flex items-center gap-4">
-                {/* Weekly Usage Display */}
+                {/* Usage Display */}
                 <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 w-[240px] h-[100px]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-300 text-sm font-medium">MONTHLY USAGE</span>
+                    <span className="text-gray-300 text-sm font-medium">
+                      {usageData.billingInterval === 'week' ? 'WEEKLY USAGE' : 'MONTHLY USAGE'}
+                    </span>
                     <span className="text-sm text-gray-400">
-                      {usageData.current}/{usageData.limit}
+                      {usageData.current}/{usageData.billingInterval === 'week' ? Math.floor(usageData.limit / 4) : usageData.limit}
                     </span>
                   </div>
                   <div className="w-full bg-[#333] rounded-full h-2 mb-2">
                     <div 
                       className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min((usageData.current / usageData.limit) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((usageData.current / (usageData.billingInterval === 'week' ? Math.floor(usageData.limit / 4) : usageData.limit)) * 100, 100)}%` }}
                     ></div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {usageData.remaining} remaining - {usageData.billingInterval === 'week' ? 'Resets Mondays' : 'Resets on the 1st'}
+                    {usageData.billingInterval === 'week' ? Math.max(0, Math.floor(usageData.limit / 4) - usageData.current) : usageData.remaining} remaining - {usageData.billingInterval === 'week' ? 'Resets Mondays' : 'Resets on the 1st'}
                   </p>
                 </div>
 
