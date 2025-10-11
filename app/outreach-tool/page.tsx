@@ -206,7 +206,7 @@ export default function OutreachToolPage() {
   const [messageUsage, setMessageUsage] = useState<{
     hourly: { used: number; limit: number; remaining: number }
     daily: { used: number; limit: number; remaining: number }
-    monthly?: { used: number; limit: number; remaining: number; tierName?: string }
+    monthly?: { used: number; limit: number; remaining: number; tierName?: string; billingInterval?: string }
   } | null>(null)
   const [messageType, setMessageType] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
@@ -3096,12 +3096,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               <div className="flex items-center justify-between min-w-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="text-3xl font-bold text-white flex-shrink-0">
-                    {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                    {messageUsage?.monthly 
+                      ? `${messageUsage.monthly.used}/${messageUsage.monthly.billingInterval === 'week' ? Math.floor(messageUsage.monthly.limit / 4) : messageUsage.monthly.limit}`
+                      : '...'}
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-300 truncate">AI Messages</div>
                     <div className="text-xs text-gray-500 truncate">
-                      {messageUsage ? `${messageUsage.daily.used} used today` : 'Loading...'}
+                      {messageUsage?.monthly 
+                        ? `${messageUsage.monthly.used} used this ${messageUsage.monthly.billingInterval === 'week' ? 'week' : 'month'}`
+                        : 'Loading...'}
                     </div>
                   </div>
                 </div>
