@@ -332,11 +332,11 @@ export class AIUsageService {
       const today = getCurrentLocalDateString() // Use local timezone instead of UTC
 
       // Insert into ai_feature_usage table (used by checkUsageStatus)
+      // Note: This table only has user_id, feature_type, created_at (no brand_id)
       const { error: featureUsageError } = await this.supabase
         .from('ai_feature_usage')
         .insert({
           user_id: userId,
-          brand_id: brandId,
           feature_type: featureType,
           created_at: now.toISOString()
         })
