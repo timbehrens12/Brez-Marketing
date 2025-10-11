@@ -106,26 +106,52 @@ export class AIUsageService {
       return baseLimits
     }
 
+    // Get user's billing interval to determine reset schedule
+    const { data: subscription } = await this.supabase
+      .from('subscriptions')
+      .select('billing_interval')
+      .eq('user_id', userId)
+      .single()
+    
+    const billingInterval = subscription?.billing_interval || 'month'
+    const isWeekly = billingInterval === 'week'
+
     // Override base limits with tier-specific limits
     const limits = { ...baseLimits }
     
     switch (featureType) {
       case 'ai_consultant_chat':
+        // AI Chatbot always uses daily limit (doesn't vary by billing interval)
         limits.dailyLimit = tierLimits.ai_chats_daily
         break
       case 'creative_generation':
-        limits.monthlyLimit = tierLimits.creative_gen_monthly
+        // Creative Gen resets weekly for weekly plans, monthly for monthly plans
+        if (isWeekly) {
+          limits.weeklyLimit = tierLimits.creative_gen_monthly
+        } else {
+          limits.monthlyLimit = tierLimits.creative_gen_monthly
+        }
         break
       case 'lead_gen_enrichment':
       case 'lead_gen_ecommerce':
-        limits.monthlyLimit = tierLimits.lead_gen_monthly
+        // Lead Gen resets weekly for weekly plans, monthly for monthly plans
+        if (isWeekly) {
+          limits.weeklyLimit = tierLimits.lead_gen_monthly
+        } else {
+          limits.monthlyLimit = tierLimits.lead_gen_monthly
+        }
         break
       case 'outreach_messages':
-        limits.monthlyLimit = tierLimits.outreach_messages_monthly
+        // Outreach resets weekly for weekly plans, monthly for monthly plans
+        if (isWeekly) {
+          limits.weeklyLimit = tierLimits.outreach_messages_monthly
+        } else {
+          limits.monthlyLimit = tierLimits.outreach_messages_monthly
+        }
         break
     }
 
-    console.log(`[AI Usage] Tier-based limits for ${featureType}:`, limits)
+    console.log(`[AI Usage] Tier-based limits for ${featureType} (billing: ${billingInterval}):`, limits)
     return limits
   }
 
