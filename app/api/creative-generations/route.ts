@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs/server'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Database } from '@/types/supabase'
+import { aiUsageService } from '@/lib/services/ai-usage-service'
 
 // Create Supabase client with service role for server-side operations (for POST/DELETE)
 const serviceSupabase = createClient<Database>(
@@ -147,6 +148,21 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('✅ Successfully created creative generation with ID:', data.id)
+    
+    // Record usage for creative generation
+    try {
+      await aiUsageService.recordUsage(
+        brandId,
+        userId,
+        'creative_generation',
+        { creativeId: data.id }
+      )
+      console.log('✅ Successfully recorded creative generation usage for user:', userId)
+    } catch (usageError) {
+      console.error('⚠️ Error recording usage (creative was still created):', usageError)
+      // Don't fail the request if usage tracking fails
+    }
+    
     return NextResponse.json({ creative: data })
 
   } catch (error: any) {
