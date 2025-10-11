@@ -2118,7 +2118,7 @@ export default function LeadGeneratorPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium text-gray-400">
-                    Selected Niches ({selectedNiches.length}/5 max)
+                    Selected Niches ({selectedNiches.length})
                   </Label>
                   <div className="text-sm text-gray-500">
                     {usageData?.remaining || 0} leads remaining this month

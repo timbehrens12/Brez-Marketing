@@ -12,16 +12,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Usage limits for weekly system
-// ALL tiers get 1 generation per week (4 per month)
-// What varies is the NUMBER OF LEADS per generation:
-// Free: 25 leads per generation
-// Pro: 100 leads per generation  
-// Agency: 625 leads per generation
-const WEEKLY_GENERATION_LIMIT = 100 // TODO: Make this dynamic based on tier (25/week for Basic, 625/week for Elite) - v2
-const TOTAL_LEADS_PER_GENERATION = 25 // TODO: Make dynamic based on subscription tier 
+// Usage limits for monthly system
+// Limits are tier-based and reset monthly (1st of each month)
+// What varies is the NUMBER OF LEADS per month based on tier:
+// DTC Owner: 0 leads (locked)
+// Beginner: 100 leads per month
+// Multi-Brand: 500 leads per month
+// Enterprise: Custom leads per month
+const TOTAL_LEADS_PER_GENERATION = 25 // Default leads per generation
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
-const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search
 const NICHE_COOLDOWN_HOURS = 72 // 72 hours (3 days) cooldown per niche
 
 
@@ -61,9 +60,9 @@ export async function POST(request: NextRequest) {
     const sanitizedLocation = sanitizeString(location, 200)
 
     // Check niche limit (already validated by schema, but double-check)
-    if (sanitizedNiches.length < MIN_NICHES_PER_SEARCH || sanitizedNiches.length > MAX_NICHES_PER_SEARCH) {
+    if (sanitizedNiches.length < MIN_NICHES_PER_SEARCH) {
       return addSecurityHeaders(NextResponse.json({ 
-        error: `Invalid niche selection. Minimum ${MIN_NICHES_PER_SEARCH} and maximum ${MAX_NICHES_PER_SEARCH} niches allowed.` 
+        error: `Invalid niche selection. At least ${MIN_NICHES_PER_SEARCH} niche is required.` 
       }, { status: 400 }))
     }
 

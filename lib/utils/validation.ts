@@ -18,7 +18,7 @@ export const aiReportRequestSchema = z.object({
 
 export const leadGenerationRequestSchema = z.object({
   businessType: z.string().min(1, 'Business type is required'),
-  niches: z.array(z.string()).min(1, 'At least one niche is required').max(5, 'Maximum 5 niches allowed'),
+  niches: z.array(z.string()).min(1, 'At least one niche is required'),
   location: z.object({
     city: z.string().min(1, 'City is required'),
     state: z.string().min(1, 'State is required'),
@@ -28,7 +28,9 @@ export const leadGenerationRequestSchema = z.object({
   brandId: z.string().uuid('Invalid brand ID format').optional(),
   userId: userIdSchema,
   localDate: z.string().min(1, 'Local date is required'),
-  localStartOfDayUTC: z.string().min(1, 'Local start of day UTC is required')
+  localStartOfDayUTC: z.string().min(1, 'Local start of day UTC is required'),
+  totalLeadsToGenerate: z.number().optional(),
+  nicheAllocation: z.record(z.number()).optional()
 })
 
 export const campaignRecommendationRequestSchema = z.object({
