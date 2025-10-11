@@ -56,9 +56,16 @@ export async function POST(req: NextRequest) {
       return { daily, monthly }
     }
 
+    // Combine both lead gen types (enrichment + ecommerce)
+    const leadGenEnrichment = calculateUsage('lead_gen_enrichment')
+    const leadGenEcommerce = calculateUsage('lead_gen_ecommerce')
+    
     const usageCounts = {
       creativeStudio: calculateUsage('creative_generation'),
-      leadGenerator: calculateUsage('lead_gen_ecommerce'),
+      leadGenerator: {
+        daily: leadGenEnrichment.daily + leadGenEcommerce.daily,
+        monthly: leadGenEnrichment.monthly + leadGenEcommerce.monthly
+      },
       outreachTool: calculateUsage('outreach_messages'),
       aiConsultant: calculateUsage('ai_consultant_chat'),
       brandReport: calculateUsage('brand_report'),
