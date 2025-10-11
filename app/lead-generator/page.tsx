@@ -1987,7 +1987,7 @@ export default function LeadGeneratorPage() {
                         <span className="text-sm text-gray-500">
                           {usageData.billingInterval === 'week' 
                             ? `Resets Mondays - ${getCountdownToMondayMidnight()}` 
-                            : `Resets 1st - ${getCountdownToFirstOfMonth()}`}
+                            : `Resets on the 1st - ${getCountdownToFirstOfMonth()}`}
                         </span>
                       </div>
                       
