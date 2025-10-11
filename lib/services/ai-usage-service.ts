@@ -383,10 +383,14 @@ export class AIUsageService {
           const isNewDay = existingDate !== today
           const isNewMonth = existingMonth !== currentMonth
           
-          const newDailyCount = isNewDay ? 1 : (existingUsage.daily_usage_count || 0) + 1
-          const newMonthlyCount = isNewMonth ? 1 : (existingUsage.monthly_usage_count || 0) + 1
+          // For lead generation, count actual leads generated (from metadata.leadsEnriched)
+          // For other features, increment by 1
+          const incrementAmount = metadata?.leadsEnriched || 1
+          
+          const newDailyCount = isNewDay ? incrementAmount : (existingUsage.daily_usage_count || 0) + incrementAmount
+          const newMonthlyCount = isNewMonth ? incrementAmount : (existingUsage.monthly_usage_count || 0) + incrementAmount
 
-          console.log(`[AI Usage] Recording usage for ${featureType}: isNewDay=${isNewDay}, isNewMonth=${isNewMonth}, newMonthlyCount=${newMonthlyCount}`)
+          console.log(`[AI Usage] Recording usage for ${featureType}: isNewDay=${isNewDay}, isNewMonth=${isNewMonth}, incrementAmount=${incrementAmount}, newMonthlyCount=${newMonthlyCount}`)
 
           const { data: updateData, error: updateError } = await this.supabase
             .from('ai_usage_tracking')
@@ -410,16 +414,20 @@ export class AIUsageService {
           console.log('[AI Usage] Successfully updated usage tracking:', updateData)
         } else {
           // Create new record (tracking per user)
-          console.log(`[AI Usage] Creating new usage record for userId=${userId}, feature=${featureType}`)
+          // For lead generation, count actual leads generated (from metadata.leadsEnriched)
+          // For other features, start with 1
+          const initialCount = metadata?.leadsEnriched || 1
+          
+          console.log(`[AI Usage] Creating new usage record for userId=${userId}, feature=${featureType}, initialCount=${initialCount}`)
           const { error: insertError } = await this.supabase
             .from('ai_usage_tracking')
             .insert({
               user_id: userId,
               brand_id: brandId,
               feature_type: featureType,
-              daily_usage_count: 1,
+              daily_usage_count: initialCount,
               daily_usage_date: today,
-              monthly_usage_count: 1,
+              monthly_usage_count: initialCount,
               monthly_usage_month: currentMonth,
               last_used_at: now.toISOString(),
               last_used_by: userId
