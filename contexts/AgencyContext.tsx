@@ -126,7 +126,12 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
   const updateAgencySettings = async (settings: AgencySettings): Promise<boolean> => {
     try {
-      // console.log('💾 Updating agency settings:', settings)
+      console.log('💾 [AgencyContext] Updating agency settings:', {
+        agency_name: settings.agency_name,
+        signature_name: settings.signature_name,
+        hasLogo: !!settings.agency_logo_url,
+        hasSignatureImage: !!settings.signature_image
+      })
       
       const response = await fetch('/api/agency-settings', {
         method: 'POST',
@@ -137,19 +142,26 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (!response.ok) {
+        console.error('❌ [AgencyContext] API returned not OK:', response.status)
         return false
       }
       
       const result = await response.json()
       
+      console.log('📥 [AgencyContext] API response:', {
+        success: result.success,
+        signature_name: result.settings?.signature_name
+      })
+      
       if (result.success && result.settings) {
-        // console.log('✅ Updated agency settings successfully')
+        console.log('✅ [AgencyContext] Updated agency settings successfully')
         setAgencySettings(result.settings)
         return true
       }
       
       return false
     } catch (error) {
+      console.error('❌ [AgencyContext] Error updating settings:', error)
       return false
     }
   }
