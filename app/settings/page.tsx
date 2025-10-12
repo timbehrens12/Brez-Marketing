@@ -1193,8 +1193,8 @@ export default function SettingsPage() {
     setIsSavingAgency(true)
     
     try {
-      let logoUrl = agencySettings.agency_logo_url
-      let signatureUrl = agencySettings.signature_image
+      let logoUrl: string | null = typeof agencySettings.agency_logo_url === 'string' ? agencySettings.agency_logo_url : null
+      let signatureUrl: string | null = typeof agencySettings.signature_image === 'string' ? agencySettings.signature_image : null
 
       // Handle logo changes
       if (removeLogo) {
