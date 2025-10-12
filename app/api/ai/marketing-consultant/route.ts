@@ -519,7 +519,7 @@ export async function POST(request: NextRequest) {
     // Record chat usage - now using unified tracking for brand mode
     console.log(`[AI Marketing] Recording usage for userId ${userId}, mode: brand, feature: ai_consultant_chat...`)
     
-    // Always record in ai_feature_usage table for unified tracking
+    // Record in ai_feature_usage table (this is what checkCombinedUsage checks for limits)
     await recordAgencyModeUsage(userId, 'ai_consultant_chat', {
       prompt: prompt.substring(0, 100), // Store first 100 chars for tracking
       marketingGoal,
@@ -530,19 +530,7 @@ export async function POST(request: NextRequest) {
     }, supabase)
     console.log(`[AI Marketing] Usage recorded successfully!`)
     
-    // Record usage in ai_usage_tracking for dashboard counters
-    await aiUsageService.recordUsage(
-      brandId || null,
-      userId,
-      'ai_consultant_chat',
-      {
-        promptLength: prompt.length,
-        marketingGoal
-      }
-    )
-    console.log(`[AI Marketing] Usage recorded to ai_usage_tracking`)
-    
-    // ALSO log to ai_usage_logs for centralized tracking
+    // Log to ai_usage_logs for centralized logging (not counting, just logging)
     await aiUsageService.logUsage({
       userId,
       brandId: brandId || null,
