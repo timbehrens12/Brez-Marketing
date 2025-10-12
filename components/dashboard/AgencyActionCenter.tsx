@@ -3601,7 +3601,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           >
                             {isLocked && (
                               <div className="absolute top-2 right-2 z-10">
-                                <Lock className="h-4 w-4 text-gray-400" />
+                                <Lock className="h-4 w-4 text-[#FF2A2A]" />
                               </div>
                             )}
                             <div className="flex items-start gap-3 mb-2 min-w-0">
