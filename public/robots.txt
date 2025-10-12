@@ -1,0 +1,45 @@
+# Robots.txt for Brez Marketing Dashboard
+# Block search engines from indexing sensitive areas
+
+User-agent: *
+# Allow public pages
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /data-security
+
+# Block dashboard and authenticated areas
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /analytics
+Disallow: /customers
+Disallow: /orders
+Disallow: /onboarding
+Disallow: /action-center
+Disallow: /ad-creative-studio
+Disallow: /ai-dashboard
+Disallow: /ai-marketing-consultant
+Disallow: /brand-report
+Disallow: /critical-brands
+Disallow: /lead-generator
+Disallow: /marketing-assistant
+Disallow: /outreach-tool
+Disallow: /shopify
+Disallow: /meta-test
+
+# Block all API endpoints
+Disallow: /api/
+
+# Block sign-in/sign-up pages (no need to index these)
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /login
+Disallow: /join
+
+# Block debug/admin routes
+Disallow: /debug-
+Disallow: /test-
+
+# Sitemap location
+Sitemap: https://brezmarketingdashboard.com/sitemap.xml
+
