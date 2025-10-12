@@ -7003,7 +7003,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Platform-Specific Actions */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Share2 className="h-5 w-5 text-violet-400" />
+                  <Share2 className="h-5 w-5 text-gray-400" />
                   Platform-Specific Guidance
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
