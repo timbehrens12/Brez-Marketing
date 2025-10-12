@@ -1223,6 +1223,8 @@ export default function SettingsPage() {
       }
 
       console.log('🔍 Saving agency settings:', {
+        agencyName: tempAgencyName.trim(),
+        signatureName: tempSignatureName.trim(),
         hasLogo: !!logoUrl,
         logoLength: logoUrl?.length,
         hasSignature: !!signatureUrl,
