@@ -1350,7 +1350,7 @@ export default function HomePage() {
                 </a>
                 <span className="text-zinc-600">•</span>
                 <span className="text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
-                  v0.1.0.8375
+                  v0.1.0.8517
                 </span>
               </div>
             </div>

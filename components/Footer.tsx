@@ -43,12 +43,12 @@ function FooterContentComponent({ centered = false }: { centered?: boolean }) {
   }, [])
   
   // Version information - use static values to avoid hydration mismatch
-  const [versionString, setVersionString] = useState("v0.1.0.8375")
+  const [versionString, setVersionString] = useState("v0.1.0.8517")
   
   useEffect(() => {
     // Update version string on client side only
     const packageVersion = "0.1.0"
-    const deploymentNumber = process.env.NEXT_PUBLIC_DEPLOYMENT_NUMBER || "8375"
+    const deploymentNumber = process.env.NEXT_PUBLIC_DEPLOYMENT_NUMBER || "8517"
     const gitHash = process.env.NEXT_PUBLIC_GIT_HASH || ""
     setVersionString(`v${packageVersion}${deploymentNumber ? `.${deploymentNumber}` : ''}${gitHash ? ` (${gitHash.slice(0, 7)})` : ''}`)
   }, [])
