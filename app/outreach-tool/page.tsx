@@ -6938,8 +6938,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     <div>5. <strong>Professional Download:</strong> Export as HTML format for PDF conversion</div>
                     <div>6. <strong>Digital Signatures:</strong> Automatic signature inclusion from Settings</div>
                   </div>
-                  <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/30 to-green-900/30 rounded-lg">
-                    <p className="text-blue-200 text-sm">
+                  <div className="mt-4 p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
+                    <p className="text-gray-300 text-sm">
                       <strong>Pricing Models:</strong> Monthly Retainer (fixed fee), Revenue Share (% of sales), or Pay Per Lead (perfect for roofing, landscaping, and local service businesses requiring qualified leads).
                     </p>
                   </div>
@@ -6984,7 +6984,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Todo System */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <CheckSquare className="h-5 w-5 text-green-400" />
+                  <CheckSquare className="h-5 w-5 text-gray-400" />
                   Smart Todo System
                 </h3>
                 <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
