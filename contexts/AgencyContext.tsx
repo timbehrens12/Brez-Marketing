@@ -130,7 +130,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         agency_name: settings.agency_name,
         signature_name: settings.signature_name,
         hasLogo: !!settings.agency_logo_url,
-        hasSignatureImage: !!settings.signature_image
+        logoType: typeof settings.agency_logo_url,
+        hasSignatureImage: !!settings.signature_image,
+        signatureType: typeof settings.signature_image
       })
       
       const response = await fetch('/api/agency-settings', {
