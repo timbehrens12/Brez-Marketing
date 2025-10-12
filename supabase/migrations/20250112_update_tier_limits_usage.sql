@@ -19,25 +19,25 @@ WHERE tier = 'beginner';
 -- Growing: Update outreach and creative generation
 UPDATE tier_limits 
 SET 
-  outreach_messages_monthly = 720,
-  creative_gen_monthly = 72,
+  outreach_messages_monthly = 700,
+  creative_gen_monthly = 80,
   updated_at = now()
 WHERE tier = 'growing';
 
 -- Multi-Brand (scaling): Update all usage limits
 UPDATE tier_limits 
 SET 
-  lead_gen_monthly = 752,
+  lead_gen_monthly = 800,
   outreach_messages_monthly = 2000,
-  creative_gen_monthly = 144,
+  creative_gen_monthly = 160,
   updated_at = now()
 WHERE tier = 'scaling';
 
 -- Enterprise (agency): Update lead generation and outreach
 UPDATE tier_limits 
 SET 
-  lead_gen_monthly = 2500,
-  outreach_messages_monthly = 7500,
+  lead_gen_monthly = 2400,
+  outreach_messages_monthly = 7200,
   updated_at = now()
 WHERE tier = 'agency';
 
