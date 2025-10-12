@@ -93,7 +93,11 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         const result = await response.json()
         
         if (result.success && result.settings) {
-          // console.log('✅ Loaded agency settings:', result.settings)
+          console.log('✅ Loaded agency settings:', {
+            ...result.settings,
+            agency_logo_url: typeof result.settings.agency_logo_url,
+            signature_image: typeof result.settings.signature_image
+          })
           setAgencySettings(result.settings)
         } else {
           // console.log('ℹ️ No agency settings found, using defaults')
