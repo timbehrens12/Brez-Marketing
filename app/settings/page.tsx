@@ -1943,7 +1943,7 @@ export default function SettingsPage() {
                           <Input 
                             value={userTier === 'dtc_owner' ? 'Scale 2.0 Dashboard' : tempAgencyName}
                             onChange={(e) => userTier !== 'dtc_owner' && setTempAgencyName(e.target.value)}
-                            onBlur={userTier !== 'dtc_owner' ? handleSaveAgencySettings : undefined}
+                            onBlur={userTier !== 'dtc_owner' ? () => handleSaveAgencySettings() : undefined}
                             placeholder="Enter your agency name"
                             className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
                             disabled={agencyLoading || isSavingAgency || userTier === 'dtc_owner'}
@@ -2168,7 +2168,7 @@ export default function SettingsPage() {
                           <Input 
                             value={tempSignatureName}
                             onChange={(e) => setTempSignatureName(e.target.value)}
-                            onBlur={handleSaveAgencySettings}
+                            onBlur={() => handleSaveAgencySettings()}
                             placeholder="Enter your full legal name"
                             className="h-11 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 focus:border-white/30 rounded-xl"
                             disabled={agencyLoading || isSavingAgency}
