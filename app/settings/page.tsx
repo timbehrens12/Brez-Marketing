@@ -1236,7 +1236,7 @@ export default function SettingsPage() {
       const success = await updateAgencySettings({
         agency_name: tempAgencyName.trim(),
         agency_logo_url: logoUrl,
-        signature_name: tempSignatureName.trim() || undefined,
+        signature_name: tempSignatureName.trim() ? tempSignatureName.trim() : undefined,
         signature_image: signatureUrl
       })
 
