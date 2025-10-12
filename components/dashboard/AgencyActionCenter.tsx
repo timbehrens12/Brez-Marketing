@@ -44,6 +44,7 @@ import {
   Palette,
   BrainCircuit,
   MessageCircle,
+  Lock,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -277,6 +278,43 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [tierLimits, setTierLimits] = useState<any>(null)
   const [tierUsage, setTierUsage] = useState<any>(null)
   const [billingInterval, setBillingInterval] = useState<'week' | 'month'>('month')
+  
+  // Track locked features based on tier (for DTC tier)
+  const [lockedFeatures, setLockedFeatures] = useState<Record<string, boolean>>({})
+  
+  // Check tier access for Lead Generator and Outreach Tool
+  useEffect(() => {
+    async function checkFeatureAccess() {
+      if (!userId) return
+      
+      try {
+        // Check Lead Generator access
+        const leadGenResponse = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'lead_generation' })
+        })
+        const leadGenData = await leadGenResponse.json()
+        
+        // Check Outreach Tool access
+        const outreachResponse = await fetch('/api/tier/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: 'outreach_tool' })
+        })
+        const outreachData = await outreachResponse.json()
+        
+        setLockedFeatures({
+          'lead-generator': !leadGenData.allowed,
+          'outreach-tool': !outreachData.allowed
+        })
+      } catch (error) {
+        console.error('Error checking feature access:', error)
+      }
+    }
+    
+    checkFeatureAccess()
+  }, [userId])
 
   // Refresh functionality with cooldown
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
@@ -3546,6 +3584,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         // Add visual indicator for maxed out tools without disabling them
                         const isMaxedOut = tool.status === 'unavailable' && (tool.dependencyType === 'user' || tool.dependencyType === 'brand')
                         
+                        // Check if this tool is locked for DTC tier
+                        const isLocked = lockedFeatures[tool.id] || false
+                        
                         return (
                           <div
                             key={tool.id}
@@ -3553,13 +3594,22 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                               "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full min-w-0 overflow-visible relative",
                               getCategoryColor(tool.category),
                               isDisabled && "opacity-60",
+                              isLocked && "opacity-50",
                               // Remove red border for maxed out tools - only button should be red
                               false
                             )}
                           >
+                            {isLocked && (
+                              <div className="absolute top-2 right-2 z-10">
+                                <Lock className="h-4 w-4 text-gray-400" />
+                              </div>
+                            )}
                             <div className="flex items-start gap-3 mb-2 min-w-0">
                               <div className="mt-0.5 flex-shrink-0">
-                                <IconComponent className="h-5 w-5" />
+                                <IconComponent className={cn(
+                                  "h-5 w-5",
+                                  isLocked && "text-gray-500"
+                                )} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1 flex-wrap overflow-visible">
@@ -3590,6 +3640,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                             <Button
                               size="sm"
                               onClick={() => {
+                                // If tool is locked (DTC tier), navigate to settings to upgrade
+                                if (isLocked) {
+                                  router.push('/settings?tab=operator')
+                                  return
+                                }
+                                
                                 // Set navigating state to prevent button text flashing
                                 setNavigatingToolId(tool.id)
                                 
@@ -3616,15 +3672,26 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                 "w-full text-xs h-7 mt-auto",
                                 isDisabled
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                                  : isMaxedOut
-                                      ? getButtonText(tool) === 'Connect Brand First'
-                                        ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
-                                       : "bg-[#FF2A2A]/80 hover:bg-[#FF2A2A] text-white" // Red button for "Weekly Limit Reached"
-                                      : "bg-[#2A2A2A] hover:bg-[#333] text-white"
+                                  : isLocked
+                                      ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600"
+                                      : isMaxedOut
+                                          ? getButtonText(tool) === 'Connect Brand First'
+                                            ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
+                                           : "bg-[#FF2A2A]/80 hover:bg-[#FF2A2A] text-white" // Red button for "Weekly Limit Reached"
+                                          : "bg-[#2A2A2A] hover:bg-[#333] text-white"
                               )}
                             >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              {getButtonText(tool)}
+                              {isLocked ? (
+                                <>
+                                  <Lock className="h-3 w-3 mr-1" />
+                                  Upgrade to Access
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  {getButtonText(tool)}
+                                </>
+                              )}
                             </Button>
                           </div>
                         )
