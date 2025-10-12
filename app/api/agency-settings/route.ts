@@ -74,7 +74,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agency name is required' }, { status: 400 })
     }
 
-    console.log(`💾 Saving agency settings for user: ${userId}`)
+    console.log(`💾 Saving agency settings for user: ${userId}`, {
+      agency_name,
+      signature_name,
+      hasSignatureImage: !!signature_image
+    })
 
     // Upsert the agency settings
     const { data, error } = await supabase
