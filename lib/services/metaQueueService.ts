@@ -3,12 +3,42 @@ import { createClient } from '@/lib/supabase/server'
 
 // Create Redis connection for Meta queue (same as Shopify)
 const getRedisConfig = () => {
+  // Check for Upstash REST API format first (Vercel integration)
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Upstash uses REST API, but Bull needs TCP connection
+    // Extract host from REST URL for Bull
+    const restUrl = process.env.UPSTASH_REDIS_REST_URL
+    const host = restUrl.replace('https://', '').replace('http://', '').split('/')[0]
+    
+    const config = {
+      redis: {
+        port: 6379,
+        host: host,
+        password: process.env.UPSTASH_REDIS_REST_TOKEN,
+        tls: {},
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+        maxRetriesPerRequest: 3,
+        lazyConnect: true,
+      },
+    }
+
+    console.log('[Meta Queue] Using Upstash Redis:', {
+      host: host,
+      port: 6379,
+      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN
+    })
+
+    return config
+  }
+  
+  // Fall back to standard Redis config
   const config = {
     redis: {
       port: parseInt(process.env.REDIS_PORT || '6379'),
       host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
       password: process.env.REDIS_PASSWORD,
-      tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined, // Only enable TLS for Upstash
+      tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined,
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
@@ -422,7 +452,7 @@ export class MetaQueueService {
       console.log(`[Meta Queue] Starting complete historical sync for brand ${brandId}`)
 
       // Check if Redis is available before attempting to queue
-      const hasRedis = process.env.REDIS_HOST || process.env.REDIS_URL
+      const hasRedis = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_HOST || process.env.REDIS_URL
       if (!hasRedis) {
         console.warn(`[Meta Queue] ⚠️ Redis not configured - skipping background historical sync`)
         return {
@@ -431,6 +461,8 @@ export class MetaQueueService {
           totalJobs: 0
         }
       }
+      
+      console.log(`[Meta Queue] ✅ Redis is configured, proceeding with queue jobs`)
 
       // Step 1: Add recent sync for immediate UI (high priority)
       await this.addRecentSyncJob(brandId, connectionId, accessToken, accountId)

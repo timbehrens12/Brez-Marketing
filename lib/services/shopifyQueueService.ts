@@ -2,18 +2,61 @@ import Queue from 'bull'
 import { createClient } from '@/lib/supabase/server'
 
 // Create Redis connection for Upstash
-const redisConfig = {
-  redis: {
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
-    password: process.env.REDIS_PASSWORD,
-    tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined, // Only enable TLS for Upstash
-    retryDelayOnFailover: 100,
-    enableReadyCheck: false,
-    maxRetriesPerRequest: 3,
-    lazyConnect: true,
-  },
+const getRedisConfig = () => {
+  // Check for Upstash REST API format first (Vercel integration)
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Upstash uses REST API, but Bull needs TCP connection
+    // Extract host from REST URL for Bull
+    const restUrl = process.env.UPSTASH_REDIS_REST_URL
+    const host = restUrl.replace('https://', '').replace('http://', '').split('/')[0]
+    
+    const config = {
+      redis: {
+        port: 6379,
+        host: host,
+        password: process.env.UPSTASH_REDIS_REST_TOKEN,
+        tls: {},
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+        maxRetriesPerRequest: 3,
+        lazyConnect: true,
+      },
+    }
+
+    console.log('[Shopify Queue] Using Upstash Redis:', {
+      host: host,
+      port: 6379,
+      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN
+    })
+
+    return config
+  }
+  
+  // Fall back to standard Redis config
+  const config = {
+    redis: {
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
+      password: process.env.REDIS_PASSWORD,
+      tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    },
+  }
+
+  console.log('[Shopify Queue] Redis config:', {
+    host: config.redis.host,
+    port: config.redis.port,
+    hasPassword: !!config.redis.password,
+    isUpstash: config.redis.tls !== undefined
+  })
+
+  return config
 }
+
+const redisConfig = getRedisConfig()
 
 // Define job queues
 export const shopifyQueue = new Queue('shopify-sync', redisConfig)
