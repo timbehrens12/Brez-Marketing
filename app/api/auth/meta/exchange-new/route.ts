@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 IMMEDIATE SYNC: Just sync last 7 days now, queue the rest
-    console.log(`[Meta Exchange NEW] 🎯 IMMEDIATE SYNC: Syncing last 7 days immediately`)
+    // 🚀 QSTASH SYNC: Sync last 7 days immediately, queue 12-month backfill with QStash
+    console.log(`[Meta Exchange NEW] 🚀 QSTASH SYNC: Starting immediate + queued sync`)
     
     const endDate = new Date()
     const recentStartDate = new Date()
@@ -160,8 +160,9 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Exchange NEW] 📅 Immediate sync: ${recentStartDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    // Import the meta sync service
+    // Import services
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+    const { QStashService } = await import('@/lib/services/qstashService')
     
     // Sync last 7 days immediately (fast, under 10 seconds)
     try {
@@ -171,29 +172,32 @@ export async function POST(request: NextRequest) {
       console.error(`[Meta Exchange NEW] ❌ Immediate sync failed:`, recentError)
     }
     
-    // Queue the full 12-month historical sync to run in background via cron
-    console.log(`[Meta Exchange NEW] 📋 Queueing 12-month historical sync jobs...`)
-    
-    const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+    // Queue the full 12-month historical sync with QStash (serverless-friendly)
+    console.log(`[Meta Exchange NEW] 📋 Queueing 12-month historical sync with QStash...`)
     
     try {
-      await MetaQueueService.queueCompleteHistoricalSync(
+      const queueResult = await QStashService.queueMetaHistoricalBackfill(
         state,
         connectionData.id,
         tokenData.access_token,
         accountId,
         undefined // Will default to 12 months ago
       )
-      console.log(`[Meta Exchange NEW] ✅ Historical sync jobs queued - cron will process them`)
+      
+      if (queueResult.success) {
+        console.log(`[Meta Exchange NEW] ✅ QStash queued ${queueResult.totalJobs} jobs, estimated: ${queueResult.estimatedMinutes} minutes`)
+      } else {
+        console.warn(`[Meta Exchange NEW] ⚠️ QStash queue failed - check QSTASH_TOKEN env var`)
+      }
     } catch (queueError) {
-      console.error(`[Meta Exchange NEW] ⚠️ Failed to queue historical sync:`, queueError)
+      console.error(`[Meta Exchange NEW] ⚠️ Failed to queue with QStash:`, queueError)
     }
     
     const completionMetadata = {
       ...metadataWithFlag,
       full_sync_in_progress: false,
       last_full_sync_completed_at: new Date().toISOString(),
-      last_full_sync_result: 'queued'
+      last_full_sync_result: 'queued_qstash'
     }
     
     // Mark sync as completed (recent data done, historical queued)
@@ -206,7 +210,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', connectionData.id)
     
-    return NextResponse.json({ success: true, message: 'Recent data synced, historical data queued' })
+    return NextResponse.json({ success: true, message: 'Recent data synced, 12-month backfill queued with QStash' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
