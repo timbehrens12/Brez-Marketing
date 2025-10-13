@@ -5,6 +5,7 @@ import {
   performDeepHistoricalScan,
   performOneTimeHistoricalCleanup 
 } from '@/lib/services/data-gap-detection'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * API endpoint to perform a complete data refresh that handles:
