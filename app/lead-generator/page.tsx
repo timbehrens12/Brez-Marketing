@@ -2137,9 +2137,27 @@ export default function LeadGeneratorPage() {
                     min="1"
                     max={usageData?.remaining || 100}
                     value={totalLeadsToGenerate}
+                    onInput={(e) => {
+                      // Remove leading zeros as user types
+                      const input = e.target as HTMLInputElement
+                      if (input.value.startsWith('0') && input.value.length > 1) {
+                        input.value = input.value.replace(/^0+/, '')
+                      }
+                    }}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0
-                      setTotalLeadsToGenerate(Math.min(val, usageData?.remaining || 100))
+                      // Parse and clamp the value
+                      let val = parseInt(e.target.value)
+                      
+                      // Handle empty input or invalid numbers
+                      if (isNaN(val) || e.target.value === '') {
+                        val = 1
+                      }
+                      
+                      // Clamp between 1 and max remaining
+                      val = Math.max(1, Math.min(val, usageData?.remaining || 100))
+                      
+                      setTotalLeadsToGenerate(val)
+                      
                       // Auto-distribute evenly when total changes
                       const perNiche = Math.floor(val / selectedNiches.length)
                       const remainder = val % selectedNiches.length

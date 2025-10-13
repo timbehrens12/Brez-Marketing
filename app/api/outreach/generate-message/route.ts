@@ -475,27 +475,22 @@ ${instructionsContext}
 
 Generate a ${messageType} message for this lead. Make it highly personalized and compelling. IMPORTANT: Emphasize that you have access to very limited per-person AI software that uses artificial intelligence to achieve superior results in customer acquisition - this technology is restricted and not widely available, giving clients a significant competitive advantage. Make this AI advantage a key selling point in your message.`
 
-    console.log('🔮 Sending request to OpenAI with optimized timeout...')
+    console.log('🔮 Sending request to OpenAI with tight timeout...')
     
-    // Use GPT-5 Mini for high-quality outreach messages that convert
+    // Use GPT-4o Mini for high-quality outreach messages that convert
     // Faster and better quality than GPT-3.5, perfect for revenue-generating content
     const completion = await Promise.race([
-      Promise.race([
-        openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-          ],
-          max_completion_tokens: 600,
-          temperature: 0.7,
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout')), 25000) // Increased to 25 seconds for reliability
-        )
-      ]),
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        max_completion_tokens: 600,
+        temperature: 0.7,
+      }),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Server timeout protection')), 27000) // Increased to 27 seconds
+        setTimeout(() => reject(new Error('OpenAI request timeout')), 20000) // 20 second timeout (Vercel has 30s max)
       )
     ]) as any
 
