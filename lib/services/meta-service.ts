@@ -242,6 +242,14 @@ export async function fetchMetaAdInsights(
     return { data: allData, error: null, pageCount }
   }
 
+  const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+    const chunks: T[][] = []
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size))
+    }
+    return chunks
+  }
+
   try {
     // Find the Meta connection for this brand
     const { data: connection, error: connectionError } = await supabase
@@ -654,22 +662,9 @@ export async function fetchMetaAdInsights(
 
     // Only store data if not in dry run mode
     if (!dryRun) {
-      // Process and store insights data in meta_ad_insights
-      // First clear existing data for this date range to avoid duplicates
-      const { error: deleteError } = await supabase
-        .from('meta_ad_insights')
-        .delete()
-        .eq('brand_id', brandId)
-        .gte('date', startDateStr)
-        .lte('date', endDateStr)
-      
-      if (deleteError) {
-        console.error(`[Meta] Error clearing existing insights:`, deleteError)
-      }
-  
-      // Prepare and deduplicate the enriched insights
-      // Group by (brand_id, ad_id, date) and merge duplicates
-      const insightGroups = new Map<string, any>()
+        // Process and store insights data in meta_ad_insights
+        // Process data in smaller batches to avoid hitting Supabase payload limits
+        const insightGroups = new Map<string, any>()
       
       allInsights.forEach((insight: any) => {
         // Ensure we have a valid date
@@ -751,34 +746,42 @@ export async function fetchMetaAdInsights(
       let insertError = null
 
       if (enrichedInsights.length > 0) {
-        console.log(`[Meta] Bulk upserting ${enrichedInsights.length} records`)
+        console.log(`[Meta] Preparing to upsert ${enrichedInsights.length} records in batches`)
         console.log(`[Meta] Sample record:`, JSON.stringify(enrichedInsights[0], null, 2))
 
-        try {
-          // Add timeout wrapper to catch database timeouts
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Database operation timeout')), 25000) // 25 second timeout
-          })
+        const insightBatches = chunkArray(enrichedInsights, 500)
+        console.log(`[Meta] Split insights into ${insightBatches.length} batches`)    
 
-          const upsertPromise = supabase
-            .from('meta_ad_insights')
-            .upsert(enrichedInsights, {
-              onConflict: 'brand_id,ad_id,date',
-              ignoreDuplicates: false
+        for (let i = 0; i < insightBatches.length; i++) {
+          const batch = insightBatches[i]
+          console.log(`[Meta] 🔄 Upserting insights batch ${i + 1}/${insightBatches.length} (${batch.length} records)`)  
+
+          try {
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Database operation timeout')), 25000)
             })
 
-          // Race between the actual operation and timeout
-          const { error: bulkError } = await Promise.race([upsertPromise, timeoutPromise]) as any
+            const upsertPromise = supabase
+              .from('meta_ad_insights')
+              .upsert(batch, {
+                onConflict: 'brand_id,ad_id,date',
+                ignoreDuplicates: false
+              })
 
-          if (bulkError) {
-            console.error(`[Meta] Bulk upsert failed:`, JSON.stringify(bulkError, null, 2))
-            insertError = bulkError
-          } else {
-            console.log(`[Meta] ✅ Successfully bulk upserted ${enrichedInsights.length} records`)
+            const { error: bulkError } = await Promise.race([upsertPromise, timeoutPromise]) as any
+
+            if (bulkError) {
+              console.error(`[Meta] ❌ Batch ${i + 1}/${insightBatches.length} upsert failed:`, JSON.stringify(bulkError, null, 2))
+              insertError = bulkError
+              break
+            } else {
+              console.log(`[Meta] ✅ Batch ${i + 1}/${insightBatches.length} upserted successfully`)
+            }
+          } catch (bulkError) {
+            console.error(`[Meta] ❌ Batch ${i + 1}/${insightBatches.length} upsert exception:`, bulkError instanceof Error ? bulkError.message : JSON.stringify(bulkError, null, 2))
+            insertError = bulkError instanceof Error ? bulkError : new Error(String(bulkError))
+            break
           }
-        } catch (bulkError) {
-          console.error(`[Meta] Bulk upsert exception:`, bulkError instanceof Error ? bulkError.message : JSON.stringify(bulkError, null, 2))
-          insertError = bulkError instanceof Error ? bulkError : new Error(String(bulkError))
         }
       }
       
