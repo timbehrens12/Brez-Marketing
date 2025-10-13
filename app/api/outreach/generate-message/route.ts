@@ -307,43 +307,24 @@ AI Instructions:
 - Use casual, human language - avoid corporate buzzwords
 Format as: Subject: [subject line]\n\n[email body]`,
 
-      phone: `Create a comprehensive phone conversation framework that sounds like one business owner calling another. MUST include:
+      phone: `Create a concise phone script that sounds like one business owner calling another:
 
-MAIN SCRIPT SECTIONS:
-- Friendly opening (15-20 seconds) that feels genuine and establishes connection
-- Conversational hooks that spark curiosity naturally
-- Industry-specific talking points that show understanding
-- Focus on shared challenges and approaches, never specific numbers or claims
-- Natural next steps that feel collaborative
-- Script should sound like a helpful peer, not a salesperson
-- Use everyday language, avoid jargon and corporate speak
+SCRIPT SECTIONS (Keep brief):
+- Opening (10-15 seconds): Genuine, establishes connection
+- Value Hook: Spark curiosity about systematic customer acquisition
+- Industry Insight: Show understanding of their challenges
+- Natural Close: Collaborative next step
 
-MANDATORY OBJECTION HANDLING SECTION:
-You MUST include a comprehensive objection handling guide with multiple response options for each common objection:
+TOP 5 OBJECTION RESPONSES (1-2 sentences each):
+1. "Not Interested" → Reframe as opportunity, not pitch
+2. "Too Busy" → Position as time-saving solution
+3. "No Budget" → Focus on ROI and paying for itself
+4. "Send Info" → Ask qualifying question first
+5. "Already Have Marketing" → Ask about predictability/results
 
-⚡ OBJECTION HANDLING GUIDE:
+Keep responses natural, conversational, and brief. Avoid lengthy examples.
 
-🚫 "NOT INTERESTED" (3 response options)
-⏰ "TOO BUSY" (3 response options)
-✅ "ALREADY HAVE MARKETING" (3 response options)
-💰 "NO BUDGET" (3 response options)
-📧 "SEND ME INFORMATION" (3 response options)
-📞 "CALL ME BACK LATER" (3 response options)
-🤔 "NEED TO THINK ABOUT IT" (3 response options)
-🏢 "NEED TO DISCUSS WITH PARTNER/TEAM" (3 response options)
-❌ "WE'VE TRIED MARKETING BEFORE - DIDN'T WORK" (3 response options)
-⚠️ "TOO GOOD TO BE TRUE" (3 response options)
-
-Each objection should have 3 different response approaches (Option 1, Option 2, Option 3) that:
-- Acknowledge their concern genuinely
-- Reframe the conversation
-- Ask questions to keep dialogue going
-- Sound natural and conversational
-- Build rapport rather than pressure
-
-EMERGENCY OBJECTION BREAKERS for when they're really resistant.
-
-Format as: OPENING → CONNECTION → SHARED CHALLENGES → NATURAL CLOSE → OBJECTION HANDLING GUIDE → EMERGENCY OBJECTION BREAKERS`,
+Format as: OPENING → VALUE → CLOSE → TOP 5 OBJECTIONS`,
 
       linkedin: `Create a LinkedIn message that sounds like authentic professional networking between peers. Should be:
 - 100-150 words maximum
