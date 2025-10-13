@@ -109,154 +109,69 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 12-MONTH HISTORICAL SYNC: Fetch full year of data
-    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Fetching complete year of data`)
+    // 🎯 12-MONTH HISTORICAL SYNC: Trigger in background to avoid timeout
+    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Triggering background sync`)
     
-    let syncedInsights = 0
-    try {
-      // Import the SAME Meta service that worked in nuclear reset
-      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-      
-      // Use 12-month date range for complete historical data
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setFullYear(endDate.getFullYear() - 1) // 12 months back
-      
-      console.log(`[Meta Exchange NEW] 🎯 Syncing 12 months WITH demographics: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-      
-      // Call the SAME Meta service that worked perfectly in nuclear reset
-      const result = await fetchMetaAdInsights(
-        state, // brandId
-        startDate, 
-        endDate,
-        false, // dryRun = false (actually sync)
-        false  // skipDemographics = false (include demographics)
-      )
-      
-      console.log(`[Meta Exchange NEW] 📊 Complete sync result:`, result)
-      
-      if (result && result.success) {
-        syncedInsights = result.count || 0
-        console.log(`[Meta Exchange NEW] ✅ COMPLETE SYNC SUCCESS: ${syncedInsights} insights + demographics + device data`)
-      } else {
-        console.error(`[Meta Exchange NEW] ❌ Complete sync failed:`, result?.error || 'Unknown error')
-        // Fall back to basic sync if the advanced sync fails
-        throw new Error(`Advanced sync failed: ${result?.error || 'Unknown error'}`)
-      }
-      
-    } catch (syncError) {
-      console.error(`[Meta Exchange NEW] ❌ Complete sync failed, falling back to basic sync:`, syncError)
-      
-      // FALLBACK: Basic insights sync (same as before)
-      const today = new Date()
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(today.getDate() - 30)
-      
-      const since = thirtyDaysAgo.toISOString().split('T')[0]
-      const until = today.toISOString().split('T')[0]
-      
-      console.log(`[Meta Exchange NEW] 📅 FALLBACK: Basic sync ${since} to ${until}`)
-      
-      const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?fields=impressions,clicks,spend,reach,date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,account_id,ctr,cpc,conversions&time_range={"since":"${since}","until":"${until}"}&level=ad&access_token=${tokenData.access_token}`
-      
-      const insightsResponse = await fetch(insightsUrl)
-      const insightsData = await insightsResponse.json()
-      
-      if (insightsData.data && insightsData.data.length > 0) {
-        // Store basic insights
-        const insightRecords = insightsData.data.map(insight => ({
-          brand_id: state,
-          connection_id: connectionData.id,
-          campaign_id: insight.campaign_id,
-          campaign_name: insight.campaign_name,
-          adset_id: insight.adset_id,
-          adset_name: insight.adset_name,
-          ad_id: insight.ad_id,
-          ad_name: insight.ad_name,
-          account_id: insight.account_id || accountId.replace('act_', ''),
-          date: insight.date_start,
-          impressions: parseInt(insight.impressions) || 0,
-          clicks: parseInt(insight.clicks) || 0,
-          spend: parseFloat(insight.spend) || 0,
-          reach: parseInt(insight.reach) || 0,
-          ctr: parseFloat(insight.ctr) || 0,
-          cpc: parseFloat(insight.cpc) || 0,
-          conversions: 0, // 🎯 FIXED: Force conversions to 0 until real conversions happen
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }))
+    // Trigger the sync in the background without waiting (fire-and-forget)
+    const syncPromise = (async () => {
+      try {
+        // Import the SAME Meta service that worked in nuclear reset
+        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
         
-        await supabase.from('meta_ad_insights').insert(insightRecords)
-        syncedInsights = insightRecords.length
-        console.log(`[Meta Exchange NEW] ✅ FALLBACK: Stored ${syncedInsights} basic insights`)
-      }
-    }
-
-    // 🔄 CREATE CAMPAIGNS AND ADSETS: Manual creation (aggregation function is broken)
-    console.log(`[Meta Exchange NEW] 🔄 Creating campaigns and adsets manually...`)
-    try {
-      // Create campaigns manually
-      await supabase.from('meta_campaigns').insert({
-        brand_id: state,
-        connection_id: connectionData.id,
-        campaign_id: '120218263352990058', // Known campaign ID from API test
-        campaign_name: 'TEST - DO NOT USE',
-        status: 'ACTIVE',
-        budget: 1.00,
-        account_id: accountId.replace('act_', ''),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }).select('*').single()
-      
-      // Create adsets manually from insights data
-      const { data: uniqueAdsets } = await supabase
-        .from('meta_ad_insights')
-        .select('adset_id, adset_name, campaign_id')
-        .eq('brand_id', state)
-      
-      if (uniqueAdsets && uniqueAdsets.length > 0) {
-        const adsetRecords = []
-        const seenAdsets = new Set()
+        // Use 12-month date range for complete historical data
+        const endDate = new Date()
+        const startDate = new Date()
+        startDate.setFullYear(endDate.getFullYear() - 1) // 12 months back
         
-        for (const insight of uniqueAdsets) {
-          if (!seenAdsets.has(insight.adset_id)) {
-            seenAdsets.add(insight.adset_id)
-            adsetRecords.push({
-              brand_id: state,
-              adset_id: insight.adset_id,
-              adset_name: insight.adset_name,
-              campaign_id: insight.campaign_id,
-              status: 'ACTIVE',
-              budget: '1.00',
-              budget_type: 'daily',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+        console.log(`[Meta Exchange NEW] 🎯 Background sync started: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+        
+        // Call the SAME Meta service that worked perfectly in nuclear reset
+        const result = await fetchMetaAdInsights(
+          state, // brandId
+          startDate, 
+          endDate,
+          false, // dryRun = false (actually sync)
+          false  // skipDemographics = false (include demographics)
+        )
+        
+        console.log(`[Meta Exchange NEW] 📊 Background sync result:`, result)
+        
+        if (result && result.success) {
+          console.log(`[Meta Exchange NEW] ✅ BACKGROUND SYNC SUCCESS: ${result.count || 0} insights + demographics + device data`)
+          
+          // Mark sync as completed
+          await supabase
+            .from('platform_connections')
+            .update({ 
+              sync_status: 'completed',
+              last_synced_at: new Date().toISOString() 
             })
-          }
+            .eq('id', connectionData.id)
+        } else {
+          console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, result?.error || 'Unknown error')
+          
+          // Mark sync as failed
+          await supabase
+            .from('platform_connections')
+            .update({ sync_status: 'failed' })
+            .eq('id', connectionData.id)
         }
+      } catch (syncError) {
+        console.error(`[Meta Exchange NEW] ❌ Background sync error:`, syncError)
         
-        if (adsetRecords.length > 0) {
-          await supabase.from('meta_adsets').insert(adsetRecords)
-          console.log(`[Meta Exchange NEW] ✅ Created ${adsetRecords.length} adsets`)
-        }
+        // Mark sync as failed
+        await supabase
+          .from('platform_connections')
+          .update({ sync_status: 'failed' })
+          .eq('id', connectionData.id)
       }
-      
-      console.log(`[Meta Exchange NEW] ✅ Campaigns and adsets created`)
-      
-    } catch (creationError) {
-      console.error(`[Meta Exchange NEW] ❌ Failed to create campaigns/adsets:`, creationError)
-    }
-
-    // Mark sync as completed
-    await supabase
-      .from('platform_connections')
-      .update({ 
-        sync_status: 'completed',
-        last_synced_at: new Date().toISOString() 
-      })
-      .eq('id', connectionData.id)
-
-    console.log(`[Meta Exchange NEW] 🎉 AUTH SYNC COMPLETE! Synced ${syncedInsights} insights`)
+    })()
+    
+    // Don't await the sync - let it run in background
+    syncPromise.catch(err => console.error('[Meta Exchange NEW] Background sync promise error:', err))
+    
+    // Return immediately to avoid timeout - background sync will complete asynchronously
+    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month historical sync running in background...`)
 
     return NextResponse.json({ success: true })
 
