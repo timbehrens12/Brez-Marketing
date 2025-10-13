@@ -109,69 +109,49 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 12-MONTH HISTORICAL SYNC: Trigger in background to avoid timeout
-    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Triggering background sync`)
+    // 🎯 12-MONTH HISTORICAL SYNC: Use queue system (no timeout issues)
+    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Queueing background jobs`)
     
-    // Trigger the sync in the background without waiting (fire-and-forget)
-    const syncPromise = (async () => {
-      try {
-        // Import the SAME Meta service that worked in nuclear reset
-        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+    // Queue the 12-month historical sync jobs (same as callback route)
+    const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+    
+    MetaQueueService.queueCompleteHistoricalSync(
+      state, // brandId
+      connectionData.id, // connectionId
+      tokenData.access_token,
+      accountId
+    )
+      .then(result => {
+        console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
         
-        // Use 12-month date range for complete historical data
-        const endDate = new Date()
-        const startDate = new Date()
-        startDate.setFullYear(endDate.getFullYear() - 1) // 12 months back
-        
-        console.log(`[Meta Exchange NEW] 🎯 Background sync started: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-        
-        // Call the SAME Meta service that worked perfectly in nuclear reset
-        const result = await fetchMetaAdInsights(
-          state, // brandId
-          startDate, 
-          endDate,
-          false, // dryRun = false (actually sync)
-          false  // skipDemographics = false (include demographics)
-        )
-        
-        console.log(`[Meta Exchange NEW] 📊 Background sync result:`, result)
-        
-        if (result && result.success) {
-          console.log(`[Meta Exchange NEW] ✅ BACKGROUND SYNC SUCCESS: ${result.count || 0} insights + demographics + device data`)
-          
-          // Mark sync as completed
-          await supabase
-            .from('platform_connections')
-            .update({ 
-              sync_status: 'completed',
-              last_synced_at: new Date().toISOString() 
-            })
-            .eq('id', connectionData.id)
-        } else {
-          console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, result?.error || 'Unknown error')
-          
-          // Mark sync as failed
-          await supabase
-            .from('platform_connections')
-            .update({ sync_status: 'failed' })
-            .eq('id', connectionData.id)
-        }
-      } catch (syncError) {
-        console.error(`[Meta Exchange NEW] ❌ Background sync error:`, syncError)
+        // 🚀 CRITICAL: Trigger worker to process queued jobs immediately
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/public-worker`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ maxJobs: 10 })
+        })
+          .then(workerRes => {
+            if (workerRes.ok) {
+              console.log('[Meta Exchange NEW] ✅ Worker triggered successfully to process queued jobs')
+            } else {
+              console.warn('[Meta Exchange NEW] ⚠️ Worker trigger returned non-OK status, but jobs are queued')
+            }
+          })
+          .catch(err => console.error('[Meta Exchange NEW] ❌ Worker trigger failed:', err))
+      })
+      .catch(err => {
+        console.error(`[Meta Exchange NEW] ❌ Failed to queue backfill jobs:`, err)
         
         // Mark sync as failed
-        await supabase
+        supabase
           .from('platform_connections')
           .update({ sync_status: 'failed' })
           .eq('id', connectionData.id)
-      }
-    })()
+          .then(() => console.log('[Meta Exchange NEW] Marked sync as failed'))
+      })
     
-    // Don't await the sync - let it run in background
-    syncPromise.catch(err => console.error('[Meta Exchange NEW] Background sync promise error:', err))
-    
-    // Return immediately to avoid timeout - background sync will complete asynchronously
-    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month historical sync running in background...`)
+    // Return immediately - jobs will process in background via worker
+    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month historical sync queued and worker triggered...`)
 
     return NextResponse.json({ success: true })
 
