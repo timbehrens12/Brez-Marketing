@@ -167,6 +167,81 @@ export async function fetchMetaAdInsights(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  const createDateChunks = (
+    rangeStart: Date,
+    rangeEnd: Date,
+    chunkSizeDays = 30
+  ): { start: string; end: string }[] => {
+    const chunks: { start: string; end: string }[] = []
+
+    let current = new Date(rangeStart)
+    current.setHours(0, 0, 0, 0)
+
+    const end = new Date(rangeEnd)
+    end.setHours(0, 0, 0, 0)
+
+    while (current <= end) {
+      const chunkStart = new Date(current)
+      const chunkEnd = new Date(current)
+      chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
+
+      if (chunkEnd > end) {
+        chunkEnd.setTime(end.getTime())
+      }
+
+      chunks.push({
+        start: chunkStart.toISOString().split('T')[0],
+        end: chunkEnd.toISOString().split('T')[0]
+      })
+
+      current = new Date(chunkEnd)
+      current.setDate(current.getDate() + 1)
+    }
+
+    return chunks
+  }
+
+  const fetchPaginatedData = async (
+    initialUrl: string,
+    dataType: string,
+    maxPages = 12
+  ): Promise<{ data: any[]; error: any; pageCount: number }> => {
+    let allData: any[] = []
+    let nextUrl: string | null = initialUrl
+    let pageCount = 0
+
+    while (nextUrl && pageCount < maxPages) {
+      pageCount++
+      console.log(`[Meta] 🔥 Fetching ${dataType} page ${pageCount}: ${nextUrl.substring(0, 120)}...`)
+
+      const response = await fetchWithRetry(nextUrl)
+
+      if (response?.error) {
+        console.error(`[Meta] Error fetching ${dataType} page ${pageCount}:`, response.error)
+        return { data: allData, error: response.error, pageCount }
+      }
+
+      if (Array.isArray(response?.data) && response.data.length > 0) {
+        allData = allData.concat(response.data)
+        console.log(`[Meta] 🔥 ${dataType} page ${pageCount}: ${response.data.length} records (total: ${allData.length})`)
+      } else {
+        console.log(`[Meta] 🔍 ${dataType} page ${pageCount} returned 0 records`)
+      }
+
+      nextUrl = response?.paging?.next || null
+
+      if (!nextUrl) {
+        console.log(`[Meta] ✅ ${dataType} pagination complete: ${allData.length} total records (${pageCount} pages)`)
+      }
+    }
+
+    if (nextUrl) {
+      console.warn(`[Meta] ⚠️ ${dataType} pagination stopped at page limit (${maxPages}) with ${allData.length} records`)
+    }
+
+    return { data: allData, error: null, pageCount }
+  }
+
   try {
     // Find the Meta connection for this brand
     const { data: connection, error: connectionError } = await supabase
@@ -241,6 +316,9 @@ export async function fetchMetaAdInsights(
     const endDateStr = endDate.toISOString().split('T')[0]
     const todayStr = new Date().toISOString().split('T')[0];
     const isFetchingToday = startDateStr === todayStr && endDateStr === todayStr;
+    const dateChunks = !isFetchingToday
+      ? createDateChunks(new Date(startDateStr), new Date(endDateStr), 31)
+      : []
 
     let allInsights = []
     let campaignBudgets = new Map()
@@ -293,29 +371,65 @@ export async function fetchMetaAdInsights(
         // Add another delay before the insights request
         await delay(1000);
         
-        // Construct insights URL - RESTORED 'reach' (limiting to 12 months instead of years)
-        let insightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
+        const baseInsightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
 
-        if (isFetchingToday) {
-          insightsUrl += `&date_preset=today`;
-          console.log(`[Meta] Using date_preset=today for account ${account.id}`);
+        const insightChunkResults: any[] = []
+
+        if (isFetchingToday || dateChunks.length === 0) {
+          let insightsUrl = `${baseInsightsUrl}&date_preset=today`
+          console.log(`[Meta] Using date_preset=today for account ${account.id}`)
+
+          const insightsResult = await fetchPaginatedData(insightsUrl, 'Insights (today)', 5)
+
+          if (insightsResult.error) {
+            console.error(`[Meta] Error fetching insights (today) for account ${account.id}:`, insightsResult.error)
+            continue
+          }
+
+          insightChunkResults.push({
+            chunkStart: todayStr,
+            chunkEnd: todayStr,
+            records: insightsResult.data,
+            pageCount: insightsResult.pageCount
+          })
         } else {
-          insightsUrl += `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&time_increment=1`;
+          console.log(`[Meta] Splitting insights fetch into ${dateChunks.length} chunks for account ${account.id}`)
+
+          for (const chunk of dateChunks) {
+            const chunkUrl = `${baseInsightsUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}&time_increment=1`
+            console.log(`[Meta] 🔄 Fetching insights chunk ${chunk.start} → ${chunk.end}`)
+
+            const chunkResult = await fetchPaginatedData(chunkUrl, `Insights ${chunk.start}→${chunk.end}`, 20)
+
+            if (chunkResult.error) {
+              console.error(`[Meta] Error fetching insights chunk ${chunk.start} → ${chunk.end} for account ${account.id}:`, chunkResult.error)
+              continue
+            }
+
+            insightChunkResults.push({
+              chunkStart: chunk.start,
+              chunkEnd: chunk.end,
+              records: chunkResult.data,
+              pageCount: chunkResult.pageCount
+            })
+
+            console.log(`[Meta] ✅ Chunk ${chunk.start} → ${chunk.end}: ${chunkResult.data.length} records (${chunkResult.pageCount} pages)`)
+
+            await delay(500)
+          }
         }
-        
-        const insightsData = await fetchWithRetry(insightsUrl);
-        
+
+        const insightsData = insightChunkResults.flatMap((chunk) => chunk.records)
+
         console.log(`[Meta] 🔍 DEBUG: API Response for account ${account.id}:`)
-        console.log(`[Meta] 🔍 Request URL: ${insightsUrl.substring(0, 150)}...`)
-        console.log(`[Meta] 🔍 Response data count: ${insightsData?.data?.length || 0}`)
-        if (insightsData?.data?.length > 0) {
-          console.log(`[Meta] 🔍 Date range in response: ${insightsData.data[0]?.date_start} to ${insightsData.data[insightsData.data.length - 1]?.date_stop}`)
-          console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(insightsData.data[0], null, 2))
-        }
-        
-        if (insightsData.error) {
-          console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
-          continue
+        console.log(`[Meta] 🔍 Total chunks fetched: ${insightChunkResults.length}`)
+        console.log(`[Meta] 🔍 Total records: ${insightsData.length}`)
+        if (insightsData.length > 0) {
+          const firstRecord = insightsData[0]
+          const lastRecord = insightsData[insightsData.length - 1]
+          console.log(`[Meta] 🔍 First record date: ${firstRecord?.date_start} to ${firstRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Last record date: ${lastRecord?.date_start} to ${lastRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(firstRecord, null, 2))
         }
 
         // Fetch demographic breakdowns (age, gender) in parallel - SKIP if requested
@@ -347,12 +461,7 @@ export async function fetchMetaAdInsights(
 
           // Add time range to all URLs
           const timeRange = `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}`;
-          ageUrl += timeRange;
-          genderUrl += timeRange;
-          ageGenderUrl += timeRange;
-          deviceUrl += timeRange;
-          placementUrl += timeRange;
-          platformUrl += timeRange;
+          // We'll append time_range per chunk when fetching to avoid duplicate params
 
           console.log(`[Meta] 🔥 DEBUGGING - About to fetch demographic breakdowns with URLs:`);
           console.log(`[Meta] 🔥 Age URL: ${ageUrl}`);
@@ -360,83 +469,95 @@ export async function fetchMetaAdInsights(
           console.log(`[Meta] 🔥 Device URL: ${deviceUrl}`);
 
           // Helper function to fetch all pages of data
-          const fetchAllPages = async (initialUrl: string, dataType: string) => {
-            let allData: any[] = [];
-            let nextUrl = initialUrl;
-            let pageCount = 0;
-            
-            while (nextUrl && pageCount < 10) { // Increased to 10 pages for full 30-day data coverage
-              pageCount++;
-              console.log(`[Meta] 🔥 Fetching ${dataType} page ${pageCount}: ${nextUrl.substring(0, 100)}...`);
-              
-              const response = await fetchWithRetry(nextUrl);
-              // No delay - speed is critical to prevent timeout
-              
-              if (response.data && Array.isArray(response.data)) {
-                allData = allData.concat(response.data);
-                console.log(`[Meta] 🔥 ${dataType} page ${pageCount}: ${response.data.length} records (total: ${allData.length})`);
-              }
-              
-              // Check for next page
-              nextUrl = response.paging?.next || null;
-              if (!nextUrl) {
-                console.log(`[Meta] ✅ ${dataType} pagination complete: ${allData.length} total records`);
-                break;
-              }
-            }
-            
-            if (pageCount >= 10 && nextUrl) {
-              console.log(`[Meta] ⚠️ ${dataType} pagination stopped at page limit (10 pages, ${allData.length} records)`);
-            }
-            
-            return { data: allData, error: null };
-          };
-
           // Fetch ALL essential breakdowns: Age, Gender, Device, Platform, Age+Gender
           console.log(`[Meta] 🔥 Starting COMPLETE demographic data fetch (Age + Gender + Device + Platform + Age+Gender)...`);
-          const ageData = await fetchAllPages(ageUrl, 'Age');
-          const genderData = await fetchAllPages(genderUrl, 'Gender');
-          const deviceBreakdownData = await fetchAllPages(deviceUrl, 'Device');
-          const platformData = await fetchAllPages(platformUrl, 'Platform');
-          const ageGenderData = await fetchAllPages(ageGenderUrl, 'Age+Gender');
+          const demographicChunks = dateChunks.length > 0 ? dateChunks : [{ start: startDateStr, end: endDateStr }]
+
+          const aggregateChunkedFetch = async (urlBuilder: (chunk: { start: string; end: string }) => string, dataType: string) => {
+            const aggregated: any[] = []
+            let totalPages = 0
+
+            for (const chunk of demographicChunks) {
+              const chunkUrl = urlBuilder(chunk)
+              const result = await fetchPaginatedData(chunkUrl, `${dataType} ${chunk.start}→${chunk.end}`, 20)
+
+              if (result.error) {
+                console.error(`[Meta] Error fetching ${dataType} chunk ${chunk.start}→${chunk.end}:`, result.error)
+                continue
+              }
+
+              aggregated.push(...(result.data || []))
+              totalPages += result.pageCount
+              console.log(`[Meta] ✅ ${dataType} chunk ${chunk.start}→${chunk.end}: ${(result.data || []).length} records (${result.pageCount} pages)`)
+
+              await delay(500)
+            }
+
+            return { data: aggregated, pageCount: totalPages }
+          }
+
+          const ageResult = await aggregateChunkedFetch(
+            (chunk) => `${ageUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Age'
+          )
+
+          const genderResult = await aggregateChunkedFetch(
+            (chunk) => `${genderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Gender'
+          )
+
+          const ageGenderResult = await aggregateChunkedFetch(
+            (chunk) => `${ageGenderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Age+Gender'
+          )
+
+          const deviceBreakdownResult = await aggregateChunkedFetch(
+            (chunk) => `${deviceUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Device'
+          )
+
+          const platformResult = await aggregateChunkedFetch(
+            (chunk) => `${platformUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Platform'
+          )
           
           // Skip only placement (redundant with platform)
           const placementData = { data: [], error: null };
 
           console.log(`[Meta] 🔥 DEBUGGING - Raw API responses:`);
-          console.log(`[Meta] 🔥 Age data count: ${ageData.data?.length || 0}`);
-          console.log(`[Meta] 🔥 Age date ranges:`, ageData.data?.map(d => `${d.date_start} to ${d.date_stop}`));
-          console.log(`[Meta] 🔥 Device data count: ${deviceBreakdownData.data?.length || 0}`);
-          console.log(`[Meta] 🔥 Device date ranges:`, deviceBreakdownData.data?.map(d => `${d.date_start} to ${d.date_stop}`));
+          console.log(`[Meta] 🔥 Age data count: ${ageResult.data?.length || 0}`);
+          console.log(`[Meta] 🔥 Age date ranges:`, ageResult.data?.map(d => `${d.date_start} to ${d.date_stop}`));
+          console.log(`[Meta] 🔥 Device data count: ${deviceBreakdownResult.data?.length || 0}`);
+          console.log(`[Meta] 🔥 Device date ranges:`, deviceBreakdownResult.data?.map(d => `${d.date_start} to ${d.date_stop}`));
 
           // Process demographic data
-          if (ageData.data && !ageData.error) {
-            demographicData.age = ageData.data;
-            console.log(`[Meta] ✅ Age data processed: ${ageData.data.length} records`);
+          if (ageResult.data && !ageResult.error) {
+            demographicData.age = ageResult.data;
+            console.log(`[Meta] ✅ Age data processed: ${ageResult.data.length} records (pages: ${ageResult.pageCount})`);
           } else {
-            console.log(`[Meta] ❌ Age data FAILED:`, ageData.error || 'No data');
+            console.log(`[Meta] ❌ Age data FAILED:`, ageResult.error || 'No data');
           }
           
-          if (genderData.data && !genderData.error) {
-            demographicData.gender = genderData.data;
-            console.log(`[Meta] ✅ Gender data processed: ${genderData.data.length} records`);
+          if (genderResult.data && !genderResult.error) {
+            demographicData.gender = genderResult.data;
+            console.log(`[Meta] ✅ Gender data processed: ${genderResult.data.length} records (pages: ${genderResult.pageCount})`);
           } else {
-            console.log(`[Meta] ❌ Gender data FAILED:`, genderData.error || 'No data');
+            console.log(`[Meta] ❌ Gender data FAILED:`, genderResult.error || 'No data');
           }
           
-          if (ageGenderData.data && !ageGenderData.error) {
-            demographicData.ageGender = ageGenderData.data;
-            console.log(`[Meta] ✅ Age+Gender data processed: ${ageGenderData.data.length} records`);
+          if (ageGenderResult.data && !ageGenderResult.error) {
+            demographicData.ageGender = ageGenderResult.data;
+            console.log(`[Meta] ✅ Age+Gender data processed: ${ageGenderResult.data.length} records (pages: ${ageGenderResult.pageCount})`);
           } else {
-            console.log(`[Meta] ❌ Age+Gender data FAILED:`, ageGenderData.error || 'No data');
+            console.log(`[Meta] ❌ Age+Gender data FAILED:`, ageGenderResult.error || 'No data');
           }
           
           // Process device data
-          if (deviceBreakdownData.data && !deviceBreakdownData.error) {
-            deviceData.device = deviceBreakdownData.data;
-            console.log(`[Meta] ✅ Device data processed: ${deviceBreakdownData.data.length} records`);
+          if (deviceBreakdownResult.data && !deviceBreakdownResult.error) {
+            deviceData.device = deviceBreakdownResult.data;
+            console.log(`[Meta] ✅ Device data processed: ${deviceBreakdownResult.data.length} records (pages: ${deviceBreakdownResult.pageCount})`);
           } else {
-            console.log(`[Meta] ❌ Device data FAILED:`, deviceBreakdownData.error || 'No data');
+            console.log(`[Meta] ❌ Device data FAILED:`, deviceBreakdownResult.error || 'No data');
           }
           
           console.log(`[Meta] 🔥 RAW PLACEMENT API RESPONSE (using publisher_platform):`, JSON.stringify(placementData, null, 2));
@@ -453,11 +574,11 @@ export async function fetchMetaAdInsights(
             }
           }
           
-          if (platformData.data && !platformData.error) {
-            deviceData.platform = platformData.data;
-            console.log(`[Meta] ✅ Platform data processed: ${platformData.data.length} records`);
+          if (platformResult.data && !platformResult.error) {
+            deviceData.platform = platformResult.data;
+            console.log(`[Meta] ✅ Platform data processed: ${platformResult.data.length} records (pages: ${platformResult.pageCount})`);
           } else {
-            console.log(`[Meta] ❌ Platform data FAILED:`, platformData.error || 'No data');
+            console.log(`[Meta] ❌ Platform data FAILED:`, platformResult.error || 'No data');
           }
 
           console.log(`[Meta] 🔥 FINAL COUNT: ${demographicData.age.length} age, ${demographicData.gender.length} gender, ${deviceData.device.length} device breakdowns`);
@@ -491,22 +612,22 @@ export async function fetchMetaAdInsights(
           allDeviceData.platform.push({ ...item, account_id: account.id, account_name: account.name });
         });
         
-        if (insightsData.data && insightsData.data.length > 0) {
+        if (insightsData.length > 0) {
           // If fetching for today using date_preset=today, Meta might not include date_start/date_stop in each item.
           // We'll assign today's date to these records.
           if (isFetchingToday) {
-            insightsData.data.forEach((insight: any) => {
+            insightsData.forEach((insight: any) => {
               insight.date_start = todayStr;
               insight.date_stop = todayStr;
             });
           }
-          allInsights.push(...insightsData.data)
-          if (insightsData.data[0]) {
+          allInsights.push(...insightsData)
+          if (insightsData[0]) {
             console.log(`[Meta] Sample data format (first item):`, {
-              date_start: insightsData.data[0].date_start,
-              date_stop: insightsData.data[0].date_stop,
-              ad_id: insightsData.data[0].ad_id,
-              impressions: insightsData.data[0].impressions
+              date_start: insightsData[0].date_start,
+              date_stop: insightsData[0].date_stop,
+              ad_id: insightsData[0].ad_id,
+              impressions: insightsData[0].impressions
             })
           }
         }
