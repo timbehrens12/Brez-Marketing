@@ -132,59 +132,42 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 12-MONTH HISTORICAL SYNC: Direct sync (FUCK THE QUEUE)
+    // 🎯 12-MONTH HISTORICAL SYNC: Direct sync using meta-service
     console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Starting direct sync`)
-    
-    // Import the data backfill service
-    const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
     
     // Calculate 12-month date range
     const endDate = new Date()
     const startDate = new Date()
     startDate.setFullYear(startDate.getFullYear() - 1) // 12 months ago
     
-    const dateRange = {
-      start: startDate.toISOString().split('T')[0],
-      end: endDate.toISOString().split('T')[0]
-    }
+    console.log(`[Meta Exchange NEW] 📅 Syncing from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    console.log(`[Meta Exchange NEW] 📅 Syncing from ${dateRange.start} to ${dateRange.end}`)
+    // Import and call the meta sync service directly
+    const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
     
     // Fire-and-forget the 12-month sync (don't await - return immediately)
-    (async () => {
-      try {
-        console.log(`[Meta Exchange NEW] 🚀 Starting background 12-month sync...`)
-        
-        // Fetch campaigns and daily insights for 12 months
-        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, dateRange)
-        console.log(`[Meta Exchange NEW] ✅ Campaigns synced`)
-        
-        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, dateRange)
-        console.log(`[Meta Exchange NEW] ✅ Daily insights synced`)
-        
-        await DataBackfillService.fetchMetaDemographicsAndDevice(state, accountId, tokenData.access_token, dateRange)
-        console.log(`[Meta Exchange NEW] ✅ Demographics synced`)
+    fetchMetaAdInsights(state, startDate, endDate, false, false)
+      .then(() => {
+        console.log(`[Meta Exchange NEW] ✅ 12-month historical sync COMPLETE!`)
         
         // Mark sync as completed
-        await supabase
+        return supabase
           .from('platform_connections')
           .update({ 
             sync_status: 'completed',
             last_synced_at: new Date().toISOString()
           })
           .eq('id', connectionData.id)
-        
-        console.log(`[Meta Exchange NEW] 🎉 12-month historical sync COMPLETE!`)
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, error)
         
         // Mark sync as failed
-        await supabase
+        return supabase
           .from('platform_connections')
           .update({ sync_status: 'failed' })
           .eq('id', connectionData.id)
-      }
-    })()
+      })
     
     // Return immediately - sync will continue in background
     console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month sync started in background...`)
