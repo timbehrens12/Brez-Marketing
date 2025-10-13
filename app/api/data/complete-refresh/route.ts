@@ -40,6 +40,40 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Complete Refresh API] Starting ${mode} refresh for brand ${brandId} (${lookbackDays} days lookback)`)
 
+    const supabase = createClient()
+
+    let fullSyncInProgress = false
+    let syncStatus: string | null = null
+
+    try {
+      const { data: connection } = await supabase
+        .from('platform_connections')
+        .select('id,sync_status,metadata')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'meta')
+        .single()
+
+      if (connection) {
+        syncStatus = connection.sync_status || null
+        const metadataFlag = connection.metadata?.full_sync_in_progress
+        if (metadataFlag) {
+          fullSyncInProgress = true
+        }
+      }
+    } catch (statusError) {
+      console.warn('[Complete Refresh API] Unable to read sync status:', statusError)
+    }
+
+    if (fullSyncInProgress || syncStatus === 'full_sync') {
+      console.log('[Complete Refresh API] Skipping refresh because full historical sync is in progress or just completed')
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: 'full_sync_in_progress',
+        message: 'Historical sync detected – skipping dashboard refresh to avoid wiping data.'
+      })
+    }
+
     let result: any
 
     if (mode === 'comprehensive') {
