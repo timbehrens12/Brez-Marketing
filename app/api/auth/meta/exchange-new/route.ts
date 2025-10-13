@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 12-MONTH HISTORICAL SYNC: Direct sync using meta-service
-    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Starting direct sync`)
+    // 🎯 PROGRESSIVE 12-MONTH SYNC: Sync in 7-day chunks with immediate storage
+    console.log(`[Meta Exchange NEW] 🎯 PROGRESSIVE 12-MONTH SYNC: Starting chunked sync`)
     
     // Calculate 12-month date range
     const endDate = new Date()
@@ -161,53 +161,81 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Exchange NEW] 📅 Syncing from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    // Import and call the meta sync service directly
+    // Import the meta sync service
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
     
-    // Fire-and-forget the 12-month sync (don't await - return immediately)
-    fetchMetaAdInsights(state, startDate, endDate, false, false)
-      .then(async () => {
-        console.log(`[Meta Exchange NEW] ✅ 12-month historical sync COMPLETE!`)
+    // Create 7-day chunks to stay under Vercel timeout
+    const createWeekChunks = (start: Date, end: Date) => {
+      const chunks: { start: Date; end: Date }[] = []
+      let current = new Date(start)
+      
+      while (current <= end) {
+        const chunkStart = new Date(current)
+        const chunkEnd = new Date(current)
+        chunkEnd.setDate(chunkEnd.getDate() + 6) // 7 days
         
-        const completionMetadata = {
-          ...metadataWithFlag,
-          full_sync_in_progress: false,
-          last_full_sync_completed_at: new Date().toISOString(),
-          last_full_sync_result: 'success'
+        if (chunkEnd > end) {
+          chunkEnd.setTime(end.getTime())
         }
-
-        // Mark sync as completed
-        await supabase
-          .from('platform_connections')
-          .update({ 
-            sync_status: 'completed',
-            last_synced_at: new Date().toISOString(),
-            metadata: completionMetadata
-          })
-          .eq('id', connectionData.id)
-      })
-      .catch(async (error) => {
-        console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, error)
         
-        const failureMetadata = {
-          ...metadataWithFlag,
-          full_sync_in_progress: false,
-          last_full_sync_completed_at: new Date().toISOString(),
-          last_full_sync_result: 'failed',
-          last_full_sync_error: error instanceof Error ? error.message : String(error)
+        chunks.push({ start: chunkStart, end: chunkEnd })
+        
+        current = new Date(chunkEnd)
+        current.setDate(current.getDate() + 1)
+      }
+      
+      return chunks
+    }
+    
+    const weekChunks = createWeekChunks(startDate, endDate)
+    console.log(`[Meta Exchange NEW] Created ${weekChunks.length} 7-day chunks`)
+    
+    // Sync each chunk sequentially with immediate storage
+    let totalSynced = 0
+    let errors = 0
+    
+    for (let i = 0; i < weekChunks.length; i++) {
+      const chunk = weekChunks[i]
+      console.log(`[Meta Exchange NEW] 🔄 Syncing chunk ${i + 1}/${weekChunks.length}: ${chunk.start.toISOString().split('T')[0]} → ${chunk.end.toISOString().split('T')[0]}`)
+      
+      try {
+        const result = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, i > 0) // Skip demographics after first chunk
+        
+        if (result.success) {
+          totalSynced += result.count || 0
+          console.log(`[Meta Exchange NEW] ✅ Chunk ${i + 1}/${weekChunks.length} complete: ${result.count || 0} records`)
+        } else {
+          errors++
+          console.error(`[Meta Exchange NEW] ❌ Chunk ${i + 1}/${weekChunks.length} failed:`, result.error)
         }
-
-        // Mark sync as failed
-        await supabase
-          .from('platform_connections')
-          .update({ sync_status: 'failed', metadata: failureMetadata })
-          .eq('id', connectionData.id)
+      } catch (chunkError) {
+        errors++
+        console.error(`[Meta Exchange NEW] ❌ Chunk ${i + 1}/${weekChunks.length} exception:`, chunkError)
+      }
+    }
+    
+    console.log(`[Meta Exchange NEW] 🎉 Progressive sync COMPLETE! Synced ${totalSynced} records across ${weekChunks.length} chunks (${errors} errors)`)
+    
+    const completionMetadata = {
+      ...metadataWithFlag,
+      full_sync_in_progress: false,
+      last_full_sync_completed_at: new Date().toISOString(),
+      last_full_sync_result: errors === 0 ? 'success' : 'partial',
+      total_chunks: weekChunks.length,
+      successful_chunks: weekChunks.length - errors
+    }
+    
+    // Mark sync as completed
+    await supabase
+      .from('platform_connections')
+      .update({ 
+        sync_status: errors === 0 ? 'completed' : 'partial',
+        last_synced_at: new Date().toISOString(),
+        metadata: completionMetadata
       })
+      .eq('id', connectionData.id)
     
-    // Return immediately - sync will continue in background
-    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month sync started in background...`)
-    
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, totalSynced, chunks: weekChunks.length, errors })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
