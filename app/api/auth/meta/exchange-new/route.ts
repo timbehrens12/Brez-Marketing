@@ -138,7 +138,8 @@ export async function POST(request: NextRequest) {
     // Queue the 12-month historical sync jobs (same as callback route)
     const { MetaQueueService } = await import('@/lib/services/metaQueueService')
     
-    const queuePromise = MetaQueueService.queueCompleteHistoricalSync(
+    // AWAIT the queue creation to ensure jobs are created before returning
+    const result = await MetaQueueService.queueCompleteHistoricalSync(
       state, // brandId
       connectionData.id, // connectionId
       tokenData.access_token,
@@ -146,46 +147,43 @@ export async function POST(request: NextRequest) {
       undefined // accountCreatedDate - will default to 12 months ago
     )
     
-    queuePromise
-      .then(result => {
-        console.log(`[Meta Exchange NEW] 📊 Queue result: success=${result.success}, totalJobs=${result.totalJobs}, completion=${result.estimatedCompletion}`)
-        
-        if (!result.success || result.totalJobs === 0) {
-          console.error(`[Meta Exchange NEW] ❌ Queue failed or returned 0 jobs - Redis might not be configured`)
-          return
-        }
-        
-        console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
-        
-        // 🚀 CRITICAL: Trigger worker to process queued jobs immediately
-        fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/public-worker`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ maxJobs: 10 })
-        })
-          .then(workerRes => {
-            if (workerRes.ok) {
-              console.log('[Meta Exchange NEW] ✅ Worker triggered successfully to process queued jobs')
-            } else {
-              console.warn('[Meta Exchange NEW] ⚠️ Worker trigger returned non-OK status, but jobs are queued')
-            }
-          })
-          .catch(err => console.error('[Meta Exchange NEW] ❌ Worker trigger failed:', err))
-      })
-      .catch(err => {
-        console.error(`[Meta Exchange NEW] ❌ Failed to queue backfill jobs:`, err)
-        
-        // Mark sync as failed
-        supabase
-          .from('platform_connections')
-          .update({ sync_status: 'failed' })
-          .eq('id', connectionData.id)
-          .then(() => console.log('[Meta Exchange NEW] Marked sync as failed'))
-      })
+    console.log(`[Meta Exchange NEW] 📊 Queue result: success=${result.success}, totalJobs=${result.totalJobs}, completion=${result.estimatedCompletion}`)
     
-    // Return immediately - jobs will process in background via worker
-    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month historical sync queued and worker triggered...`)
-
+    if (!result.success || result.totalJobs === 0) {
+      console.error(`[Meta Exchange NEW] ❌ Queue failed or returned 0 jobs - Redis might not be configured`)
+      
+      // Mark sync as failed
+      await supabase
+        .from('platform_connections')
+        .update({ sync_status: 'failed' })
+        .eq('id', connectionData.id)
+      
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to queue background jobs' 
+      }, { status: 500 })
+    }
+    
+    console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
+    
+    // 🚀 CRITICAL: Trigger worker to process queued jobs immediately (fire-and-forget)
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/public-worker`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ maxJobs: 10 })
+    })
+      .then(workerRes => {
+        if (workerRes.ok) {
+          console.log('[Meta Exchange NEW] ✅ Worker triggered successfully to process queued jobs')
+        } else {
+          console.warn('[Meta Exchange NEW] ⚠️ Worker trigger returned non-OK status, but jobs are queued')
+        }
+      })
+      .catch(err => console.error('[Meta Exchange NEW] ❌ Worker trigger failed:', err))
+    
+    // Return immediately after queue creation - worker will process in background
+    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! ${result.totalJobs} jobs queued and worker triggered...`)
+    
     return NextResponse.json({ success: true })
 
   } catch (error) {
