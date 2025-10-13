@@ -138,14 +138,23 @@ export async function POST(request: NextRequest) {
     // Queue the 12-month historical sync jobs (same as callback route)
     const { MetaQueueService } = await import('@/lib/services/metaQueueService')
     
-    MetaQueueService.queueCompleteHistoricalSync(
+    const queuePromise = MetaQueueService.queueCompleteHistoricalSync(
       state, // brandId
       connectionData.id, // connectionId
       tokenData.access_token,
       accountId,
       undefined // accountCreatedDate - will default to 12 months ago
     )
+    
+    queuePromise
       .then(result => {
+        console.log(`[Meta Exchange NEW] 📊 Queue result: success=${result.success}, totalJobs=${result.totalJobs}, completion=${result.estimatedCompletion}`)
+        
+        if (!result.success || result.totalJobs === 0) {
+          console.error(`[Meta Exchange NEW] ❌ Queue failed or returned 0 jobs - Redis might not be configured`)
+          return
+        }
+        
         console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
         
         // 🚀 CRITICAL: Trigger worker to process queued jobs immediately
