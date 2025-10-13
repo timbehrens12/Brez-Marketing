@@ -142,7 +142,8 @@ export async function POST(request: NextRequest) {
       state, // brandId
       connectionData.id, // connectionId
       tokenData.access_token,
-      accountId
+      accountId,
+      undefined // accountCreatedDate - will default to 12 months ago
     )
       .then(result => {
         console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
