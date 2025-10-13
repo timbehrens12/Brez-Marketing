@@ -132,57 +132,62 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 12-MONTH HISTORICAL SYNC: Use queue system (no timeout issues)
-    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Queueing background jobs`)
+    // 🎯 12-MONTH HISTORICAL SYNC: Direct sync (FUCK THE QUEUE)
+    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Starting direct sync`)
     
-    // Queue the 12-month historical sync jobs (same as callback route)
-    const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+    // Import the data backfill service
+    const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
     
-    // AWAIT the queue creation to ensure jobs are created before returning
-    const result = await MetaQueueService.queueCompleteHistoricalSync(
-      state, // brandId
-      connectionData.id, // connectionId
-      tokenData.access_token,
-      accountId,
-      undefined // accountCreatedDate - will default to 12 months ago
-    )
+    // Calculate 12-month date range
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setFullYear(startDate.getFullYear() - 1) // 12 months ago
     
-    console.log(`[Meta Exchange NEW] 📊 Queue result: success=${result.success}, totalJobs=${result.totalJobs}, completion=${result.estimatedCompletion}`)
-    
-    if (!result.success || result.totalJobs === 0) {
-      console.error(`[Meta Exchange NEW] ❌ Queue failed or returned 0 jobs - Redis might not be configured`)
-      
-      // Mark sync as failed
-      await supabase
-        .from('platform_connections')
-        .update({ sync_status: 'failed' })
-        .eq('id', connectionData.id)
-      
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to queue background jobs' 
-      }, { status: 500 })
+    const dateRange = {
+      start: startDate.toISOString().split('T')[0],
+      end: endDate.toISOString().split('T')[0]
     }
     
-    console.log(`[Meta Exchange NEW] ✅ Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
+    console.log(`[Meta Exchange NEW] 📅 Syncing from ${dateRange.start} to ${dateRange.end}`)
     
-    // 🚀 CRITICAL: Trigger worker to process queued jobs immediately (fire-and-forget)
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/public-worker`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ maxJobs: 10 })
-    })
-      .then(workerRes => {
-        if (workerRes.ok) {
-          console.log('[Meta Exchange NEW] ✅ Worker triggered successfully to process queued jobs')
-        } else {
-          console.warn('[Meta Exchange NEW] ⚠️ Worker trigger returned non-OK status, but jobs are queued')
-        }
-      })
-      .catch(err => console.error('[Meta Exchange NEW] ❌ Worker trigger failed:', err))
+    // Fire-and-forget the 12-month sync (don't await - return immediately)
+    (async () => {
+      try {
+        console.log(`[Meta Exchange NEW] 🚀 Starting background 12-month sync...`)
+        
+        // Fetch campaigns and daily insights for 12 months
+        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, dateRange)
+        console.log(`[Meta Exchange NEW] ✅ Campaigns synced`)
+        
+        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, dateRange)
+        console.log(`[Meta Exchange NEW] ✅ Daily insights synced`)
+        
+        await DataBackfillService.fetchMetaDemographicsAndDevice(state, accountId, tokenData.access_token, dateRange)
+        console.log(`[Meta Exchange NEW] ✅ Demographics synced`)
+        
+        // Mark sync as completed
+        await supabase
+          .from('platform_connections')
+          .update({ 
+            sync_status: 'completed',
+            last_synced_at: new Date().toISOString()
+          })
+          .eq('id', connectionData.id)
+        
+        console.log(`[Meta Exchange NEW] 🎉 12-month historical sync COMPLETE!`)
+      } catch (error) {
+        console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, error)
+        
+        // Mark sync as failed
+        await supabase
+          .from('platform_connections')
+          .update({ sync_status: 'failed' })
+          .eq('id', connectionData.id)
+      }
+    })()
     
-    // Return immediately after queue creation - worker will process in background
-    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! ${result.totalJobs} jobs queued and worker triggered...`)
+    // Return immediately - sync will continue in background
+    console.log(`[Meta Exchange NEW] 🎉 OAuth complete! 12-month sync started in background...`)
     
     return NextResponse.json({ success: true })
 
