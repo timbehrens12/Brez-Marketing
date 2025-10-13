@@ -62,6 +62,25 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    // Load existing metadata so we don't overwrite other fields
+    const { data: existingConnection } = await supabase
+      .from('platform_connections')
+      .select('id, metadata')
+      .eq('brand_id', state)
+      .eq('platform_type', 'meta')
+      .single()
+
+    const nowIso = new Date().toISOString()
+
+    const existingMetadata = existingConnection?.metadata || {}
+
+    const metadataWithFlag = {
+      ...existingMetadata,
+      ad_account_id: accountId || existingMetadata?.ad_account_id,
+      full_sync_in_progress: true,
+      last_full_sync_started_at: nowIso
+    }
+
     // Store connection in database
     const { data: connectionData, error: dbError } = await supabase
       .from('platform_connections')
@@ -72,10 +91,10 @@ export async function POST(request: NextRequest) {
         status: 'active',
         user_id: userId,
         sync_status: 'in_progress',
-        metadata: accountId ? { ad_account_id: accountId } : {},
-        connected_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_synced_at: new Date().toISOString()
+        metadata: metadataWithFlag,
+        connected_at: nowIso,
+        updated_at: nowIso,
+        last_synced_at: nowIso
       })
       .select('id')
       .single()
@@ -147,25 +166,41 @@ export async function POST(request: NextRequest) {
     
     // Fire-and-forget the 12-month sync (don't await - return immediately)
     fetchMetaAdInsights(state, startDate, endDate, false, false)
-      .then(() => {
+      .then(async () => {
         console.log(`[Meta Exchange NEW] ✅ 12-month historical sync COMPLETE!`)
         
+        const completionMetadata = {
+          ...metadataWithFlag,
+          full_sync_in_progress: false,
+          last_full_sync_completed_at: new Date().toISOString(),
+          last_full_sync_result: 'success'
+        }
+
         // Mark sync as completed
-        return supabase
+        await supabase
           .from('platform_connections')
           .update({ 
             sync_status: 'completed',
-            last_synced_at: new Date().toISOString()
+            last_synced_at: new Date().toISOString(),
+            metadata: completionMetadata
           })
           .eq('id', connectionData.id)
       })
-      .catch((error) => {
+      .catch(async (error) => {
         console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, error)
         
+        const failureMetadata = {
+          ...metadataWithFlag,
+          full_sync_in_progress: false,
+          last_full_sync_completed_at: new Date().toISOString(),
+          last_full_sync_result: 'failed',
+          last_full_sync_error: error instanceof Error ? error.message : String(error)
+        }
+
         // Mark sync as failed
-        return supabase
+        await supabase
           .from('platform_connections')
-          .update({ sync_status: 'failed' })
+          .update({ sync_status: 'failed', metadata: failureMetadata })
           .eq('id', connectionData.id)
       })
     
