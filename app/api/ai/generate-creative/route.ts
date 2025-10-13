@@ -412,9 +412,43 @@ ${backgroundPreset.prompt}`;
 
     try {
       // Build the content array for Gemini - Ultra-strict text boundaries and instruction following
+      // Detect if this is a "copy creative" request (has example creative)
+      const isCopyCreativeMode = !!(exampleCreativeFile && exampleBase64 && exampleMimeType);
+      
       const contentArray = [
         {
-          text: isProductCollage && customPrompt ? customPrompt : `Create a professional advertisement image with this product. The product image has been pre-standardized to 512x768 dimensions for optimal composition. Make it visually appealing with text overlays.
+          text: isProductCollage && customPrompt ? customPrompt : isCopyCreativeMode ? `Create a professional advertisement image that REPLICATES THE EXACT VISUAL STYLE of the example creative image provided (the third image).
+
+🎯 COPY CREATIVE MODE - CRITICAL REQUIREMENTS:
+- ANALYZE the example creative's text placement, colors, fonts, and layout
+- IF the example creative has TEXT: Recreate similar text with the same styling, positioning, and design
+- IF the example creative has NO TEXT or MINIMAL TEXT: DO NOT ADD TEXT - keep it minimal like the example
+- Match the background style, color scheme, lighting, and overall aesthetic of the example
+- Replace the example's product with THIS product while maintaining the same layout
+- ONLY add text if specifically instructed in custom modifiers OR if the example creative contains text
+
+📐 PRODUCT POSITIONING GUIDELINES:
+- Product image is standardized 512x768 (2:3 ratio) - optimal for portrait layouts
+- Position product similar to how it appears in the example creative
+- Match the product's scale and placement from the reference image
+- Product should never exceed 70% of canvas width
+
+📝 USER INSTRUCTION COMPLIANCE - FOLLOW EXACTLY:
+${customPromptModifiers ? `MANDATORY REQUIREMENTS FROM USER: ${customPromptModifiers}` : 'No custom instructions - STRICTLY copy the example creative\'s style without adding extra elements.'}
+
+🚨 TEXT RULES FOR COPY MODE:
+- IF example has text AND no custom instructions: Copy the text style exactly
+- IF example has NO text AND no custom instructions: DO NOT add text - keep it clean
+- IF custom instructions mention text: Follow those instructions precisely
+- ALL TEXT (if any) MUST BE COMPLETELY INSIDE THE 1024x1536 CANVAS with 80px margins
+
+LAYOUT STRATEGY:
+- Analyze and replicate the example creative's composition
+- Match the visual hierarchy and balance of the reference
+- Keep the same mood and aesthetic as the example
+- Only deviate if explicitly instructed by custom modifiers
+
+Format: 1024x1536 portrait. Professional quality matching the example creative's style.` : `Create a professional advertisement image with this product. The product image has been pre-standardized to 512x768 dimensions for optimal composition. Make it visually appealing with text overlays.
 
 🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
 - ALL TEXT MUST BE COMPLETELY INSIDE THE 1024x1536 CANVAS
