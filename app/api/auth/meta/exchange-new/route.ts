@@ -90,12 +90,35 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange NEW] ✅ Stored connection with ID: ${connectionData.id}`)
 
+    // 🧹 QUEUE CLEANUP: Remove any orphaned jobs from previous connection
+    console.log(`[Meta Exchange NEW] 🧹 Cleaning up orphaned queue jobs...`)
+    try {
+      const { metaQueue } = await import('@/lib/services/metaQueueService')
+      
+      const waiting = await metaQueue.getWaiting()
+      const active = await metaQueue.getActive()
+      let cleanedCount = 0
+      
+      // Remove jobs for this brand that reference old connection IDs
+      for (const job of [...waiting, ...active]) {
+        if (job.data?.brandId === state && job.data?.connectionId !== connectionData.id) {
+          await metaQueue.remove(job.id)
+          console.log(`[Meta Exchange NEW] Removed orphaned job ${job.id} with old connection ${job.data.connectionId}`)
+          cleanedCount++
+        }
+      }
+      
+      console.log(`[Meta Exchange NEW] ✅ Cleaned up ${cleanedCount} orphaned queue jobs`)
+    } catch (cleanupError) {
+      console.warn(`[Meta Exchange NEW] ⚠️ Queue cleanup failed:`, cleanupError)
+    }
+
     // 🧨 NUCLEAR WIPE: Delete all existing Meta data (including hidden tables)
     console.log(`[Meta Exchange NEW] 🧨 NUCLEAR WIPE: Deleting all old Meta data...`)
     try {
       await Promise.all([
         supabase.from('meta_ad_insights').delete().eq('brand_id', state),
-        supabase.from('meta_ad_daily_insights').delete().eq('brand_id', state), // This was missing!
+        supabase.from('meta_ad_daily_insights').delete().eq('brand_id', state),
         supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state),
         supabase.from('meta_adsets').delete().eq('brand_id', state),
         supabase.from('meta_campaigns').delete().eq('brand_id', state),
