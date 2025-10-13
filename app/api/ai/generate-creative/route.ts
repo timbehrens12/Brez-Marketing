@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 import { aiUsageService } from '@/lib/services/ai-usage-service';
 
@@ -54,45 +55,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check weekly usage limits
+    // Check monthly usage limits using ai_usage_tracking (matches UI)
     const supabase = createClient();
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     const now = new Date();
     
-    // Calculate start of current week (Monday at 12:00 AM)
-    const dayOfWeek = now.getDay();
-    const startOfWeek = new Date(now);
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(now.getDate() - daysToSubtract);
-    startOfWeek.setHours(0, 0, 0, 0);
+    // Get user's tier limits
+    const { data: tierData } = await supabaseAdmin.rpc('get_user_tier_limits', {
+      p_user_id: userId
+    });
     
-    const startOfNextWeek = new Date(startOfWeek);
-    startOfNextWeek.setDate(startOfWeek.getDate() + 7);
+    const tierLimits = tierData?.[0];
+    const monthlyLimit = tierLimits?.creative_gen_monthly || WEEKLY_CREATIVE_LIMIT;
     
-    // Check user's weekly usage
-    const { data: usageData, error: usageError } = await supabase
-      .from('ai_feature_usage')
+    // Calculate the start of the current month
+    const startOfMonthLocal = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonthLocal.setHours(0, 0, 0, 0);
+    
+    const startOfNextMonthLocal = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    startOfNextMonthLocal.setHours(0, 0, 0, 0);
+    
+    // Get monthly usage from ai_usage_tracking (same as UI)
+    const { data: monthlyUsageData, error: usageError } = await supabaseAdmin
+      .from('ai_usage_tracking')
       .select('*')
       .eq('user_id', userId)
       .eq('feature_type', USAGE_FEATURE_TYPE)
-      .gte('created_at', startOfWeek.toISOString())
-      .lt('created_at', startOfNextWeek.toISOString());
+      .gte('monthly_usage_month', startOfMonthLocal.toISOString().split('T')[0]);
 
     if (usageError) {
       console.error('Error checking creative usage:', usageError);
       return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 });
     }
 
-    const currentWeeklyUsage = usageData?.length || 0;
+    const currentMonthlyUsage = monthlyUsageData?.reduce((sum, record) => sum + (record.monthly_usage_count || 0), 0) || 0;
     
-    // Check if user has exceeded weekly limit
-    if (currentWeeklyUsage >= WEEKLY_CREATIVE_LIMIT) {
+    console.log(`[Creative Gen] Monthly usage: ${currentMonthlyUsage}/${monthlyLimit}`);
+    
+    // Check if user has exceeded monthly limit
+    if (currentMonthlyUsage >= monthlyLimit) {
       return NextResponse.json({ 
-        error: `Weekly creative generation limit reached. You've used ${currentWeeklyUsage} of ${WEEKLY_CREATIVE_LIMIT} generations this week. Resets Monday at 12:00 AM.`,
+        error: `Monthly creative generation limit reached. You've used ${currentMonthlyUsage} of ${monthlyLimit} generations this month. Resets on the 1st of next month.`,
         usage: {
-          used: currentWeeklyUsage,
-          limit: WEEKLY_CREATIVE_LIMIT,
-          resetsAt: startOfNextWeek.toISOString(),
-          resetsIn: startOfNextWeek.getTime() - now.getTime()
+          used: currentMonthlyUsage,
+          limit: monthlyLimit,
+          resetsAt: startOfNextMonthLocal.toISOString(),
+          resetsIn: startOfNextMonthLocal.getTime() - now.getTime()
         }
       }, { status: 429 });
     }
@@ -706,26 +718,43 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
       }, { status: 500 });
     }
 
-      // Track usage in database
+      // Track usage in ai_usage_tracking (matches UI)
     try {
-      await supabase
-        .from('ai_feature_usage')
-        .insert({
-          user_id: userId,
-          feature_type: USAGE_FEATURE_TYPE,
-          usage_count: 1,
-          metadata: {
-            backgroundType,
-            aspectRatio,
-            quality,
-            lighting,
-            customModifiers: !!customPromptModifiers,
-            model: 'gemini-2.5-flash-image-preview'
-          },
-          created_at: new Date().toISOString()
-        });
+      const currentMonth = startOfMonthLocal.toISOString().split('T')[0];
+      
+      // Try to increment existing record or create new one
+      const { data: existingRecord } = await supabaseAdmin
+        .from('ai_usage_tracking')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('feature_type', USAGE_FEATURE_TYPE)
+        .eq('monthly_usage_month', currentMonth)
+        .single();
+      
+      if (existingRecord) {
+        // Update existing record
+        await supabaseAdmin
+          .from('ai_usage_tracking')
+          .update({
+            monthly_usage_count: (existingRecord.monthly_usage_count || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+      } else {
+        // Create new record
+        await supabaseAdmin
+          .from('ai_usage_tracking')
+          .insert({
+            user_id: userId,
+            feature_type: USAGE_FEATURE_TYPE,
+            monthly_usage_count: 1,
+            monthly_usage_month: currentMonth,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      }
 
-      console.log('✅ Usage tracked successfully');
+      console.log('✅ Usage tracked successfully in ai_usage_tracking');
       
       // ALSO log to ai_usage_logs for centralized tracking
       await aiUsageService.logUsage({
@@ -757,9 +786,9 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
       productDescription: productDescription.substring(0, 100) + '...',
       model: 'gemini-2.5-flash-image-preview',
       usage: {
-        used: currentWeeklyUsage + 1,
-        limit: WEEKLY_CREATIVE_LIMIT,
-        remaining: WEEKLY_CREATIVE_LIMIT - currentWeeklyUsage - 1
+        used: currentMonthlyUsage + 1,
+        limit: monthlyLimit,
+        remaining: monthlyLimit - currentMonthlyUsage - 1
       }
     });
 
