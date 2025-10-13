@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
     }
 
     const analysisResult = await imageModel.generateContent([
-      "Analyze this product image and provide a detailed description that captures all the important visual details including: colors, patterns, text/logos, fabric texture, shape, style, and any distinctive features. Be very specific and detailed as this will be used to recreate the product in a new setting.",
+      "Analyze this product image and provide a concise description (max 200 words) that captures: colors, key text/logos, shape, and distinctive features. Be specific but brief.",
       {
         inlineData: {
           mimeType: imageMimeType,
@@ -347,7 +347,8 @@ export async function POST(request: NextRequest) {
     ]);
 
     const productDescription = analysisResult.response.text() || 'product';
-    console.log('📝 Product analysis:', productDescription);
+    console.log('📝 Product analysis length:', productDescription.length, 'chars');
+    console.log('📝 Product analysis:', productDescription.substring(0, 500) + '...');
 
     // Step 2: Build the complete prompt with background and modifiers
     
@@ -684,6 +685,18 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
       }
     } catch (imageGenError: any) {
       console.error('Gemini 2.5 Flash Image Generation Error:', imageGenError);
+      console.error('Error status:', imageGenError?.status);
+      console.error('Error details:', imageGenError?.errorDetails);
+      
+      // Check for specific Gemini API errors
+      if (imageGenError?.status === 400) {
+        return NextResponse.json({
+          error: 'Invalid Request',
+          message: 'The image or prompt was rejected by the AI service. This can happen if: 1) Images are too large (try smaller images), 2) The prompt is too complex, or 3) Content violates safety policies. Try using smaller images or simpler custom instructions.',
+          details: imageGenError?.message || 'Bad Request',
+          userFriendly: true
+        }, { status: 400 });
+      }
 
       return NextResponse.json({
         error: 'Image Generation Failed',
