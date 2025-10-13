@@ -1222,18 +1222,19 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Contact Sales */}
+              {/* Contact Sales - Disabled for now */}
               <div className="mt-16 text-center">
                 <div className="bg-gradient-to-br from-[var(--brand-red)]/10 via-[var(--brand-red)]/5 to-transparent border border-[var(--brand-red)]/20 rounded-2xl p-8 max-w-md mx-auto">
                   <h3 className="text-2xl font-bold mb-4 text-white">Need More Than 25 Brands?</h3>
                   <p className="text-white/70 mb-6">
                     Custom enterprise solutions for large-scale operations with unlimited brands and dedicated support.
                   </p>
-                  <Link href="/join-agency">
-                    <Button className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold px-8 py-3 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all">
-                      Contact Sales
-                    </Button>
-                  </Link>
+                  <Button 
+                    disabled
+                    className="bg-[var(--brand-red)]/50 text-black/50 font-bold px-8 py-3 cursor-not-allowed opacity-50"
+                  >
+                    Contact Sales (Coming Soon)
+                  </Button>
                 </div>
               </div>
 
