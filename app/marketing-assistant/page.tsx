@@ -1364,7 +1364,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
             
             {/* AI Optimization Feed - Completely Redesigned */}
-            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
               <CardHeader className="border-b border-[#333]/60 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1381,7 +1381,7 @@ export default function MarketingAssistantPage() {
                         </div>
               </CardHeader>
               
-              <CardContent className="p-3">
+              <CardContent className="p-3 flex-1 overflow-y-auto">
                 <div className="space-y-3">
                   {filteredOptimizations.map(card => {
                     const effortLevel = card.priority === 'high' ? 3 : card.priority === 'medium' ? 2 : 1
@@ -1518,7 +1518,7 @@ export default function MarketingAssistantPage() {
            <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
             
             {/* Performance Trends - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                 <div>
@@ -1647,7 +1647,7 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* Quick Insights - Completely Redesigned */}
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-shrink-0">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col">
               
               <CardHeader className="relative border-b border-[#333]/60 pb-3 flex-shrink-0">
                         <div>
