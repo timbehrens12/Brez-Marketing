@@ -94,6 +94,22 @@ export async function GET(request: NextRequest) {
     )
       .then(result => {
         console.log(`[Meta Callback] Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
+        
+        // Trigger worker to process queued jobs immediately
+        // This ensures the 12-month historical data is actually synced
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/public-worker`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ maxJobs: 10 })
+        })
+          .then(workerRes => {
+            if (workerRes.ok) {
+              console.log('[Meta Callback] Worker triggered successfully to process queued jobs')
+            } else {
+              console.warn('[Meta Callback] Worker trigger returned non-OK status, but jobs are queued')
+            }
+          })
+          .catch(err => console.error('[Meta Callback] Worker trigger failed:', err))
       })
       .catch(error => {
         console.error('[Meta Callback] Background queue backfill failed:', error)
