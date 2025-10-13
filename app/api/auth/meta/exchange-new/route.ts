@@ -151,91 +151,62 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 PROGRESSIVE 12-MONTH SYNC: Sync in 7-day chunks with immediate storage
-    console.log(`[Meta Exchange NEW] 🎯 PROGRESSIVE 12-MONTH SYNC: Starting chunked sync`)
+    // 🎯 IMMEDIATE SYNC: Just sync last 7 days now, queue the rest
+    console.log(`[Meta Exchange NEW] 🎯 IMMEDIATE SYNC: Syncing last 7 days immediately`)
     
-    // Calculate 12-month date range
     const endDate = new Date()
-    const startDate = new Date()
-    startDate.setFullYear(startDate.getFullYear() - 1) // 12 months ago
+    const recentStartDate = new Date()
+    recentStartDate.setDate(recentStartDate.getDate() - 7)
     
-    console.log(`[Meta Exchange NEW] 📅 Syncing from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+    console.log(`[Meta Exchange NEW] 📅 Immediate sync: ${recentStartDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
     // Import the meta sync service
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
     
-    // Create 7-day chunks to stay under Vercel timeout
-    const createWeekChunks = (start: Date, end: Date) => {
-      const chunks: { start: Date; end: Date }[] = []
-      let current = new Date(start)
-      
-      while (current <= end) {
-        const chunkStart = new Date(current)
-        const chunkEnd = new Date(current)
-        chunkEnd.setDate(chunkEnd.getDate() + 6) // 7 days
-        
-        if (chunkEnd > end) {
-          chunkEnd.setTime(end.getTime())
-        }
-        
-        chunks.push({ start: chunkStart, end: chunkEnd })
-        
-        current = new Date(chunkEnd)
-        current.setDate(current.getDate() + 1)
-      }
-      
-      return chunks
+    // Sync last 7 days immediately (fast, under 10 seconds)
+    try {
+      const recentResult = await fetchMetaAdInsights(state, recentStartDate, endDate, false, false)
+      console.log(`[Meta Exchange NEW] ✅ Immediate 7-day sync complete: ${recentResult.count || 0} records`)
+    } catch (recentError) {
+      console.error(`[Meta Exchange NEW] ❌ Immediate sync failed:`, recentError)
     }
     
-    const weekChunks = createWeekChunks(startDate, endDate)
-    console.log(`[Meta Exchange NEW] Created ${weekChunks.length} 7-day chunks`)
+    // Queue the full 12-month historical sync to run in background via cron
+    console.log(`[Meta Exchange NEW] 📋 Queueing 12-month historical sync jobs...`)
     
-    // Sync each chunk sequentially with immediate storage
-    let totalSynced = 0
-    let errors = 0
+    const { MetaQueueService } = await import('@/lib/services/metaQueueService')
     
-    for (let i = 0; i < weekChunks.length; i++) {
-      const chunk = weekChunks[i]
-      console.log(`[Meta Exchange NEW] 🔄 Syncing chunk ${i + 1}/${weekChunks.length}: ${chunk.start.toISOString().split('T')[0]} → ${chunk.end.toISOString().split('T')[0]}`)
-      
-      try {
-        const result = await fetchMetaAdInsights(state, chunk.start, chunk.end, false, i > 0) // Skip demographics after first chunk
-        
-        if (result.success) {
-          totalSynced += result.count || 0
-          console.log(`[Meta Exchange NEW] ✅ Chunk ${i + 1}/${weekChunks.length} complete: ${result.count || 0} records`)
-        } else {
-          errors++
-          console.error(`[Meta Exchange NEW] ❌ Chunk ${i + 1}/${weekChunks.length} failed:`, result.error)
-        }
-      } catch (chunkError) {
-        errors++
-        console.error(`[Meta Exchange NEW] ❌ Chunk ${i + 1}/${weekChunks.length} exception:`, chunkError)
-      }
+    try {
+      await MetaQueueService.queueCompleteHistoricalSync(
+        state,
+        connectionData.id,
+        tokenData.access_token,
+        accountId,
+        undefined // Will default to 12 months ago
+      )
+      console.log(`[Meta Exchange NEW] ✅ Historical sync jobs queued - cron will process them`)
+    } catch (queueError) {
+      console.error(`[Meta Exchange NEW] ⚠️ Failed to queue historical sync:`, queueError)
     }
-    
-    console.log(`[Meta Exchange NEW] 🎉 Progressive sync COMPLETE! Synced ${totalSynced} records across ${weekChunks.length} chunks (${errors} errors)`)
     
     const completionMetadata = {
       ...metadataWithFlag,
       full_sync_in_progress: false,
       last_full_sync_completed_at: new Date().toISOString(),
-      last_full_sync_result: errors === 0 ? 'success' : 'partial',
-      total_chunks: weekChunks.length,
-      successful_chunks: weekChunks.length - errors
+      last_full_sync_result: 'queued'
     }
     
-    // Mark sync as completed
+    // Mark sync as completed (recent data done, historical queued)
     await supabase
       .from('platform_connections')
       .update({ 
-        sync_status: errors === 0 ? 'completed' : 'partial',
+        sync_status: 'completed',
         last_synced_at: new Date().toISOString(),
         metadata: completionMetadata
       })
       .eq('id', connectionData.id)
     
-    return NextResponse.json({ success: true, totalSynced, chunks: weekChunks.length, errors })
+    return NextResponse.json({ success: true, message: 'Recent data synced, historical data queued' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
