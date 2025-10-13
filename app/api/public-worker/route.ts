@@ -102,89 +102,121 @@ export async function POST(request: NextRequest) {
     }
     
     // Then process other jobs if we haven't reached maxJobs
-    for (let i = 0; i < Math.min(allWaitingJobs.length, maxJobs - processedCount); i++) {
-      const job = allWaitingJobs[i]
+    // 🚀 PARALLEL PROCESSING: Process jobs in parallel with concurrency limit for 5x faster performance
+    const jobsToProcess = allWaitingJobs.slice(0, Math.min(allWaitingJobs.length, maxJobs - processedCount))
+    const concurrency = 5 // Process 5 jobs in parallel (5x faster than sequential)
+    
+    console.log(`[Public Worker] 🚀 Processing ${jobsToProcess.length} jobs with concurrency ${concurrency}`)
+    
+    // Split jobs into chunks for parallel processing
+    for (let i = 0; i < jobsToProcess.length; i += concurrency) {
+      const chunk = jobsToProcess.slice(i, i + concurrency)
+      console.log(`[Public Worker] Processing chunk ${Math.floor(i / concurrency) + 1}/${Math.ceil(jobsToProcess.length / concurrency)} (${chunk.length} jobs)`)
       
-      try {
-        console.log(`[Public Worker] Processing ${job.name} job ${job.id}`)
-        
-        // Determine if this is a Meta or Shopify job
-        const isMetaJob = metaWaiting.includes(job)
-        console.log(`[Public Worker] Job ${job.id} is ${isMetaJob ? 'Meta' : 'Shopify'} job`)
-        
-        // Process the job based on its type and origin
-        if (isMetaJob) {
-          // Meta jobs
-          switch (job.name) {
-            case 'recent_sync':
-              await MetaWorker.processRecentSync(job)
-              break
-            case 'historical_campaigns':
-              await MetaWorker.processHistoricalCampaigns(job)
-              break
-            case 'historical_demographics':
-              await MetaWorker.processHistoricalDemographics(job)
-              break
-            case 'historical_insights':
-              await MetaWorker.processHistoricalInsights(job)
-              break
-            case 'daily_sync':
-              await MetaWorker.processDailySync(job)
-              break
-            case 'reconcile':
-              await MetaWorker.processReconcile(job)
-              break
-            default:
-              console.warn(`[Public Worker] Unknown Meta job type: ${job.name}`)
-              await metaQueue.moveToFailed(job.id, new Error(`Unknown Meta job type: ${job.name}`))
-              continue
+      // Process this chunk in parallel
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async (job) => {
+          try {
+            console.log(`[Public Worker] Processing ${job.name} job ${job.id}`)
+            
+            // Determine if this is a Meta or Shopify job
+            const isMetaJob = metaWaiting.includes(job)
+            console.log(`[Public Worker] Job ${job.id} is ${isMetaJob ? 'Meta' : 'Shopify'} job`)
+            
+            // Process the job based on its type and origin
+            if (isMetaJob) {
+              // Meta jobs
+              switch (job.name) {
+                case 'recent_sync':
+                  await MetaWorker.processRecentSync(job)
+                  break
+                case 'historical_campaigns':
+                  await MetaWorker.processHistoricalCampaigns(job)
+                  break
+                case 'historical_demographics':
+                  await MetaWorker.processHistoricalDemographics(job)
+                  break
+                case 'historical_insights':
+                  await MetaWorker.processHistoricalInsights(job)
+                  break
+                case 'daily_sync':
+                  await MetaWorker.processDailySync(job)
+                  break
+                case 'reconcile':
+                  await MetaWorker.processReconcile(job)
+                  break
+                default:
+                  console.warn(`[Public Worker] Unknown Meta job type: ${job.name}`)
+                  await metaQueue.moveToFailed(job.id, new Error(`Unknown Meta job type: ${job.name}`))
+                  throw new Error(`Unknown Meta job type: ${job.name}`)
+              }
+            } else {
+              // Shopify jobs
+              switch (job.name) {
+                case 'recent_sync':
+                  await ShopifyWorker.processRecentSync(job)
+                  break
+                case 'bulk_orders':
+                  await ShopifyWorker.processBulkOrders(job)
+                  break
+                case 'bulk_customers':
+                  await ShopifyWorker.processBulkCustomers(job)
+                  break
+                case 'bulk_products':
+                  await ShopifyWorker.processBulkProducts(job)
+                  break
+                case 'real_time_order':
+                  await ShopifyWorker.processRealTimeOrder(job)
+                  break
+                case 'real_time_customer':
+                  await ShopifyWorker.processRealTimeCustomer(job)
+                  break
+                case 'real_time_product':
+                  await ShopifyWorker.processRealTimeProduct(job)
+                  break
+                default:
+                  console.warn(`[Public Worker] Unknown Shopify job type: ${job.name}`)
+                  await shopifyQueue.moveToFailed(job.id, new Error(`Unknown Shopify job type: ${job.name}`))
+                  throw new Error(`Unknown Shopify job type: ${job.name}`)
+              }
+            }
+            
+            return {
+              id: job.id,
+              name: job.name,
+              status: 'completed'
+            }
+          } catch (error) {
+            console.error(`[Public Worker] Error processing job ${job.id}:`, error)
+            return {
+              id: job.id,
+              name: job.name,
+              status: 'failed',
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }
+        })
+      )
+      
+      // Collect results from this chunk
+      for (const result of chunkResults) {
+        if (result.status === 'fulfilled') {
+          results.push(result.value)
+          if (result.value.status === 'completed') {
+            processedCount++
           }
         } else {
-          // Shopify jobs
-          switch (job.name) {
-            case 'recent_sync':
-              await ShopifyWorker.processRecentSync(job)
-              break
-            case 'bulk_orders':
-              await ShopifyWorker.processBulkOrders(job)
-              break
-            case 'bulk_customers':
-              await ShopifyWorker.processBulkCustomers(job)
-              break
-            case 'bulk_products':
-              await ShopifyWorker.processBulkProducts(job)
-              break
-            case 'real_time_order':
-              await ShopifyWorker.processRealTimeOrder(job)
-              break
-            case 'real_time_customer':
-              await ShopifyWorker.processRealTimeCustomer(job)
-              break
-            case 'real_time_product':
-              await ShopifyWorker.processRealTimeProduct(job)
-              break
-            default:
-              console.warn(`[Public Worker] Unknown Shopify job type: ${job.name}`)
-              await shopifyQueue.moveToFailed(job.id, new Error(`Unknown Shopify job type: ${job.name}`))
-              continue
-          }
+          console.error(`[Public Worker] Job promise rejected:`, result.reason)
+          results.push({
+            id: 'unknown',
+            name: 'unknown',
+            status: 'failed',
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+          })
         }
-        
-        results.push({
-          id: job.id,
-          name: job.name,
-          status: 'completed'
-        })
-        processedCount++
-      } catch (error) {
-        console.error(`[Public Worker] Error processing job ${job.id}:`, error)
-        results.push({
-          id: job.id,
-          name: job.name,
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
       }
+      
+      console.log(`[Public Worker] ✅ Chunk complete - Processed: ${processedCount}/${jobsToProcess.length}`)
     }
     
     console.log(`[Public Worker] Processed ${processedCount} jobs`)
