@@ -179,8 +179,8 @@ export class MetaQueueService {
     
     console.log(`[Meta Queue] Created ${chunks.length} chunks for historical backfill`)
 
-    // Queue all historical job types with progressive delays
-    let delayMs = 0
+    // Queue all historical job types with NO delays (60s timeout allows batch processing)
+    // Priority system will handle order: campaigns (8) > demographics (6) > insights (4)
     
     // 1. Historical Campaigns (priority - need this first)
     for (let i = 0; i < chunks.length; i++) {
@@ -200,14 +200,12 @@ export class MetaQueueService {
           chunkType: 'campaigns'
         }
       } as MetaHistoricalJobData, { 
-        delay: delayMs,
+        delay: 0, // No delay - process immediately
         priority: 8 // High priority for campaigns
       })
-      delayMs += 5000 // 5 second delay between campaign chunks
     }
 
-    // 2. Historical Demographics (after campaigns)
-    delayMs += 30000 // 30 second gap before starting demographics
+    // 2. Historical Demographics (after campaigns via priority)
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       await this.addJob(MetaJobType.HISTORICAL_DEMOGRAPHICS, {
@@ -225,14 +223,12 @@ export class MetaQueueService {
           chunkType: 'demographics'
         }
       } as MetaHistoricalJobData, { 
-        delay: delayMs,
+        delay: 0, // No delay - process immediately
         priority: 6 // Medium priority for demographics
       })
-      delayMs += 8000 // 8 second delay between demographic chunks
     }
 
     // 3. Historical Daily Insights (lowest priority, most comprehensive)
-    delayMs += 60000 // 1 minute gap before starting insights
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       await this.addJob(MetaJobType.HISTORICAL_INSIGHTS, {
@@ -250,13 +246,12 @@ export class MetaQueueService {
           chunkType: 'insights'
         }
       } as MetaHistoricalJobData, { 
-        delay: delayMs,
+        delay: 0, // No delay - process immediately
         priority: 4 // Lower priority for insights
       })
-      delayMs += 10000 // 10 second delay between insight chunks
     }
 
-    console.log(`[Meta Queue] Queued ${chunks.length * 3} historical jobs with total estimated time: ${Math.ceil(delayMs / 60000)} minutes`)
+    console.log(`[Meta Queue] Queued ${chunks.length * 3} historical jobs (no delays - priority-based processing)`)
   }
 
   /**
