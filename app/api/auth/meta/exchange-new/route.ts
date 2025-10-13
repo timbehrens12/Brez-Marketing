@@ -109,19 +109,20 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 COMPLETE SEPTEMBER SYNC: Use the same logic that worked in nuclear reset
-    console.log(`[Meta Exchange NEW] 🎯 COMPLETE SEPTEMBER SYNC: Using proven nuclear reset logic`)
+    // 🎯 12-MONTH HISTORICAL SYNC: Fetch full year of data
+    console.log(`[Meta Exchange NEW] 🎯 12-MONTH HISTORICAL SYNC: Fetching complete year of data`)
     
     let syncedInsights = 0
     try {
       // Import the SAME Meta service that worked in nuclear reset
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // Use SAME date range as nuclear reset: September 1-24
-      const startDate = new Date('2025-09-01')
-      const endDate = new Date('2025-09-24') // Up to today
+      // Use 12-month date range for complete historical data
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setFullYear(endDate.getFullYear() - 1) // 12 months back
       
-      console.log(`[Meta Exchange NEW] 🎯 Syncing September 1-24 WITH demographics: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+      console.log(`[Meta Exchange NEW] 🎯 Syncing 12 months WITH demographics: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
       
       // Call the SAME Meta service that worked perfectly in nuclear reset
       const result = await fetchMetaAdInsights(
