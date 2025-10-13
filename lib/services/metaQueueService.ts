@@ -114,10 +114,16 @@ export class MetaQueueService {
         etlJobId
       }
 
-      await metaQueue.add(jobType, jobDataWithEtl, { ...defaultOptions, ...options })
-      console.log(`[Meta Queue] ✅ Added ${jobType} job for brand ${data.brandId} with ETL tracking`)
+      console.log(`[Meta Queue] 🔄 About to add ${jobType} job to queue...`)
+      const job = await metaQueue.add(jobType, jobDataWithEtl, { ...defaultOptions, ...options })
+      console.log(`[Meta Queue] ✅ Added ${jobType} job for brand ${data.brandId} with job ID: ${job.id}`)
     } catch (error) {
       console.error(`[Meta Queue] ❌ Failed to add ${jobType} job:`, error)
+      console.error(`[Meta Queue] ❌ Error details:`, {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
       // Don't throw - let the sync continue without background jobs
       console.warn(`[Meta Queue] ⚠️ Continuing without background sync for ${jobType}`)
     }

@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       // Remove jobs for this brand that reference old connection IDs
       for (const job of [...waiting, ...active]) {
         if (job.data?.brandId === state && job.data?.connectionId !== connectionData.id) {
-          await metaQueue.remove(job.id)
+          await job.remove()
           console.log(`[Meta Exchange NEW] Removed orphaned job ${job.id} with old connection ${job.data.connectionId}`)
           cleanedCount++
         }
