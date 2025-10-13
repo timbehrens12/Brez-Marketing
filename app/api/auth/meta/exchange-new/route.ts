@@ -151,56 +151,34 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🚀 QSTASH SYNC: Sync last 7 days immediately, queue 12-month backfill with QStash
-    console.log(`[Meta Exchange NEW] 🚀 QSTASH SYNC: Starting immediate + queued sync`)
+    // 🎯 SIMPLE SYNC: Just sync last 90 days immediately (fits in 60s timeout)
+    console.log(`[Meta Exchange NEW] 🎯 SIMPLE SYNC: Syncing last 90 days immediately`)
     
     const endDate = new Date()
-    const recentStartDate = new Date()
-    recentStartDate.setDate(recentStartDate.getDate() - 7)
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 90) // 90 days = ~3 months
     
-    console.log(`[Meta Exchange NEW] 📅 Immediate sync: ${recentStartDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+    console.log(`[Meta Exchange NEW] 📅 Syncing: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    // Import services
+    // Import service
     const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-    const { QStashService } = await import('@/lib/services/qstashService')
     
-    // Sync last 7 days immediately (fast, under 10 seconds)
+    // Sync 90 days immediately (should complete in ~30-40 seconds)
     try {
-      const recentResult = await fetchMetaAdInsights(state, recentStartDate, endDate, false, false)
-      console.log(`[Meta Exchange NEW] ✅ Immediate 7-day sync complete: ${recentResult.count || 0} records`)
-    } catch (recentError) {
-      console.error(`[Meta Exchange NEW] ❌ Immediate sync failed:`, recentError)
-    }
-    
-    // Queue the full 12-month historical sync with QStash (serverless-friendly)
-    console.log(`[Meta Exchange NEW] 📋 Queueing 12-month historical sync with QStash...`)
-    
-    try {
-      const queueResult = await QStashService.queueMetaHistoricalBackfill(
-        state,
-        connectionData.id,
-        tokenData.access_token,
-        accountId,
-        undefined // Will default to 12 months ago
-      )
-      
-      if (queueResult.success) {
-        console.log(`[Meta Exchange NEW] ✅ QStash queued ${queueResult.totalJobs} jobs, estimated: ${queueResult.estimatedMinutes} minutes`)
-      } else {
-        console.warn(`[Meta Exchange NEW] ⚠️ QStash queue failed - check QSTASH_TOKEN env var`)
-      }
-    } catch (queueError) {
-      console.error(`[Meta Exchange NEW] ⚠️ Failed to queue with QStash:`, queueError)
+      const result = await fetchMetaAdInsights(state, startDate, endDate, false, false)
+      console.log(`[Meta Exchange NEW] ✅ 90-day sync complete: ${result.count || 0} records`)
+    } catch (syncError) {
+      console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
     }
     
     const completionMetadata = {
       ...metadataWithFlag,
       full_sync_in_progress: false,
       last_full_sync_completed_at: new Date().toISOString(),
-      last_full_sync_result: 'queued_qstash'
+      last_full_sync_result: 'success_90_days'
     }
     
-    // Mark sync as completed (recent data done, historical queued)
+    // Mark sync as completed
     await supabase
       .from('platform_connections')
       .update({ 
@@ -210,7 +188,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', connectionData.id)
     
-    return NextResponse.json({ success: true, message: 'Recent data synced, 12-month backfill queued with QStash' })
+    return NextResponse.json({ success: true, message: '90-day data synced successfully' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
