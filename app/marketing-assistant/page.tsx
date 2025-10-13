@@ -307,12 +307,34 @@ export default function MarketingAssistantPage() {
   // Load viewed state and completed items from localStorage
   useEffect(() => {
     if (!selectedBrandId) return
-    const viewed = localStorage.getItem(`recommendationsViewed_${selectedBrandId}`)
-    if (viewed === 'true') {
-      setRecommendationsViewed(true)
-    } else {
-      setRecommendationsViewed(false)
+    
+    // Check if there's actual usage tracking in the database
+    // If not, clear localStorage (handles manual database resets)
+    const checkUsageTracking = async () => {
+      try {
+        const response = await fetch(`/api/ai/check-usage?brandId=${selectedBrandId}&feature=marketing_analysis`)
+        const data = await response.json()
+        
+        if (!data.hasUsage) {
+          // No usage tracking exists - clear localStorage
+          localStorage.removeItem(`recommendationsViewed_${selectedBrandId}`)
+          setRecommendationsViewed(false)
+          return
+        }
+      } catch (error) {
+        console.error('Error checking usage:', error)
+      }
+      
+      // Normal flow - check localStorage
+      const viewed = localStorage.getItem(`recommendationsViewed_${selectedBrandId}`)
+      if (viewed === 'true') {
+        setRecommendationsViewed(true)
+      } else {
+        setRecommendationsViewed(false)
+      }
     }
+    
+    checkUsageTracking()
     
     const completed = localStorage.getItem(`completedItems_${selectedBrandId}`)
     if (completed) {
@@ -1361,7 +1383,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Column - Main Work Area - Scrollable */}
-           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
+           <div className="col-span-1 xl:col-span-6 flex flex-col gap-4 min-w-0 h-full">
             
             {/* AI Optimization Feed - Completely Redesigned */}
             <Card className="bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
@@ -1515,7 +1537,7 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Right Rail - Insights Column - Scrollable */}
-           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full overflow-y-auto pr-1 rounded-b-xl border-b border-[#333] pb-4">
+           <div className="col-span-1 xl:col-span-3 flex flex-col gap-4 min-w-0 h-full">
             
             {/* Performance Trends - Completely Redesigned */}
             <Card className="relative overflow-hidden bg-gradient-to-br from-[#111]/80 to-[#0A0A0A]/80 border border-[#333] backdrop-blur-sm flex-1 flex flex-col">
