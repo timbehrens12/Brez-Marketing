@@ -183,6 +183,7 @@ export class MetaQueueService {
     // Priority system will handle order: campaigns (8) > demographics (6) > insights (4)
     
     // 1. Historical Campaigns (priority - need this first)
+    console.log(`[Meta Queue] 📋 Queueing ${chunks.length} HISTORICAL_CAMPAIGNS jobs...`)
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       await this.addJob(MetaJobType.HISTORICAL_CAMPAIGNS, {
@@ -203,9 +204,12 @@ export class MetaQueueService {
         delay: 0, // No delay - process immediately
         priority: 8 // High priority for campaigns
       })
+      console.log(`[Meta Queue] ✅ Queued HISTORICAL_CAMPAIGNS job ${i + 1}/${chunks.length}: ${chunk.start} to ${chunk.end}`)
     }
+    console.log(`[Meta Queue] ✅ All ${chunks.length} HISTORICAL_CAMPAIGNS jobs queued`)
 
     // 2. Historical Demographics (after campaigns via priority)
+    console.log(`[Meta Queue] 📋 Queueing ${chunks.length} HISTORICAL_DEMOGRAPHICS jobs...`)
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       await this.addJob(MetaJobType.HISTORICAL_DEMOGRAPHICS, {
@@ -226,9 +230,12 @@ export class MetaQueueService {
         delay: 0, // No delay - process immediately
         priority: 6 // Medium priority for demographics
       })
+      console.log(`[Meta Queue] ✅ Queued HISTORICAL_DEMOGRAPHICS job ${i + 1}/${chunks.length}: ${chunk.start} to ${chunk.end}`)
     }
+    console.log(`[Meta Queue] ✅ All ${chunks.length} HISTORICAL_DEMOGRAPHICS jobs queued`)
 
     // 3. Historical Daily Insights (lowest priority, most comprehensive)
+    console.log(`[Meta Queue] 📋 Queueing ${chunks.length} HISTORICAL_INSIGHTS jobs...`)
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       await this.addJob(MetaJobType.HISTORICAL_INSIGHTS, {
@@ -249,9 +256,11 @@ export class MetaQueueService {
         delay: 0, // No delay - process immediately
         priority: 4 // Lower priority for insights
       })
+      console.log(`[Meta Queue] ✅ Queued HISTORICAL_INSIGHTS job ${i + 1}/${chunks.length}: ${chunk.start} to ${chunk.end}`)
     }
+    console.log(`[Meta Queue] ✅ All ${chunks.length} HISTORICAL_INSIGHTS jobs queued`)
 
-    console.log(`[Meta Queue] Queued ${chunks.length * 3} historical jobs (no delays - priority-based processing)`)
+    console.log(`[Meta Queue] 🎉 TOTAL: Queued ${chunks.length * 3} historical jobs (${chunks.length} campaigns + ${chunks.length} demographics + ${chunks.length} insights) - no delays, priority-based processing`)
   }
 
   /**
