@@ -1231,7 +1231,7 @@ export default function HomePage() {
                   </p>
                   <Button 
                     disabled
-                    className="bg-[var(--brand-red)]/50 text-black/50 font-bold px-8 py-3 cursor-not-allowed opacity-50"
+                    className="bg-[var(--brand-red)] text-black font-bold px-8 py-3 cursor-not-allowed opacity-60 shadow-[0_4px_0_rgba(0,0,0,.2)]"
                   >
                     Contact Sales (Coming Soon)
                   </Button>
