@@ -432,9 +432,32 @@ export async function GET(request: NextRequest) {
         } else {
           console.log(`[API /api/metrics/meta] No records found in meta_ad_daily_insights for the range.`);
           
-          // No data found for the requested date range - return zeros
-          console.log(`[API /api/metrics/meta] No data found for date range, returning zeros`)
-          insightsForProcessing = []
+          // Fallback: try meta_ad_insights for the same date range
+          try {
+            const { data: fallbackInsights, error: fallbackError } = await supabase
+              .from('meta_ad_insights')
+              .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc, ad_id, updated_at')
+              .eq('brand_id', brandId)
+              .gte('date', fromDate)
+              .lte('date', toDate)
+              .order('date', { ascending: true })
+              .limit(2000);
+
+            if (fallbackError) {
+              console.error(`[API /api/metrics/meta] Fallback to meta_ad_insights failed:`, fallbackError);
+            } else if (fallbackInsights && fallbackInsights.length > 0) {
+              console.log(`[API /api/metrics/meta] ✅ Fallback succeeded: using ${fallbackInsights.length} records from meta_ad_insights.`);
+              // Normalize spend field to 'spent' to match downstream processing
+              insightsForProcessing = fallbackInsights.map((r: any) => ({ ...r, spent: r.spend }));
+            } else {
+              // No data found for the requested date range - return zeros downstream
+              console.log(`[API /api/metrics/meta] No data found in fallback table for date range`)
+              insightsForProcessing = []
+            }
+          } catch (fbErr) {
+            console.error(`[API /api/metrics/meta] Exception during fallback fetch:`, fbErr);
+            insightsForProcessing = []
+          }
           
           // DISABLED: Handle midnight boundary case - was too aggressive and prevented real data
           // The original logic was forcing zero values when no data existed for today

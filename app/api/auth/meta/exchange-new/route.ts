@@ -167,26 +167,6 @@ export async function POST(request: NextRequest) {
     try {
       const result = await fetchMetaAdInsights(state, startDate, endDate, false, false)
       console.log(`[Meta Exchange NEW] ✅ 90-day sync complete: ${result.count || 0} records`)
-      
-      // 🔥 CRITICAL: Also call the regular sync endpoint to populate meta_ad_daily_insights (account-level data)
-      // This is what the dashboard actually uses for campaign widgets
-      console.log(`[Meta Exchange NEW] 📊 Calling full sync to populate account-level data...`)
-      const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          brandId: state,
-          days: 90, // Sync last 90 days
-          force: true
-        })
-      })
-      
-      if (syncResponse.ok) {
-        const syncData = await syncResponse.json()
-        console.log(`[Meta Exchange NEW] ✅ Account-level sync complete:`, syncData)
-      } else {
-        console.error(`[Meta Exchange NEW] ⚠️ Account-level sync failed with status ${syncResponse.status}`)
-      }
     } catch (syncError) {
       console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
     }

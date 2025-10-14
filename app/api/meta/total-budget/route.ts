@@ -305,6 +305,31 @@ export async function GET(req: NextRequest) {
         }
         
         adSets = activeAdSetsData;
+
+        // Fallback: If DB has zero budgets but we have active campaigns, try one-time direct refresh
+        const totalDbBudget = (adSets || []).reduce((sum: number, a: any) => sum + (parseFloat(a.budget) || 0), 0)
+        if (forceRefresh && totalDbBudget === 0) {
+          console.log('[Total Meta Budget] DB shows $0 budget with active campaigns. Attempting one-time direct Meta refresh...')
+          try {
+            const base = process.env.NEXT_PUBLIC_APP_URL || ''
+            const refreshUrl = base ? `${base}/api/meta/adsets/refresh?brandId=${brandId}` : `/api/meta/adsets/refresh?brandId=${brandId}`
+            const refreshRes = await fetch(refreshUrl, { method: 'POST' })
+            const refreshJson = await refreshRes.json().catch(() => ({}))
+            console.log('[Total Meta Budget] One-time refresh result:', refreshJson)
+            // Re-query after refresh
+            const { data: refreshedAdSets } = await supabase
+              .from('meta_adsets')
+              .select('adset_id, adset_name, campaign_id, status, budget, budget_type')
+              .eq('brand_id', brandId)
+              .in('campaign_id', campaignIds)
+              .eq('status', 'ACTIVE')
+            if (refreshedAdSets) {
+              adSets = refreshedAdSets
+            }
+          } catch (e) {
+            console.warn('[Total Meta Budget] One-time direct refresh failed, continuing with DB data')
+          }
+        }
         console.log(`[Total Meta Budget] Found ${adSets?.length || 0} active ad sets in active campaigns`);
         console.log('[Total Meta Budget] Active ad sets:', adSets?.map(a => `${a.adset_name} (${a.status})`));
         

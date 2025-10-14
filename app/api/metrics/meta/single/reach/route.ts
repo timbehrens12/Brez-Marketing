@@ -67,12 +67,21 @@ export async function GET(request: NextRequest) {
     const adSetIds = adSets.map((adSet: any) => adSet.adset_id);
     
     // Get insights for these ad sets in the date range
-    const { data: insights, error: insightsError } = await supabase
-      .from('meta_adset_daily_insights')
-      .select('*')
-      .in('adset_id', adSetIds)
-      .gte('date', from)
-      .lte('date', to)
+    let insights: any[] | null = null
+    let insightsError: any = null
+    try {
+      const res = await supabase
+        .from('meta_adset_daily_insights')
+        .select('*')
+        .in('adset_id', adSetIds)
+        .gte('date', from)
+        .lte('date', to)
+      insights = res.data
+      insightsError = res.error
+    } catch (e) {
+      insights = null
+      insightsError = e
+    }
     
     if (insightsError) {
       console.log(`Error retrieving ad set insights: ${JSON.stringify(insightsError)}`)
@@ -80,7 +89,23 @@ export async function GET(request: NextRequest) {
     }
     
     if (!insights || insights.length === 0) {
-      console.log(`No ad set insights found for date range ${from} to ${to}`)
+      console.log(`No ad set insights found for date range ${from} to ${to} in meta_adset_daily_insights, falling back to meta_ad_daily_insights`)
+      // Fallback to ad-level daily insights aggregated by adset via join on ad_id -> meta_ads
+      const { data: adLevelInsights, error: adLevelError } = await supabase
+        .from('meta_ad_daily_insights')
+        .select('ad_id, reach, date')
+        .eq('brand_id', brandId)
+        .gte('date', from)
+        .lte('date', to)
+        .limit(2000)
+      if (!adLevelError && adLevelInsights && adLevelInsights.length > 0) {
+        // Sum reach across ads as a conservative fallback
+        const fallbackReach = adLevelInsights.reduce((sum: number, i: any) => sum + Number(i.reach || 0), 0)
+        return NextResponse.json({
+          value: fallbackReach,
+          _meta: { from, to, source: 'meta_ad_daily_insights_fallback', records: adLevelInsights.length }
+        })
+      }
       return NextResponse.json({ value: 0 })
     }
     
