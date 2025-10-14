@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 SIMPLE SYNC: Just sync last 90 days immediately (fits in 60s timeout)
-    console.log(`[Meta Exchange NEW] 🎯 SIMPLE SYNC: Syncing last 90 days immediately`)
+    // 🎯 SIMPLE SYNC: Sync last 90 days of ALL data immediately (fits in 60s timeout)
+    console.log(`[Meta Exchange NEW] 🎯 SIMPLE SYNC: Syncing last 90 days of campaigns, adsets, and insights`)
     
     const endDate = new Date()
     const startDate = new Date()
@@ -160,13 +160,27 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Exchange NEW] 📅 Syncing: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    // Import service
-    const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+    // Import services
+    const { fetchMetaAdInsights, syncMetaCampaigns, syncMetaAdSets } = await import('@/lib/services/meta-service')
     
-    // Sync 90 days immediately (should complete in ~30-40 seconds)
+    // Sync in order: campaigns → adsets → insights (since insights depend on campaigns)
     try {
-      const result = await fetchMetaAdInsights(state, startDate, endDate, false, false)
-      console.log(`[Meta Exchange NEW] ✅ 90-day sync complete: ${result.count || 0} records`)
+      // 1. Sync campaigns first (contains budget info)
+      console.log(`[Meta Exchange NEW] 📋 Syncing campaigns...`)
+      const campaignsResult = await syncMetaCampaigns(state, startDate, endDate)
+      console.log(`[Meta Exchange NEW] ✅ Campaigns sync complete: ${campaignsResult.count || 0} campaigns`)
+      
+      // 2. Sync adsets (contains targeting/placement info)
+      console.log(`[Meta Exchange NEW] 📊 Syncing adsets...`)
+      const adsetsResult = await syncMetaAdSets(state, startDate, endDate)
+      console.log(`[Meta Exchange NEW] ✅ Adsets sync complete: ${adsetsResult.count || 0} adsets`)
+      
+      // 3. Sync insights + demographics
+      console.log(`[Meta Exchange NEW] 📈 Syncing insights & demographics...`)
+      const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
+      console.log(`[Meta Exchange NEW] ✅ Insights sync complete: ${insightsResult.count || 0} records`)
+      
+      console.log(`[Meta Exchange NEW] 🎉 COMPLETE - Campaigns: ${campaignsResult.count || 0}, Adsets: ${adsetsResult.count || 0}, Insights: ${insightsResult.count || 0}`)
     } catch (syncError) {
       console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
     }
