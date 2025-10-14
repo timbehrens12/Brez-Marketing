@@ -161,26 +161,39 @@ export async function POST(request: NextRequest) {
     console.log(`[Meta Exchange NEW] 📅 Syncing: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
     // Import services
-    const { fetchMetaAdInsights, syncMetaCampaigns, syncMetaAdSets } = await import('@/lib/services/meta-service')
+    const { fetchMetaAdInsights, fetchMetaCampaignBudgets, fetchMetaAdSets } = await import('@/lib/services/meta-service')
     
-    // Sync in order: campaigns → adsets → insights (since insights depend on campaigns)
+    // Sync in order: campaigns → adsets → insights
     try {
-      // 1. Sync campaigns first (contains budget info)
-      console.log(`[Meta Exchange NEW] 📋 Syncing campaigns...`)
-      const campaignsResult = await syncMetaCampaigns(state, startDate, endDate)
-      console.log(`[Meta Exchange NEW] ✅ Campaigns sync complete: ${campaignsResult.count || 0} campaigns`)
+      // 1. Fetch campaigns first (contains budget info)
+      console.log(`[Meta Exchange NEW] 📋 Fetching campaigns...`)
+      const campaignsResult = await fetchMetaCampaignBudgets(state, true)
+      const campaignCount = campaignsResult.budgets?.length || 0
+      console.log(`[Meta Exchange NEW] ✅ Campaigns fetched: ${campaignCount} campaigns`)
       
-      // 2. Sync adsets (contains targeting/placement info)
-      console.log(`[Meta Exchange NEW] 📊 Syncing adsets...`)
-      const adsetsResult = await syncMetaAdSets(state, startDate, endDate)
-      console.log(`[Meta Exchange NEW] ✅ Adsets sync complete: ${adsetsResult.count || 0} adsets`)
+      // 2. Fetch adsets for each campaign (contains targeting/placement info)
+      console.log(`[Meta Exchange NEW] 📊 Fetching adsets for ${campaignCount} campaigns...`)
+      let totalAdsets = 0
+      if (campaignsResult.success && campaignsResult.budgets) {
+        for (const campaign of campaignsResult.budgets) {
+          try {
+            const adsetsResult = await fetchMetaAdSets(state, campaign.campaign_id, true)
+            if (adsetsResult.success) {
+              totalAdsets += adsetsResult.adsets?.length || 0
+            }
+          } catch (adsetError) {
+            console.warn(`[Meta Exchange NEW] Failed to fetch adsets for campaign ${campaign.campaign_id}:`, adsetError)
+          }
+        }
+      }
+      console.log(`[Meta Exchange NEW] ✅ Adsets fetched: ${totalAdsets} adsets`)
       
       // 3. Sync insights + demographics
       console.log(`[Meta Exchange NEW] 📈 Syncing insights & demographics...`)
       const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
       console.log(`[Meta Exchange NEW] ✅ Insights sync complete: ${insightsResult.count || 0} records`)
       
-      console.log(`[Meta Exchange NEW] 🎉 COMPLETE - Campaigns: ${campaignsResult.count || 0}, Adsets: ${adsetsResult.count || 0}, Insights: ${insightsResult.count || 0}`)
+      console.log(`[Meta Exchange NEW] 🎉 COMPLETE - Campaigns: ${campaignCount}, Adsets: ${totalAdsets}, Insights: ${insightsResult.count || 0}`)
     } catch (syncError) {
       console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
     }
