@@ -772,7 +772,8 @@ export function BrandManagementDropdown({
                         <span className="font-medium text-gray-300">API Connection:</span> Connect our API to your Meta Business account to automatically sync ad campaign data, ROAS metrics, and conversion tracking.
                       </p>
                       <p className="text-amber-400 text-xs mb-1">⚠️ Requires: Meta Business account ownership or admin access and Meta Pixel configured in your account for conversion data.</p>
-                      <p>Provides real-time campaign performance with automated ad spend and revenue reporting.</p>
+                      <p className="mb-1">Provides real-time campaign performance with automated ad spend and revenue reporting.</p>
+                      <p className="text-blue-400 text-xs">📊 Initial sync imports the last 90 days of data - all your system needs to start optimizing campaigns.</p>
                     </div>
                   </div>
                 </div>
