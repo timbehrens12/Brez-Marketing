@@ -39,13 +39,14 @@ export async function POST(request: NextRequest) {
     const campaignCount = campaignsResult.budgets?.length || 0
     console.log(`[Meta Backfill Worker] ✅ Campaigns: ${campaignCount}`)
 
-    // 2. Fetch adsets for each campaign
+    // 2. Fetch adsets for each campaign (with 90-day date range!)
     console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns...`)
     let totalAdsets = 0
     if (campaignsResult.success && campaignsResult.budgets) {
       for (const campaign of campaignsResult.budgets) {
         try {
-          const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true)
+          // IMPORTANT: Pass startDate and endDate to get 90 days of adset insights!
+          const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
           if (adsetsResult.success) {
             totalAdsets += adsetsResult.adsets?.length || 0
           }
