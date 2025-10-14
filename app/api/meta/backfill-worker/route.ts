@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
     const campaignCount = campaignsResult.budgets?.length || 0
     console.log(`[Meta Backfill Worker] ✅ Campaigns: ${campaignCount}`)
 
-    // 2. Fetch adsets for each campaign (with 90-day date range!)
-    console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns...`)
+    // 2. Fetch adsets for each campaign (with 90-day insights)
+    console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns (90-day insights)...`)
     let totalAdsets = 0
     if (campaignsResult.success && campaignsResult.budgets) {
       for (const campaign of campaignsResult.budgets) {
         try {
-          // IMPORTANT: Pass startDate and endDate to get 90 days of adset insights!
+          // Pass date range to get 90 days of adset insights
           const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
           if (adsetsResult.success) {
             totalAdsets += adsetsResult.adsets?.length || 0
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets}`)
+    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)`)
 
     // 3. Fetch insights + demographics
     console.log(`[Meta Backfill Worker] 📈 Fetching insights & demographics...`)
