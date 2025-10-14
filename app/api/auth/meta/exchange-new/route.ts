@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 FIRE-AND-FORGET SYNC: Start 90-day sync in background, return immediately
-    console.log(`[Meta Exchange NEW] 🚀 Starting background sync for 90 days of data...`)
+    // 🎯 TRIGGER DEDICATED WORKER: Call separate endpoint to handle 90-day backfill
+    console.log(`[Meta Exchange NEW] 🚀 Triggering dedicated backfill worker...`)
     
     // Immediately mark as syncing (but clear the flag so spinner stops)
     await supabase
@@ -163,87 +163,27 @@ export async function POST(request: NextRequest) {
         metadata: {
           ...metadataWithFlag,
           full_sync_in_progress: false, // Clear flag immediately so UI stops spinning
-          background_sync_started_at: new Date().toISOString()
+          backfill_started_at: new Date().toISOString()
         }
       })
       .eq('id', connectionData.id)
     
-    // Start background sync (fire-and-forget)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 90) // 90 days = ~3 months
+    // Trigger dedicated worker endpoint (fire-and-forget)
+    const workerUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/backfill-worker`
     
-    // Don't await - let it run in background
-    ;(async () => {
-      try {
-        console.log(`[Meta Exchange NEW] 📅 Background sync: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-        
-        const { fetchMetaAdInsights, fetchMetaCampaignBudgets, fetchMetaAdSets } = await import('@/lib/services/meta-service')
-        
-        // 1. Fetch campaigns
-        console.log(`[Meta Exchange NEW] 📋 Fetching campaigns...`)
-        const campaignsResult = await fetchMetaCampaignBudgets(state, true)
-        const campaignCount = campaignsResult.budgets?.length || 0
-        console.log(`[Meta Exchange NEW] ✅ Campaigns: ${campaignCount}`)
-        
-        // 2. Fetch adsets for each campaign
-        console.log(`[Meta Exchange NEW] 📊 Fetching adsets...`)
-        let totalAdsets = 0
-        if (campaignsResult.success && campaignsResult.budgets) {
-          for (const campaign of campaignsResult.budgets) {
-            try {
-              const adsetsResult = await fetchMetaAdSets(state, campaign.campaign_id, true)
-              if (adsetsResult.success) {
-                totalAdsets += adsetsResult.adsets?.length || 0
-              }
-            } catch (adsetError) {
-              console.warn(`[Meta Exchange NEW] Adset fetch failed for campaign ${campaign.campaign_id}:`, adsetError)
-            }
-          }
-        }
-        console.log(`[Meta Exchange NEW] ✅ Adsets: ${totalAdsets}`)
-        
-        // 3. Fetch insights + demographics
-        console.log(`[Meta Exchange NEW] 📈 Fetching insights & demographics...`)
-        const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
-        console.log(`[Meta Exchange NEW] ✅ Insights: ${insightsResult.count || 0}`)
-        
-        // Mark as completed
-        await supabase
-          .from('platform_connections')
-          .update({ 
-            sync_status: 'completed',
-            last_synced_at: new Date().toISOString(),
-            metadata: {
-              ...metadataWithFlag,
-              full_sync_in_progress: false,
-              last_full_sync_completed_at: new Date().toISOString(),
-              last_full_sync_result: `success_90_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult.count || 0} insights`
-            }
-          })
-          .eq('id', connectionData.id)
-        
-        console.log(`[Meta Exchange NEW] 🎉 Background sync COMPLETE`)
-      } catch (bgError) {
-        console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, bgError)
-        // Mark as failed
-        await supabase
-          .from('platform_connections')
-          .update({ 
-            sync_status: 'error',
-            metadata: {
-              ...metadataWithFlag,
-              full_sync_in_progress: false,
-              last_sync_error: bgError instanceof Error ? bgError.message : String(bgError)
-            }
-          })
-          .eq('id', connectionData.id)
-      }
-    })()
+    fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        brandId: state,
+        connectionId: connectionData.id
+      })
+    }).catch(err => {
+      console.error(`[Meta Exchange NEW] ❌ Failed to trigger backfill worker:`, err)
+    })
     
-    // Return immediately so OAuth completes and user gets redirected
-    console.log(`[Meta Exchange NEW] ✅ OAuth complete - background sync running`)
-    return NextResponse.json({ success: true, message: 'Meta connected - syncing data in background' })
+    console.log(`[Meta Exchange NEW] ✅ OAuth complete - backfill worker triggered at ${workerUrl}`)
+    return NextResponse.json({ success: true, message: 'Meta connected - 90-day backfill in progress' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
