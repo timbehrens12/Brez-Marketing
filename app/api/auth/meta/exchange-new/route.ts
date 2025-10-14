@@ -151,71 +151,99 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
     }
 
-    // 🎯 SIMPLE SYNC: Sync last 90 days of ALL data immediately (fits in 60s timeout)
-    console.log(`[Meta Exchange NEW] 🎯 SIMPLE SYNC: Syncing last 90 days of campaigns, adsets, and insights`)
+    // 🎯 FIRE-AND-FORGET SYNC: Start 90-day sync in background, return immediately
+    console.log(`[Meta Exchange NEW] 🚀 Starting background sync for 90 days of data...`)
     
+    // Immediately mark as syncing (but clear the flag so spinner stops)
+    await supabase
+      .from('platform_connections')
+      .update({ 
+        sync_status: 'in_progress',
+        last_synced_at: new Date().toISOString(),
+        metadata: {
+          ...metadataWithFlag,
+          full_sync_in_progress: false, // Clear flag immediately so UI stops spinning
+          background_sync_started_at: new Date().toISOString()
+        }
+      })
+      .eq('id', connectionData.id)
+    
+    // Start background sync (fire-and-forget)
     const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - 90) // 90 days = ~3 months
     
-    console.log(`[Meta Exchange NEW] 📅 Syncing: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-    
-    // Import services
-    const { fetchMetaAdInsights, fetchMetaCampaignBudgets, fetchMetaAdSets } = await import('@/lib/services/meta-service')
-    
-    // Sync in order: campaigns → adsets → insights
-    try {
-      // 1. Fetch campaigns first (contains budget info)
-      console.log(`[Meta Exchange NEW] 📋 Fetching campaigns...`)
-      const campaignsResult = await fetchMetaCampaignBudgets(state, true)
-      const campaignCount = campaignsResult.budgets?.length || 0
-      console.log(`[Meta Exchange NEW] ✅ Campaigns fetched: ${campaignCount} campaigns`)
-      
-      // 2. Fetch adsets for each campaign (contains targeting/placement info)
-      console.log(`[Meta Exchange NEW] 📊 Fetching adsets for ${campaignCount} campaigns...`)
-      let totalAdsets = 0
-      if (campaignsResult.success && campaignsResult.budgets) {
-        for (const campaign of campaignsResult.budgets) {
-          try {
-            const adsetsResult = await fetchMetaAdSets(state, campaign.campaign_id, true)
-            if (adsetsResult.success) {
-              totalAdsets += adsetsResult.adsets?.length || 0
+    // Don't await - let it run in background
+    ;(async () => {
+      try {
+        console.log(`[Meta Exchange NEW] 📅 Background sync: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+        
+        const { fetchMetaAdInsights, fetchMetaCampaignBudgets, fetchMetaAdSets } = await import('@/lib/services/meta-service')
+        
+        // 1. Fetch campaigns
+        console.log(`[Meta Exchange NEW] 📋 Fetching campaigns...`)
+        const campaignsResult = await fetchMetaCampaignBudgets(state, true)
+        const campaignCount = campaignsResult.budgets?.length || 0
+        console.log(`[Meta Exchange NEW] ✅ Campaigns: ${campaignCount}`)
+        
+        // 2. Fetch adsets for each campaign
+        console.log(`[Meta Exchange NEW] 📊 Fetching adsets...`)
+        let totalAdsets = 0
+        if (campaignsResult.success && campaignsResult.budgets) {
+          for (const campaign of campaignsResult.budgets) {
+            try {
+              const adsetsResult = await fetchMetaAdSets(state, campaign.campaign_id, true)
+              if (adsetsResult.success) {
+                totalAdsets += adsetsResult.adsets?.length || 0
+              }
+            } catch (adsetError) {
+              console.warn(`[Meta Exchange NEW] Adset fetch failed for campaign ${campaign.campaign_id}:`, adsetError)
             }
-          } catch (adsetError) {
-            console.warn(`[Meta Exchange NEW] Failed to fetch adsets for campaign ${campaign.campaign_id}:`, adsetError)
           }
         }
+        console.log(`[Meta Exchange NEW] ✅ Adsets: ${totalAdsets}`)
+        
+        // 3. Fetch insights + demographics
+        console.log(`[Meta Exchange NEW] 📈 Fetching insights & demographics...`)
+        const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
+        console.log(`[Meta Exchange NEW] ✅ Insights: ${insightsResult.count || 0}`)
+        
+        // Mark as completed
+        await supabase
+          .from('platform_connections')
+          .update({ 
+            sync_status: 'completed',
+            last_synced_at: new Date().toISOString(),
+            metadata: {
+              ...metadataWithFlag,
+              full_sync_in_progress: false,
+              last_full_sync_completed_at: new Date().toISOString(),
+              last_full_sync_result: `success_90_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult.count || 0} insights`
+            }
+          })
+          .eq('id', connectionData.id)
+        
+        console.log(`[Meta Exchange NEW] 🎉 Background sync COMPLETE`)
+      } catch (bgError) {
+        console.error(`[Meta Exchange NEW] ❌ Background sync failed:`, bgError)
+        // Mark as failed
+        await supabase
+          .from('platform_connections')
+          .update({ 
+            sync_status: 'error',
+            metadata: {
+              ...metadataWithFlag,
+              full_sync_in_progress: false,
+              last_sync_error: bgError instanceof Error ? bgError.message : String(bgError)
+            }
+          })
+          .eq('id', connectionData.id)
       }
-      console.log(`[Meta Exchange NEW] ✅ Adsets fetched: ${totalAdsets} adsets`)
-      
-      // 3. Sync insights + demographics
-      console.log(`[Meta Exchange NEW] 📈 Syncing insights & demographics...`)
-      const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
-      console.log(`[Meta Exchange NEW] ✅ Insights sync complete: ${insightsResult.count || 0} records`)
-      
-      console.log(`[Meta Exchange NEW] 🎉 COMPLETE - Campaigns: ${campaignCount}, Adsets: ${totalAdsets}, Insights: ${insightsResult.count || 0}`)
-    } catch (syncError) {
-      console.error(`[Meta Exchange NEW] ❌ Sync failed:`, syncError)
-    }
+    })()
     
-    const completionMetadata = {
-      ...metadataWithFlag,
-      full_sync_in_progress: false,
-      last_full_sync_completed_at: new Date().toISOString(),
-      last_full_sync_result: 'success_90_days'
-    }
-    
-    // Mark sync as completed
-    await supabase
-      .from('platform_connections')
-      .update({ 
-        sync_status: 'completed',
-        last_synced_at: new Date().toISOString(),
-        metadata: completionMetadata
-      })
-      .eq('id', connectionData.id)
-    
-    return NextResponse.json({ success: true, message: '90-day data synced successfully' })
+    // Return immediately so OAuth completes and user gets redirected
+    console.log(`[Meta Exchange NEW] ✅ OAuth complete - background sync running`)
+    return NextResponse.json({ success: true, message: 'Meta connected - syncing data in background' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
