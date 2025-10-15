@@ -261,10 +261,10 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // If !forceRefresh and we have cached data, return it ONLY if NO date range is requested
-    // If a date range IS provided, we must recalculate metrics from daily insights
-    if (!forceRefresh && cachedAdSets && cachedAdSets.length > 0 && !hasDateRange) {
-      console.log(`[API] Returning ${cachedAdSets.length} cached ad sets (no date range requested)`);
+    // If !forceRefresh and we have cached data, return it
+    // When a date range is provided, we've already recalculated metrics from daily insights above
+    if (!forceRefresh && cachedAdSets && cachedAdSets.length > 0) {
+      console.log(`[API] Returning ${cachedAdSets.length} cached ad sets${hasDateRange ? ' (recalculated for date range)' : ''}`);
       
       // Apply conversion zeroing if needed
       const processedAdSets = shouldZeroConversions 
@@ -281,7 +281,7 @@ export async function GET(req: NextRequest) {
           source: 'database',
           timestamp: new Date().toISOString(),
           adSets: processedAdSets,
-          dateRange: undefined
+          dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined
         },
         { status: 200 }
       );
