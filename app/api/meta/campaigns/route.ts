@@ -864,8 +864,8 @@ export async function GET(request: NextRequest) {
           .from('meta_adsets')
           .select('adset_id, campaign_id')
           .eq('brand_id', brandId)
-          .in('campaign_id', campaignIds)
-          .eq('status', 'ACTIVE');
+          .in('campaign_id', campaignIds);
+          // Don't filter by status - include ALL adsets to match displayed data
         
         if (!adSetsError && allAdSets && allAdSets.length > 0) {
           // Get all ad set insights in one query
