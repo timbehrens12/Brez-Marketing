@@ -601,6 +601,46 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API /api/metrics/meta] Processing ${formattedInsights.length} records for period ${fromDate} to ${toDate}`);
     const processedData = processMetaData(formattedInsights);
+    
+    // 🔧 FIX: Override reach with adset-level aggregation instead of ad-level
+    // This matches the reach widget calculation for consistency
+    try {
+      const { data: adSets } = await supabase
+        .from('meta_adsets')
+        .select('adset_id')
+        .eq('brand_id', brandId)
+        .eq('status', 'ACTIVE')
+
+      if (adSets && adSets.length > 0) {
+        const adSetIds = adSets.map((a: any) => a.adset_id)
+        
+        const { data: adsetInsights } = await supabase
+          .from('meta_adset_daily_insights')
+          .select('date, reach')
+          .in('adset_id', adSetIds)
+          .gte('date', fromDate)
+          .lte('date', toDate)
+        
+        if (adsetInsights && adsetInsights.length > 0) {
+          // Group reach by date and sum across all adsets
+          const reachByDate: Record<string, number> = {}
+          adsetInsights.forEach((insight: any) => {
+            const date = insight.date
+            reachByDate[date] = (reachByDate[date] || 0) + (insight.reach || 0)
+          })
+          
+          // Recalculate totalReach using adset-level data
+          const correctTotalReach = Object.values(reachByDate).reduce((sum: number, val: number) => sum + val, 0)
+          
+          // Update processedData reach values
+          processedData.reach = correctTotalReach
+          console.log(`[API Meta Metrics] Reach corrected from ${processedData.dailyData.reduce((sum: number, d: any) => sum + d.reach, 0)} to ${correctTotalReach} using adset-level aggregation`)
+        }
+      }
+    } catch (reachFixError) {
+      console.warn(`[API Meta Metrics] Failed to fix reach calculation:`, reachFixError)
+      // Continue with original reach value if adset-level calculation fails
+    }
       
       // Add date range info to help client validate
       const response = {
