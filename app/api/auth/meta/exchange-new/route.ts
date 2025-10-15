@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[Meta Exchange NEW] 🚨 FIXED AUTH: Starting for brand ${state}`)
+    console.log(`[Meta Exchange NEW] Starting OAuth for brand ${state}`)
 
     // Exchange code for token
     const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
@@ -62,24 +62,7 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Load existing metadata so we don't overwrite other fields
-    const { data: existingConnection } = await supabase
-      .from('platform_connections')
-      .select('id, metadata')
-      .eq('brand_id', state)
-      .eq('platform_type', 'meta')
-      .single()
-
     const nowIso = new Date().toISOString()
-
-    const existingMetadata = existingConnection?.metadata || {}
-
-    const metadataWithFlag = {
-      ...existingMetadata,
-      ad_account_id: accountId || existingMetadata?.ad_account_id,
-      full_sync_in_progress: true,
-      last_full_sync_started_at: nowIso
-    }
 
     // Store connection in database
     const { data: connectionData, error: dbError } = await supabase
@@ -91,7 +74,11 @@ export async function POST(request: NextRequest) {
         status: 'active',
         user_id: userId,
         sync_status: 'in_progress',
-        metadata: metadataWithFlag,
+        metadata: {
+          ad_account_id: accountId,
+          full_sync_in_progress: false,
+          backfill_started_at: nowIso
+        },
         connected_at: nowIso,
         updated_at: nowIso,
         last_synced_at: nowIso
@@ -109,81 +96,99 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Meta Exchange NEW] ✅ Stored connection with ID: ${connectionData.id}`)
 
-    // 🧹 QUEUE CLEANUP: Remove any orphaned jobs from previous connection
-    console.log(`[Meta Exchange NEW] 🧹 Cleaning up orphaned queue jobs...`)
-    try {
-      const { metaQueue } = await import('@/lib/services/metaQueueService')
-      
-      const waiting = await metaQueue.getWaiting()
-      const active = await metaQueue.getActive()
-      let cleanedCount = 0
-      
-      // Remove jobs for this brand that reference old connection IDs
-      for (const job of [...waiting, ...active]) {
-        if (job.data?.brandId === state && job.data?.connectionId !== connectionData.id) {
-          await job.remove()
-          console.log(`[Meta Exchange NEW] Removed orphaned job ${job.id} with old connection ${job.data.connectionId}`)
-          cleanedCount++
-        }
-      }
-      
-      console.log(`[Meta Exchange NEW] ✅ Cleaned up ${cleanedCount} orphaned queue jobs`)
-    } catch (cleanupError) {
-      console.warn(`[Meta Exchange NEW] ⚠️ Queue cleanup failed:`, cleanupError)
-    }
-
-    // 🧨 NUCLEAR WIPE: Delete all existing Meta data (including hidden tables)
-    console.log(`[Meta Exchange NEW] 🧨 NUCLEAR WIPE: Deleting all old Meta data...`)
+    // 🧨 NUCLEAR WIPE: Delete all existing Meta data
+    console.log(`[Meta Exchange NEW] 🧨 Deleting old Meta data...`)
     try {
       await Promise.all([
         supabase.from('meta_ad_insights').delete().eq('brand_id', state),
-        supabase.from('meta_ad_daily_insights').delete().eq('brand_id', state),
         supabase.from('meta_adset_daily_insights').delete().eq('brand_id', state),
         supabase.from('meta_adsets').delete().eq('brand_id', state),
         supabase.from('meta_campaigns').delete().eq('brand_id', state),
-        supabase.from('meta_ads').delete().eq('brand_id', state),
         supabase.from('meta_demographics').delete().eq('brand_id', state),
         supabase.from('meta_device_performance').delete().eq('brand_id', state),
         supabase.from('meta_campaign_daily_stats').delete().eq('brand_id', state)
       ])
-      console.log(`[Meta Exchange NEW] ✅ All Meta data wiped (including hidden tables)`)
+      console.log(`[Meta Exchange NEW] ✅ Old Meta data deleted`)
     } catch (nukeError) {
-      console.warn(`[Meta Exchange NEW] ⚠️ Nuclear wipe failed:`, nukeError)
+      console.warn(`[Meta Exchange NEW] ⚠️ Delete failed:`, nukeError)
     }
 
-    // 🎯 TRIGGER DEDICATED WORKER: Call separate endpoint to handle 90-day backfill
-    console.log(`[Meta Exchange NEW] 🚀 Triggering dedicated backfill worker...`)
+    // ✅ Perform simple 30-day sync directly (no worker needed)
+    console.log(`[Meta Exchange NEW] 📊 Starting 30-day backfill...`)
     
-    // Immediately mark as syncing (but clear the flag so spinner stops)
-    await supabase
-      .from('platform_connections')
-      .update({ 
-        sync_status: 'in_progress',
-        last_synced_at: new Date().toISOString(),
-        metadata: {
-          ...metadataWithFlag,
-          full_sync_in_progress: false, // Clear flag immediately so UI stops spinning
-          backfill_started_at: new Date().toISOString()
+    // Calculate date range (last 30 days)
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 30)
+    
+    const startDateStr = startDate.toISOString().split('T')[0]
+    const endDateStr = endDate.toISOString().split('T')[0]
+    
+    console.log(`[Meta Exchange NEW] Date range: ${startDateStr} to ${endDateStr}`)
+
+    // Import services for direct sync
+    const { fetchMetaCampaignBudgets, fetchMetaAdSets, fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+
+    try {
+      // 1. Fetch campaigns
+      console.log(`[Meta Exchange NEW] 📋 Fetching campaigns...`)
+      const campaignsResult = await fetchMetaCampaignBudgets(state, true)
+      const campaignCount = campaignsResult.budgets?.length || 0
+      console.log(`[Meta Exchange NEW] ✅ Campaigns: ${campaignCount}`)
+
+      // 2. Fetch adsets for each campaign
+      console.log(`[Meta Exchange NEW] 📊 Fetching adsets...`)
+      let totalAdsets = 0
+      if (campaignsResult.success && campaignsResult.budgets) {
+        for (const campaign of campaignsResult.budgets) {
+          const adsetsResult = await fetchMetaAdSets(state, campaign.campaign_id, true, startDate, endDate)
+          if (adsetsResult.success) {
+            totalAdsets += adsetsResult.adSets?.length || 0
+          }
+          // Small delay between campaigns
+          await new Promise(resolve => setTimeout(resolve, 1000))
         }
-      })
-      .eq('id', connectionData.id)
-    
-    // Trigger dedicated worker endpoint (fire-and-forget)
-    const workerUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/meta/backfill-worker`
-    
-    fetch(workerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        brandId: state,
-        connectionId: connectionData.id
-      })
-    }).catch(err => {
-      console.error(`[Meta Exchange NEW] ❌ Failed to trigger backfill worker:`, err)
-    })
-    
-    console.log(`[Meta Exchange NEW] ✅ OAuth complete - backfill worker triggered at ${workerUrl}`)
-    return NextResponse.json({ success: true, message: 'Meta connected - 90-day backfill in progress' })
+      }
+      console.log(`[Meta Exchange NEW] ✅ Adsets: ${totalAdsets}`)
+
+      // 3. Fetch 30-day ad-level insights and demographics
+      console.log(`[Meta Exchange NEW] 📈 Fetching insights and demographics...`)
+      const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, true, false)
+      console.log(`[Meta Exchange NEW] ✅ Insights: ${insightsResult.count || 0}`)
+
+      // Update connection as completed
+      await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: 'completed',
+          last_synced_at: new Date().toISOString(),
+          metadata: {
+            ad_account_id: accountId,
+            full_sync_in_progress: false,
+            last_full_sync_completed_at: new Date().toISOString(),
+            last_full_sync_result: `success_30_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult.count || 0} insights`
+          }
+        })
+        .eq('id', connectionData.id)
+
+      console.log(`[Meta Exchange NEW] 🎉 Backfill complete!`)
+
+    } catch (syncError) {
+      console.error(`[Meta Exchange NEW] Sync error:`, syncError)
+      // Mark as failed but keep the connection
+      await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: 'error',
+          metadata: {
+            ad_account_id: accountId,
+            error: String(syncError)
+          }
+        })
+        .eq('id', connectionData.id)
+    }
+
+    return NextResponse.json({ success: true, message: 'Meta connected and synced' })
 
   } catch (error) {
     console.error('[Meta Exchange NEW] Exchange error:', error)
