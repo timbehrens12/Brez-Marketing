@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300 // 5 minutes for backfill
+export const maxDuration = 600 // 10 minutes for backfill (max on Pro plan)
 
 /**
  * Dedicated worker endpoint for Meta 90-day backfill
