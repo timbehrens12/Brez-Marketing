@@ -141,10 +141,9 @@ export async function fetchMetaAdInsights(
   startDate: Date,
   endDate: Date,
   dryRun: boolean = false,
-  skipDemographics: boolean = false,
-  skipInsights: boolean = false // New parameter to skip ad-level insights
+  skipDemographics: boolean = false
 ) {
-  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}${skipDemographics ? ' (skipping demographics)' : ''}${skipInsights ? ' (skipping insights)' : ''}`)
+  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}${skipDemographics ? ' (skipping demographics)' : ''}`)
 
   // If this is a new day transition, handle it specially
   if (isNewDayTransition && newDayTransitionInfo) {
@@ -337,140 +336,116 @@ export async function fetchMetaAdInsights(
     let allDeviceData = { device: [], placement: [], platform: [] };
     
     // For each ad account, fetch insights - with rate limit handling
-    if (!skipInsights) {
-      for (const account of accountsData.data) {
-        console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
+    for (const account of accountsData.data) {
+      console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
+      
+      try {
+        // Add delay between requests to avoid rate limiting
+        await delay(1000);
         
-        try {
-          // Add delay between requests to avoid rate limiting
-          await delay(1000);
-          
-          // First fetch campaign information to get budgets - with retry
-          const campaignsData = await fetchWithRetry(
-            `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
-          );
-          
-          if (campaignsData.error) {
-            console.error(`[Meta] Error fetching campaigns for account ${account.id}:`, campaignsData.error);
-            continue;
-          }
-          
-          if (campaignsData.data && campaignsData.data.length > 0) {
-            for (const campaign of campaignsData.data) {
-              let totalBudget = 0
-              
-              // Add daily budget (converted from cents to dollars)
-              if (campaign.daily_budget) {
-                const dailyBudget = parseFloat(campaign.daily_budget) / 100
-                totalBudget += dailyBudget
-              }
-              
-              // Add lifetime budget (converted from cents to dollars) 
-              if (campaign.lifetime_budget) {
-                const lifetimeBudget = parseFloat(campaign.lifetime_budget) / 100
-                totalBudget += lifetimeBudget
-              }
-              
-              // Store budget for this campaign
-              campaignBudgets.set(campaign.id, totalBudget)
+        // First fetch campaign information to get budgets - with retry
+        const campaignsData = await fetchWithRetry(
+          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
+        );
+        
+        if (campaignsData.error) {
+          console.error(`[Meta] Error fetching campaigns for account ${account.id}:`, campaignsData.error);
+          continue;
+        }
+        
+        if (campaignsData.data && campaignsData.data.length > 0) {
+          for (const campaign of campaignsData.data) {
+            let totalBudget = 0
+            
+            // Add daily budget (converted from cents to dollars)
+            if (campaign.daily_budget) {
+              const dailyBudget = parseFloat(campaign.daily_budget) / 100
+              totalBudget += dailyBudget
             }
             
-            console.log(`[Meta] Fetched budget info for ${campaignsData.data.length} campaigns`)
+            // Add lifetime budget (converted from cents to dollars) 
+            if (campaign.lifetime_budget) {
+              const lifetimeBudget = parseFloat(campaign.lifetime_budget) / 100
+              totalBudget += lifetimeBudget
+            }
+            
+            // Store budget for this campaign
+            campaignBudgets.set(campaign.id, totalBudget)
           }
           
-          // Add another delay before the insights request
-          await delay(1000);
-          
-          const baseInsightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
+          console.log(`[Meta] Fetched budget info for ${campaignsData.data.length} campaigns`)
+        }
+        
+        // Add another delay before the insights request
+        await delay(1000);
+        
+        const baseInsightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
 
-          const insightChunkResults: any[] = []
+        const insightChunkResults: any[] = []
 
-          if (isFetchingToday || dateChunks.length === 0) {
-            let insightsUrl = `${baseInsightsUrl}&date_preset=today`
-            console.log(`[Meta] Using date_preset=today for account ${account.id}`)
+        if (isFetchingToday || dateChunks.length === 0) {
+          let insightsUrl = `${baseInsightsUrl}&date_preset=today`
+          console.log(`[Meta] Using date_preset=today for account ${account.id}`)
 
-            const insightsResult = await fetchPaginatedData(insightsUrl, 'Insights (today)', 5)
+          const insightsResult = await fetchPaginatedData(insightsUrl, 'Insights (today)', 5)
 
-            if (insightsResult.error) {
-              console.error(`[Meta] Error fetching insights (today) for account ${account.id}:`, insightsResult.error)
+          if (insightsResult.error) {
+            console.error(`[Meta] Error fetching insights (today) for account ${account.id}:`, insightsResult.error)
+            continue
+          }
+
+          insightChunkResults.push({
+            chunkStart: todayStr,
+            chunkEnd: todayStr,
+            records: insightsResult.data,
+            pageCount: insightsResult.pageCount
+          })
+        } else {
+          console.log(`[Meta] Splitting insights fetch into ${dateChunks.length} chunks for account ${account.id}`)
+
+          for (const chunk of dateChunks) {
+            const chunkUrl = `${baseInsightsUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}&time_increment=1`
+            console.log(`[Meta] 🔄 Fetching insights chunk ${chunk.start} → ${chunk.end}`)
+
+            const chunkResult = await fetchPaginatedData(chunkUrl, `Insights ${chunk.start}→${chunk.end}`, 20)
+
+            if (chunkResult.error) {
+              console.error(`[Meta] Error fetching insights chunk ${chunk.start} → ${chunk.end} for account ${account.id}:`, chunkResult.error)
               continue
             }
 
             insightChunkResults.push({
-              chunkStart: todayStr,
-              chunkEnd: todayStr,
-              records: insightsResult.data,
-              pageCount: insightsResult.pageCount
+              chunkStart: chunk.start,
+              chunkEnd: chunk.end,
+              records: chunkResult.data,
+              pageCount: chunkResult.pageCount
             })
-          } else {
-            console.log(`[Meta] Splitting insights fetch into ${dateChunks.length} chunks for account ${account.id}`)
 
-            for (const chunk of dateChunks) {
-              const chunkUrl = `${baseInsightsUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}&time_increment=1`
-              console.log(`[Meta] 🔄 Fetching insights chunk ${chunk.start} → ${chunk.end}`)
+            console.log(`[Meta] ✅ Chunk ${chunk.start} → ${chunk.end}: ${chunkResult.data.length} records (${chunkResult.pageCount} pages)`)
 
-              const chunkResult = await fetchPaginatedData(chunkUrl, `Insights ${chunk.start}→${chunk.end}`, 20)
-
-              if (chunkResult.error) {
-                console.error(`[Meta] Error fetching insights chunk ${chunk.start} → ${chunk.end} for account ${account.id}:`, chunkResult.error)
-                continue
-              }
-
-              insightChunkResults.push({
-                chunkStart: chunk.start,
-                chunkEnd: chunk.end,
-                records: chunkResult.data,
-                pageCount: chunkResult.pageCount
-              })
-
-              console.log(`[Meta] ✅ Chunk ${chunk.start} → ${chunk.end}: ${chunkResult.data.length} records (${chunkResult.pageCount} pages)`)
-
-              await delay(500)
-            }
+            await delay(500)
           }
-
-          const insightsData = insightChunkResults.flatMap((chunk) => chunk.records)
-
-          console.log(`[Meta] 🔍 DEBUG: API Response for account ${account.id}:`)
-          console.log(`[Meta] 🔍 Total chunks fetched: ${insightChunkResults.length}`)
-          console.log(`[Meta] 🔍 Total records: ${insightsData.length}`)
-          if (insightsData.length > 0) {
-            const firstRecord = insightsData[0]
-            const lastRecord = insightsData[insightsData.length - 1]
-            console.log(`[Meta] 🔍 First record date: ${firstRecord?.date_start} to ${firstRecord?.date_stop}`)
-            console.log(`[Meta] 🔍 Last record date: ${lastRecord?.date_start} to ${lastRecord?.date_stop}`)
-            console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(firstRecord, null, 2))
-          }
-
-          // If fetching for today using date_preset=today, Meta might not include date_start/date_stop in each item.
-          // We'll assign today's date to these records.
-          if (isFetchingToday) {
-            insightsData.forEach((insight: any) => {
-              insight.date_start = todayStr;
-              insight.date_stop = todayStr;
-            });
-          }
-          allInsights.push(...insightsData)
-          if (insightsData[0]) {
-            console.log(`[Meta] Sample data format (first item):`, {
-              date_start: insightsData[0].date_start,
-              date_stop: insightsData[0].date_stop,
-              ad_id: insightsData[0].ad_id,
-              impressions: insightsData[0].impressions
-            })
-          }
-        } catch (error) {
-          console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)
         }
-      }
-    }
 
-    // For each ad account, fetch demographics
-    if (!skipDemographics) {
-      for (const account of accountsData.data) {
-        // The demographic fetching logic was previously inside the insights loop.
-        // It is now independent.
-        try {
+        const insightsData = insightChunkResults.flatMap((chunk) => chunk.records)
+
+        console.log(`[Meta] 🔍 DEBUG: API Response for account ${account.id}:`)
+        console.log(`[Meta] 🔍 Total chunks fetched: ${insightChunkResults.length}`)
+        console.log(`[Meta] 🔍 Total records: ${insightsData.length}`)
+        if (insightsData.length > 0) {
+          const firstRecord = insightsData[0]
+          const lastRecord = insightsData[insightsData.length - 1]
+          console.log(`[Meta] 🔍 First record date: ${firstRecord?.date_start} to ${firstRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Last record date: ${lastRecord?.date_start} to ${lastRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(firstRecord, null, 2))
+        }
+
+        // Fetch demographic breakdowns (age, gender) in parallel - SKIP if requested
+        let demographicData = { age: [], gender: [], ageGender: [] };
+        let deviceData = { device: [], placement: [], platform: [] };
+
+        if (!skipDemographics) {
+          try {
           console.log(`[Meta] Fetching demographic and device breakdowns for account ${account.id}`);
           
           // RESTORED: Add 'reach' back to breakdown queries - limit to 12 months instead of going back years
@@ -644,9 +619,31 @@ export async function fetchMetaAdInsights(
         deviceData.platform.forEach((item: any) => {
           allDeviceData.platform.push({ ...item, account_id: account.id, account_name: account.name });
         });
-      } // This closes the for loop for demographics
-    } // This closes the if(!skipDemographics) block
-    
+        
+        if (insightsData.length > 0) {
+          // If fetching for today using date_preset=today, Meta might not include date_start/date_stop in each item.
+          // We'll assign today's date to these records.
+          if (isFetchingToday) {
+            insightsData.forEach((insight: any) => {
+              insight.date_start = todayStr;
+              insight.date_stop = todayStr;
+            });
+          }
+          allInsights.push(...insightsData)
+          if (insightsData[0]) {
+            console.log(`[Meta] Sample data format (first item):`, {
+              date_start: insightsData[0].date_start,
+              date_stop: insightsData[0].date_stop,
+              ad_id: insightsData[0].ad_id,
+              impressions: insightsData[0].impressions
+            })
+          }
+        }
+      } catch (error) {
+        console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)
+      }
+    }
+
     console.log(`[Meta] Fetched a total of ${allInsights.length} insights across all accounts`)
     
     // Log count of distinct dates
