@@ -81,9 +81,54 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)${rateLimitHit ? ' - INCOMPLETE due to rate limit' : ''}`)
 
-    // Ad-level insights and demographics will be backfilled by the daily cron job.
-    // This initial sync focuses on the critical adset-level data for the dashboard.
-    const insightsResult = { success: true, count: 0 };
+    // Staged Fetching for Insights and Demographics
+    let insightsResult = { success: false, count: 0, error: '' };
+    let demographicsResult = { success: false, error: '' };
+
+    // STAGE 3: Fetch ad-level insights only
+    if (!rateLimitHit) {
+      console.log(`[Meta Backfill Worker] ⏳ Waiting 30 seconds before fetching ad-level insights...`);
+      await new Promise(resolve => setTimeout(resolve, 30000));
+
+      console.log(`[Meta Backfill Worker] 📈 Fetching ad-level insights ONLY...`);
+      try {
+        insightsResult = await fetchMetaAdInsights(brandId, startDate, endDate, false, true, false); // skipDemographics = true, skipInsights = false
+        if (!insightsResult.success && insightsResult.error?.includes('rate limit')) {
+          console.warn(`[Meta Backfill Worker] ⚠️ Ad-level insights rate limited - sync will be incomplete.`);
+          rateLimitHit = true;
+        } else {
+          console.log(`[Meta Backfill Worker] ✅ Ad-level insights fetched: ${insightsResult.count || 0} records`);
+        }
+      } catch (error) {
+        console.error(`[Meta Backfill Worker] ❌ Insights fetch error:`, error);
+        insightsResult = { success: false, count: 0, error: String(error) };
+        rateLimitHit = true; // Assume failure means we should stop
+      }
+    }
+
+    // STAGE 4: Fetch demographics only
+    if (!rateLimitHit) {
+      console.log(`[Meta Backfill Worker] ⏳ Waiting 30 seconds before fetching demographics...`);
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      
+      console.log(`[Meta Backfill Worker] 🌍 Fetching demographics ONLY...`);
+      try {
+        // We don't have a dedicated result for demographics, but we can check for success
+        const demoSyncResult = await fetchMetaAdInsights(brandId, startDate, endDate, false, false, true); // skipDemographics = false, skipInsights = true
+        if (!demoSyncResult.success && demoSyncResult.error?.includes('rate limit')) {
+          console.warn(`[Meta Backfill Worker] ⚠️ Demographics rate limited - sync will be incomplete.`);
+          rateLimitHit = true;
+          demographicsResult = { success: false, error: demoSyncResult.error };
+        } else {
+          console.log(`[Meta Backfill Worker] ✅ Demographics sync initiated successfully.`);
+          demographicsResult = { success: true, error: '' };
+        }
+      } catch (error) {
+        console.error(`[Meta Backfill Worker] ❌ Demographics fetch error:`, error);
+        demographicsResult = { success: false, error: String(error) };
+        rateLimitHit = true;
+      }
+    }
 
     // Mark sync as completed
     if (connectionId) {
@@ -102,14 +147,14 @@ export async function POST(request: NextRequest) {
             ...(existingConnection?.metadata || {}),
             full_sync_in_progress: false,
             last_full_sync_completed_at: new Date().toISOString(),
-            last_full_sync_result: `${rateLimitHit ? 'PARTIAL_' : ''}success_90_days: ${campaignCount} campaigns, ${totalAdsets} adsets synced. Ad-level insights and demographics will be synced via daily cron.`,
+            last_full_sync_result: `${rateLimitHit ? 'PARTIAL_' : ''}success_90_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult?.count || 0} insights. Demographics sync ${demographicsResult.success ? 'succeeded' : 'failed'}.${rateLimitHit ? ' (rate limited - some data missing)' : ''}`,
             needs_manual_sync: rateLimitHit // Flag for UI to show "Complete Sync" button
           }
         })
         .eq('id', connectionId)
     }
 
-    console.log(`[Meta Backfill Worker] 🎉 COMPLETE - Campaigns: ${campaignCount}, Adsets: ${totalAdsets}. Ad-level insights and demographics will sync via daily cron.`)
+    console.log(`[Meta Backfill Worker] 🎉 COMPLETE - Campaigns: ${campaignCount}, Adsets: ${totalAdsets}, Insights: ${insightsResult.count || 0}`)
 
     return NextResponse.json({
       success: true,
