@@ -39,43 +39,93 @@ export async function POST(request: NextRequest) {
     const campaignCount = campaignsResult.budgets?.length || 0
     console.log(`[Meta Backfill Worker] ✅ Campaigns: ${campaignCount}`)
 
-    // 2. Fetch adsets for each campaign (with 90-day insights + rate limit handling)
+    // 2. Fetch adsets for each campaign (with 90-day insights + automatic rate limit retry)
     console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns (90-day insights)...`)
     let totalAdsets = 0
-    let rateLimitHit = false
+    let retryAfterSeconds = 0
     
     if (campaignsResult.success && campaignsResult.budgets) {
       for (const campaign of campaignsResult.budgets) {
-        try {
-          // Pass date range to get 90 days of adset insights
-          const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
-          
-          if (adsetsResult.success) {
-            totalAdsets += adsetsResult.adsets?.length || 0
-            console.log(`[Meta Backfill Worker] ✅ Campaign ${campaign.campaign_id}: ${adsetsResult.adsets?.length || 0} adsets fetched`)
-          } else if (adsetsResult.error?.includes('rate limit')) {
-            console.warn(`[Meta Backfill Worker] ⚠️ Rate limit hit for campaign ${campaign.campaign_id}, will retry later`)
-            rateLimitHit = true
-            break // Stop processing more campaigns if rate limited
+        let retryCount = 0
+        const maxRetries = 1 // Only retry once after rate limit
+        
+        while (retryCount <= maxRetries) {
+          try {
+            // Pass date range to get 90 days of adset insights
+            const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
+            
+            if (adsetsResult.success) {
+              totalAdsets += adsetsResult.adsets?.length || 0
+              console.log(`[Meta Backfill Worker] ✅ Campaign ${campaign.campaign_id}: ${adsetsResult.adsets?.length || 0} adsets fetched`)
+              break // Success, move to next campaign
+            } else if (adsetsResult.error?.includes('rate limit')) {
+              // Extract wait time from error message (e.g., "Wait 298s")
+              const waitMatch = adsetsResult.error.match(/Wait (\d+)s/)
+              const waitSeconds = waitMatch ? parseInt(waitMatch[1]) : 300
+              
+              if (retryCount < maxRetries) {
+                console.warn(`[Meta Backfill Worker] ⏳ Rate limited - waiting ${waitSeconds}s before retry...`)
+                retryAfterSeconds = waitSeconds
+                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000))
+                retryCount++
+                console.log(`[Meta Backfill Worker] 🔄 Retrying campaign ${campaign.campaign_id}...`)
+              } else {
+                console.error(`[Meta Backfill Worker] ❌ Rate limit retry failed for campaign ${campaign.campaign_id}`)
+                break
+              }
+            } else {
+              console.warn(`[Meta Backfill Worker] ⚠️ Failed to fetch adsets for campaign ${campaign.campaign_id}:`, adsetsResult.error)
+              break
+            }
+          } catch (adsetError) {
+            console.error(`[Meta Backfill Worker] ❌ Adset fetch error for campaign ${campaign.campaign_id}:`, adsetError)
+            break
           }
-          
-          // Add 5-second delay between campaigns to avoid rate limits
-          if (campaignsResult.budgets.length > 1) {
-            console.log(`[Meta Backfill Worker] ⏳ Waiting 5 seconds before next campaign...`)
-            await new Promise(resolve => setTimeout(resolve, 5000))
-          }
-        } catch (adsetError) {
-          console.warn(`[Meta Backfill Worker] Adset fetch failed for campaign ${campaign.campaign_id}:`, adsetError)
+        }
+        
+        // Add 2-second delay between campaigns to reduce API load
+        if (campaignsResult.budgets.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
         }
       }
     }
     
-    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)${rateLimitHit ? ' - RATE LIMITED, some data incomplete' : ''}`)
+    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)${retryAfterSeconds > 0 ? ` - Had to wait ${retryAfterSeconds}s for rate limit` : ''}`)
 
-    // 3. Fetch insights + demographics
+    // 3. Fetch insights + demographics (with retry logic)
     console.log(`[Meta Backfill Worker] 📈 Fetching insights & demographics...`)
-    const insightsResult = await fetchMetaAdInsights(brandId, startDate, endDate, false, false)
-    console.log(`[Meta Backfill Worker] ✅ Insights: ${insightsResult.count || 0}`)
+    let insightsResult
+    let insightsRetryCount = 0
+    
+    while (insightsRetryCount <= 1) {
+      try {
+        insightsResult = await fetchMetaAdInsights(brandId, startDate, endDate, false, false)
+        
+        if (insightsResult.success || !insightsResult.error?.includes('rate limit')) {
+          break // Success or non-rate-limit error
+        }
+        
+        // Rate limited - wait and retry
+        const waitMatch = insightsResult.error.match(/Wait (\d+)s/)
+        const waitSeconds = waitMatch ? parseInt(waitMatch[1]) : 300
+        
+        if (insightsRetryCount < 1) {
+          console.warn(`[Meta Backfill Worker] ⏳ Insights rate limited - waiting ${waitSeconds}s...`)
+          await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000))
+          insightsRetryCount++
+          console.log(`[Meta Backfill Worker] 🔄 Retrying insights fetch...`)
+        } else {
+          console.error(`[Meta Backfill Worker] ❌ Insights retry failed after rate limit`)
+          break
+        }
+      } catch (insightsError) {
+        console.error(`[Meta Backfill Worker] ❌ Insights fetch error:`, insightsError)
+        insightsResult = { success: false, count: 0, error: String(insightsError) }
+        break
+      }
+    }
+    
+    console.log(`[Meta Backfill Worker] ✅ Insights: ${insightsResult?.count || 0}`)
 
     // Mark sync as completed
     if (connectionId) {
