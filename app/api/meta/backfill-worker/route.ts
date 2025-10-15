@@ -39,23 +39,38 @@ export async function POST(request: NextRequest) {
     const campaignCount = campaignsResult.budgets?.length || 0
     console.log(`[Meta Backfill Worker] ✅ Campaigns: ${campaignCount}`)
 
-    // 2. Fetch adsets for each campaign (with 90-day insights)
+    // 2. Fetch adsets for each campaign (with 90-day insights + rate limit handling)
     console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns (90-day insights)...`)
     let totalAdsets = 0
+    let rateLimitHit = false
+    
     if (campaignsResult.success && campaignsResult.budgets) {
       for (const campaign of campaignsResult.budgets) {
         try {
           // Pass date range to get 90 days of adset insights
           const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
+          
           if (adsetsResult.success) {
             totalAdsets += adsetsResult.adsets?.length || 0
+            console.log(`[Meta Backfill Worker] ✅ Campaign ${campaign.campaign_id}: ${adsetsResult.adsets?.length || 0} adsets fetched`)
+          } else if (adsetsResult.error?.includes('rate limit')) {
+            console.warn(`[Meta Backfill Worker] ⚠️ Rate limit hit for campaign ${campaign.campaign_id}, will retry later`)
+            rateLimitHit = true
+            break // Stop processing more campaigns if rate limited
+          }
+          
+          // Add 5-second delay between campaigns to avoid rate limits
+          if (campaignsResult.budgets.length > 1) {
+            console.log(`[Meta Backfill Worker] ⏳ Waiting 5 seconds before next campaign...`)
+            await new Promise(resolve => setTimeout(resolve, 5000))
           }
         } catch (adsetError) {
           console.warn(`[Meta Backfill Worker] Adset fetch failed for campaign ${campaign.campaign_id}:`, adsetError)
         }
       }
     }
-    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)`)
+    
+    console.log(`[Meta Backfill Worker] ✅ Adsets: ${totalAdsets} (with 90-day insights)${rateLimitHit ? ' - RATE LIMITED, some data incomplete' : ''}`)
 
     // 3. Fetch insights + demographics
     console.log(`[Meta Backfill Worker] 📈 Fetching insights & demographics...`)
