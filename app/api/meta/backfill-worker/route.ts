@@ -39,14 +39,18 @@ export async function POST(request: NextRequest) {
     const campaignCount = campaignsResult.budgets?.length || 0
     console.log(`[Meta Backfill Worker] ✅ Campaigns: ${campaignCount}`)
 
-    // 2. Fetch adsets for each campaign (with 90-day insights - NO RETRY due to Vercel 5min timeout)
-    console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns (90-day insights)...`)
+    // 2. Fetch adsets for each campaign (STAGGERED to avoid rate limits)
+    console.log(`[Meta Backfill Worker] 📊 Fetching adsets for ${campaignCount} campaigns (90-day insights with staggered delays)...`)
     let totalAdsets = 0
     let rateLimitHit = false
     
     if (campaignsResult.success && campaignsResult.budgets) {
-      for (const campaign of campaignsResult.budgets) {
+      for (let i = 0; i < campaignsResult.budgets.length; i++) {
+        const campaign = campaignsResult.budgets[i]
+        
         try {
+          console.log(`[Meta Backfill Worker] 🔄 Processing campaign ${i + 1}/${campaignsResult.budgets.length}: ${campaign.campaign_id}`)
+          
           // Pass date range to get 90 days of adset insights
           const adsetsResult = await fetchMetaAdSets(brandId, campaign.campaign_id, true, startDate, endDate)
           
@@ -54,9 +58,9 @@ export async function POST(request: NextRequest) {
             totalAdsets += adsetsResult.adsets?.length || 0
             console.log(`[Meta Backfill Worker] ✅ Campaign ${campaign.campaign_id}: ${adsetsResult.adsets?.length || 0} adsets fetched`)
           } else if (adsetsResult.error?.includes('rate limit')) {
-            console.warn(`[Meta Backfill Worker] ⚠️ Rate limit hit for campaign ${campaign.campaign_id} - skipping remaining campaigns`)
+            console.warn(`[Meta Backfill Worker] ⚠️ Rate limit hit for campaign ${campaign.campaign_id}`)
             rateLimitHit = true
-            break // Stop processing more campaigns if rate limited (can't wait 5min due to Vercel timeout)
+            break // Stop if rate limited
           } else {
             console.warn(`[Meta Backfill Worker] ⚠️ Failed to fetch adsets for campaign ${campaign.campaign_id}:`, adsetsResult.error)
           }
@@ -64,9 +68,13 @@ export async function POST(request: NextRequest) {
           console.error(`[Meta Backfill Worker] ❌ Adset fetch error for campaign ${campaign.campaign_id}:`, adsetError)
         }
         
-        // Add 2-second delay between campaigns to reduce API load
-        if (campaignsResult.budgets.length > 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000))
+        // CRITICAL: Add 10-second delay between campaigns to stay under Meta's rate limit
+        // Meta allows ~20 calls/min = 1 call every 3 seconds
+        // Each campaign with 90-day insights = ~10-15 API calls
+        // So we need ~10 seconds between campaigns to stay safe
+        if (i < campaignsResult.budgets.length - 1) {
+          console.log(`[Meta Backfill Worker] ⏳ Waiting 10 seconds before next campaign to avoid rate limits...`)
+          await new Promise(resolve => setTimeout(resolve, 10000))
         }
       }
     }
