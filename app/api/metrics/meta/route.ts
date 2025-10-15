@@ -609,7 +609,7 @@ export async function GET(request: NextRequest) {
         .from('meta_adsets')
         .select('adset_id')
         .eq('brand_id', brandId)
-        .eq('status', 'ACTIVE')
+        // Don't filter by status - include ALL adsets to match campaign table display
 
       if (adSets && adSets.length > 0) {
         const adSetIds = adSets.map((a: any) => a.adset_id)

@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
       .from('meta_adsets')
       .select('adset_id')
       .eq('brand_id', brandId)
-      .eq('status', 'ACTIVE')
+      // Don't filter by status - include ALL adsets to match campaign table display
     
     if (adSetsError || !adSets || adSets.length === 0) {
-      console.log(`No active ad sets found for brand ${brandId}`)
+      console.log(`No ad sets found for brand ${brandId}`)
       return NextResponse.json({ value: 0 })
     }
     
