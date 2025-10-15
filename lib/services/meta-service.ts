@@ -498,7 +498,7 @@ export async function fetchMetaAdInsights(
               totalPages += result.pageCount
               console.log(`[Meta] ✅ ${dataType} chunk ${chunk.start}→${chunk.end}: ${(result.data || []).length} records (${result.pageCount} pages)`)
 
-              await delay(500)
+              await delay(3000)  // Increase to 3 seconds between demographic chunks
             }
 
             return { data: aggregated, pageCount: totalPages }
@@ -509,20 +509,28 @@ export async function fetchMetaAdInsights(
             'Age'
           )
 
+          await delay(2000)  // Delay between demographic types
+
           const genderResult = await aggregateChunkedFetch(
             (chunk) => `${genderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
             'Gender'
           )
+
+          await delay(2000)  // Delay between demographic types
 
           const ageGenderResult = await aggregateChunkedFetch(
             (chunk) => `${ageGenderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
             'Age+Gender'
           )
 
+          await delay(2000)  // Delay between demographic types
+
           const deviceBreakdownResult = await aggregateChunkedFetch(
             (chunk) => `${deviceUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
             'Device'
           )
+
+          await delay(2000)  // Delay between demographic types
 
           const platformResult = await aggregateChunkedFetch(
             (chunk) => `${platformUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,

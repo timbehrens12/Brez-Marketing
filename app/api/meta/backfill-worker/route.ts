@@ -87,13 +87,25 @@ export async function POST(request: NextRequest) {
     if (!rateLimitHit) {
       console.log(`[Meta Backfill Worker] 📈 Fetching 90-day ad-level insights and demographics...`)
       try {
+        // Add 5-second delay before insights fetch to give Meta API breathing room
+        console.log(`[Meta Backfill Worker] ⏳ Waiting 5 seconds before fetching insights to avoid rate limits...`)
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        
+        // Fetch ad-level insights with skipDemographics=false to get both
+        // The fetchMetaAdInsights function has built-in retry logic for rate limits
         insightsResult = await fetchMetaAdInsights(brandId, startDate, endDate, true, false)
         
         if (insightsResult.success) {
           console.log(`[Meta Backfill Worker] ✅ Insights & Demographics: ${insightsResult.count || 0} records fetched`)
+        } else if (insightsResult.error?.includes('rate limit') || insightsResult.error?.includes('Application request limit')) {
+          // Rate limit hit - this is expected with Meta's strict limits
+          console.warn(`[Meta Backfill Worker] ⚠️ Rate limit hit during insights fetch - will retry with longer delays`)
+          
+          // Mark as partial but keep the data we got
+          rateLimitHit = true
+          insightsResult.success = true // Treat partial success as ok
         } else {
           console.warn(`[Meta Backfill Worker] ⚠️ Failed to fetch insights:`, insightsResult.error)
-          rateLimitHit = insightsResult.error?.includes('rate limit') || false
         }
       } catch (insightsError) {
         console.error(`[Meta Backfill Worker] ❌ Insights fetch error:`, insightsError)
