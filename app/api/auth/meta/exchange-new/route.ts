@@ -113,13 +113,13 @@ export async function POST(request: NextRequest) {
       console.warn(`[Meta Exchange NEW] ⚠️ Delete failed:`, nukeError)
     }
 
-    // ✅ Perform simple 30-day sync directly (no worker needed)
-    console.log(`[Meta Exchange NEW] 📊 Starting 30-day backfill...`)
+    // ✅ Perform simple 90-day sync directly (no worker needed)
+    console.log(`[Meta Exchange NEW] 📊 Starting 90-day backfill...`)
     
-    // Calculate date range (last 30 days)
+    // Calculate date range (last 90 days)
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 30)
+    startDate.setDate(startDate.getDate() - 90)
     
     const startDateStr = startDate.toISOString().split('T')[0]
     const endDateStr = endDate.toISOString().split('T')[0]
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
             ad_account_id: accountId,
             full_sync_in_progress: false,
             last_full_sync_completed_at: new Date().toISOString(),
-            last_full_sync_result: `success_30_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult.count || 0} insights`
+            last_full_sync_result: `success_90_days: ${campaignCount} campaigns, ${totalAdsets} adsets, ${insightsResult.count || 0} insights`
           }
         })
         .eq('id', connectionData.id)
