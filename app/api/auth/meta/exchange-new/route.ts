@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs'
 
+// Set maximum duration for Meta OAuth exchange (5 minutes for 90-day backfill)
+export const maxDuration = 300
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()
@@ -151,9 +154,9 @@ export async function POST(request: NextRequest) {
       }
       console.log(`[Meta Exchange NEW] ✅ Adsets: ${totalAdsets}`)
 
-      // 3. Fetch 30-day ad-level insights and demographics
+      // 3. Fetch 90-day ad-level insights and demographics
       console.log(`[Meta Exchange NEW] 📈 Fetching insights and demographics...`)
-      const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, true, false)
+      const insightsResult = await fetchMetaAdInsights(state, startDate, endDate, false, false)
       console.log(`[Meta Exchange NEW] ✅ Insights: ${insightsResult.count || 0}`)
 
       // Update connection as completed
