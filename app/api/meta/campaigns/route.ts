@@ -854,9 +854,9 @@ export async function GET(request: NextRequest) {
       }));
       
       // BULK REACH CALCULATION: Fix reach values for all campaigns at once
-      console.log(`[Meta Campaigns] Bulk reach calculation check: hasDateRange=${hasDateRange}, from=${from}, to=${to}`);
+      console.log(`[Meta Campaigns] Bulk reach calculation check: hasDateRange=${hasDateRange}, from=${from}, to=${to}, campaigns count=${campaigns.length}`);
       if (hasDateRange && from && to) {
-        console.log('[Meta Campaigns] Calculating accurate reach values for all campaigns...');
+        console.log(`[Meta Campaigns] ✅ Starting bulk reach calculation for ${campaigns.length} campaigns...`);
         
         // Get all ad sets for all campaigns in one query
         const campaignIds = campaigns.map(c => c.campaign_id);
