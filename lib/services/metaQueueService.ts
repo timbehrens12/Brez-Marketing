@@ -191,21 +191,21 @@ export class MetaQueueService {
     // Calculate date ranges for historical backfill  
     const endDate = new Date()
     
-    // FIXED: Use 12 months maximum to stay within Meta's reach limitation (13 months)
+    // FIXED: Use 90 days (3 months) - provides all the data needed for optimization
     let startDate: Date
     if (accountCreatedDate) {
       const accountDate = new Date(accountCreatedDate)
-      const twelveMonthsAgo = new Date()
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+      const ninetyDaysAgo = new Date()
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
       
-      // Use the more recent date: account creation or 12 months ago
-      startDate = accountDate > twelveMonthsAgo ? accountDate : twelveMonthsAgo
-      console.log(`[Meta Queue] Using account creation date ${accountDate.toISOString().split('T')[0]} vs 12-month limit ${twelveMonthsAgo.toISOString().split('T')[0]}, chose: ${startDate.toISOString().split('T')[0]}`)
+      // Use the more recent date: account creation or 90 days ago
+      startDate = accountDate > ninetyDaysAgo ? accountDate : ninetyDaysAgo
+      console.log(`[Meta Queue] Using account creation date ${accountDate.toISOString().split('T')[0]} vs 90-day limit ${ninetyDaysAgo.toISOString().split('T')[0]}, chose: ${startDate.toISOString().split('T')[0]}`)
     } else {
-      // Default to 12 months ago to stay within Meta's reach limitation
+      // Default to 90 days ago - all the system needs to start optimizing
       startDate = new Date()
-      startDate.setMonth(startDate.getMonth() - 12)
-      console.log(`[Meta Queue] ⚠️ No account creation date provided, defaulting to 12 months ago: ${startDate.toISOString().split('T')[0]}`)
+      startDate.setDate(startDate.getDate() - 90)
+      console.log(`[Meta Queue] ⚠️ No account creation date provided, defaulting to 90 days ago: ${startDate.toISOString().split('T')[0]}`)
     }
     
     console.log(`[Meta Queue] Planning historical backfill from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
@@ -469,18 +469,21 @@ export class MetaQueueService {
 
       // Step 2: RE-ENABLE HISTORICAL BACKFILL - Queue all historical backfill jobs
       await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
-      console.log(`[Meta Queue] Historical backfill re-enabled - full data sync will proceed`)
+      console.log(`[Meta Queue] Historical backfill re-enabled - 90-day data sync will proceed`)
 
-      // Calculate estimated completion time with historical backfill
+      // Calculate estimated completion time with historical backfill (90 days)
+      const ninetyDaysAgo = new Date()
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+      
       const chunks = this.createDateChunks(
-        new Date(accountCreatedDate || '2020-01-01'),
+        ninetyDaysAgo,
         new Date(),
         90
       )
       const totalJobs = 1 + (chunks.length * 3) // Recent sync + (chunks * 3 job types)
       const estimatedMinutes = Math.max(5, Math.ceil(totalJobs * 0.5)) // Estimate 30 seconds per job, min 5 minutes
 
-      console.log(`[Meta Queue] Queued ${totalJobs} total jobs, estimated completion: ${estimatedMinutes} minutes`)
+      console.log(`[Meta Queue] Queued ${totalJobs} total jobs for 90-day backfill, estimated completion: ${estimatedMinutes} minutes`)
 
       return {
         success: true,

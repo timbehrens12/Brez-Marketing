@@ -1290,6 +1290,8 @@ export default function SettingsPage() {
   // Handle success parameter from URL (e.g., after Meta connection)
   useEffect(() => {
     const success = searchParams.get('success')
+    const backfill = searchParams.get('backfill')
+    
     if (success === 'true') {
       // Refresh connections and brands data after successful platform connection
       setTimeout(() => {
@@ -1299,7 +1301,11 @@ export default function SettingsPage() {
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('brandDataRefreshed'))
         
-        toast.success('Platform connected successfully!')
+        if (backfill === 'started') {
+          toast.success('Platform connected successfully! Syncing the last 90 days of data...')
+        } else {
+          toast.success('Platform connected successfully!')
+        }
       }, 500)
       
       // Clean up URL parameters
