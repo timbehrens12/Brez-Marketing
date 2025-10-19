@@ -810,19 +810,32 @@ Please extract the following information and return it as a valid JSON object on
 }
 
 WEBSITE QUALITY SCORING (0-100):
-Score the website based on these criteria:
-- Contact Forms/Lead Forms: +30 points if present, 0 if missing
-- Contact Information (phone/email): +20 points if visible, 0 if missing
-- Professional Design: +20 points if modern/professional, 0 if outdated
-- Clear Call-to-Action: +15 points if present, 0 if missing
-- Mobile Responsive: +15 points if appears responsive, 0 if not
+BE VERY STRICT AND CRITICAL. Most local business websites are poorly designed and need rebuilding.
+Score the website based on these criteria with HARSH penalties:
 
-SCORING EXAMPLES:
-- 0-30: Poor quality (no contact forms, missing contact info, outdated design)
-- 31-50: Below average (minimal contact options, basic design)
-- 51-70: Average (has contact info but missing forms or CTAs)
-- 71-85: Good quality (has forms, contact info, decent design)
-- 86-100: Excellent (all elements present, professional design)
+START AT 100 POINTS, THEN DEDUCT:
+- NO Contact Form/Lead Form: -40 points (CRITICAL - this is the main indicator)
+- NO visible Contact Information (phone/email on homepage): -25 points
+- Outdated/Unprofessional Design (old fonts, poor layout, looks like 2010): -20 points
+- NO Clear Call-to-Action buttons: -10 points
+- NOT Mobile Responsive (fixed width, tiny text): -5 points
+
+ADDITIONAL DEDUCTIONS:
+- Generic template site with no customization: -10 points
+- Broken images or links: -15 points
+- No clear services/offerings listed: -10 points
+- Cluttered or confusing navigation: -10 points
+
+SCORING EXAMPLES (BE HARSH):
+- 0-20: Terrible (no forms, no contact info, looks abandoned)
+- 21-40: Very Poor (missing forms, outdated design, unprofessional)
+- 41-60: Below Average (basic site, missing key elements like forms)
+- 61-75: Average (has some elements but could be much better)
+- 76-85: Good (professional, has forms and contact info)
+- 86-100: Excellent (modern, professional, all elements present)
+
+CRITICAL: If there is NO contact form or lead capture form, the score MUST be below 60.
+Most local business websites should score 20-50 because they lack proper lead generation.
 
 SOCIAL MEDIA EXTRACTION GUIDELINES:
 - Instagram: Look for @username, instagram.com/username, or Instagram links

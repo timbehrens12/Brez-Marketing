@@ -465,10 +465,11 @@ export default function LeadGeneratorPage() {
       filtered = filtered.filter(lead => !lead.website || lead.website === 'N/A')
     }
     if (filters.poorWebsiteQuality) {
-      // Filter for leads with poor website quality (score < 50) or no website
+      // Filter for leads with poor website quality (score < 60) or no website
+      // Scores below 60 indicate missing contact forms or poor design
       filtered = filtered.filter(lead => {
         if (!lead.website || lead.website === 'N/A') return true
-        if (lead.website_quality_score !== undefined && lead.website_quality_score < 50) return true
+        if (lead.website_quality_score !== undefined && lead.website_quality_score < 60) return true
         return false
       })
     }
