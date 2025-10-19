@@ -513,6 +513,7 @@ export default function OutreachToolPage() {
     // Count leads by status
     const pendingLeads = campaignLeads.filter(cl => cl.status === 'pending')
     const contactedLeads = campaignLeads.filter(cl => cl.status === 'contacted')
+    const contactedNoResponseLeads = campaignLeads.filter(cl => cl.status === 'contacted_no_response')
     const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
     const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
     
@@ -588,6 +589,48 @@ export default function OutreachToolPage() {
       })
     }
     })
+    }
+
+    // High priority - No Response leads (need re-outreach)
+    if (contactedNoResponseLeads.length > 1) {
+      // If 2+ no response leads, show bulk re-outreach option
+      newTodos.push({
+        id: 'bulk_no_response_many',
+        type: 'follow_up',
+        priority: 'high',
+        title: `${contactedNoResponseLeads.length} leads have been contacted but haven't responded`,
+        description: 'These leads need follow-up outreach. Use bulk re-outreach to efficiently reach out again.',
+        count: contactedNoResponseLeads.length,
+        action: 'Start Bulk Re-Outreach',
+        filterAction: () => {
+          if (contactedNoResponseLeads.length > 0) {
+            setContactedFollowUpQueue(contactedNoResponseLeads)
+            setCurrentFollowUpIndex(0)
+            setSelectedCampaignLead(contactedNoResponseLeads[0])
+            setIsFollowUpMode(true)
+            setShowOutreachOptions(true)
+          }
+        }
+      })
+    } else if (contactedNoResponseLeads.length === 1) {
+      // Show individual no response lead if only 1
+      const cl = contactedNoResponseLeads[0]
+      if (cl.lead) {
+        newTodos.push({
+          id: `no_response_${cl.id}`,
+          type: 'follow_up',
+          priority: 'high',
+          title: `Re-reach out to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} hasn't responded - time for follow-up`,
+          count: 1,
+          action: 'Re-reach Out',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setIsFollowUpMode(true)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
     }
 
     // High priority - Qualified leads (ready to close)
@@ -1137,6 +1180,7 @@ export default function OutreachToolPage() {
     totalLeads: campaignLeads.length,
     pending: campaignLeads.filter(cl => cl.status === 'pending').length,
     contacted: campaignLeads.filter(cl => cl.status === 'contacted').length,
+    contacted_no_response: campaignLeads.filter(cl => cl.status === 'contacted_no_response').length,
     responded: campaignLeads.filter(cl => cl.status === 'responded').length,
     qualified: campaignLeads.filter(cl => cl.status === 'qualified').length,
     signed: campaignLeads.filter(cl => cl.status === 'signed').length,
@@ -2076,7 +2120,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       case 'pending':
         return ['pending', 'contacted']
       case 'contacted':
-        return ['contacted', 'responded', 'rejected']
+        return ['contacted', 'contacted_no_response', 'responded', 'rejected']
+      case 'contacted_no_response':
+        return ['contacted_no_response', 'responded', 'rejected']
       case 'responded':
         return ['responded', 'qualified', 'rejected']
       case 'qualified':
@@ -3235,7 +3281,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       }`}
                     >
                       <MessageCircle className="h-3 w-3 mr-1 opacity-50" />
-                      No Response ({campaignLeads.filter(cl => cl.status === 'contacted_no_response').length})
+                      No Response ({stats.contacted_no_response})
                     </Button>
                     <Button
                       onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))}
@@ -3526,6 +3572,34 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         >
                           Cancel
                         </Button>
+                        {/* Bulk Re-Outreach for No Response leads */}
+                        {selectedLeads.some(id => {
+                          const lead = campaignLeads.find(cl => cl.id === id)
+                          return lead?.status === 'contacted_no_response'
+                        }) && (
+                          <Button
+                            onClick={() => {
+                              const noResponseLeads = campaignLeads.filter(cl => 
+                                selectedLeads.includes(cl.id) && cl.status === 'contacted_no_response'
+                              )
+                              if (noResponseLeads.length > 0) {
+                                setContactedFollowUpQueue(noResponseLeads)
+                                setCurrentFollowUpIndex(0)
+                                setSelectedCampaignLead(noResponseLeads[0])
+                                setIsFollowUpMode(true)
+                                setShowOutreachOptions(true)
+                                setSelectedLeads([])
+                                setIsSelectAll(false)
+                              }
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="bg-orange-900/20 border-orange-500/50 text-orange-300 hover:bg-orange-900/30 hover:text-orange-200"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Bulk Re-Outreach
+                          </Button>
+                        )}
                         <Button
                           onClick={deleteBulkCampaignLeads}
                           variant="outline"
