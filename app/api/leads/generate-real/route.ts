@@ -668,7 +668,8 @@ async function enrichBusinessData(business: any, niche: any, location: any, plac
       instagram_handle: null,
       facebook_page: null,
       linkedin_profile: null,
-      twitter_handle: null
+      twitter_handle: null,
+      website_quality_score: null
     }
     
     console.log(`🔑 [Enrichment] OpenAI API Key present: ${!!process.env.OPENAI_API_KEY}, Website: ${!!website}`)
@@ -723,7 +724,8 @@ async function enrichBusinessData(business: any, niche: any, location: any, plac
           instagram_handle: null,
           facebook_page: null,
           linkedin_profile: null,
-          twitter_handle: null
+          twitter_handle: null,
+          website_quality_score: null
         }
       }
     }
@@ -735,6 +737,7 @@ async function enrichBusinessData(business: any, niche: any, location: any, plac
       email: enrichedData.email,
       phone,
       website,
+      website_quality_score: enrichedData.website_quality_score,
       city,
       state_province: state,
       niche_name: niche.name,
@@ -776,9 +779,9 @@ async function enrichWithAI(businessName: string, websiteUrl: string, city: stri
       }
     }
 
-    // Use ChatGPT to extract contact information
+    // Use ChatGPT to extract contact information and assess website quality
     const prompt = `
-You are a professional data extraction specialist. I need you to thoroughly analyze the following website content for a business and extract ALL available contact information and social media profiles.
+You are a professional data extraction specialist and website quality analyst. I need you to thoroughly analyze the following website content for a business and extract ALL available contact information, social media profiles, AND assess the website quality for lead generation potential.
 
 Business: ${businessName}
 Location: ${city}, ${state}
@@ -793,6 +796,7 @@ CRITICAL INSTRUCTIONS:
 3. Check footer links, header menus, contact pages, and social media sections
 4. Look for social media icons, "Follow us" sections, and embedded social feeds
 5. Extract the exact URLs or handles as they appear on the website
+6. ASSESS WEBSITE QUALITY for lead generation potential (0-100 scale)
 
 Please extract the following information and return it as a valid JSON object only:
 {
@@ -801,8 +805,24 @@ Please extract the following information and return it as a valid JSON object on
   "instagram_handle": "Instagram username or full URL (if found)",
   "facebook_page": "Facebook page name or full URL (if found)",
   "linkedin_profile": "LinkedIn company page URL or company name (if found)",
-  "twitter_handle": "Twitter/X username or full URL (if found)"
+  "twitter_handle": "Twitter/X username or full URL (if found)",
+  "website_quality_score": 0-100 (number)
 }
+
+WEBSITE QUALITY SCORING (0-100):
+Score the website based on these criteria:
+- Contact Forms/Lead Forms: +30 points if present, 0 if missing
+- Contact Information (phone/email): +20 points if visible, 0 if missing
+- Professional Design: +20 points if modern/professional, 0 if outdated
+- Clear Call-to-Action: +15 points if present, 0 if missing
+- Mobile Responsive: +15 points if appears responsive, 0 if not
+
+SCORING EXAMPLES:
+- 0-30: Poor quality (no contact forms, missing contact info, outdated design)
+- 31-50: Below average (minimal contact options, basic design)
+- 51-70: Average (has contact info but missing forms or CTAs)
+- 71-85: Good quality (has forms, contact info, decent design)
+- 86-100: Excellent (all elements present, professional design)
 
 SOCIAL MEDIA EXTRACTION GUIDELINES:
 - Instagram: Look for @username, instagram.com/username, or Instagram links
@@ -815,9 +835,10 @@ IMPORTANT:
 - Extract information exactly as it appears on the website
 - For social media, include the full URL if available, otherwise just the username/handle
 - For LinkedIn, make sure to extract the company page URL, not personal profiles
-- If not found, return null for that field
+- If not found, return null for that field (except website_quality_score which should be a number 0-100)
 - Be thorough - check all sections of the website content for social media mentions
 - Look for variations like "Follow us on", "Connect with us", social media icons, etc.
+- website_quality_score MUST be a number between 0 and 100
 `
 
     console.log(`🔍 [AI Enrichment] Starting enrichment for ${businessName}...`)
@@ -860,7 +881,8 @@ IMPORTANT:
             instagram_handle: processSocialMediaUrl('instagram', extractedData.instagram_handle, businessName),
             facebook_page: processSocialMediaUrl('facebook', extractedData.facebook_page, businessName),
             linkedin_profile: processSocialMediaUrl('linkedin', extractedData.linkedin_profile, businessName),
-            twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName)
+            twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName),
+            website_quality_score: typeof extractedData.website_quality_score === 'number' ? extractedData.website_quality_score : null
           }
           
           console.log(`✅ [GPT-5 Enrichment] Final processed data for ${businessName}:`, processedData)
@@ -900,7 +922,8 @@ IMPORTANT:
     instagram_handle: null,
     facebook_page: null,
     linkedin_profile: null,
-    twitter_handle: null
+    twitter_handle: null,
+    website_quality_score: null
   }
 }
 

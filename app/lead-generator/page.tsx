@@ -43,6 +43,7 @@ interface Lead {
   phone?: string
   email?: string
   website?: string
+  website_quality_score?: number
   city?: string
   state_province?: string
   business_type: 'ecommerce' | 'local_service'
@@ -88,6 +89,7 @@ interface LeadFilters {
   hasEmail: boolean
   hasWebsite: boolean
   noWebsite: boolean
+  poorWebsiteQuality: boolean
   hasSocials: boolean
   socialPlatforms: {
     instagram: boolean
@@ -306,6 +308,7 @@ export default function LeadGeneratorPage() {
     hasEmail: false,
     hasWebsite: false,
     noWebsite: false,
+    poorWebsiteQuality: false,
     hasSocials: false,
     socialPlatforms: {
       instagram: false,
@@ -323,6 +326,7 @@ export default function LeadGeneratorPage() {
     hasEmail: false,
     hasWebsite: false,
     noWebsite: false,
+    poorWebsiteQuality: false,
     hasSocials: false,
     socialPlatforms: {
       instagram: false,
@@ -460,6 +464,14 @@ export default function LeadGeneratorPage() {
     if (filters.noWebsite) {
       filtered = filtered.filter(lead => !lead.website || lead.website === 'N/A')
     }
+    if (filters.poorWebsiteQuality) {
+      // Filter for leads with poor website quality (score < 50) or no website
+      filtered = filtered.filter(lead => {
+        if (!lead.website || lead.website === 'N/A') return true
+        if (lead.website_quality_score !== undefined && lead.website_quality_score < 50) return true
+        return false
+      })
+    }
     
     // Apply social media filters
     const hasSpecificSocialFilters = filters.socialPlatforms.instagram || 
@@ -561,7 +573,7 @@ export default function LeadGeneratorPage() {
       
       let query = supabase
         .from('leads')
-        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, place_id, created_at')
+        .select('id, business_name, owner_name, phone, email, website, website_quality_score, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, place_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       
@@ -1960,83 +1972,7 @@ export default function LeadGeneratorPage() {
           {/* Lead Search Panel */}
           <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl xl:col-span-2 flex flex-col">
             <CardContent className="space-y-6 pt-6">
-              {/* Usage Statistics Panel */}
-            <Card className="mb-6 bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-gray-400" />
-                  Daily Usage & Limits
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoadingUsage ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
-                    <span className="ml-2 text-gray-400">Loading usage data...</span>
-                  </div>
-                ) : usageData ? (
-                  <>
-                    {/* Weekly Generation Status */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Generation Status</span>
-                        <span className="text-sm text-gray-500">
-                          {usageData.billingInterval === 'week' 
-                            ? `Resets Mondays - ${getCountdownToMondayMidnight()}` 
-                            : `Resets on the 1st - ${getCountdownToFirstOfMonth()}`}
-                        </span>
-                      </div>
-                      
-                      {/* Subtle status indicator */}
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-[#2A2A2A] border border-[#333]">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            usageData.remaining <= 0 ? 'bg-[#2A2A2A]' : 'bg-white'
-                          }`}></div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-300">
-                              {usageData.remaining <= 0 ? 'Limit reached' : 'Generation available'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {usageData.remaining <= 0 && usageData.used > 0 ? 
-                                (usageData.billingInterval === 'week' ? 'Resets every Monday' : 'Resets on the 1st of each month') : 
-                               usageData.remaining <= 0 ? 'Limit reached' : 'Ready to find leads'}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {usageData.remaining > 0 && (
-                          <div className="text-right">
-                            <div className="text-xs font-medium text-white bg-red-600 px-2 py-1 rounded-full">
-                              Ready
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Usage Counter */}
-                    <div className="pt-3 border-t border-[#333]">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-white">
-                          {usageData.used}/{usageData.billingInterval === 'week' ? Math.floor(usageData.limit / 4) : usageData.limit}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Used this {usageData.billingInterval === 'week' ? 'week' : 'month'}
-                        </div>
-                      </div>
-                    </div>
-
-
-
-                  </>
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    Unable to load usage data
-                  </div>
-                )}
-            </CardContent>
-          </Card>
+              {/* Usage Statistics Panel - Hidden (No limits) */}
 
               {/* Business Type Selector */}
             <div className="space-y-3">
@@ -2623,6 +2559,21 @@ export default function LeadGeneratorPage() {
                         <label htmlFor="noWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                           <Globe className="h-3 w-3 opacity-50" />
                           No Website
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="poorWebsiteQuality"
+                          checked={tempFilters.poorWebsiteQuality}
+                          onCheckedChange={(checked) => 
+                            setTempFilters(prev => ({ ...prev, poorWebsiteQuality: checked as boolean }))
+                          }
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="poorWebsiteQuality" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3 text-orange-500" />
+                          Poor Website Quality
                         </label>
                       </div>
 
