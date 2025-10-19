@@ -3868,7 +3868,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             </div>
                           </TableCell>
                           <TableCell>
-                              {campaignLead.status === 'responded' ? (
+                              {campaignLead.status === 'contacted_responded' ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -3911,54 +3911,37 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   <XCircle className="h-3 w-3" />
                                   <span className="text-xs">Rejected</span>
                                 </div>
-                              ) : (campaignLead.status === 'pending' || (campaignLead.status === 'contacted' && methodsUsed.length < outreachMethods.length)) ? (
-                                (() => {
-                                  // Calculate days until follow-up if at least 1 method was used
-                                  let followUpMessage = null
-                                  if (campaignLead.status === 'contacted' && campaignLead.last_contacted_at) {
-                                    const contactDate = new Date(campaignLead.last_contacted_at)
-                                    const now = new Date()
-                                    const daysSinceContact = Math.floor((now.getTime() - contactDate.getTime()) / (1000 * 60 * 60 * 24))
-                                    const daysUntilFollowUp = 3 - daysSinceContact
-                                    if (daysUntilFollowUp > 0) {
-                                      followUpMessage = `Follow-up in ${daysUntilFollowUp} day${daysUntilFollowUp === 1 ? '' : 's'}`
-                                    }
-                                  }
-                                  
-                                  return (
-                                    <div className="flex flex-col items-center gap-1">
-                                      {followUpMessage && (
-                                        <div className="text-[10px] text-gray-500 flex items-center">
-                                          <Clock className="h-2.5 w-2.5 mr-1" />
-                                          {followUpMessage}
-                                        </div>
-                                      )}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                                        onClick={() => {
-                                          setSelectedCampaignLead(campaignLead)
-                                          setIsFollowUpMode(false) // Not follow-up mode
-                                          setShowContractGenerator(false) // Clear contract state
-                                          setMethodUsageTimestamp(Date.now()) // Force method switcher to check usage
-                                          setShowOutreachOptions(true)
-                                        }}
-                                        disabled={outreachMethods.length === 0}
-                                        title={`${methodsUsed.length} of ${outreachMethods.length} methods used today`}
-                                      >
-                                        <Sparkles className="h-3 w-3 mr-1" />
-                                        Outreach ({methodsUsed.length}/{outreachMethods.length})
-                                        {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
-                                      </Button>
-                                    </div>
-                                  )
-                                })()
-                              ) : (
-                                // For 'contacted' status with all methods used - show follow-up option only after 3+ days
+                              ) : campaignLead.status === 'pending' ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                                  onClick={() => {
+                                    setSelectedCampaignLead(campaignLead)
+                                    setIsFollowUpMode(false) // Not follow-up mode
+                                    setShowContractGenerator(false) // Clear contract state
+                                    setMethodUsageTimestamp(Date.now()) // Force method switcher to check usage
+                                    setShowOutreachOptions(true)
+                                  }}
+                                  disabled={outreachMethods.length === 0}
+                                  title={`${methodsUsed.length} of ${outreachMethods.length} methods used today`}
+                                >
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  Outreach ({methodsUsed.length}/{outreachMethods.length})
+                                  {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
+                                </Button>
+                              ) : campaignLead.status === 'contacted_no_response' ? (
+                                // For 'contacted_no_response' status - show follow-up option only after 3+ days
                                 (() => {
                                   // Check if enough time has passed for follow-up
-                                  if (!campaignLead.last_contacted_at) return null;
+                                  if (!campaignLead.last_contacted_at) {
+                                    return (
+                                      <div className="h-8 text-xs text-gray-500 flex items-center">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        Follow-up in 3 days
+                                      </div>
+                                    );
+                                  }
                                   
                                   const contactDate = new Date(campaignLead.last_contacted_at);
                                   const now = new Date();
@@ -3992,7 +3975,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                     </Button>
                                   );
                                 })()
-                              )}
+                              ) : null}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
