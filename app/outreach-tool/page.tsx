@@ -72,7 +72,7 @@ interface CampaignLead {
   id: string
   campaign_id: string
   lead_id: string
-  status: 'pending' | 'contacted' | 'responded' | 'qualified' | 'signed' | 'rejected'
+  status: 'pending' | 'contacted' | 'contacted_no_response' | 'responded' | 'qualified' | 'signed' | 'rejected'
   added_at: string
   last_contacted_at?: string
   next_follow_up_date?: string
@@ -2086,7 +2086,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       case 'rejected':
         return ['rejected'] // Can't change from rejected (but this shouldn't show anyway)
       default:
-        return ['pending', 'contacted', 'responded', 'qualified', 'signed', 'rejected']
+        return ['pending', 'contacted', 'contacted_no_response', 'responded', 'qualified', 'signed', 'rejected']
     }
   }
 
@@ -2600,7 +2600,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     if (sortConfig) {
       filtered.sort((a, b) => {
         if (sortConfig.key === 'status') {
-          const statusOrder = { 'pending': 1, 'contacted': 2, 'responded': 3, 'qualified': 4, 'signed': 5, 'rejected': 0 }
+          const statusOrder = { 'pending': 1, 'contacted': 2, 'contacted_no_response': 3, 'responded': 4, 'qualified': 5, 'signed': 6, 'rejected': 0 }
           const statusA = statusOrder[a.status as keyof typeof statusOrder] || 0
           const statusB = statusOrder[b.status as keyof typeof statusOrder] || 0
           return sortConfig.direction === 'desc' ? statusB - statusA : statusA - statusB
@@ -3225,6 +3225,19 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       Contacted ({stats.contacted})
                     </Button>
                     <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'contacted_no_response' }))}
+                      variant={filters.statusFilter === 'contacted_no_response' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'contacted_no_response'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <MessageCircle className="h-3 w-3 mr-1 opacity-50" />
+                      No Response ({campaignLeads.filter(cl => cl.status === 'contacted_no_response').length})
+                    </Button>
+                    <Button
                       onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))}
                       variant={filters.statusFilter === 'responded' ? 'default' : 'outline'}
                       size="sm"
@@ -3564,6 +3577,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         <TableHead className="text-gray-400">Contact Info</TableHead>
                         <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
+                        <TableHead className="text-gray-400">Notes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -3634,11 +3648,12 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                     <div className="flex items-center gap-2">
                                       {status === 'pending' && <CircleDot className="h-3 w-3" />}
                                       {status === 'contacted' && <MessageCircle className="h-3 w-3" />}
+                                      {status === 'contacted_no_response' && <MessageCircle className="h-3 w-3 opacity-50" />}
                                       {status === 'responded' && <MessageSquare className="h-3 w-3" />}
                                       {status === 'qualified' && <Star className="h-3 w-3" />}
                                       {status === 'signed' && <CheckCircle2 className="h-3 w-3" />}
                                       {status === 'rejected' && <XCircle className="h-3 w-3" />}
-                                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                                      {status === 'contacted_no_response' ? 'Contacted - No Response' : status.charAt(0).toUpperCase() + status.slice(1)}
                                     </div>
                                   </SelectItem>
                                 ))}
@@ -3955,6 +3970,37 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   );
                                 })()
                               )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Textarea
+                                value={campaignLead.notes || ''}
+                                onChange={(e) => {
+                                  // Update local state immediately for better UX
+                                  const newNotes = e.target.value
+                                  setCampaignLeads(prev => prev.map(cl => 
+                                    cl.id === campaignLead.id ? { ...cl, notes: newNotes } : cl
+                                  ))
+                                }}
+                                onBlur={async () => {
+                                  // Save to database on blur
+                                  try {
+                                    const supabase = await getSupabaseClient()
+                                    const { error } = await supabase
+                                      .from('outreach_campaign_leads')
+                                      .update({ notes: campaignLead.notes || '' })
+                                      .eq('id', campaignLead.id)
+                                    
+                                    if (error) throw error
+                                  } catch (error) {
+                                    console.error('Error saving notes:', error)
+                                    toast.error("Failed to save notes")
+                                  }
+                                }}
+                                placeholder="Add notes..."
+                                className="min-h-[60px] max-h-[120px] w-48 bg-[#2A2A2A] border-[#444] text-gray-300 text-xs resize-y"
+                              />
+                            </div>
                           </TableCell>
                         </TableRow>
                         )
