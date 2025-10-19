@@ -38,30 +38,32 @@ const navItems: NavItem[] = [
     description: "Marketing overview"
   },
 
-  { 
-    name: "Marketing Assistant", 
-    href: "/marketing-assistant", 
-    icon: BrainCircuit,
-    description: "AI marketing insights"
-  },
-  { 
-    name: "AI Chatbot", 
-    href: "/ai-marketing-consultant", 
-    icon: MessageCircle,
-    description: "Chat with AI assistant"
-  },
-  { 
-    name: "Brand Report", 
-    href: "/brand-report", 
-    icon: FileBarChart,
-    description: "Brand analytics"
-  },
-  { 
-    name: "Ad Creative Studio", 
-    href: "/ad-creative-studio", 
-    icon: Palette,
-    description: "Create ad designs"
-  },
+  // Hidden pages - not deleted, just removed from sidebar
+  // { 
+  //   name: "Marketing Assistant", 
+  //   href: "/marketing-assistant", 
+  //   icon: BrainCircuit,
+  //   description: "AI marketing insights"
+  // },
+  // { 
+  //   name: "AI Chatbot", 
+  //   href: "/ai-marketing-consultant", 
+  //   icon: MessageCircle,
+  //   description: "Chat with AI assistant"
+  // },
+  // { 
+  //   name: "Brand Report", 
+  //   href: "/brand-report", 
+  //   icon: FileBarChart,
+  //   description: "Brand analytics"
+  // },
+  // { 
+  //   name: "Ad Creative Studio", 
+  //   href: "/ad-creative-studio", 
+  //   icon: Palette,
+  //   description: "Create ad designs"
+  // },
+
   { 
     name: "Lead Generator", 
     href: "/lead-generator", 
