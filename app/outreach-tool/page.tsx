@@ -72,7 +72,7 @@ interface CampaignLead {
   id: string
   campaign_id: string
   lead_id: string
-  status: 'pending' | 'contacted' | 'contacted_no_response' | 'responded' | 'qualified' | 'signed' | 'rejected'
+  status: 'pending' | 'contacted_responded' | 'contacted_no_response' | 'qualified' | 'signed' | 'rejected'
   added_at: string
   last_contacted_at?: string
   next_follow_up_date?: string
@@ -512,9 +512,8 @@ export default function OutreachToolPage() {
     
     // Count leads by status
     const pendingLeads = campaignLeads.filter(cl => cl.status === 'pending')
-    const contactedLeads = campaignLeads.filter(cl => cl.status === 'contacted')
     const contactedNoResponseLeads = campaignLeads.filter(cl => cl.status === 'contacted_no_response')
-    const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
+    const contactedRespondedLeads = campaignLeads.filter(cl => cl.status === 'contacted_responded')
     const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
     
     // Get current date for comparisons
@@ -525,43 +524,27 @@ export default function OutreachToolPage() {
     fiveDaysAgo.setDate(now.getDate() - 5)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(now.getDate() - 7)
-    
-    // Get leads that need follow-up (5+ days old and still contacted, not snoozed)
-    const needsFollowUp = contactedLeads.filter(cl => {
-      if (!cl.last_contacted_at) return false
-      // Exclude snoozed leads (those with future next_follow_up_date)
-      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
-      return new Date(cl.last_contacted_at) < fiveDaysAgo
-    })
-    
-    // Get leads going cold (7+ days old, not snoozed)
-    const goingCold = contactedLeads.filter(cl => {
-      if (!cl.last_contacted_at) return false
-      // Exclude snoozed leads (those with future next_follow_up_date)
-      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
-      return new Date(cl.last_contacted_at) < sevenDaysAgo
-    })
 
 
 
     // Generate specific todo items for individual leads
     
-    // High priority - Responded leads (need immediate attention)
-    if (respondedLeads.length > 1) {
+    // High priority - Contacted Responded leads (need immediate attention)
+    if (contactedRespondedLeads.length > 1) {
       // If 2+ responded leads, show bulk action instead of individual items
       newTodos.push({
         id: 'bulk_responded_many',
         type: 'responded',
         priority: 'high',
-        title: `${respondedLeads.length} leads have responded and need immediate attention`,
+        title: `${contactedRespondedLeads.length} leads have responded and need immediate attention`,
         description: 'Use the bulk smart response tool to efficiently process all responded leads in sequence',
-        count: respondedLeads.length,
+        count: contactedRespondedLeads.length,
         action: 'Start Bulk Smart Response',
         filterAction: () => {
-          if (respondedLeads.length > 0) {
-            setRespondedQueue(respondedLeads)
+          if (contactedRespondedLeads.length > 0) {
+            setRespondedQueue(contactedRespondedLeads)
             setCurrentRespondedIndex(0)
-            setSelectedCampaignLead(respondedLeads[0])
+            setSelectedCampaignLead(contactedRespondedLeads[0])
             setIsRespondedMode(true)
             setShowSmartResponse(true)
           }
@@ -569,7 +552,7 @@ export default function OutreachToolPage() {
       })
     } else {
       // Show individual responded leads if only 1
-    respondedLeads.forEach(cl => {
+    contactedRespondedLeads.forEach(cl => {
       if (cl.lead) {
       newTodos.push({
           id: `respond_${cl.id}`,
@@ -580,7 +563,7 @@ export default function OutreachToolPage() {
           count: 1,
           action: 'Smart Response',
           filterAction: () => {
-            setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
+            setFilters(prev => ({ ...prev, statusFilter: 'contacted_responded' }))
             // Also select this specific lead
             setSelectedCampaignLead(cl)
               setIsRespondedMode(false)
@@ -723,8 +706,10 @@ export default function OutreachToolPage() {
     }
     }
 
-    // Medium priority - Contacted leads needing follow-up (7+ days old)
-    if (goingCold.length > 1) {
+    // Note: Old "contacted" follow-up todos removed - now using explicit contacted_no_response status
+
+    // Medium priority - Contacted leads needing follow-up (7+ days old) - REMOVED
+    /*if (goingCold.length > 1) {
       // If 2+ contacted leads are 7+ days old, show bulk follow-up option
       newTodos.push({
         id: 'bulk_contacted_followup',
@@ -859,27 +844,8 @@ export default function OutreachToolPage() {
       }
     }
 
-    // Add status update reminders
-    const oldContactedLeads = contactedLeads.filter(cl => {
-      if (!cl.last_contacted_at) return false
-      // Exclude snoozed leads and leads that are already covered by unsnoozed todos
-      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
-      if (unsnoozedLeads.includes(cl)) return false
-      return new Date(cl.last_contacted_at) < threeDaysAgo
-    })
-
-    if (oldContactedLeads.length > 0) {
-      newTodos.push({
-        id: 'update_status',
-        type: 'follow_up',
-        priority: 'low',
-        title: `Update status for ${oldContactedLeads.length} leads`,
-        description: `Some leads may have responded but status hasn't been updated`,
-        count: oldContactedLeads.length,
-        action: 'Review Status',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-      })
-    }
+    // Add status update reminders - REMOVED (using explicit statuses now)
+    */
 
     setTodos(newTodos)
   }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode, setRespondedQueue, setCurrentRespondedIndex, setIsRespondedMode, setQualifiedContractQueue, setCurrentContractIndex, setIsContractMode, setShowContractGenerator])
@@ -1179,17 +1145,16 @@ export default function OutreachToolPage() {
   const stats = {
     totalLeads: campaignLeads.length,
     pending: campaignLeads.filter(cl => cl.status === 'pending').length,
-    contacted: campaignLeads.filter(cl => cl.status === 'contacted').length,
+    contacted_responded: campaignLeads.filter(cl => cl.status === 'contacted_responded').length,
     contacted_no_response: campaignLeads.filter(cl => cl.status === 'contacted_no_response').length,
-    responded: campaignLeads.filter(cl => cl.status === 'responded').length,
     qualified: campaignLeads.filter(cl => cl.status === 'qualified').length,
     signed: campaignLeads.filter(cl => cl.status === 'signed').length,
     rejected: campaignLeads.filter(cl => cl.status === 'rejected').length,
     conversionRate: campaignLeads.length > 0 ? 
       (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0',
-    responseRate: campaignLeads.filter(cl => cl.status === 'contacted').length > 0 ?
-      (campaignLeads.filter(cl => cl.status === 'responded').length / 
-       campaignLeads.filter(cl => cl.status === 'contacted').length * 100).toFixed(1) : '0'
+    responseRate: (campaignLeads.filter(cl => cl.status === 'contacted_responded').length + campaignLeads.filter(cl => cl.status === 'contacted_no_response').length) > 0 ?
+      (campaignLeads.filter(cl => cl.status === 'contacted_responded').length / 
+       (campaignLeads.filter(cl => cl.status === 'contacted_responded').length + campaignLeads.filter(cl => cl.status === 'contacted_no_response').length) * 100).toFixed(1) : '0'
   }
 
   // Get unique niches from leads
@@ -2118,13 +2083,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   const getAvailableStatuses = (currentStatus: string) => {
     switch (currentStatus) {
       case 'pending':
-        return ['pending', 'contacted']
-      case 'contacted':
-        return ['contacted', 'contacted_no_response', 'responded', 'rejected']
+        return ['pending', 'contacted_responded', 'contacted_no_response']
+      case 'contacted_responded':
+        return ['contacted_responded', 'qualified', 'rejected']
       case 'contacted_no_response':
-        return ['contacted_no_response', 'responded', 'rejected']
-      case 'responded':
-        return ['responded', 'qualified', 'rejected']
+        return ['contacted_no_response', 'contacted_responded', 'rejected']
       case 'qualified':
         return ['qualified', 'signed', 'rejected']
       case 'signed':
@@ -2132,7 +2095,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       case 'rejected':
         return ['rejected'] // Can't change from rejected (but this shouldn't show anyway)
       default:
-        return ['pending', 'contacted', 'contacted_no_response', 'responded', 'qualified', 'signed', 'rejected']
+        return ['pending', 'contacted_responded', 'contacted_no_response', 'qualified', 'signed', 'rejected']
     }
   }
 
@@ -2646,7 +2609,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     if (sortConfig) {
       filtered.sort((a, b) => {
         if (sortConfig.key === 'status') {
-          const statusOrder = { 'pending': 1, 'contacted': 2, 'contacted_no_response': 3, 'responded': 4, 'qualified': 5, 'signed': 6, 'rejected': 0 }
+          const statusOrder = { 'pending': 1, 'contacted_responded': 2, 'contacted_no_response': 3, 'qualified': 4, 'signed': 5, 'rejected': 0 }
           const statusA = statusOrder[a.status as keyof typeof statusOrder] || 0
           const statusB = statusOrder[b.status as keyof typeof statusOrder] || 0
           return sortConfig.direction === 'desc' ? statusB - statusA : statusA - statusB
@@ -3258,17 +3221,17 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       Pending ({stats.pending})
                     </Button>
                     <Button
-                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))}
-                      variant={filters.statusFilter === 'contacted' ? 'default' : 'outline'}
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'contacted_responded' }))}
+                      variant={filters.statusFilter === 'contacted_responded' ? 'default' : 'outline'}
                       size="sm"
                       className={`h-8 text-xs ${
-                        filters.statusFilter === 'contacted'
+                        filters.statusFilter === 'contacted_responded'
                           ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
-                      <MessageCircle className="h-3 w-3 mr-1" />
-                      Contacted ({stats.contacted})
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Responded ({stats.contacted_responded})
                     </Button>
                     <Button
                       onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'contacted_no_response' }))}
@@ -3282,19 +3245,6 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     >
                       <MessageCircle className="h-3 w-3 mr-1 opacity-50" />
                       No Response ({stats.contacted_no_response})
-                    </Button>
-                    <Button
-                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))}
-                      variant={filters.statusFilter === 'responded' ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-8 text-xs ${
-                        filters.statusFilter === 'responded'
-                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
-                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
-                      }`}
-                    >
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Responded ({stats.responded})
                     </Button>
                     <Button
                       onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))}
@@ -3721,13 +3671,12 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   <SelectItem key={status} value={status}>
                                     <div className="flex items-center gap-2">
                                       {status === 'pending' && <CircleDot className="h-3 w-3" />}
-                                      {status === 'contacted' && <MessageCircle className="h-3 w-3" />}
+                                      {status === 'contacted_responded' && <MessageSquare className="h-3 w-3" />}
                                       {status === 'contacted_no_response' && <MessageCircle className="h-3 w-3 opacity-50" />}
-                                      {status === 'responded' && <MessageSquare className="h-3 w-3" />}
                                       {status === 'qualified' && <Star className="h-3 w-3" />}
                                       {status === 'signed' && <CheckCircle2 className="h-3 w-3" />}
                                       {status === 'rejected' && <XCircle className="h-3 w-3" />}
-                                      {status === 'contacted_no_response' ? 'Contacted - No Response' : status.charAt(0).toUpperCase() + status.slice(1)}
+                                      {status === 'contacted_no_response' ? 'Contacted - No Response' : status === 'contacted_responded' ? 'Contacted - Responded' : status.charAt(0).toUpperCase() + status.slice(1)}
                                     </div>
                                   </SelectItem>
                                 ))}
