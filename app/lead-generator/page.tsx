@@ -2057,9 +2057,6 @@ export default function LeadGeneratorPage() {
                   <Label className="text-sm font-medium text-gray-400">
                     Selected Niches ({selectedNiches.length})
                   </Label>
-                  <div className="text-sm text-gray-500">
-                    {usageData?.remaining || 0} leads remaining this month
-                  </div>
                 </div>
                 
                 {/* Total Leads Input */}
@@ -2068,7 +2065,7 @@ export default function LeadGeneratorPage() {
                   <Input
                     type="number"
                     min="1"
-                    max={usageData?.remaining || 100}
+                    max={1000}
                     value={totalLeadsToGenerate}
                     onInput={(e) => {
                       // Remove leading zeros as user types
@@ -2086,8 +2083,8 @@ export default function LeadGeneratorPage() {
                         val = 1
                       }
                       
-                      // Clamp between 1 and max remaining
-                      val = Math.max(1, Math.min(val, usageData?.remaining || 100))
+                      // Clamp between 1 and 1000 (no usage limit)
+                      val = Math.max(1, Math.min(val, 1000))
                       
                       setTotalLeadsToGenerate(val)
                       
@@ -2104,7 +2101,7 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter number of leads"
                   />
                   <div className="text-xs text-gray-500">
-                    Max {usageData?.remaining || 100} leads ({usageData?.billingInterval === 'week' ? 'weekly' : 'monthly'} limit)
+                    Generate up to 1000 leads at once
                   </div>
                 </div>
 
@@ -2353,13 +2350,6 @@ export default function LeadGeneratorPage() {
                 )}
               </Button>
               
-              {selectedNiches.length > 0 && selectedNiches.length <= 5 && usageData && (
-                <div className="text-xs text-center text-gray-500">
-                  Will generate 25 leads total
-                  {selectedNiches.length > 1 ? ` (${Math.floor(25 / selectedNiches.length)} per niche)` : ''}
-                  {' '}from {selectedNiches.length} niche{selectedNiches.length > 1 ? 's' : ''}
-                </div>
-              )}
               {selectedNiches.length === 0 && (
                 <div className="text-xs text-center text-gray-400">
                   Select niches to generate leads
