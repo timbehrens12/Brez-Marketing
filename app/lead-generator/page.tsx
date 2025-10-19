@@ -58,6 +58,7 @@ interface Lead {
   shopify_detected?: boolean
   marketing_prospect_reason?: string
   lead_score?: number
+  place_id?: string
   created_at: string
 }
 
@@ -86,6 +87,7 @@ interface LeadFilters {
   hasPhone: boolean
   hasEmail: boolean
   hasWebsite: boolean
+  noWebsite: boolean
   hasSocials: boolean
   socialPlatforms: {
     instagram: boolean
@@ -303,6 +305,7 @@ export default function LeadGeneratorPage() {
     hasPhone: false,
     hasEmail: false,
     hasWebsite: false,
+    noWebsite: false,
     hasSocials: false,
     socialPlatforms: {
       instagram: false,
@@ -319,6 +322,7 @@ export default function LeadGeneratorPage() {
     hasPhone: false,
     hasEmail: false,
     hasWebsite: false,
+    noWebsite: false,
     hasSocials: false,
     socialPlatforms: {
       instagram: false,
@@ -453,6 +457,9 @@ export default function LeadGeneratorPage() {
     if (filters.hasWebsite) {
       filtered = filtered.filter(lead => lead.website && lead.website !== 'N/A')
     }
+    if (filters.noWebsite) {
+      filtered = filtered.filter(lead => !lead.website || lead.website === 'N/A')
+    }
     
     // Apply social media filters
     const hasSpecificSocialFilters = filters.socialPlatforms.instagram || 
@@ -554,7 +561,7 @@ export default function LeadGeneratorPage() {
       
       let query = supabase
         .from('leads')
-        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, created_at')
+        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, place_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       
@@ -818,12 +825,6 @@ export default function LeadGeneratorPage() {
       return
     }
 
-    if (!usageData || usageData.remaining <= 0) {
-      const resetText = usageData?.billingInterval === 'week' ? 'Resets every Monday' : 'Resets on the 1st of each month'
-      toast.error(`Limit reached. ${resetText}`)
-      return
-    }
-
     // Validate allocation
     const allocatedTotal = Object.values(nicheAllocation).reduce((sum, val) => sum + val, 0)
     if (allocatedTotal !== totalLeadsToGenerate) {
@@ -833,11 +834,6 @@ export default function LeadGeneratorPage() {
 
     if (totalLeadsToGenerate <= 0) {
       toast.error('Please specify how many leads to generate')
-      return
-    }
-
-    if (totalLeadsToGenerate > usageData.remaining) {
-      toast.error(`Cannot generate ${totalLeadsToGenerate} leads. Only ${usageData.remaining} remaining this month.`)
       return
     }
 
@@ -2398,14 +2394,9 @@ export default function LeadGeneratorPage() {
                 disabled={
                   isGenerating || 
                   selectedNiches.length === 0 || 
-                  businessType === 'ecommerce' || 
-                  (usageData?.remaining ?? 0) <= 0
+                  businessType === 'ecommerce'
                 }
-                className={`w-full ${
-                  (usageData?.remaining ?? 0) <= 0 
-                    ? 'bg-[#1A1A1A] text-gray-400 cursor-not-allowed border border-[#2A2A2A]'
-                : 'bg-[#FF2A2A] hover:bg-[#E02424] text-black font-bold border border-[#FF2A2A] hover:border-[#E02424]'
-                }`}
+                className="w-full bg-[#FF2A2A] hover:bg-[#E02424] text-black font-bold border border-[#FF2A2A] hover:border-[#E02424]"
               >
                 {businessType === 'ecommerce' ? (
                   <>
@@ -2417,15 +2408,10 @@ export default function LeadGeneratorPage() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Finding Real Businesses... (may take up to 90 seconds)
                   </>
-                ) : (usageData?.remaining ?? 0) <= 0 ? (
-                  <>
-                    <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">Weekly Limit - resets Mondays - {getCountdownToMondayMidnight()}</span>
-                  </>
                 ) : (
                   <>
                     <Search className="h-4 w-4 mr-2" />
-                    Find Real Businesses
+                    Find Real Businesses ({totalLeadsToGenerate} leads)
                   </>
                 )}
               </Button>
@@ -2622,6 +2608,21 @@ export default function LeadGeneratorPage() {
                         <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                           <Globe className="h-3 w-3" />
                           Has Website
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="noWebsite"
+                          checked={tempFilters.noWebsite}
+                          onCheckedChange={(checked) => 
+                            setTempFilters(prev => ({ ...prev, noWebsite: checked as boolean }))
+                          }
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="noWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Globe className="h-3 w-3 opacity-50" />
+                          No Website
                         </label>
                       </div>
 
@@ -3041,6 +3042,20 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
+                              {lead.place_id && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="p-1 h-8 w-8 text-gray-400 hover:text-white hover:bg-[#222]"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    window.open(`https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${lead.place_id}`, '_blank')
+                                  }}
+                                  title="View Google Business Profile"
+                                >
+                                  <MapPin className="h-3 w-3" />
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant="ghost"

@@ -40,29 +40,8 @@ export async function POST(request: NextRequest) {
     
     const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC, totalLeadsToGenerate, nicheAllocation } = validatedData
 
-    // Check tier access for lead generation
-    const accessResult = await tierEnforcementService.canAccessFeature(userId, 'lead_generation')
-    if (!accessResult.allowed) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: accessResult.reason || 'Lead Generation is not available on your current plan',
-        upgradeRequired: true,
-        currentTier: accessResult.currentTier,
-        recommendedTier: accessResult.recommendedTier
-      }, { status: 403 }))
-    }
-
-    // Check current usage against tier-based limits (monthly or weekly based on billing interval)
-    if (brandId) {
-      const usageStatus = await aiUsageService.checkUsageStatus(brandId, userId, 'lead_gen_enrichment')
-      if (!usageStatus.canUse) {
-        return addSecurityHeaders(NextResponse.json({ 
-          error: usageStatus.reason || 'Monthly lead generation limit reached',
-          remainingUses: usageStatus.remainingUses || 0,
-          upgradeRequired: true
-        }, { status: 429 }))
-      }
-      console.log(`✅ [Usage Check] User has ${usageStatus.remainingUses} leads remaining`)
-    }
+    // Usage limits removed - infinite lead generation enabled
+    console.log(`✅ [Usage Check] Unlimited lead generation enabled`)
     
     // Sanitize inputs
     const sanitizedBusinessType = sanitizeString(businessType, 100)
@@ -181,6 +160,7 @@ export async function POST(request: NextRequest) {
         facebook_page: lead.facebook_page,
         linkedin_profile: lead.linkedin_profile,
         twitter_handle: lead.twitter_handle,
+        place_id: lead.place_id,
         user_id: userId,
         business_type: businessType,
         status: 'new',
@@ -323,24 +303,8 @@ export async function POST(request: NextRequest) {
        // console.log(`🔄 DIVERSIFICATION: Successfully tracked ${distributionEntries.length} lead distributions`)
     }
 
-    // Record AI usage for lead gen enrichment
-    console.log(`📊 [Usage Recording] brandId=${brandId}, userId=${userId}, savedCount=${savedCount}`)
-    if (brandId) {
-      const recordResult = await aiUsageService.recordUsage(brandId, userId, 'lead_gen_enrichment', {
-        leadsEnriched: savedCount,
-        niches: sanitizedNiches,
-        location: sanitizedLocation,
-        timestamp: new Date().toISOString()
-      })
-      console.log(`✅ [Usage Recording] Result: ${recordResult}`)
-    } else {
-      console.warn(`⚠️ [Usage Recording] Skipped - brandId is undefined/null`)
-    }
-
-    // NOTE: Usage tracking is now handled by AIUsageService via ai_usage_tracking table
-    // Monthly limits reset on the 1st of each month
-    // Tier-based limits are enforced before lead generation starts
-    console.log(`✅ [Usage Tracking] Lead generation completed. Saved ${savedCount} leads.`)
+    // Usage recording disabled - unlimited lead generation
+    console.log(`✅ [Lead Generation] Completed. Saved ${savedCount} leads. Usage tracking disabled.`)
 
     // Update niche-specific usage tracking
     const nicheUsageUpdates = niches.map((nicheId: string) => ({
@@ -609,7 +573,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
             
             // Only include businesses that are currently operational
             if (business.business_status === 'OPERATIONAL') {
-              const lead = await enrichBusinessData(business, niche, location)
+              const lead = await enrichBusinessData(business, niche, location, place.place_id)
                           if (lead) {
               // console.log(`Added real business: ${business.name}`)
               return lead
@@ -684,7 +648,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
   }
 }
 
-async function enrichBusinessData(business: any, niche: any, location: any) {
+async function enrichBusinessData(business: any, niche: any, location: any, placeId?: string) {
   try {
     // Extract real data from Google Places
     const name = business.name || 'N/A'
@@ -777,7 +741,8 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       instagram_handle: enrichedData.instagram_handle,
       facebook_page: enrichedData.facebook_page,
       linkedin_profile: enrichedData.linkedin_profile,
-      twitter_handle: enrichedData.twitter_handle
+      twitter_handle: enrichedData.twitter_handle,
+      place_id: placeId
     }
     
     // console.log(`Successfully created lead for ${name}`)
