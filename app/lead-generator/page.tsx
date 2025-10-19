@@ -2065,14 +2065,19 @@ export default function LeadGeneratorPage() {
                   <Input
                     type="number"
                     min="1"
-                    value={totalLeadsToGenerate}
+                    value={totalLeadsToGenerate === 0 ? '' : totalLeadsToGenerate}
                     onChange={(e) => {
+                      // Allow empty input while typing
+                      if (e.target.value === '') {
+                        setTotalLeadsToGenerate(0)
+                        return
+                      }
+                      
                       // Parse the value - allow any number to be entered
                       let val = parseInt(e.target.value)
                       
-                      // Handle empty input or invalid numbers
-                      if (isNaN(val) || e.target.value === '') {
-                        setTotalLeadsToGenerate(1)
+                      // Handle invalid numbers
+                      if (isNaN(val)) {
                         return
                       }
                       
@@ -2089,6 +2094,19 @@ export default function LeadGeneratorPage() {
                         newAllocation[nicheId] = perNiche + (idx < remainder ? 1 : 0)
                       })
                       setNicheAllocation(newAllocation)
+                    }}
+                    onBlur={(e) => {
+                      // When user leaves the field, ensure it has a valid value
+                      if (totalLeadsToGenerate === 0 || e.target.value === '') {
+                        setTotalLeadsToGenerate(1)
+                        const perNiche = Math.floor(1 / selectedNiches.length)
+                        const remainder = 1 % selectedNiches.length
+                        const newAllocation: Record<string, number> = {}
+                        selectedNiches.forEach((nicheId, idx) => {
+                          newAllocation[nicheId] = perNiche + (idx < remainder ? 1 : 0)
+                        })
+                        setNicheAllocation(newAllocation)
+                      }
                     }}
                     className="bg-[#1A1A1A] border-[#333] text-white"
                     placeholder="Enter number of leads"
