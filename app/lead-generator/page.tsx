@@ -2065,26 +2065,19 @@ export default function LeadGeneratorPage() {
                   <Input
                     type="number"
                     min="1"
-                    max={1000}
                     value={totalLeadsToGenerate}
-                    onInput={(e) => {
-                      // Remove leading zeros as user types
-                      const input = e.target as HTMLInputElement
-                      if (input.value.startsWith('0') && input.value.length > 1) {
-                        input.value = input.value.replace(/^0+/, '')
-                      }
-                    }}
                     onChange={(e) => {
-                      // Parse and clamp the value
+                      // Parse the value - allow any number to be entered
                       let val = parseInt(e.target.value)
                       
                       // Handle empty input or invalid numbers
                       if (isNaN(val) || e.target.value === '') {
-                        val = 1
+                        setTotalLeadsToGenerate(1)
+                        return
                       }
                       
-                      // Clamp between 1 and 1000 (no usage limit)
-                      val = Math.max(1, Math.min(val, 1000))
+                      // Only enforce minimum of 1, no maximum limit
+                      val = Math.max(1, val)
                       
                       setTotalLeadsToGenerate(val)
                       
@@ -2101,7 +2094,7 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter number of leads"
                   />
                   <div className="text-xs text-gray-500">
-                    Generate up to 1000 leads at once
+                    Enter any number of leads to generate
                   </div>
                 </div>
 
