@@ -1,11 +1,25 @@
 "use client"
 
-export const runtime = 'edge'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-/**
- * Dashboard Page
- * 
- * Loading behavior:
+export default function DashboardPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // Redirect to landing page since authentication is removed
+    router.push('/')
+  }, [router])
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="text-white text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff2a2a] mx-auto mb-4"></div>
+        <p>Redirecting...</p>
+      </div>
+    </div>
+  )
+}
  * 1. When a brand is first selected, initialDataLoad is set to true
  * 2. When initialDataLoad is true, a full-screen loading spinner is shown
  * 3. After data is loaded, initialDataLoad is set to false
