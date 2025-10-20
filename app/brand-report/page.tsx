@@ -1,5 +1,7 @@
 "use client"
 
+export const runtime = 'edge'
+
 import { useState, useEffect, useCallback } from "react"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { DateRange } from "react-day-picker"

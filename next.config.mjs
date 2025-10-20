@@ -15,6 +15,27 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Exclude dashboard pages from static generation since they require authentication
+  exportPathMap: async function (defaultPathMap) {
+    const paths = { ...defaultPathMap }
+
+    // Remove dashboard and authenticated pages from static export
+    delete paths['/dashboard']
+    delete paths['/ai-dashboard']
+    delete paths['/analytics']
+    delete paths['/brand-report']
+    delete paths['/action-center']
+    delete paths['/ad-creative-studio']
+    delete paths['/lead-generator']
+    delete paths['/marketing-assistant']
+    delete paths['/outreach-tool']
+    delete paths['/review']
+    delete paths['/orders']
+    delete paths['/settings']
+    delete paths['/ai-marketing-consultant']
+
+    return paths
+  },
   async headers() {
     return [
       {

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Check, Target, Building2, Monitor, Funnel, Cog, Star, Quote, Phone, Mail, Instagram, Facebook, Twitter, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Heart, Sparkles, Layers, Zap as ZapIcon } from "lucide-react"
+import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Check, Target, Building2, Monitor, Filter, Cog, Star, Quote, Phone, Mail, Instagram, Facebook, Twitter, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Heart, Sparkles, Layers, Zap as ZapIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
@@ -168,7 +168,7 @@ function ServicesSection() {
       features: ["Mobile-First Design", "SEO Optimization", "Conversion Focused", "Fast Loading"]
     },
     {
-      icon: Funnel,
+      icon: Filter,
       title: "Lead Generation Systems",
       desc: "Complete funnel automation with forms, CRM integration, and intelligent lead scoring. Turn visitors into qualified prospects.",
       features: ["Smart Lead Forms", "CRM Integration", "Lead Scoring", "Automated Follow-up"]
