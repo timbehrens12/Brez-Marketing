@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "TLUCA Systems - Systems That Scale",
-  description: "We build systems that attract, convert, and manage leads — all in one place. High-converting websites, lead generation funnels, and automated business systems.",
+  description: "We build systems that attract, convert, and manage leads — all in one place. High-converting websites, lead generation funnels, and automated business systems for growth.",
   other: {
     'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
   },
