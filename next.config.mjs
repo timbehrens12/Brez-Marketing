@@ -46,7 +46,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com https://api.openai.com https://graph.facebook.com https://*.facebook.com https://brezmarketingdashboard.com https://www.brezmarketingdashboard.com; frame-src 'self' https://js.clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com https://accounts.google.com; worker-src 'self' blob:;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:;",
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
