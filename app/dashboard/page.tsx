@@ -16,7 +16,7 @@ export default function DashboardPage() {
       <div className="text-white text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff2a2a] mx-auto mb-4"></div>
         <p>Redirecting...</p>
-      </div>
-    </div>
+          </div>
+                    </div>
   )
 }
