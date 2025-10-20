@@ -1,5 +1,7 @@
 "use client"
 
+export const runtime = 'edge'
+
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { UnifiedLoading, pageLoadingConfig } from '@/components/ui/unified-loading'
 import { useAgency } from '@/contexts/AgencyContext'
