@@ -1,10 +1,10 @@
 "use client"
 
+import React, { useState, useEffect } from "react"
 import { X, Zap, Shield, Users, User, BarChart3, TrendingUp, TrendingDown, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Check, Target, Building2, Monitor, Funnel, Cog, Star, Quote, Phone, Mail, Instagram, Facebook, Twitter, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Heart, Sparkles, Layers, Zap as ZapIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { useState, useEffect } from "react"
 
 const BRAND_RED = "#ff2a2a"
 const BRAND_DARK = "#0a0a0a"
