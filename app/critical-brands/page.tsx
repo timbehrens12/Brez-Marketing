@@ -1,5 +1,7 @@
 "use client"
 
+export const runtime = 'edge'
+
 import { useState, useEffect } from 'react'
 import { useAuth } from "@clerk/nextjs"
 import { getSupabaseClient } from '@/lib/supabase/client'

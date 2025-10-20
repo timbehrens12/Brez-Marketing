@@ -1,5 +1,7 @@
 "use client"
 
+export const runtime = 'edge'
+
 import { useEffect, useState } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { useBrandContext } from "@/lib/context/BrandContext"
