@@ -24,6 +24,7 @@ type OnboardingData = {
     zip: string
     country: string
   }
+  businessNiche: string
   businessDescription: string
   servicesOffered: string
   operatingHours: {
@@ -100,6 +101,7 @@ const INITIAL_DATA: OnboardingData = {
   businessEmail: '',
   businessPhone: '',
   businessAddress: { street: '', city: '', state: '', zip: '', country: 'USA' },
+  businessNiche: '',
   businessDescription: '',
   servicesOffered: '',
   operatingHours: {
@@ -538,6 +540,17 @@ export default function OnboardingPage() {
                       placeholder="Country"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="businessNiche" className="text-white">Business Niche/Industry</Label>
+                  <Input
+                    id="businessNiche"
+                    value={formData.businessNiche}
+                    onChange={(e) => updateField('businessNiche', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    placeholder="e.g., Landscaping, Hair Salon, Plumbing, Real Estate, etc."
+                  />
                 </div>
 
                 <div>

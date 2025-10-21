@@ -42,6 +42,7 @@ ${data.businessAddress.street || '—'}
 ${data.businessAddress.city || '—'}, ${data.businessAddress.state || '—'} ${data.businessAddress.zip || '—'}
 ${data.businessAddress.country || '—'}
 
+Niche/Industry: ${data.businessNiche || '—'}
 Description: ${data.businessDescription || '—'}
 Services Offered:
 ${data.servicesOffered || '—'}
@@ -133,6 +134,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
         business_email: data.businessEmail,
         business_phone: data.businessPhone,
         business_address: data.businessAddress || {},
+        business_niche: data.businessNiche,
         business_description: data.businessDescription,
         services_offered: data.servicesOffered,
         operating_hours: data.operatingHours,
@@ -292,6 +294,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             
             // Business Details
             business_address: data.businessAddress,
+            business_niche: data.businessNiche,
             business_description: data.businessDescription,
             services_offered: data.servicesOffered,
             operating_hours: data.operatingHours,
