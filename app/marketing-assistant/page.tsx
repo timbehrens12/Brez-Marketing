@@ -1,7 +1,5 @@
 "use client"
 
-export const runtime = 'edge'
-
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import Image from 'next/image'
 import { useAuth } from '@clerk/nextjs'
