@@ -6,7 +6,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 // import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import type React from "react"
-// Removed authentication components for landing page
+import { ClerkProvider } from '@clerk/nextjs'
+import { AuthenticatedProviders } from '@/components/AuthenticatedProviders'
+import { SidebarProvider } from "@/context/SidebarContext"
 
 // Extend Window interface for console override tracking
 declare global {
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
   title: "TLUCA Systems - Systems That Scale",
   description: "We build systems that attract, convert, and manage leads — all in one place. High-converting websites, lead generation funnels, and automated business systems for growth.",
   other: {
-    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com https://js.stripe.com https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.openai.com https://clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com wss://*.supabase.co https://graph.facebook.com https://*.facebook.com; frame-src 'self' https://js.stripe.com https://js.clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
   },
   manifest: "/brand/site.webmanifest",
   icons: {
@@ -168,9 +170,15 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", jetbrainsMono.className)}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <SidebarProvider>
+              <AuthenticatedProviders>
+                {children}
+              </AuthenticatedProviders>
+            </SidebarProvider>
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   )
