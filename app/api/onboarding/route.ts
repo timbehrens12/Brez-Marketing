@@ -46,7 +46,10 @@ Description: ${data.businessDescription || '—'}
 Services Offered:
 ${data.servicesOffered || '—'}
 
-Operating Hours: ${data.operatingHours || '—'}
+Operating Hours:
+${data.operatingHours ? Object.entries(data.operatingHours).map(([day, hours]: [string, any]) => 
+  `  ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
+).join('\n') : '—'}
 Service Areas: ${data.serviceAreas || '—'}
 
 🎨 BRANDING & DESIGN
@@ -62,8 +65,9 @@ About Us Section: ${data.hasAboutUs ? '✓ Yes' : '✗ No'}
 ${data.hasAboutUs ? `\n${data.aboutUsText}\n` : ''}
 
 Meet the Team: ${data.hasMeetTheTeam ? '✓ Yes' : '✗ No'}
-${data.hasMeetTheTeam ? `\n${data.teamText}\n` : ''}
-Team Photos: ${data.teamPhotos?.length || 0} files
+${data.hasMeetTheTeam && data.teamMembers ? data.teamMembers.map((member: any) => 
+  `  • ${member.name || '(unnamed)'} - ${member.role || '(no role)'} ${member.photo ? '✓ Photo' : '✗ No photo'}`
+).join('\n') : ''}
 
 Inspiration Sites:
 ${data.inspirationSites?.filter((s: string) => s).join('\n') || '—'}
@@ -143,8 +147,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
         has_about_us: data.hasAboutUs || false,
         about_us_text: data.aboutUsText,
         has_meet_the_team: data.hasMeetTheTeam || false,
-        team_text: data.teamText,
-        team_photos: data.teamPhotos || [],
+        team_members: data.teamMembers || [],
         inspiration_sites: data.inspirationSites || [],
         
         has_existing_website: data.hasExistingWebsite || false,

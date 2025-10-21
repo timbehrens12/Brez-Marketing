@@ -26,7 +26,15 @@ type OnboardingData = {
   }
   businessDescription: string
   servicesOffered: string
-  operatingHours: string
+  operatingHours: {
+    monday: { open: string; close: string; closed: boolean }
+    tuesday: { open: string; close: string; closed: boolean }
+    wednesday: { open: string; close: string; closed: boolean }
+    thursday: { open: string; close: string; closed: boolean }
+    friday: { open: string; close: string; closed: boolean }
+    saturday: { open: string; close: string; closed: boolean }
+    sunday: { open: string; close: string; closed: boolean }
+  }
   serviceAreas: string
   
   // Branding
@@ -39,8 +47,11 @@ type OnboardingData = {
   hasAboutUs: boolean
   aboutUsText: string
   hasMeetTheTeam: boolean
-  teamText: string
-  teamPhotos: File[]
+  teamMembers: Array<{
+    name: string
+    role: string
+    photo: File | null
+  }>
   inspirationSites: string[]
   
   // Online Presence
@@ -91,7 +102,15 @@ const INITIAL_DATA: OnboardingData = {
   businessAddress: { street: '', city: '', state: '', zip: '', country: 'USA' },
   businessDescription: '',
   servicesOffered: '',
-  operatingHours: '',
+  operatingHours: {
+    monday: { open: '09:00', close: '17:00', closed: false },
+    tuesday: { open: '09:00', close: '17:00', closed: false },
+    wednesday: { open: '09:00', close: '17:00', closed: false },
+    thursday: { open: '09:00', close: '17:00', closed: false },
+    friday: { open: '09:00', close: '17:00', closed: false },
+    saturday: { open: '09:00', close: '17:00', closed: true },
+    sunday: { open: '09:00', close: '17:00', closed: true },
+  },
   serviceAreas: '',
   logoFile: null,
   photoFiles: [],
@@ -102,8 +121,7 @@ const INITIAL_DATA: OnboardingData = {
   hasAboutUs: false,
   aboutUsText: '',
   hasMeetTheTeam: false,
-  teamText: '',
-  teamPhotos: [],
+  teamMembers: [{ name: '', role: '', photo: null }],
   inspirationSites: ['', '', ''],
   hasExistingWebsite: false,
   currentDomain: '',
@@ -248,9 +266,11 @@ export default function OnboardingPage() {
       }
     }
 
-    if (step === 4) { // Final
+    if (step === 2) { // Branding
       if (formData.hasAboutUs && !formData.aboutUsText.trim()) newErrors.aboutUsText = 'About Us text is required'
-      if (formData.hasMeetTheTeam && !formData.teamText.trim()) newErrors.teamText = 'Team text is required'
+      if (formData.hasMeetTheTeam && formData.teamMembers.some(m => m.name && !m.photo)) {
+        newErrors.teamMembers = 'All team members with names must have photos'
+      }
     }
 
     if (step === 5) { // Review
@@ -515,7 +535,7 @@ export default function OnboardingPage() {
                     value={formData.businessDescription}
                     onChange={(e) => updateField('businessDescription', e.target.value)}
                     className="bg-white/5 border-white/10 text-white min-h-24"
-                    placeholder="What you do and what makes you different..."
+                    placeholder="What do you do? (e.g., 'We provide residential plumbing services...')"
                   />
                 </div>
 
@@ -531,14 +551,93 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="operatingHours" className="text-white">Operating Days/Hours</Label>
-                  <Input
-                    id="operatingHours"
-                    value={formData.operatingHours}
-                    onChange={(e) => updateField('operatingHours', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
-                    placeholder="Mon-Fri 9AM-5PM"
-                  />
+                  <Label className="text-white mb-3 block">Operating Days/Hours</Label>
+                  <div className="space-y-3">
+                    {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day, idx) => (
+                      <div key={day} className="flex items-center gap-3 bg-white/5 p-3 rounded-lg">
+                        <Checkbox
+                          id={`${day}-closed`}
+                          checked={formData.operatingHours[day].closed}
+                          onCheckedChange={(checked) => {
+                            updateField('operatingHours', {
+                              ...formData.operatingHours,
+                              [day]: { ...formData.operatingHours[day], closed: !!checked }
+                            })
+                          }}
+                          className="border-white/20"
+                        />
+                        <Label htmlFor={`${day}-closed`} className="text-white capitalize w-24 cursor-pointer">
+                          {day}
+                        </Label>
+                        
+                        {!formData.operatingHours[day].closed && (
+                          <>
+                            <select
+                              value={formData.operatingHours[day].open}
+                              onChange={(e) => {
+                                updateField('operatingHours', {
+                                  ...formData.operatingHours,
+                                  [day]: { ...formData.operatingHours[day], open: e.target.value }
+                                })
+                              }}
+                              className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
+                            >
+                              {Array.from({ length: 24 }, (_, i) => {
+                                const hour = i.toString().padStart(2, '0')
+                                return ['00', '30'].map(min => (
+                                  <option key={`${hour}:${min}`} value={`${hour}:${min}`}>
+                                    {`${hour}:${min}`}
+                                  </option>
+                                ))
+                              }).flat()}
+                            </select>
+                            <span className="text-gray-400">to</span>
+                            <select
+                              value={formData.operatingHours[day].close}
+                              onChange={(e) => {
+                                updateField('operatingHours', {
+                                  ...formData.operatingHours,
+                                  [day]: { ...formData.operatingHours[day], close: e.target.value }
+                                })
+                              }}
+                              className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
+                            >
+                              {Array.from({ length: 24 }, (_, i) => {
+                                const hour = i.toString().padStart(2, '0')
+                                return ['00', '30'].map(min => (
+                                  <option key={`${hour}:${min}`} value={`${hour}:${min}`}>
+                                    {`${hour}:${min}`}
+                                  </option>
+                                ))
+                              }).flat()}
+                            </select>
+                            
+                            {idx > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const prevDay = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx - 1] as keyof typeof formData.operatingHours
+                                  updateField('operatingHours', {
+                                    ...formData.operatingHours,
+                                    [day]: { ...formData.operatingHours[prevDay] }
+                                  })
+                                }}
+                                className="text-xs text-red-400 hover:text-red-300"
+                              >
+                                Copy from {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][idx - 1]}
+                              </Button>
+                            )}
+                          </>
+                        )}
+                        
+                        {formData.operatingHours[day].closed && (
+                          <span className="text-gray-400 text-sm italic">Closed</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -710,28 +809,80 @@ export default function OnboardingPage() {
                     <Label htmlFor="hasMeetTheTeam" className="text-white cursor-pointer">Include "Meet the Team" section</Label>
                   </div>
                   {formData.hasMeetTheTeam && (
-                    <>
-                      <Textarea
-                        value={formData.teamText}
-                        onChange={(e) => updateField('teamText', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white min-h-24"
-                        placeholder="Name – Role (one per line)"
-                      />
-                      <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={(e) => handleFileUpload('teamPhotos', e.target.files, true)}
-                          className="hidden"
-                          id="team-photos-upload"
-                        />
-                        <label htmlFor="team-photos-upload" className="cursor-pointer">
-                          <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                          <p className="text-gray-400">Upload team photos ({formData.teamPhotos.length} selected)</p>
-                        </label>
-                      </div>
-                    </>
+                    <div className="space-y-4">
+                      {formData.teamMembers.map((member, idx) => (
+                        <div key={idx} className="flex items-start gap-3 bg-white/5 p-4 rounded-lg">
+                          <div className="flex-1 space-y-3">
+                            <Input
+                              placeholder="Name"
+                              value={member.name}
+                              onChange={(e) => {
+                                const newMembers = [...formData.teamMembers]
+                                newMembers[idx].name = e.target.value
+                                updateField('teamMembers', newMembers)
+                              }}
+                              className="bg-white/10 border-white/10 text-white"
+                            />
+                            <Input
+                              placeholder="Role/Title"
+                              value={member.role}
+                              onChange={(e) => {
+                                const newMembers = [...formData.teamMembers]
+                                newMembers[idx].role = e.target.value
+                                updateField('teamMembers', newMembers)
+                              }}
+                              className="bg-white/10 border-white/10 text-white"
+                            />
+                            <div className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    const newMembers = [...formData.teamMembers]
+                                    newMembers[idx].photo = file
+                                    updateField('teamMembers', newMembers)
+                                  }
+                                }}
+                                className="hidden"
+                                id={`team-photo-${idx}`}
+                              />
+                              <label htmlFor={`team-photo-${idx}`} className="cursor-pointer">
+                                <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                                <p className="text-gray-400 text-sm">
+                                  {member.photo ? member.photo.name : 'Upload photo'}
+                                </p>
+                              </label>
+                            </div>
+                          </div>
+                          {formData.teamMembers.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newMembers = formData.teamMembers.filter((_, i) => i !== idx)
+                                updateField('teamMembers', newMembers)
+                              }}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          updateField('teamMembers', [...formData.teamMembers, { name: '', role: '', photo: null }])
+                        }}
+                        className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10"
+                      >
+                        + Add Team Member
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -827,6 +978,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label className="text-white mb-3 block">Social Media Links</Label>
+                  <p className="text-gray-400 text-sm mb-3">Enter full URLs or just your handle (e.g., @yourbusiness)</p>
                   <div className="space-y-3">
                     {Object.entries(formData.socialLinks).map(([platform, url]) => (
                       <div key={platform}>
@@ -836,7 +988,7 @@ export default function OnboardingPage() {
                           value={url}
                           onChange={(e) => updateNestedField('socialLinks', platform, e.target.value)}
                           className="bg-white/5 border-white/10 text-white"
-                          placeholder={`https://${platform}.com/...`}
+                          placeholder={`https://${platform}.com/... or @handle`}
                         />
                       </div>
                     ))}
@@ -904,7 +1056,8 @@ export default function OnboardingPage() {
                 )}
 
                 <div>
-                  <Label className="text-white mb-2 block">Lead Form Fields</Label>
+                  <Label className="text-white mb-2 block">Desired Lead Form Fields</Label>
+                  <p className="text-gray-400 text-sm mb-3">Select the information you want to collect from potential customers on your website's contact form</p>
                   <div className="space-y-2">
                     {['Name', 'Email', 'Phone', 'Service Interested In', 'Message', 'Company', 'Budget', 'Timeline'].map((field) => (
                       <div key={field} className="flex items-center gap-3">
