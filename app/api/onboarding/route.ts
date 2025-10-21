@@ -271,10 +271,73 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       }
     }
 
-    // Send email notification to builds@tlucasystems.com
-    console.log('📧 Email notification for:', data.businessName)
-    console.log(emailBody)
-    // TODO: Integrate with actual email service (SendGrid, Resend, etc.)
+    // Send to Zapier webhook (if configured)
+    if (process.env.ZAPIER_WEBHOOK_URL) {
+      try {
+        await fetch(process.env.ZAPIER_WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            // Core Info
+            submission_id: savedData.id,
+            business_name: data.businessName,
+            contact_name: data.contactName,
+            business_email: data.businessEmail,
+            business_phone: data.businessPhone,
+            
+            // Business Details
+            business_address: data.businessAddress,
+            business_description: data.businessDescription,
+            services_offered: data.servicesOffered,
+            operating_hours: data.operatingHours,
+            service_areas: data.serviceAreas,
+            
+            // Branding
+            logo_file: data.logoFile,
+            color_scheme: data.colorScheme,
+            slogan: data.slogan,
+            has_about_us: data.hasAboutUs,
+            has_meet_the_team: data.hasMeetTheTeam,
+            inspiration_sites: data.inspirationSites,
+            
+            // Online Presence
+            has_existing_website: data.hasExistingWebsite,
+            current_domain: data.currentDomain,
+            need_domain_help: data.needDomainHelp,
+            desired_domain: data.desiredDomain,
+            has_google_business: data.hasGoogleBusiness,
+            google_business_email: data.googleBusinessEmail,
+            social_links: data.socialLinks,
+            
+            // Leads & Communication
+            lead_alert_method: data.leadAlertMethod,
+            alert_phone: data.alertPhone,
+            alert_email: data.alertEmail,
+            lead_form_fields: data.leadFormFields,
+            bookings_payments: data.bookingsPayments,
+            has_portfolio: data.hasPortfolio,
+            has_reviews: data.hasReviews,
+            
+            // Final Details
+            owns_domain: data.ownsDomain,
+            owned_domain: data.ownedDomain,
+            dns_manager: data.dnsManager,
+            compliance_needs: data.complianceNeeds,
+            special_notes: data.specialNotes,
+            
+            // Metadata
+            submitted_at: new Date().toISOString(),
+            formatted_summary: emailBody, // Pre-formatted for easy reading
+          }),
+        })
+        console.log('✅ Sent to Zapier webhook')
+      } catch (zapierError) {
+        console.error('Zapier webhook error (non-fatal):', zapierError)
+        // Don't fail the whole request if Zapier fails
+      }
+    }
 
     return NextResponse.json({ 
       success: true,
