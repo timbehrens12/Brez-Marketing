@@ -5,8 +5,10 @@ export default authMiddleware({
   debug: true, // Enable debug logging
   publicRoutes: [
     "/",
+    "/onboarding",
     "/review",
     "/api/webhooks(.*)",
+    "/api/onboarding",
     "/privacy",
     "/terms",
     "/data-security",
@@ -67,7 +69,7 @@ export default authMiddleware({
   afterAuth: (auth, req) => {
     // 🔒 SECURITY: Block access to protected dashboard routes when not authenticated
     const protectedRoutes = [
-      '/dashboard', '/settings', '/analytics', '/customers', '/orders', '/onboarding',
+      '/dashboard', '/settings', '/analytics', '/customers', '/orders',
       '/action-center', '/ad-creative-studio', '/ai-dashboard', '/ai-marketing-consultant',
       '/brand-report', '/critical-brands', '/debug-shopify-sync', 
       '/debug-supabase', '/lead-generator', '/marketing-assistant', '/meta-test',
