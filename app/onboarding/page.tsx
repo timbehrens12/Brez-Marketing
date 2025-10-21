@@ -458,8 +458,8 @@ export default function OnboardingPage() {
                     id="businessName"
                     value={formData.businessName}
                     onChange={(e) => updateField('businessName', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
-                    placeholder="TLUCA Systems"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    placeholder="e.g., TLUCA Systems"
                   />
                   {errors.businessName && <p className="text-red-400 text-sm mt-1">{errors.businessName}</p>}
                 </div>
@@ -470,8 +470,8 @@ export default function OnboardingPage() {
                     id="contactName"
                     value={formData.contactName}
                     onChange={(e) => updateField('contactName', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
-                    placeholder="John Doe"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    placeholder="e.g., John Doe"
                   />
                   {errors.contactName && <p className="text-red-400 text-sm mt-1">{errors.contactName}</p>}
                 </div>
@@ -484,8 +484,8 @@ export default function OnboardingPage() {
                       type="email"
                       value={formData.businessEmail}
                       onChange={(e) => updateField('businessEmail', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
-                      placeholder="contact@tlucasystems.com"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      placeholder="e.g., contact@business.com"
                     />
                     {errors.businessEmail && <p className="text-red-400 text-sm mt-1">{errors.businessEmail}</p>}
                   </div>
@@ -497,7 +497,7 @@ export default function OnboardingPage() {
                       type="tel"
                       value={formData.businessPhone}
                       onChange={(e) => updateField('businessPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
                     {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
@@ -509,20 +509,20 @@ export default function OnboardingPage() {
                   <Input
                     value={formData.businessAddress.street}
                     onChange={(e) => updateNestedField('businessAddress', 'street', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
-                    placeholder="Street Address"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    placeholder="e.g., 123 Main St"
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <Input
                       value={formData.businessAddress.city}
                       onChange={(e) => updateNestedField('businessAddress', 'city', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="City"
                     />
                     <Input
                       value={formData.businessAddress.state}
                       onChange={(e) => updateNestedField('businessAddress', 'state', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="State"
                     />
                   </div>
@@ -530,13 +530,13 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.businessAddress.zip}
                       onChange={(e) => updateNestedField('businessAddress', 'zip', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="ZIP Code"
                     />
                     <Input
                       value={formData.businessAddress.country}
                       onChange={(e) => updateNestedField('businessAddress', 'country', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="Country"
                     />
                   </div>
@@ -548,7 +548,7 @@ export default function OnboardingPage() {
                     id="businessNiche"
                     value={formData.businessNiche}
                     onChange={(e) => updateField('businessNiche', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., Landscaping, Hair Salon, Plumbing, Real Estate, etc."
                   />
                 </div>
@@ -559,7 +559,7 @@ export default function OnboardingPage() {
                     id="businessDescription"
                     value={formData.businessDescription}
                     onChange={(e) => updateField('businessDescription', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-24"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
                     placeholder="What do you do? (e.g., 'We provide residential plumbing services...')"
                   />
                 </div>
@@ -570,7 +570,7 @@ export default function OnboardingPage() {
                     id="servicesOffered"
                     value={formData.servicesOffered}
                     onChange={(e) => updateField('servicesOffered', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-24"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
                     placeholder="One service per line..."
                   />
                 </div>
@@ -674,7 +674,7 @@ export default function OnboardingPage() {
                     id="serviceAreas"
                     value={formData.serviceAreas}
                     onChange={(e) => updateField('serviceAreas', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="Houston, Austin, Dallas..."
                   />
                 </div>
@@ -686,7 +686,23 @@ export default function OnboardingPage() {
               <>
                 <div>
                   <Label className="text-white mb-2 block">Logo Upload (PNG/SVG preferred)</Label>
-                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5">
+                  <div 
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        handleFileUpload('logoFile', e.dataTransfer.files)
+                      }
+                    }}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -694,7 +710,7 @@ export default function OnboardingPage() {
                       className="hidden"
                       id="logo-upload"
                     />
-                    <label htmlFor="logo-upload" className="cursor-pointer">
+                    <label htmlFor="logo-upload" className="cursor-pointer block">
                       {formData.logoFile ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-center gap-2">
@@ -715,7 +731,8 @@ export default function OnboardingPage() {
                       ) : (
                         <div className="space-y-2">
                           <Upload className="w-8 h-8 mx-auto text-gray-400" />
-                          <p className="text-gray-400">Click to upload logo</p>
+                          <p className="text-gray-400">Click or drag & drop logo here</p>
+                          <p className="text-gray-500 text-xs">PNG or SVG preferred</p>
                         </div>
                       )}
                     </label>
@@ -724,7 +741,23 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label className="text-white mb-2 block">General Photos (Business, Location, Work)</Label>
-                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5">
+                  <div 
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        handleFileUpload('photoFiles', e.dataTransfer.files, true)
+                      }
+                    }}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -733,9 +766,10 @@ export default function OnboardingPage() {
                       className="hidden"
                       id="photos-upload"
                     />
-                    <label htmlFor="photos-upload" className="cursor-pointer">
+                    <label htmlFor="photos-upload" className="cursor-pointer block">
                       <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-400">Click to upload photos ({formData.photoFiles.length} selected)</p>
+                      <p className="text-gray-400">Click or drag & drop photos here</p>
+                      <p className="text-gray-500 text-xs">{formData.photoFiles.length} file(s) selected</p>
                     </label>
                   </div>
                   {formData.photoFiles.length > 0 && (
@@ -801,7 +835,7 @@ export default function OnboardingPage() {
                     id="slogan"
                     value={formData.slogan}
                     onChange={(e) => updateField('slogan', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="Systems That Scale"
                   />
                 </div>
@@ -950,7 +984,7 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.currentDomain}
                       onChange={(e) => updateField('currentDomain', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="Current domain (e.g., example.com)"
                     />
                   ) : (
@@ -967,7 +1001,7 @@ export default function OnboardingPage() {
                       <Input
                         value={formData.desiredDomain}
                         onChange={(e) => updateField('desiredDomain', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                         placeholder="Desired domain name"
                       />
                     </div>
@@ -988,7 +1022,7 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.googleBusinessEmail}
                       onChange={(e) => updateField('googleBusinessEmail', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="Gmail used to manage it"
                     />
                   ) : (
@@ -1015,7 +1049,7 @@ export default function OnboardingPage() {
                           id={`social-${platform}`}
                           value={url}
                           onChange={(e) => updateNestedField('socialLinks', platform, e.target.value)}
-                          className="bg-white/5 border-white/10 text-white"
+                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                           placeholder={`https://${platform}.com/... or @handle`}
                         />
                       </div>
@@ -1061,7 +1095,7 @@ export default function OnboardingPage() {
                       type="tel"
                       value={formData.alertPhone}
                       onChange={(e) => updateField('alertPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
                     {errors.alertPhone && <p className="text-red-400 text-sm mt-1">{errors.alertPhone}</p>}
@@ -1076,7 +1110,7 @@ export default function OnboardingPage() {
                       type="email"
                       value={formData.alertEmail}
                       onChange={(e) => updateField('alertEmail', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="leads@example.com"
                     />
                     {errors.alertEmail && <p className="text-red-400 text-sm mt-1">{errors.alertEmail}</p>}
@@ -1209,7 +1243,7 @@ export default function OnboardingPage() {
                       <Input
                         value={formData.ownedDomain}
                         onChange={(e) => updateField('ownedDomain', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                         placeholder="yourdomain.com"
                       />
                       <div>
@@ -1244,7 +1278,7 @@ export default function OnboardingPage() {
                     id="complianceNeeds"
                     value={formData.complianceNeeds}
                     onChange={(e) => updateField('complianceNeeds', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="None, or list requirements..."
                   />
                 </div>
