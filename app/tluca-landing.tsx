@@ -601,7 +601,7 @@ function ContactSection() {
                   </div>
                   <div>
                     <p className="font-semibold">Call Us</p>
-                    <p className="text-white/70">(555) 123-4567</p>
+                    <a href="tel:8325614407" className="text-white/70 hover:text-white transition-colors">832-561-4407</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -610,7 +610,7 @@ function ContactSection() {
                   </div>
                   <div>
                     <p className="font-semibold">Email Us</p>
-                    <p className="text-white/70">hello@tluca.systems</p>
+                    <a href="mailto:tbehrens121@gmail.com" className="text-white/70 hover:text-white transition-colors">tbehrens121@gmail.com</a>
                   </div>
                 </div>
               </div>
@@ -651,11 +651,11 @@ function Footer() {
         <div className="flex items-center justify-center gap-6 flex-wrap text-sm">
           <a href="#contact" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Contact</a>
           <span className="text-white/40">•</span>
-          <a href="#" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Privacy</a>
+          <a href="/privacy" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Privacy</a>
           <span className="text-white/40">•</span>
-          <a href="#" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Terms</a>
+          <a href="/terms" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Terms</a>
           <span className="text-white/40">•</span>
-          <a href="#" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Support</a>
+          <a href="mailto:tbehrens121@gmail.com" className="text-white/60 hover:text-[#ff2a2a] transition-colors">Support</a>
         </div>
       </div>
     </footer>
