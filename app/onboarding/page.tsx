@@ -361,29 +361,15 @@ export default function OnboardingPage() {
               <CheckCircle2 className="w-10 h-10 text-red-500" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold text-white mb-2">You're all set! 🎉</CardTitle>
-              <CardDescription className="text-gray-400 text-lg">
-                We've received your onboarding. A project manager will reach out within 24 hours with your build timeline and your dashboard login.
+              <CardTitle className="text-3xl font-bold text-white mb-2">Congratulations! 🎉</CardTitle>
+              <CardDescription className="text-gray-400 text-lg leading-relaxed">
+                You'll receive a text message confirming your submission.
+                <br />
+                <br />
+                We'll text you again when your site starts building!
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={() => router.push('/')}
-              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-            <Button 
-              onClick={() => window.location.href = 'mailto:support@tlucasystems.com'}
-              variant="outline"
-              className="w-full border-white/10 hover:bg-white/5 text-white"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Email Support
-            </Button>
-          </CardContent>
         </Card>
       </div>
     )
