@@ -170,7 +170,7 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", jetbrainsMono.className)}>
-        <ClerkProvider>
+        <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <SidebarProvider>
               <ConditionalAuthProviders>
