@@ -172,6 +172,32 @@ export default function OnboardingPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
+        
+        // Migrate old operatingHours format (string) to new format (object)
+        if (typeof parsed.operatingHours === 'string') {
+          parsed.operatingHours = {
+            monday: { open: '09:00', close: '17:00', closed: false },
+            tuesday: { open: '09:00', close: '17:00', closed: false },
+            wednesday: { open: '09:00', close: '17:00', closed: false },
+            thursday: { open: '09:00', close: '17:00', closed: false },
+            friday: { open: '09:00', close: '17:00', closed: false },
+            saturday: { open: '09:00', close: '17:00', closed: true },
+            sunday: { open: '09:00', close: '17:00', closed: true },
+          }
+        }
+        
+        // Migrate old teamText/teamPhotos to new teamMembers format
+        if (parsed.teamText || parsed.teamPhotos) {
+          parsed.teamMembers = [{ name: '', role: '', photo: null }]
+          delete parsed.teamText
+          delete parsed.teamPhotos
+        }
+        
+        // Ensure teamMembers exists
+        if (!parsed.teamMembers) {
+          parsed.teamMembers = [{ name: '', role: '', photo: null }]
+        }
+        
         setFormData({ ...INITIAL_DATA, ...parsed })
       } catch (e) {
         console.error('Failed to load draft', e)
@@ -553,15 +579,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-3 block">Operating Days/Hours</Label>
                   <div className="space-y-3">
-                    {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day, idx) => (
+                    {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day, idx) => {
+                      const dayData = formData.operatingHours?.[day] || { open: '09:00', close: '17:00', closed: false }
+                      return (
                       <div key={day} className="flex items-center gap-3 bg-white/5 p-3 rounded-lg">
                         <Checkbox
                           id={`${day}-closed`}
-                          checked={formData.operatingHours[day].closed}
+                          checked={dayData.closed}
                           onCheckedChange={(checked) => {
                             updateField('operatingHours', {
                               ...formData.operatingHours,
-                              [day]: { ...formData.operatingHours[day], closed: !!checked }
+                              [day]: { ...dayData, closed: !!checked }
                             })
                           }}
                           className="border-white/20"
@@ -570,14 +598,14 @@ export default function OnboardingPage() {
                           {day}
                         </Label>
                         
-                        {!formData.operatingHours[day].closed && (
+                        {!dayData.closed && (
                           <>
                             <select
-                              value={formData.operatingHours[day].open}
+                              value={dayData.open}
                               onChange={(e) => {
                                 updateField('operatingHours', {
                                   ...formData.operatingHours,
-                                  [day]: { ...formData.operatingHours[day], open: e.target.value }
+                                  [day]: { ...dayData, open: e.target.value }
                                 })
                               }}
                               className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
@@ -593,11 +621,11 @@ export default function OnboardingPage() {
                             </select>
                             <span className="text-gray-400">to</span>
                             <select
-                              value={formData.operatingHours[day].close}
+                              value={dayData.close}
                               onChange={(e) => {
                                 updateField('operatingHours', {
                                   ...formData.operatingHours,
-                                  [day]: { ...formData.operatingHours[day], close: e.target.value }
+                                  [day]: { ...dayData, close: e.target.value }
                                 })
                               }}
                               className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
@@ -619,9 +647,10 @@ export default function OnboardingPage() {
                                 size="sm"
                                 onClick={() => {
                                   const prevDay = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx - 1] as keyof typeof formData.operatingHours
+                                  const prevDayData = formData.operatingHours?.[prevDay] || { open: '09:00', close: '17:00', closed: false }
                                   updateField('operatingHours', {
                                     ...formData.operatingHours,
-                                    [day]: { ...formData.operatingHours[prevDay] }
+                                    [day]: { ...prevDayData }
                                   })
                                 }}
                                 className="text-xs text-red-400 hover:text-red-300"
@@ -632,11 +661,11 @@ export default function OnboardingPage() {
                           </>
                         )}
                         
-                        {formData.operatingHours[day].closed && (
+                        {dayData.closed && (
                           <span className="text-gray-400 text-sm italic">Closed</span>
                         )}
                       </div>
-                    ))}
+                    )})}
                   </div>
                 </div>
 
