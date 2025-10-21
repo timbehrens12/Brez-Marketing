@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'edge'
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,18 +120,167 @@ ${data.specialNotes || '—'}
 Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}
     `.trim()
 
-    // Send email notification (using your existing email setup)
-    // This is a placeholder - integrate with your actual email service
-    console.log('Onboarding received for:', data.businessName)
-    console.log(emailBody)
+    // Save to Supabase
+    const { data: savedData, error: dbError } = await supabase
+      .from('onboarding_submissions')
+      .insert({
+        business_name: data.businessName,
+        contact_name: data.contactName,
+        business_email: data.businessEmail,
+        business_phone: data.businessPhone,
+        business_address: data.businessAddress || {},
+        business_description: data.businessDescription,
+        services_offered: data.servicesOffered,
+        operating_hours: data.operatingHours,
+        service_areas: data.serviceAreas,
+        
+        logo_file: data.logoFile,
+        photo_files: data.photoFiles || [],
+        cert_files: data.certFiles || [],
+        color_scheme: data.colorScheme,
+        slogan: data.slogan,
+        brand_guidelines: data.brandGuidelines,
+        has_about_us: data.hasAboutUs || false,
+        about_us_text: data.aboutUsText,
+        has_meet_the_team: data.hasMeetTheTeam || false,
+        team_text: data.teamText,
+        team_photos: data.teamPhotos || [],
+        inspiration_sites: data.inspirationSites || [],
+        
+        has_existing_website: data.hasExistingWebsite || false,
+        current_domain: data.currentDomain,
+        need_domain_help: data.needDomainHelp || false,
+        desired_domain: data.desiredDomain,
+        has_google_business: data.hasGoogleBusiness || false,
+        google_business_email: data.googleBusinessEmail,
+        need_google_setup: data.needGoogleSetup || false,
+        social_links: data.socialLinks || {},
+        
+        lead_alert_method: data.leadAlertMethod,
+        alert_phone: data.alertPhone,
+        alert_email: data.alertEmail,
+        lead_form_fields: data.leadFormFields || [],
+        extra_lead_form_requests: data.extraLeadFormRequests,
+        bookings_payments: data.bookingsPayments,
+        bookings_payments_notes: data.bookingsPaymentsNotes,
+        has_portfolio: data.hasPortfolio || false,
+        portfolio_files: data.portfolioFiles || [],
+        has_reviews: data.hasReviews || false,
+        
+        owns_domain: data.ownsDomain || false,
+        owned_domain: data.ownedDomain,
+        dns_manager: data.dnsManager,
+        compliance_needs: data.complianceNeeds,
+        special_notes: data.specialNotes,
+      })
+      .select()
+      .single()
 
-    // TODO: Store in database if needed
-    // TODO: Send actual email to builds@tlucasystems.com
-    // TODO: Create CRM contact/task if CRM integration exists
+    if (dbError) {
+      console.error('Supabase error:', dbError)
+      throw new Error('Failed to save to database')
+    }
+
+    console.log('✅ Saved to Supabase:', savedData.id)
+
+    // Sync to GoHighLevel (if credentials are configured)
+    let ghlContactId = null
+    let ghlOpportunityId = null
+    
+    if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
+      try {
+        // Create/Update Contact in GoHighLevel
+        const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
+            firstName: data.contactName.split(' ')[0],
+            lastName: data.contactName.split(' ').slice(1).join(' ') || '',
+            email: data.businessEmail,
+            phone: data.businessPhone,
+            companyName: data.businessName,
+            address1: data.businessAddress?.street || '',
+            city: data.businessAddress?.city || '',
+            state: data.businessAddress?.state || '',
+            postalCode: data.businessAddress?.zip || '',
+            country: data.businessAddress?.country || '',
+            website: data.hasExistingWebsite ? data.currentDomain : '',
+            source: 'Onboarding Form - tlucasystems.com',
+            tags: ['Onboarding', 'Website Build', data.hasExistingWebsite ? 'Existing Website' : 'New Website'],
+            customFields: [
+              { key: 'services_offered', value: data.servicesOffered || '' },
+              { key: 'operating_hours', value: data.operatingHours || '' },
+              { key: 'service_areas', value: data.serviceAreas || '' },
+              { key: 'lead_alert_method', value: data.leadAlertMethod },
+              { key: 'color_scheme', value: data.colorScheme || '' },
+              { key: 'special_notes', value: data.specialNotes || '' },
+            ],
+          }),
+        })
+
+        if (ghlContactResponse.ok) {
+          const ghlContact = await ghlContactResponse.json()
+          ghlContactId = ghlContact.contact?.id || ghlContact.id
+          console.log('✅ Created GoHighLevel contact:', ghlContactId)
+
+          // Create Opportunity in GoHighLevel Pipeline
+          if (process.env.GOHIGHLEVEL_PIPELINE_ID) {
+            const ghlOpportunityResponse = await fetch(`https://rest.gohighlevel.com/v1/opportunities/`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
+                pipelineId: process.env.GOHIGHLEVEL_PIPELINE_ID,
+                pipelineStageId: process.env.GOHIGHLEVEL_STAGE_ID || undefined,
+                name: `Website Build - ${data.businessName}`,
+                contactId: ghlContactId,
+                monetaryValue: 0, // You can set a default value or get from env
+                status: 'open',
+                source: 'Onboarding Form',
+                notes: emailBody, // Use the formatted email body as notes
+              }),
+            })
+
+            if (ghlOpportunityResponse.ok) {
+              const ghlOpportunity = await ghlOpportunityResponse.json()
+              ghlOpportunityId = ghlOpportunity.opportunity?.id || ghlOpportunity.id
+              console.log('✅ Created GoHighLevel opportunity:', ghlOpportunityId)
+            }
+          }
+
+          // Update Supabase with GoHighLevel IDs
+          await supabase
+            .from('onboarding_submissions')
+            .update({
+              ghl_contact_id: ghlContactId,
+              ghl_opportunity_id: ghlOpportunityId,
+              ghl_synced_at: new Date().toISOString(),
+            })
+            .eq('id', savedData.id)
+        }
+      } catch (ghlError) {
+        console.error('GoHighLevel sync error (non-fatal):', ghlError)
+        // Don't fail the whole request if GHL sync fails
+      }
+    }
+
+    // Send email notification to builds@tlucasystems.com
+    console.log('📧 Email notification for:', data.businessName)
+    console.log(emailBody)
+    // TODO: Integrate with actual email service (SendGrid, Resend, etc.)
 
     return NextResponse.json({ 
       success: true,
-      message: 'Onboarding submitted successfully'
+      message: 'Onboarding submitted successfully',
+      id: savedData.id,
+      ghl_synced: !!ghlContactId,
     })
 
   } catch (error) {
