@@ -95,6 +95,11 @@ type OnboardingData = {
   consentConfirmed: boolean
 }
 
+// Add image preview state type
+type ImagePreviews = {
+  [key: string]: string // filename -> data URL
+}
+
 const INITIAL_DATA: OnboardingData = {
   businessName: '',
   contactName: '',
@@ -167,6 +172,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -254,6 +260,19 @@ export default function OnboardingPage() {
       return isValidSize && isValidType
     })
 
+    // Generate previews for images
+    const newPreviews = { ...imagePreviews }
+    validFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          newPreviews[file.name] = e.target?.result as string
+          setImagePreviews({ ...newPreviews })
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+
     if (multiple) {
       setFormData(prev => ({ ...prev, [field]: [...(prev[field] as File[]), ...validFiles] }))
     } else {
@@ -283,7 +302,19 @@ export default function OnboardingPage() {
       if (!formData.businessPhone.trim()) newErrors.businessPhone = 'Business phone is required'
     }
 
-    if (step === 3) { // Leads
+    if (step === 1) { // Branding
+      if (formData.hasAboutUs && !formData.aboutUsText.trim()) newErrors.aboutUsText = 'About Us text is required'
+      if (formData.hasMeetTheTeam && formData.teamMembers.some(m => m.name && !m.photo)) {
+        newErrors.teamMembers = 'All team members with names must have photos'
+      }
+    }
+
+    // Step 2 (Online Presence) - no required fields, always passes
+    if (step === 2) {
+      // Online Presence has no required fields
+    }
+
+    if (step === 3) { // Leads & Communication
       if (!formData.leadAlertMethod) newErrors.leadAlertMethod = 'Lead alert method is required'
       if (formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') {
         if (!formData.alertPhone.trim()) newErrors.alertPhone = 'Alert phone is required'
@@ -294,14 +325,7 @@ export default function OnboardingPage() {
       }
     }
 
-    if (step === 2) { // Branding
-      if (formData.hasAboutUs && !formData.aboutUsText.trim()) newErrors.aboutUsText = 'About Us text is required'
-      if (formData.hasMeetTheTeam && formData.teamMembers.some(m => m.name && !m.photo)) {
-        newErrors.teamMembers = 'All team members with names must have photos'
-      }
-    }
-
-    if (step === 5) { // Review
+    if (step === 5) { // Review & Submit
       if (!formData.consentConfirmed) newErrors.consentConfirmed = 'You must confirm the information is accurate'
     }
 
@@ -836,9 +860,17 @@ export default function OnboardingPage() {
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       {formData.photoFiles.map((file, idx) => (
                         <div key={idx} className="relative group">
-                          <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400">
-                            {file.name}
-                          </div>
+                          {imagePreviews[file.name] ? (
+                            <img 
+                              src={imagePreviews[file.name]} 
+                              alt={file.name}
+                              className="aspect-square rounded object-cover bg-white/5"
+                            />
+                          ) : (
+                            <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
+                              Loading...
+                            </div>
+                          )}
                           <button
                             onClick={() => removeFile('photoFiles', idx)}
                             className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1007,10 +1039,20 @@ export default function OnboardingPage() {
                                 id={`team-photo-${idx}`}
                               />
                               <label htmlFor={`team-photo-${idx}`} className="cursor-pointer block">
-                                <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
-                                <p className="text-gray-400 text-sm">
-                                  {member.photo ? member.photo.name : 'Click or drag photo'}
-                                </p>
+                                {member.photo && imagePreviews[member.photo.name] ? (
+                                  <img 
+                                    src={imagePreviews[member.photo.name]} 
+                                    alt={member.photo.name}
+                                    className="w-full h-24 object-cover rounded"
+                                  />
+                                ) : (
+                                  <>
+                                    <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                                    <p className="text-gray-400 text-sm">
+                                      {member.photo ? member.photo.name : 'Click or drag photo'}
+                                    </p>
+                                  </>
+                                )}
                               </label>
                             </div>
                           </div>
@@ -1323,7 +1365,33 @@ export default function OnboardingPage() {
                         <p className="text-gray-500 text-xs">{formData.portfolioFiles.length} file(s) selected</p>
                       </label>
                     </div>
-                  )}
+                    )}
+                    {formData.portfolioFiles.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {formData.portfolioFiles.map((file, idx) => (
+                          <div key={idx} className="relative group">
+                            {imagePreviews[file.name] ? (
+                              <img 
+                                src={imagePreviews[file.name]} 
+                                alt={file.name}
+                                className="aspect-square rounded object-cover bg-white/5"
+                              />
+                            ) : (
+                              <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
+                                Loading...
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeFile('portfolioFiles', idx)}
+                              className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3">
