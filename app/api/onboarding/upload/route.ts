@@ -12,30 +12,51 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create FormData for Cloudinary
-    const cloudinaryData = new FormData()
-    cloudinaryData.append('file', file)
-    cloudinaryData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'onboarding')
-    cloudinaryData.append('cloud_name', process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '')
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
-    // Upload to Cloudinary
-    const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
-      {
-        method: 'POST',
-        body: cloudinaryData,
-      }
-    )
-
-    if (!cloudinaryResponse.ok) {
-      console.error('Cloudinary upload failed:', await cloudinaryResponse.text())
+    if (!cloudName) {
+      console.error('Missing NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME')
       return NextResponse.json(
-        { error: 'Failed to upload file to Cloudinary' },
+        { error: 'Cloudinary cloud name not configured' },
         { status: 500 }
       )
     }
 
-    const result = await cloudinaryResponse.json()
+    if (!uploadPreset) {
+      console.error('Missing NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET')
+      return NextResponse.json(
+        { error: 'Cloudinary upload preset not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Create FormData for Cloudinary unsigned upload
+    const cloudinaryData = new FormData()
+    cloudinaryData.append('file', file)
+    cloudinaryData.append('upload_preset', uploadPreset)
+
+    // Upload to Cloudinary
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`
+    
+    console.log('Uploading to Cloudinary:', { cloudName, uploadPreset, url: cloudinaryUrl })
+
+    const cloudinaryResponse = await fetch(cloudinaryUrl, {
+      method: 'POST',
+      body: cloudinaryData,
+    })
+
+    const responseText = await cloudinaryResponse.text()
+    
+    if (!cloudinaryResponse.ok) {
+      console.error('Cloudinary upload failed:', responseText)
+      return NextResponse.json(
+        { error: `Cloudinary error: ${responseText}` },
+        { status: 500 }
+      )
+    }
+
+    const result = JSON.parse(responseText)
 
     return NextResponse.json({
       secure_url: result.secure_url,
@@ -45,7 +66,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Upload failed' },
+      { error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     )
   }
