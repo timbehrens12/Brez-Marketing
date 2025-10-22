@@ -195,11 +195,21 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      {/* Header */}
+      {/* Thank You Hero */}
       <div className="border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-6 py-10">
-          <h1 className="text-4xl font-bold mb-2">Project Setup</h1>
-          <p className="text-zinc-400">Step {currentStep + 1} of {STEPS.length}</p>
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-6">
+              <CheckCircle2 className="w-4 h-4" />
+              Payment Confirmed
+            </div>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white tracking-tight text-center">
+            Thank you for your purchase
+          </h1>
+          <p className="text-xl text-zinc-400 max-w-3xl mx-auto text-center leading-relaxed">
+            We're excited to build your website and systems. Answer a few quick questions so we can create something perfect for your business.
+          </p>
         </div>
       </div>
 
@@ -217,6 +227,14 @@ export default function OnboardingPage() {
               />
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="border-b border-zinc-800">
+        <div className="max-w-6xl mx-auto px-6 py-10">
+          <h2 className="text-2xl font-bold mb-2">Project Setup</h2>
+          <p className="text-zinc-400">Step {currentStep + 1} of {STEPS.length}</p>
         </div>
       </div>
 
