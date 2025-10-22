@@ -179,7 +179,6 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
         special_notes: data.specialNotes,
       })
       .select()
-      .single()
 
     if (dbError) {
       console.error('Supabase error:', dbError)
@@ -302,9 +301,14 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             
             // Branding
             logo_file: data.logoFile,
+            logo_url: data.logo_url, // Cloudinary URL
+            photo_urls: data.photo_urls, // Cloudinary URLs
+            certificate_urls: data.certificate_urls, // Cloudinary URLs
+            team_member_photos: data.team_member_photos, // Cloudinary URLs
             color_scheme: data.colorScheme,
             slogan: data.slogan,
             has_about_us: data.hasAboutUs,
+            team_members: data.teamMembers,
             has_meet_the_team: data.hasMeetTheTeam,
             inspiration_sites: data.inspirationSites,
             

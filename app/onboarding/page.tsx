@@ -321,11 +321,61 @@ export default function OnboardingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/onboarding/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('Upload failed')
+      const data = await response.json()
+      return data.secure_url
+    } catch (error) {
+      console.error('Cloudinary upload error:', error)
+      return null
+    }
+  }
+
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
 
     setIsSubmitting(true)
     try {
+      toast.loading('Uploading files to Cloudinary...')
+
+      // Upload files to Cloudinary
+      let logoUrl: string | null = null
+      let photoUrls: string[] = []
+      let certificateUrls: string[] = []
+      let teamPhotoUrls: (string | null)[] = []
+
+      if (formData.logoFile) {
+        logoUrl = await uploadFileToCloudinary(formData.logoFile)
+      }
+
+      for (const photo of formData.photoFiles) {
+        const url = await uploadFileToCloudinary(photo)
+        if (url) photoUrls.push(url)
+      }
+
+      for (const cert of formData.certFiles) {
+        const url = await uploadFileToCloudinary(cert)
+        if (url) certificateUrls.push(url)
+      }
+
+      for (const member of formData.teamMembers) {
+        if (member.photo) {
+          const url = await uploadFileToCloudinary(member.photo)
+          teamPhotoUrls.push(url)
+        } else {
+          teamPhotoUrls.push(null)
+        }
+      }
+
       // Normalize URLs
       const normalizedData = {
         ...formData,
@@ -333,7 +383,15 @@ export default function OnboardingPage() {
         socialLinks: Object.fromEntries(
           Object.entries(formData.socialLinks).map(([k, v]) => [k, normalizeUrl(v)])
         ),
+        // Add Cloudinary URLs
+        logo_url: logoUrl,
+        photo_urls: photoUrls,
+        certificate_urls: certificateUrls,
+        team_member_photos: teamPhotoUrls,
       }
+
+      toast.dismiss()
+      toast.loading('Submitting your onboarding...')
 
       const response = await fetch('/api/onboarding', {
         method: 'POST',
@@ -345,8 +403,10 @@ export default function OnboardingPage() {
 
       localStorage.removeItem('tluca-onboarding-draft')
       setIsSuccess(true)
+      toast.dismiss()
       toast.success('Onboarding submitted successfully!')
     } catch (error) {
+      toast.dismiss()
       toast.error('Failed to submit onboarding. Please try again.')
       console.error(error)
     } finally {
@@ -793,7 +853,23 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label className="text-white mb-2 block">Certifications / Licenses</Label>
-                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5">
+                  <div 
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        handleFileUpload('certFiles', e.dataTransfer.files, true)
+                      }
+                    }}
+                  >
                     <input
                       type="file"
                       accept="image/*,application/pdf"
@@ -802,9 +878,10 @@ export default function OnboardingPage() {
                       className="hidden"
                       id="certs-upload"
                     />
-                    <label htmlFor="certs-upload" className="cursor-pointer">
+                    <label htmlFor="certs-upload" className="cursor-pointer block">
                       <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-400">Click to upload certificates ({formData.certFiles.length} selected)</p>
+                      <p className="text-gray-400">Click or drag & drop certificates here</p>
+                      <p className="text-gray-500 text-xs">{formData.certFiles.length} file(s) selected</p>
                     </label>
                   </div>
                 </div>
@@ -895,7 +972,26 @@ export default function OnboardingPage() {
                               }}
                               className="bg-white/10 border-white/10 text-white"
                             />
-                            <div className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors cursor-pointer">
+                            <div 
+                              className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors cursor-pointer"
+                              onDragOver={(e) => {
+                                e.preventDefault()
+                                e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                              }}
+                              onDragLeave={(e) => {
+                                e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault()
+                                e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                                const file = e.dataTransfer.files?.[0]
+                                if (file) {
+                                  const newMembers = [...formData.teamMembers]
+                                  newMembers[idx].photo = file
+                                  updateField('teamMembers', newMembers)
+                                }
+                              }}
+                            >
                               <input
                                 type="file"
                                 accept="image/*"
@@ -910,10 +1006,10 @@ export default function OnboardingPage() {
                                 className="hidden"
                                 id={`team-photo-${idx}`}
                               />
-                              <label htmlFor={`team-photo-${idx}`} className="cursor-pointer">
+                              <label htmlFor={`team-photo-${idx}`} className="cursor-pointer block">
                                 <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
                                 <p className="text-gray-400 text-sm">
-                                  {member.photo ? member.photo.name : 'Upload photo'}
+                                  {member.photo ? member.photo.name : 'Click or drag photo'}
                                 </p>
                               </label>
                             </div>
@@ -1196,7 +1292,23 @@ export default function OnboardingPage() {
                     <Label htmlFor="hasPortfolio" className="text-white cursor-pointer">Include portfolio section</Label>
                   </div>
                   {formData.hasPortfolio && (
-                    <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5">
+                    <div 
+                      className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                          handleFileUpload('portfolioFiles', e.dataTransfer.files, true)
+                        }
+                      }}
+                    >
                       <input
                         type="file"
                         accept="image/*"
@@ -1205,9 +1317,10 @@ export default function OnboardingPage() {
                         className="hidden"
                         id="portfolio-upload"
                       />
-                      <label htmlFor="portfolio-upload" className="cursor-pointer">
+                      <label htmlFor="portfolio-upload" className="cursor-pointer block">
                         <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-gray-400">Upload portfolio items ({formData.portfolioFiles.length} selected)</p>
+                        <p className="text-gray-400">Click or drag & drop portfolio items here</p>
+                        <p className="text-gray-500 text-xs">{formData.portfolioFiles.length} file(s) selected</p>
                       </label>
                     </div>
                   )}
