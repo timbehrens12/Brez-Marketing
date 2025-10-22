@@ -299,27 +299,30 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             operating_hours: data.operatingHours,
             service_areas: data.serviceAreas,
             
-            // Branding - Images with clear labels
-            logo_url: data.logo_url ? `Logo: ${data.logo_url}` : null,
-            business_photos: data.photo_urls && data.photo_urls.length > 0 
-              ? data.photo_urls.map((url, idx) => `Business Photo ${idx + 1}: ${url}`).join('\n')
-              : 'No photos uploaded',
-            certificates: data.certificate_urls && data.certificate_urls.length > 0
-              ? data.certificate_urls.map((url, idx) => `Certificate ${idx + 1}: ${url}`).join('\n')
-              : 'No certificates uploaded',
-            team_members_with_photos: data.teamMembers && data.teamMembers.length > 0
-              ? data.teamMembers.map((member, idx) => {
-                  const photoUrl = data.team_member_photos?.[idx]
-                  return `${member.name} (${member.role})${photoUrl ? `: ${photoUrl}` : ': No photo'}`
-                }).join('\n')
-              : 'No team members added',
-            portfolio_items: data.portfolioFiles && data.portfolioFiles.length > 0
-              ? `${data.portfolioFiles.length} portfolio item(s) uploaded`
-              : 'No portfolio items',
+            // Branding - Images (keep URLs clean for Slack to render)
+            logo_url: data.logo_url || null,
+            photo_url_1: data.photo_urls?.[0] || null,
+            photo_url_2: data.photo_urls?.[1] || null,
+            photo_url_3: data.photo_urls?.[2] || null,
+            photo_url_4: data.photo_urls?.[3] || null,
+            photo_url_5: data.photo_urls?.[4] || null,
+            certificate_url_1: data.certificate_urls?.[0] || null,
+            certificate_url_2: data.certificate_urls?.[1] || null,
+            certificate_url_3: data.certificate_urls?.[2] || null,
+            team_member_1_name: data.teamMembers?.[0]?.name || null,
+            team_member_1_role: data.teamMembers?.[0]?.role || null,
+            team_member_1_photo: data.team_member_photos?.[0] || null,
+            team_member_2_name: data.teamMembers?.[1]?.name || null,
+            team_member_2_role: data.teamMembers?.[1]?.role || null,
+            team_member_2_photo: data.team_member_photos?.[1] || null,
+            team_member_3_name: data.teamMembers?.[2]?.name || null,
+            team_member_3_role: data.teamMembers?.[2]?.role || null,
+            team_member_3_photo: data.team_member_photos?.[2] || null,
+            portfolio_count: data.portfolioFiles?.length || 0,
             color_scheme: data.colorScheme,
-            slogan: data.slogan,
+            slogan: data.slogan || null,
             has_about_us: data.hasAboutUs,
-            about_us_text: data.hasAboutUs ? data.aboutUsText : 'Not provided',
+            about_us_text: data.hasAboutUs ? data.aboutUsText : null,
             has_meet_the_team: data.hasMeetTheTeam,
             inspiration_sites: data.inspirationSites,
             
