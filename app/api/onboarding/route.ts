@@ -299,16 +299,27 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             operating_hours: data.operatingHours,
             service_areas: data.serviceAreas,
             
-            // Branding
-            logo_file: data.logoFile,
-            logo_url: data.logo_url, // Cloudinary URL
-            photo_urls: data.photo_urls, // Cloudinary URLs
-            certificate_urls: data.certificate_urls, // Cloudinary URLs
-            team_member_photos: data.team_member_photos, // Cloudinary URLs
+            // Branding - Images with clear labels
+            logo_url: data.logo_url ? `Logo: ${data.logo_url}` : null,
+            business_photos: data.photo_urls && data.photo_urls.length > 0 
+              ? data.photo_urls.map((url, idx) => `Business Photo ${idx + 1}: ${url}`).join('\n')
+              : 'No photos uploaded',
+            certificates: data.certificate_urls && data.certificate_urls.length > 0
+              ? data.certificate_urls.map((url, idx) => `Certificate ${idx + 1}: ${url}`).join('\n')
+              : 'No certificates uploaded',
+            team_members_with_photos: data.teamMembers && data.teamMembers.length > 0
+              ? data.teamMembers.map((member, idx) => {
+                  const photoUrl = data.team_member_photos?.[idx]
+                  return `${member.name} (${member.role})${photoUrl ? `: ${photoUrl}` : ': No photo'}`
+                }).join('\n')
+              : 'No team members added',
+            portfolio_items: data.portfolioFiles && data.portfolioFiles.length > 0
+              ? `${data.portfolioFiles.length} portfolio item(s) uploaded`
+              : 'No portfolio items',
             color_scheme: data.colorScheme,
             slogan: data.slogan,
             has_about_us: data.hasAboutUs,
-            team_members: data.teamMembers,
+            about_us_text: data.hasAboutUs ? data.aboutUsText : 'Not provided',
             has_meet_the_team: data.hasMeetTheTeam,
             inspiration_sites: data.inspirationSites,
             
