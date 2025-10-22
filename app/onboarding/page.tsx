@@ -796,20 +796,31 @@ export default function OnboardingPage() {
                     />
                     <label htmlFor="logo-upload" className="cursor-pointer block">
                       {formData.logoFile ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                            <span className="text-white">{formData.logoFile.name}</span>
-                          </div>
+                        <div className="space-y-3">
+                          {imagePreviews[formData.logoFile.name] ? (
+                            <div className="relative">
+                              <img 
+                                src={imagePreviews[formData.logoFile.name]} 
+                                alt="Logo preview"
+                                className="max-h-48 mx-auto rounded object-contain bg-white/10 p-4"
+                              />
+                              <p className="text-gray-400 text-sm mt-2 text-center">{formData.logoFile.name}</p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2 animate-pulse">
+                              <CheckCircle2 className="w-5 h-5 text-green-500" />
+                              <span className="text-white">Loading preview...</span>
+                            </div>
+                          )}
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={(e) => { e.preventDefault(); removeFile('logoFile') }}
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-400 hover:text-red-300 w-full"
                           >
                             <X className="w-4 h-4 mr-1" />
-                            Remove
+                            Remove Logo
                           </Button>
                         </div>
                       ) : (
@@ -1040,16 +1051,19 @@ export default function OnboardingPage() {
                               />
                               <label htmlFor={`team-photo-${idx}`} className="cursor-pointer block">
                                 {member.photo && imagePreviews[member.photo.name] ? (
-                                  <img 
-                                    src={imagePreviews[member.photo.name]} 
-                                    alt={member.photo.name}
-                                    className="w-full h-24 object-cover rounded"
-                                  />
+                                  <div className="space-y-2">
+                                    <img 
+                                      src={imagePreviews[member.photo.name]} 
+                                      alt={member.photo.name}
+                                      className="w-full h-40 object-contain rounded bg-white/5 p-2"
+                                    />
+                                    <p className="text-gray-400 text-xs truncate">{member.photo.name}</p>
+                                  </div>
                                 ) : (
                                   <>
                                     <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
                                     <p className="text-gray-400 text-sm">
-                                      {member.photo ? member.photo.name : 'Click or drag photo'}
+                                      {member.photo ? 'Loading...' : 'Click or drag photo'}
                                     </p>
                                   </>
                                 )}
