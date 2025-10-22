@@ -356,15 +356,15 @@ export default function OnboardingPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full bg-white border border-gray-200 shadow-sm">
-          <CardHeader className="text-center space-y-4 pb-8">
-            <div className="mx-auto w-20 h-20 rounded-full bg-black flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-white" />
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-6">
+        <Card className="max-w-2xl w-full bg-zinc-900/50 border border-zinc-800/50 shadow-2xl shadow-black/20">
+          <CardHeader className="text-center space-y-6 pb-12 pt-12">
+            <div className="mx-auto w-20 h-20 rounded-full bg-white flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-black" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-semibold text-black mb-2">All Set!</CardTitle>
-              <CardDescription className="text-gray-600 text-lg leading-relaxed">
+              <CardTitle className="text-4xl font-semibold text-white mb-3 tracking-tight">All set!</CardTitle>
+              <CardDescription className="text-zinc-400 text-lg leading-relaxed">
                 You'll receive a text message confirming your submission.
                 <br />
                 <br />
@@ -378,25 +378,25 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-[#0A0A0A] text-white">
       {/* Hero */}
-      <div className="border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black text-white text-sm mb-6">
+      <div className="border-b border-zinc-800/50">
+        <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-8">
             <CheckCircle2 className="w-4 h-4" />
-            <span>Payment Confirmed</span>
+            <span className="font-medium">Payment Confirmed</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black tracking-tight">
-            Let's Get Started
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white tracking-tight">
+            Let's get started
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Answer a few questions so we can build your website exactly how you need it.
+          <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+            We'll walk you through a few questions to ensure your website is built exactly how you need it.
           </p>
         </div>
       </div>
 
       {/* Progress Stepper */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <div className="sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-zinc-800/50">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             {SECTIONS.map((section, idx) => {
@@ -406,26 +406,26 @@ export default function OnboardingPage() {
               
               return (
                 <div key={section.id} className="flex items-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isCompleted ? 'bg-black border-black' :
-                      isActive ? 'bg-white border-black' :
-                      'bg-white border-gray-300'
+                  <div className="flex flex-col items-center gap-2.5">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
+                      isCompleted ? 'bg-white border-white' :
+                      isActive ? 'bg-zinc-800 border-zinc-600' :
+                      'bg-zinc-900 border-zinc-700'
                     }`}>
-                      <Icon className={`w-5 h-5 ${
-                        isCompleted ? 'text-white' :
-                        isActive ? 'text-black' : 'text-gray-400'
+                      <Icon className={`w-4.5 h-4.5 ${
+                        isCompleted ? 'text-black' :
+                        isActive ? 'text-white' : 'text-zinc-500'
                       }`} />
                     </div>
                     <span className={`text-xs font-medium hidden md:block ${
-                      isActive ? 'text-black' : 'text-gray-400'
+                      isActive ? 'text-white' : 'text-zinc-500'
                     }`}>
                       {section.title}
                     </span>
                   </div>
                   {idx < SECTIONS.length - 1 && (
-                    <div className={`h-0.5 w-8 md:w-16 mx-2 ${
-                      isCompleted ? 'bg-black' : 'bg-gray-200'
+                    <div className={`h-px w-8 md:w-16 mx-3 ${
+                      isCompleted ? 'bg-white' : 'bg-zinc-800'
                     }`} />
                   )}
                 </div>
@@ -436,11 +436,11 @@ export default function OnboardingPage() {
       </div>
 
       {/* Form Content */}
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader className="border-b border-gray-100 pb-6">
-            <CardTitle className="text-2xl text-black font-semibold">{SECTIONS[currentStep].title}</CardTitle>
-            <CardDescription className="text-gray-500 text-base">
+      <div className="max-w-2xl mx-auto px-6 py-16">
+        <Card className="bg-zinc-900/50 border border-zinc-800/50 shadow-2xl shadow-black/20">
+          <CardHeader className="border-b border-zinc-800/50 pb-8">
+            <CardTitle className="text-3xl text-white font-semibold tracking-tight">{SECTIONS[currentStep].title}</CardTitle>
+            <CardDescription className="text-zinc-400 text-base mt-2">
               {currentStep === 0 && "Tell us about your business"}
               {currentStep === 1 && "Share your brand identity"}
               {currentStep === 2 && "Your current online presence"}
@@ -449,29 +449,29 @@ export default function OnboardingPage() {
               {currentStep === 5 && "Review your information before submitting"}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-8">
+          <CardContent className="space-y-8 pt-8">
             {/* Step 0: Business */}
             {currentStep === 0 && (
               <>
                 <div>
-                  <Label htmlFor="businessName" className="text-black font-medium">Business Name *</Label>
+                  <Label htmlFor="businessName" className="text-white font-medium text-sm">Business Name *</Label>
                   <Input
                     id="businessName"
                     value={formData.businessName}
                     onChange={(e) => updateField('businessName', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="e.g., TLUCA Systems"
                   />
                   {errors.businessName && <p className="text-red-400 text-sm mt-1">{errors.businessName}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="contactName" className="text-black font-medium">Owner / Main Contact *</Label>
+                  <Label htmlFor="contactName" className="text-white font-medium text-sm">Owner / Main Contact *</Label>
                   <Input
                     id="contactName"
                     value={formData.contactName}
                     onChange={(e) => updateField('contactName', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="e.g., John Doe"
                   />
                   {errors.contactName && <p className="text-red-400 text-sm mt-1">{errors.contactName}</p>}
@@ -479,26 +479,26 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="businessEmail" className="text-black font-medium">Business Email *</Label>
+                    <Label htmlFor="businessEmail" className="text-white font-medium text-sm">Business Email *</Label>
                     <Input
                       id="businessEmail"
                       type="email"
                       value={formData.businessEmail}
                       onChange={(e) => updateField('businessEmail', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="e.g., contact@business.com"
                     />
                     {errors.businessEmail && <p className="text-red-400 text-sm mt-1">{errors.businessEmail}</p>}
                   </div>
 
                   <div>
-                    <Label htmlFor="businessPhone" className="text-black font-medium">Business Phone *</Label>
+                    <Label htmlFor="businessPhone" className="text-white font-medium text-sm">Business Phone *</Label>
                     <Input
                       id="businessPhone"
                       type="tel"
                       value={formData.businessPhone}
                       onChange={(e) => updateField('businessPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="(555) 123-4567"
                     />
                     {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
@@ -506,24 +506,24 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-black font-medium">Business Address</Label>
+                  <Label className="text-white font-medium text-sm">Business Address</Label>
                   <Input
                     value={formData.businessAddress.street}
                     onChange={(e) => updateNestedField('businessAddress', 'street', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="e.g., 123 Main St"
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <Input
                       value={formData.businessAddress.city}
                       onChange={(e) => updateNestedField('businessAddress', 'city', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="City"
                     />
                     <Input
                       value={formData.businessAddress.state}
                       onChange={(e) => updateNestedField('businessAddress', 'state', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="State"
                     />
                   </div>
@@ -531,47 +531,47 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.businessAddress.zip}
                       onChange={(e) => updateNestedField('businessAddress', 'zip', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="ZIP Code"
                     />
                     <Input
                       value={formData.businessAddress.country}
                       onChange={(e) => updateNestedField('businessAddress', 'country', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="Country"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="businessNiche" className="text-black font-medium">Business Niche/Industry</Label>
+                  <Label htmlFor="businessNiche" className="text-white font-medium text-sm">Business Niche/Industry</Label>
                   <Input
                     id="businessNiche"
                     value={formData.businessNiche}
                     onChange={(e) => updateField('businessNiche', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="e.g., Landscaping, Hair Salon, Plumbing, Real Estate, etc."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="businessDescription" className="text-black font-medium">Short Business Description</Label>
+                  <Label htmlFor="businessDescription" className="text-white font-medium text-sm">Short Business Description</Label>
                   <Textarea
                     id="businessDescription"
                     value={formData.businessDescription}
                     onChange={(e) => updateField('businessDescription', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black min-h-24"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white min-h-24"
                     placeholder="What do you do? (e.g., 'We provide residential plumbing services...')"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="servicesOffered" className="text-black font-medium">Services Offered</Label>
+                  <Label htmlFor="servicesOffered" className="text-white font-medium text-sm">Services Offered</Label>
                   <Textarea
                     id="servicesOffered"
                     value={formData.servicesOffered}
                     onChange={(e) => updateField('servicesOffered', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black min-h-24"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white min-h-24"
                     placeholder="One service per line..."
                   />
                 </div>
@@ -670,12 +670,12 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="serviceAreas" className="text-black font-medium">Service Areas / Cities Served</Label>
+                  <Label htmlFor="serviceAreas" className="text-white font-medium text-sm">Service Areas / Cities Served</Label>
                   <Input
                     id="serviceAreas"
                     value={formData.serviceAreas}
                     onChange={(e) => updateField('serviceAreas', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="Houston, Austin, Dallas..."
                   />
                 </div>
@@ -688,17 +688,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-2 block">Logo Upload (PNG/SVG preferred)</Label>
                   <div 
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-black transition-colors cursor-pointer bg-gray-50"
+                    className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-zinc-500 transition-colors cursor-pointer bg-zinc-800/30"
                     onDragOver={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.add('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.add('border-white', 'bg-zinc-700/50')
                     }}
                     onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.remove('border-white', 'bg-zinc-700/50')
                     }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.remove('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.remove('border-white', 'bg-zinc-700/50')
                       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         handleFileUpload('logoFile', e.dataTransfer.files)
                       }
@@ -716,7 +716,7 @@ export default function OnboardingPage() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
-                            <span className="text-black font-medium">{formData.logoFile.name}</span>
+                            <span className="text-white font-medium text-sm">{formData.logoFile.name}</span>
                           </div>
                           <Button
                             type="button"
@@ -743,17 +743,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-2 block">General Photos (Business, Location, Work)</Label>
                   <div 
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-black transition-colors cursor-pointer bg-gray-50"
+                    className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-zinc-500 transition-colors cursor-pointer bg-zinc-800/30"
                     onDragOver={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.add('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.add('border-white', 'bg-zinc-700/50')
                     }}
                     onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.remove('border-white', 'bg-zinc-700/50')
                     }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.remove('border-black', 'bg-gray-100')
+                      e.currentTarget.classList.remove('border-white', 'bg-zinc-700/50')
                       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         handleFileUpload('photoFiles', e.dataTransfer.files, true)
                       }
@@ -794,7 +794,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label className="text-white mb-2 block">Certifications / Licenses</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-black transition-colors cursor-pointer bg-gray-50">
+                  <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-zinc-500 transition-colors cursor-pointer bg-zinc-800/30">
                     <input
                       type="file"
                       accept="image/*,application/pdf"
@@ -831,12 +831,12 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="slogan" className="text-black font-medium">Slogan / Tagline (optional)</Label>
+                  <Label htmlFor="slogan" className="text-white font-medium text-sm">Slogan / Tagline (optional)</Label>
                   <Input
                     id="slogan"
                     value={formData.slogan}
                     onChange={(e) => updateField('slogan', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="Systems That Scale"
                   />
                 </div>
@@ -985,7 +985,7 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.currentDomain}
                       onChange={(e) => updateField('currentDomain', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="Current domain (e.g., example.com)"
                     />
                   ) : (
@@ -1002,7 +1002,7 @@ export default function OnboardingPage() {
                       <Input
                         value={formData.desiredDomain}
                         onChange={(e) => updateField('desiredDomain', e.target.value)}
-                        className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                        className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                         placeholder="Desired domain name"
                       />
                     </div>
@@ -1023,7 +1023,7 @@ export default function OnboardingPage() {
                     <Input
                       value={formData.googleBusinessEmail}
                       onChange={(e) => updateField('googleBusinessEmail', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="Gmail used to manage it"
                     />
                   ) : (
@@ -1050,7 +1050,7 @@ export default function OnboardingPage() {
                           id={`social-${platform}`}
                           value={url}
                           onChange={(e) => updateNestedField('socialLinks', platform, e.target.value)}
-                          className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                          className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                           placeholder={`https://${platform}.com/... or @handle`}
                         />
                       </div>
@@ -1081,7 +1081,7 @@ export default function OnboardingPage() {
                             : 'border-white/10 bg-white/5 hover:border-white/20'
                         }`}
                       >
-                        <span className="text-black font-medium">{method.label}</span>
+                        <span className="text-white font-medium text-sm">{method.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1090,13 +1090,13 @@ export default function OnboardingPage() {
 
                 {(formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') && (
                   <div>
-                    <Label htmlFor="alertPhone" className="text-black font-medium">Best Phone for SMS Alerts *</Label>
+                    <Label htmlFor="alertPhone" className="text-white font-medium text-sm">Best Phone for SMS Alerts *</Label>
                     <Input
                       id="alertPhone"
                       type="tel"
                       value={formData.alertPhone}
                       onChange={(e) => updateField('alertPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="(555) 123-4567"
                     />
                     {errors.alertPhone && <p className="text-red-400 text-sm mt-1">{errors.alertPhone}</p>}
@@ -1105,13 +1105,13 @@ export default function OnboardingPage() {
 
                 {(formData.leadAlertMethod === 'email' || formData.leadAlertMethod === 'both') && (
                   <div>
-                    <Label htmlFor="alertEmail" className="text-black font-medium">Best Email for Lead Alerts *</Label>
+                    <Label htmlFor="alertEmail" className="text-white font-medium text-sm">Best Email for Lead Alerts *</Label>
                     <Input
                       id="alertEmail"
                       type="email"
                       value={formData.alertEmail}
                       onChange={(e) => updateField('alertEmail', e.target.value)}
-                      className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                      className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                       placeholder="leads@example.com"
                     />
                     {errors.alertEmail && <p className="text-red-400 text-sm mt-1">{errors.alertEmail}</p>}
@@ -1143,7 +1143,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="extraLeadFormRequests" className="text-black font-medium">Extra Lead Form Requests</Label>
+                  <Label htmlFor="extraLeadFormRequests" className="text-white font-medium text-sm">Extra Lead Form Requests</Label>
                   <Textarea
                     id="extraLeadFormRequests"
                     value={formData.extraLeadFormRequests}
@@ -1172,7 +1172,7 @@ export default function OnboardingPage() {
                             : 'border-white/10 bg-white/5 hover:border-white/20'
                         }`}
                       >
-                        <span className="text-black font-medium">{option.label}</span>
+                        <span className="text-white font-medium text-sm">{option.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1197,7 +1197,7 @@ export default function OnboardingPage() {
                     <Label htmlFor="hasPortfolio" className="text-white cursor-pointer">Include portfolio section</Label>
                   </div>
                   {formData.hasPortfolio && (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-black transition-colors cursor-pointer bg-gray-50">
+                    <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-zinc-500 transition-colors cursor-pointer bg-zinc-800/30">
                       <input
                         type="file"
                         accept="image/*"
@@ -1244,7 +1244,7 @@ export default function OnboardingPage() {
                       <Input
                         value={formData.ownedDomain}
                         onChange={(e) => updateField('ownedDomain', e.target.value)}
-                        className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                        className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                         placeholder="yourdomain.com"
                       />
                       <div>
@@ -1264,7 +1264,7 @@ export default function OnboardingPage() {
                                   : 'border-white/10 bg-white/5 hover:border-white/20'
                               }`}
                             >
-                              <span className="text-black font-medium">{option.label}</span>
+                              <span className="text-white font-medium text-sm">{option.label}</span>
                             </button>
                           ))}
                         </div>
@@ -1274,18 +1274,18 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="complianceNeeds" className="text-black font-medium">Compliance Needs (HIPAA, FINRA, etc.)</Label>
+                  <Label htmlFor="complianceNeeds" className="text-white font-medium text-sm">Compliance Needs (HIPAA, FINRA, etc.)</Label>
                   <Input
                     id="complianceNeeds"
                     value={formData.complianceNeeds}
                     onChange={(e) => updateField('complianceNeeds', e.target.value)}
-                    className="bg-white border border-gray-300 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white"
                     placeholder="None, or list requirements..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="specialNotes" className="text-black font-medium">Special Notes</Label>
+                  <Label htmlFor="specialNotes" className="text-white font-medium text-sm">Special Notes</Label>
                   <Textarea
                     id="specialNotes"
                     value={formData.specialNotes}
@@ -1383,7 +1383,7 @@ export default function OnboardingPage() {
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-black hover:bg-gray-800 text-white"
+                  className="bg-white hover:bg-zinc-200 text-black font-medium"
                 >
                   Next
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -1393,7 +1393,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-black hover:bg-gray-800 text-white"
+                  className="bg-white hover:bg-zinc-200 text-black font-medium"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Onboarding'}
                   <CheckCircle2 className="w-4 h-4 ml-2" />
