@@ -571,51 +571,60 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="sticky top-0 z-40 bg-black border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">
-              Step {currentStep + 1} of {SECTIONS.length}
-            </span>
-            <span className="text-sm text-gray-400">
-              {Math.round(((currentStep + 1) / SECTIONS.length) * 100)}% Complete
-            </span>
-          </div>
-          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white transition-all duration-500 ease-out"
-              style={{ width: `${((currentStep + 1) / SECTIONS.length) * 100}%` }}
-            />
+      {/* Progress Stepper */}
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {SECTIONS.map((section, idx) => {
+              const Icon = section.icon
+              const isActive = idx === currentStep
+              const isCompleted = idx < currentStep
+              
+              return (
+                <div key={section.id} className="flex items-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                      isCompleted ? 'bg-white border-white' :
+                      isActive ? 'bg-white/20 border-white' :
+                      'bg-black border-white/20'
+                    }`}>
+                      <Icon className={`w-5 h-5 ${
+                        isCompleted || isActive ? 'text-white' : 'text-gray-500'
+                      }`} />
+                    </div>
+                    <span className={`text-xs font-medium hidden md:block ${
+                      isActive ? 'text-white' : 'text-gray-500'
+                    }`}>
+                      {section.title}
+                    </span>
+                  </div>
+                  {idx < SECTIONS.length - 1 && (
+                    <div className={`h-0.5 w-8 md:w-16 mx-2 ${
+                      isCompleted ? 'bg-white' : 'bg-white/10'
+                    }`} />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
 
       {/* Form Content */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="bg-gradient-to-br from-black via-gray-900 to-black border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-          {/* Section Header */}
-          <div className="bg-black/90 backdrop-blur-sm border-b border-white/10 px-10 py-8">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                <span className="text-2xl font-bold text-white">{currentStep + 1}</span>
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-white tracking-tight">{SECTIONS[currentStep].title}</h2>
-                <p className="text-gray-400 text-base mt-1">
-                  {currentStep === 0 && "Tell us about your business"}
-                  {currentStep === 1 && "Share your brand identity"}
-                  {currentStep === 2 && "Your current online presence"}
-                  {currentStep === 3 && "How you want to capture and receive leads"}
-                  {currentStep === 4 && "Additional details and special requirements"}
-                  {currentStep === 5 && "Review your information before submitting"}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Form Fields */}
-          <div className="px-10 py-10 space-y-8">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <Card className="bg-black border-white/10 shadow-2xl">
+          <CardHeader className="border-b border-white/10">
+            <CardTitle className="text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
+            <CardDescription className="text-gray-400 text-lg">
+              {currentStep === 0 && "Tell us about your business"}
+              {currentStep === 1 && "Share your brand identity"}
+              {currentStep === 2 && "Your current online presence"}
+              {currentStep === 3 && "How you want to capture and receive leads"}
+              {currentStep === 4 && "Additional details and special requirements"}
+              {currentStep === 5 && "Review your information before submitting"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8 p-8">
             {/* Step 0: Business */}
             {currentStep === 0 && (
               <>
@@ -628,7 +637,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., TLUCA Systems"
                   />
-                  {errors.businessName && <p className="text-white/60 text-sm mt-1">⚠ {errors.businessName}</p>}
+                  {errors.businessName && <p className="text-white/70 text-sm mt-1">{errors.businessName}</p>}
                 </div>
 
                 <div>
@@ -640,7 +649,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., John Doe"
                   />
-                  {errors.contactName && <p className="text-white/60 text-sm mt-1">⚠ {errors.contactName}</p>}
+                  {errors.contactName && <p className="text-white/70 text-sm mt-1">{errors.contactName}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -654,7 +663,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., contact@business.com"
                     />
-                    {errors.businessEmail && <p className="text-white/60 text-sm mt-1">⚠ {errors.businessEmail}</p>}
+                    {errors.businessEmail && <p className="text-white/70 text-sm mt-1">{errors.businessEmail}</p>}
                   </div>
 
                   <div>
@@ -667,7 +676,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
-                    {errors.businessPhone && <p className="text-white/60 text-sm mt-1">⚠ {errors.businessPhone}</p>}
+                    {errors.businessPhone && <p className="text-white/70 text-sm mt-1">{errors.businessPhone}</p>}
                   </div>
                 </div>
 
@@ -819,7 +828,7 @@ export default function OnboardingPage() {
                                     [day]: { ...prevDayData }
                                   })
                                 }}
-                                className="text-xs text-white/60 hover:text-white/80"
+                                className="text-xs text-white/70 hover:text-white"
                               >
                                 Copy from {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][idx - 1]}
                               </Button>
@@ -900,7 +909,7 @@ export default function OnboardingPage() {
                             variant="ghost"
                             size="sm"
                             onClick={(e) => { e.preventDefault(); removeFile('logoFile') }}
-                            className="text-white/60 hover:text-white/80 w-full"
+                            className="text-white/70 hover:text-white w-full"
                           >
                             <X className="w-4 h-4 mr-1" />
                             Remove Logo
@@ -1319,7 +1328,7 @@ export default function OnboardingPage() {
                       </button>
                     ))}
                   </div>
-                  {errors.leadAlertMethod && <p className="text-white/60 text-sm mt-1">⚠ {errors.leadAlertMethod}</p>}
+                  {errors.leadAlertMethod && <p className="text-white/70 text-sm mt-1">{errors.leadAlertMethod}</p>}
                 </div>
 
                 {(formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') && (
@@ -1333,7 +1342,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
-                    {errors.alertPhone && <p className="text-white/60 text-sm mt-1">⚠ {errors.alertPhone}</p>}
+                    {errors.alertPhone && <p className="text-white/70 text-sm mt-1">{errors.alertPhone}</p>}
                   </div>
                 )}
 
@@ -1348,7 +1357,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="leads@example.com"
                     />
-                    {errors.alertEmail && <p className="text-white/60 text-sm mt-1">⚠ {errors.alertEmail}</p>}
+                    {errors.alertEmail && <p className="text-white/70 text-sm mt-1">{errors.alertEmail}</p>}
                   </div>
                 )}
 
@@ -1432,7 +1441,7 @@ export default function OnboardingPage() {
                   </div>
                   {formData.hasPortfolio && (
                     <div 
-                      className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/50 transition-colors cursor-pointer bg-white/5"
+                      className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
                       onDragOver={(e) => {
                         e.preventDefault()
                         e.currentTarget.classList.add('border-white', 'bg-white/10')
@@ -1581,7 +1590,7 @@ export default function OnboardingPage() {
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-white">Business Information</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(0)} className="text-red-400 hover:text-red-300">
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(0)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
@@ -1596,7 +1605,7 @@ export default function OnboardingPage() {
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-white">Branding & Design</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)} className="text-red-400 hover:text-red-300">
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
@@ -1610,7 +1619,7 @@ export default function OnboardingPage() {
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-white">Lead Alerts</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(3)} className="text-red-400 hover:text-red-300">
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(3)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
@@ -1638,21 +1647,21 @@ export default function OnboardingPage() {
                       I confirm the information is accurate and authorize TLUCA Systems to begin work.
                     </Label>
                   </div>
-                  {errors.consentConfirmed && <p className="text-white/60 text-sm mt-2">⚠ {errors.consentConfirmed}</p>}
+                  {errors.consentConfirmed && <p className="text-white/70 text-sm mt-2">{errors.consentConfirmed}</p>}
                 </div>
               </>
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between items-center pt-8 mt-8 border-t border-white/10">
+            <div className="flex justify-between pt-6 border-t border-white/10">
               <Button
                 type="button"
                 onClick={handlePrev}
                 disabled={currentStep === 0}
                 variant="outline"
-                className="border-white/20 hover:bg-white/10 hover:border-white/40 text-white disabled:opacity-30 px-6 py-6 text-lg"
+                className="border-white/10 hover:bg-white/5 text-white disabled:opacity-50"
               >
-                <ChevronLeft className="w-5 h-5 mr-2" />
+                <ChevronLeft className="w-4 h-4 mr-1" />
                 Previous
               </Button>
 
@@ -1660,28 +1669,28 @@ export default function OnboardingPage() {
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold px-8 py-6 text-lg transition-all"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold"
                 >
-                  Continue
-                  <ChevronRight className="w-5 h-5 ml-2" />
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
                 <Button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold px-8 py-6 text-lg transition-all disabled:opacity-50"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Complete Onboarding'}
-                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                  {isSubmitting ? 'Submitting...' : 'Submit Onboarding'}
+                  <CheckCircle2 className="w-4 h-4 ml-2" />
                 </Button>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <p className="text-center text-gray-400 text-sm mt-8">
-          Questions? Email <a href="mailto:support@tlucasystems.com" className="text-white hover:text-gray-300 underline">support@tlucasystems.com</a>
+        <p className="text-center text-gray-500 text-sm mt-6">
+          Questions? Email <a href="mailto:support@tlucasystems.com" className="text-white hover:underline">support@tlucasystems.com</a>
         </p>
       </div>
     </div>
