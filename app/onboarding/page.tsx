@@ -455,21 +455,106 @@ export default function OnboardingPage() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full bg-black/40 border-white/10 backdrop-blur-xl">
-          <CardHeader className="text-center space-y-4 pb-8">
-            <div className="mx-auto w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-              <CheckCircle2 className="w-10 h-10 text-white" />
+        <Card className="max-w-3xl w-full bg-black border-white/10 shadow-2xl">
+          <CardHeader className="text-center space-y-6 pb-8 border-b border-white/10">
+            <div className="mx-auto w-24 h-24 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/20">
+              <CheckCircle2 className="w-12 h-12 text-white" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold text-white mb-2">Congratulations! 🎉</CardTitle>
-              <CardDescription className="text-gray-400 text-lg leading-relaxed">
-                You'll receive a text message confirming your submission.
-                <br />
-                <br />
-                We'll text you again when your site starts building!
+              <CardTitle className="text-4xl font-bold text-white mb-4">Thank You! 🎉</CardTitle>
+              <CardDescription className="text-gray-400 text-xl leading-relaxed">
+                Your onboarding submission has been received.
               </CardDescription>
             </div>
           </CardHeader>
+
+          <CardContent className="p-8 space-y-8">
+            {/* Our Promise */}
+            <div className="text-center space-y-4">
+              <h3 className="text-2xl font-bold text-white">Our Promise</h3>
+              <p className="text-gray-400 text-lg leading-relaxed">
+                We're committed to making your experience <span className="text-white font-semibold">exceptional</span>. 
+                Your business deserves systems that work flawlessly, and that's exactly what we'll deliver.
+              </p>
+            </div>
+
+            {/* What Happens Next */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-white text-center mb-6">What Happens Next</h3>
+              
+              <div className="space-y-4">
+                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-2">Review & Development Start</h4>
+                    <p className="text-gray-400">
+                      Within the next <span className="text-white font-semibold">24 hours</span>, someone from our team will review your onboarding details 
+                      and begin development of your website and systems. You'll receive an email confirmation when we start.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-2">Project Completion</h4>
+                    <p className="text-gray-400">
+                      Once your site and systems are complete, you'll receive an email containing:
+                    </p>
+                    <ul className="mt-3 space-y-2 text-gray-400">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                        Website & CRM login credentials
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                        Tutorial and walkthrough documentation
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                        System details and setup guide
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                        Final invoice and next steps
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-2">Questions?</h4>
+                    <p className="text-gray-400">
+                      If you have any questions in the meantime, feel free to reach out:
+                      <br />
+                      <a href="mailto:tbehrens121@gmail.com" className="text-white font-semibold hover:underline">
+                        tbehrens121@gmail.com
+                      </a>
+                      {' | '}
+                      <a href="tel:832-561-4407" className="text-white font-semibold hover:underline">
+                        832-561-4407
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center pt-6 border-t border-white/10">
+              <p className="text-gray-400 text-lg">
+                We're excited to build your business systems! 🚀
+              </p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     )
