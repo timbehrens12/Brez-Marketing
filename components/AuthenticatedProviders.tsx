@@ -7,6 +7,7 @@ import { MetricsProvider } from '@/lib/contexts/MetricsContext'
 
 import { WidgetProvider } from '@/context/WidgetContext'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AuthenticatedLayout } from './AuthenticatedLayout'
 
 export function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   // The provider tree MUST be static and not change between renders.
@@ -17,7 +18,9 @@ export function AuthenticatedProviders({ children }: { children: React.ReactNode
         <MetricsProvider>
           <WidgetProvider>
             <AuthProvider>
-              {children}
+              <AuthenticatedLayout>
+                {children}
+              </AuthenticatedLayout>
             </AuthProvider>
           </WidgetProvider>
         </MetricsProvider>

@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
           <p className="text-gray-400 text-lg">
             Effective Date: October 20, 2025
           </p>
-        </div>
+          </div>
 
         {/* Content Card */}
         <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-2xl p-8 md:p-12 backdrop-blur-sm">
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2 text-gray-300 ml-4 mb-8">
               <li><strong className="text-white">Service Providers:</strong> For hosting, payments, analytics, and customer communication (e.g., GoHighLevel, Mailgun, Stripe, AWS).</li>
               <li><strong className="text-white">Legal Authorities:</strong> If required by law or to protect our rights and users' safety.</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">5. Data Retention & Deletion</h2>
             <p className="text-gray-300 mb-4">
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
               <li>Access, correct, or delete your personal data</li>
               <li>Request account closure</li>
               <li>Withdraw consent for communications</li>
-            </ul>
+              </ul>
             <p className="text-gray-300 mb-8">
               Contact <a href="mailto:tbehrens121@gmail.com" className="text-[#ff2a2a] hover:text-[#ff4444] underline">tbehrens121@gmail.com</a> to exercise these rights.
             </p>
@@ -145,8 +145,8 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-[#ff2a2a]" />
                 <a href="mailto:tbehrens121@gmail.com" className="text-white hover:text-[#ff2a2a] transition-colors">
-                  tbehrens121@gmail.com
-                </a>
+                    tbehrens121@gmail.com
+                  </a>
               </div>
             </div>
           </div>

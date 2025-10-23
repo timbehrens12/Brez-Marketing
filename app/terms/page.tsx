@@ -31,7 +31,7 @@ export default function TermsAndConditionsPage() {
           <p className="text-gray-400 text-lg">
             Effective Date: October 20, 2025
           </p>
-        </div>
+          </div>
 
         {/* Content Card */}
         <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-2xl p-8 md:p-12 backdrop-blur-sm">
@@ -55,7 +55,7 @@ export default function TermsAndConditionsPage() {
               <li>AI tools and chatbots</li>
               <li>Email and SMS marketing integrations</li>
               <li>Hosting and ongoing technical maintenance</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">3. Account & Access</h2>
             <p className="text-gray-300 mb-4">You are responsible for:</p>
@@ -63,7 +63,7 @@ export default function TermsAndConditionsPage() {
               <li>Maintaining the confidentiality of your login credentials</li>
               <li>Ensuring all account data you provide is accurate</li>
               <li>Any activity under your account</li>
-            </ul>
+              </ul>
             <p className="text-gray-300 mb-8">
               If suspicious or unauthorized use is detected, we may suspend access pending review.
             </p>
@@ -77,7 +77,7 @@ export default function TermsAndConditionsPage() {
               <li>Failed payments trigger automatic retries over 7 days. If unpaid after retries, your account and website access will be temporarily suspended until payment is resolved.</li>
               <li>After 14 days of non-payment, your account may be permanently deactivated and associated data deleted.</li>
               <li>All fees are non-refundable once a billing cycle begins unless otherwise stated in writing.</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">5. Cancellations</h2>
             <p className="text-gray-300 mb-4">
@@ -92,7 +92,7 @@ export default function TermsAndConditionsPage() {
               <li>All code, designs, templates, and systems built by TLUCA Systems LLC remain our exclusive intellectual property.</li>
               <li>Clients retain ownership of their uploaded materials (content, images, logos, etc.).</li>
               <li>You are not permitted to resell, duplicate, or white-label our platform without prior written consent.</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">7. Acceptable Use</h2>
             <p className="text-gray-300 mb-4">You agree not to:</p>
@@ -100,7 +100,7 @@ export default function TermsAndConditionsPage() {
               <li>Use our platform for spam, scams, or unlawful content</li>
               <li>Attempt to breach or reverse-engineer the system</li>
               <li>Interfere with other users or servers</li>
-            </ul>
+              </ul>
             <p className="text-gray-300 mb-8">
               Violation of these terms may result in immediate suspension or termination.
             </p>
@@ -110,13 +110,13 @@ export default function TermsAndConditionsPage() {
               <li>Our Services are provided "as is" without warranties of any kind.</li>
               <li>We make no guarantees regarding uptime, conversions, or specific outcomes.</li>
               <li>We are not responsible for interruptions caused by third-party providers or integrations.</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">9. Limitation of Liability</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-300 ml-4 mb-8">
               <li>To the maximum extent permitted by law, TLUCA Systems LLC shall not be liable for indirect, incidental, or consequential damages.</li>
               <li>Our total liability for any claim shall not exceed the total amount you paid us within the previous three (3) months.</li>
-            </ul>
+              </ul>
 
             <h2 className="text-2xl font-bold text-white mb-4">10. Termination</h2>
             <p className="text-gray-300 mb-4">
@@ -126,7 +126,7 @@ export default function TermsAndConditionsPage() {
               <li>You violate these Terms</li>
               <li>Payments remain overdue</li>
               <li>Illegal or harmful activity is detected</li>
-            </ul>
+              </ul>
             <p className="text-gray-300 mb-8">
               Upon termination, your access ceases immediately and data may be deleted after 30 days.
             </p>
@@ -149,8 +149,8 @@ export default function TermsAndConditionsPage() {
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-[#ff2a2a]" />
                 <a href="mailto:tbehrens121@gmail.com" className="text-white hover:text-[#ff2a2a] transition-colors">
-                  tbehrens121@gmail.com
-                </a>
+                    tbehrens121@gmail.com
+                  </a>
               </div>
             </div>
           </div>
@@ -177,4 +177,4 @@ export default function TermsAndConditionsPage() {
       </footer>
     </div>
   )
-}
+} 
