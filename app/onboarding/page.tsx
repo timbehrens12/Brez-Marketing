@@ -1588,13 +1588,14 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="specialNotes" className="text-white">Special Notes</Label>
+                  <Label htmlFor="specialNotes" className="text-white">Anything We're Missing?</Label>
+                  <p className="text-sm text-gray-400 mb-2">Let us know if there's anything else you'd like us to include, any custom features you need, or special requests</p>
                   <Textarea
                     id="specialNotes"
                     value={formData.specialNotes}
                     onChange={(e) => updateField('specialNotes', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-32"
-                    placeholder="Any additional information, special requests, or important details..."
+                    className="bg-white/5 border-white/10 text-white min-h-32 placeholder:text-gray-500"
+                    placeholder="e.g., 'Need a customer portal', 'Want integration with X software', 'Special booking system requirements', 'Custom payment processing'..."
                   />
                 </div>
               </>
@@ -1604,50 +1605,103 @@ export default function OnboardingPage() {
             {currentStep === 5 && (
               <>
                 <div className="space-y-6">
+                  {/* Business Information */}
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-white">Business Information</h3>
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-white text-lg">Business Information</h3>
                       <Button variant="ghost" size="sm" onClick={() => setCurrentStep(0)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
-                    <div className="space-y-1 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Name:</strong> {formData.businessName || '—'}</p>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <p><strong className="text-gray-300">Business Name:</strong> {formData.businessName || '—'}</p>
                       <p><strong className="text-gray-300">Contact:</strong> {formData.contactName || '—'}</p>
                       <p><strong className="text-gray-300">Email:</strong> {formData.businessEmail || '—'}</p>
                       <p><strong className="text-gray-300">Phone:</strong> {formData.businessPhone || '—'}</p>
+                      {formData.businessAddress.street && (
+                        <p><strong className="text-gray-300">Address:</strong> {formData.businessAddress.street}, {formData.businessAddress.city}, {formData.businessAddress.state} {formData.businessAddress.zip}</p>
+                      )}
+                      {formData.businessNiche && <p><strong className="text-gray-300">Industry:</strong> {formData.businessNiche}</p>}
+                      {formData.businessDescription && <p><strong className="text-gray-300">Description:</strong> {formData.businessDescription}</p>}
+                      {formData.servicesOffered && <p><strong className="text-gray-300">Services:</strong> {formData.servicesOffered}</p>}
+                      {formData.serviceAreas && <p><strong className="text-gray-300">Service Areas:</strong> {formData.serviceAreas}</p>}
                     </div>
                   </div>
 
+                  {/* Branding & Design */}
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-white">Branding & Design</h3>
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-white text-lg">Branding & Design</h3>
                       <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
-                    <div className="space-y-1 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Logo:</strong> {formData.logoFile ? '✓ Uploaded' : '—'}</p>
-                      <p><strong className="text-gray-300">Photos:</strong> {formData.photoFiles.length} files</p>
-                      <p><strong className="text-gray-300">Color Scheme:</strong> {formData.colorScheme}</p>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <p><strong className="text-gray-300">Logo:</strong> {formData.logoFile ? '✓ Uploaded' : 'Not uploaded'}</p>
+                      <p><strong className="text-gray-300">Photos:</strong> {formData.photoFiles.length} file(s)</p>
+                      <p><strong className="text-gray-300">Certificates:</strong> {formData.certFiles.length} file(s)</p>
+                      <p><strong className="text-gray-300">Color Scheme:</strong> {formData.colorScheme.replace('-', ' ')}</p>
+                      {formData.slogan && <p><strong className="text-gray-300">Slogan:</strong> {formData.slogan}</p>}
+                      <p><strong className="text-gray-300">About Us Section:</strong> {formData.hasAboutUs ? 'Yes' : 'No'}</p>
+                      <p><strong className="text-gray-300">Meet the Team Section:</strong> {formData.hasMeetTheTeam ? `Yes (${formData.teamMembers.length} members)` : 'No'}</p>
+                      {formData.inspirationSites.filter(s => s).length > 0 && (
+                        <p><strong className="text-gray-300">Inspiration Sites:</strong> {formData.inspirationSites.filter(s => s).length} provided</p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Online Presence */}
                   <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-white">Lead Alerts</h3>
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-white text-lg">Online Presence</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(2)} className="text-white/70 hover:text-white">
+                        Edit
+                      </Button>
+                    </div>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <p><strong className="text-gray-300">Existing Website:</strong> {formData.hasExistingWebsite ? `Yes (${formData.currentDomain})` : 'No'}</p>
+                      {!formData.hasExistingWebsite && formData.desiredDomain && (
+                        <p><strong className="text-gray-300">Desired Domain:</strong> {formData.desiredDomain}</p>
+                      )}
+                      <p><strong className="text-gray-300">Google Business Profile:</strong> {formData.hasGoogleBusiness ? 'Yes' : 'No'}</p>
+                      {Object.entries(formData.socialLinks).filter(([_, v]) => v).length > 0 && (
+                        <p><strong className="text-gray-300">Social Media:</strong> {Object.entries(formData.socialLinks).filter(([_, v]) => v).map(([k]) => k).join(', ')}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Leads & Communication */}
+                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-white text-lg">Leads & Communication</h3>
                       <Button variant="ghost" size="sm" onClick={() => setCurrentStep(3)} className="text-white/70 hover:text-white">
                         Edit
                       </Button>
                     </div>
-                    <div className="space-y-1 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Method:</strong> {formData.leadAlertMethod || '—'}</p>
-                      {formData.leadAlertMethod && formData.leadAlertMethod !== 'email' && (
-                        <p><strong className="text-gray-300">Phone:</strong> {formData.alertPhone || '—'}</p>
-                      )}
-                      {formData.leadAlertMethod && formData.leadAlertMethod !== 'text' && (
-                        <p><strong className="text-gray-300">Email:</strong> {formData.alertEmail || '—'}</p>
-                      )}
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <p><strong className="text-gray-300">Lead Alert Method:</strong> {formData.leadAlertMethod || '—'}</p>
+                      {formData.alertPhone && <p><strong className="text-gray-300">Alert Phone:</strong> {formData.alertPhone}</p>}
+                      {formData.alertEmail && <p><strong className="text-gray-300">Alert Email:</strong> {formData.alertEmail}</p>}
+                      <p><strong className="text-gray-300">Lead Form Fields:</strong> {formData.leadFormFields.length} fields</p>
+                      <p><strong className="text-gray-300">Bookings/Payments:</strong> {formData.bookingsPayments}</p>
+                      <p><strong className="text-gray-300">Portfolio Section:</strong> {formData.hasPortfolio ? `Yes (${formData.portfolioFiles.length} items)` : 'No'}</p>
+                      <p><strong className="text-gray-300">Reviews Section:</strong> {formData.hasReviews ? 'Yes' : 'No'}</p>
+                    </div>
+                  </div>
+
+                  {/* Final Details */}
+                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-white text-lg">Final Details</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(4)} className="text-white/70 hover:text-white">
+                        Edit
+                      </Button>
+                    </div>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <p><strong className="text-gray-300">Domain Ownership:</strong> {formData.ownsDomain ? `Yes (${formData.ownedDomain})` : 'No'}</p>
+                      {formData.ownsDomain && <p><strong className="text-gray-300">DNS Management:</strong> {formData.dnsManager === 'client' ? 'I have access' : 'TLUCA will manage'}</p>}
+                      {formData.complianceNeeds && <p><strong className="text-gray-300">Compliance Needs:</strong> {formData.complianceNeeds}</p>}
+                      {formData.specialNotes && <p><strong className="text-gray-300">Special Requests:</strong> {formData.specialNotes}</p>}
                     </div>
                   </div>
                 </div>
