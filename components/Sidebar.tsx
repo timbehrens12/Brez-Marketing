@@ -31,14 +31,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { 
-    name: "Dashboard", 
-    href: "/dashboard", 
-    icon: LayoutDashboard,
-    description: "Marketing overview"
-  },
-
   // Hidden pages - not deleted, just removed from sidebar
+  // { 
+  //   name: "Dashboard", 
+  //   href: "/dashboard", 
+  //   icon: LayoutDashboard,
+  //   description: "Marketing overview"
+  // },
   // { 
   //   name: "Marketing Assistant", 
   //   href: "/marketing-assistant", 
@@ -63,6 +62,12 @@ const navItems: NavItem[] = [
   //   icon: Palette,
   //   description: "Create ad designs"
   // },
+  // { 
+  //   name: "Settings", 
+  //   href: "/settings", 
+  //   icon: Settings,
+  //   description: "Account settings"
+  // },
 
   { 
     name: "Lead Generator", 
@@ -81,13 +86,6 @@ const navItems: NavItem[] = [
     href: "/objection-handler", 
     icon: Phone,
     description: "AI sales objection responses"
-  },
-
-  { 
-    name: "Settings", 
-    href: "/settings", 
-    icon: Settings,
-    description: "Account settings"
   },
 ]
 
@@ -434,23 +432,7 @@ export function Sidebar({ className }: SidebarProps) {
           showExpanded ? "mx-4" : "mx-0"
         )}></div>
         
-        {/* Brand Selector - smooth transition */}
-        <div className={cn(
-          "mb-4 transition-all duration-300 ease-in-out",
-          showExpanded ? "px-6 opacity-100 max-h-20" : "px-0 opacity-0 max-h-0"
-        )}>
-          <div className={cn(
-            "transition-all duration-300 ease-in-out",
-            !showExpanded && "overflow-hidden"
-          )}>
-            <BrandSelector 
-              onSelect={handleBrandSelect}
-              selectedBrandId={selectedBrandId}
-              className="w-full"
-              isVisible={showExpanded}
-            />
-          </div>
-        </div>
+        {/* Brand Selector - hidden for now */}
         
         <div className={cn("flex-1 transition-all duration-200", showExpanded ? "px-6" : "px-2")}>
           <nav className="space-y-3">

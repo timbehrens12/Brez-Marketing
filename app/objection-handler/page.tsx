@@ -31,56 +31,56 @@ const presetObjections: PresetObjection[] = [
     label: "Too Expensive",
     objection: "Your price is too high. I can't afford that right now.",
     icon: DollarSign,
-    color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'timing',
     label: "Bad Timing",
     objection: "Now is not a good time. Maybe later.",
     icon: Clock,
-    color: 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'already-have',
     label: "Already Have Website",
     objection: "We already have a website. Why would we need a new one?",
     icon: Shield,
-    color: 'bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'no-budget',
     label: "No Budget",
     objection: "We don't have budget allocated for this.",
     icon: TrendingUp,
-    color: 'bg-purple-500/10 text-purple-500 border-purple-500/20 hover:bg-purple-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'need-approval',
     label: "Need Approval",
     objection: "I need to talk to my business partner/spouse first.",
     icon: Target,
-    color: 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'diy',
     label: "DIY Approach",
     objection: "I can just build it myself or use a template.",
     icon: Award,
-    color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'no-leads',
     label: "Don't Need Leads",
     objection: "We get enough business through word of mouth. Don't need more leads.",
     icon: Zap,
-    color: 'bg-pink-500/10 text-pink-500 border-pink-500/20 hover:bg-pink-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   },
   {
     id: 'think-about',
     label: "Need to Think",
     objection: "Let me think about it and I'll get back to you.",
     icon: Sparkles,
-    color: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20 hover:bg-cyan-500/20'
+    color: 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
   }
 ]
 
