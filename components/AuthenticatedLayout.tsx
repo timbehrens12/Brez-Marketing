@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from 'next/navigation'
-import Sidebar from './Sidebar'
+import { Sidebar } from './Sidebar'
 import { SidebarProvider } from '@/context/SidebarContext'
 
 // Routes that should NOT show the sidebar
