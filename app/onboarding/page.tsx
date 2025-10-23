@@ -562,10 +562,10 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <Image 
-                src="/brand/new-logo.png" 
+                src="/tluca-logo.png" 
                 alt="TLUCA Systems Logo" 
-                width={50} 
-                height={50}
+                width={60} 
+                height={60}
                 className="object-contain"
               />
               <div>
