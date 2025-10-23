@@ -440,11 +440,11 @@ export default function OnboardingPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-[#0a0a0a] to-black flex items-center justify-center p-6">
+      <div className="min-h-screen bg-black flex items-center justify-center p-6">
         <Card className="max-w-2xl w-full bg-black/40 border-white/10 backdrop-blur-xl">
           <CardHeader className="text-center space-y-4 pb-8">
-            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center border border-red-500/30">
-              <CheckCircle2 className="w-10 h-10 text-red-500" />
+            <div className="mx-auto w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+              <CheckCircle2 className="w-10 h-10 text-white" />
             </div>
             <div>
               <CardTitle className="text-3xl font-bold text-white mb-2">Congratulations! 🎉</CardTitle>
@@ -462,15 +462,15 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#0a0a0a] to-black text-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Hero */}
       <div className="border-b border-white/10 bg-black/40 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-6 py-12 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 mb-6">
-            <CheckCircle2 className="w-5 h-5 text-red-500" />
-            <span className="text-red-400 font-semibold">Payment Confirmed</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6">
+            <CheckCircle2 className="w-5 h-5 text-white" />
+            <span className="text-white font-semibold">Payment Confirmed</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
             Thanks for your payment — let's build your system.
           </h1>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
@@ -492,8 +492,8 @@ export default function OnboardingPage() {
                 <div key={section.id} className="flex items-center">
                   <div className="flex flex-col items-center gap-2">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isCompleted ? 'bg-red-600 border-red-600' :
-                      isActive ? 'bg-red-600/20 border-red-600' :
+                      isCompleted ? 'bg-white border-white' :
+                      isActive ? 'bg-white/20 border-white' :
                       'bg-black border-white/20'
                     }`}>
                       <Icon className={`w-5 h-5 ${
@@ -508,7 +508,7 @@ export default function OnboardingPage() {
                   </div>
                   {idx < SECTIONS.length - 1 && (
                     <div className={`h-0.5 w-8 md:w-16 mx-2 ${
-                      isCompleted ? 'bg-red-600' : 'bg-white/10'
+                      isCompleted ? 'bg-white' : 'bg-white/10'
                     }`} />
                   )}
                 </div>
@@ -771,17 +771,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-2 block">Logo Upload (PNG/SVG preferred)</Label>
                   <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
                     onDragOver={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.add('border-white', 'bg-white/10')
                     }}
                     onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                     }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         handleFileUpload('logoFile', e.dataTransfer.files)
                       }
@@ -837,17 +837,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-2 block">General Photos (Business, Location, Work)</Label>
                   <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
                     onDragOver={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.add('border-white', 'bg-white/10')
                     }}
                     onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                     }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         handleFileUpload('photoFiles', e.dataTransfer.files, true)
                       }
@@ -884,7 +884,7 @@ export default function OnboardingPage() {
                           )}
                           <button
                             onClick={() => removeFile('photoFiles', idx)}
-                            className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -897,17 +897,17 @@ export default function OnboardingPage() {
                 <div>
                   <Label className="text-white mb-2 block">Certifications / Licenses</Label>
                   <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-red-500/50 transition-colors cursor-pointer bg-white/5"
+                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
                     onDragOver={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.add('border-white', 'bg-white/10')
                     }}
                     onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                     }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
                       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         handleFileUpload('certFiles', e.dataTransfer.files, true)
                       }
@@ -1016,17 +1016,17 @@ export default function OnboardingPage() {
                               className="bg-white/10 border-white/10 text-white"
                             />
                             <div 
-                              className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors cursor-pointer"
+                              className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-white/40 transition-colors cursor-pointer"
                               onDragOver={(e) => {
                                 e.preventDefault()
-                                e.currentTarget.classList.add('border-red-500', 'bg-red-500/10')
+                                e.currentTarget.classList.add('border-white', 'bg-white/10')
                               }}
                               onDragLeave={(e) => {
-                                e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                                e.currentTarget.classList.remove('border-white', 'bg-white/10')
                               }}
                               onDrop={(e) => {
                                 e.preventDefault()
-                                e.currentTarget.classList.remove('border-red-500', 'bg-red-500/10')
+                                e.currentTarget.classList.remove('border-white', 'bg-white/10')
                                 const file = e.dataTransfer.files?.[0]
                                 if (file) {
                                   const newMembers = [...formData.teamMembers]
@@ -1079,7 +1079,7 @@ export default function OnboardingPage() {
                                 const newMembers = formData.teamMembers.filter((_, i) => i !== idx)
                                 updateField('teamMembers', newMembers)
                               }}
-                              className="text-red-400 hover:text-red-300"
+                              className="text-white/80 hover:text-white"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -1398,7 +1398,7 @@ export default function OnboardingPage() {
                             <button
                               type="button"
                               onClick={() => removeFile('portfolioFiles', idx)}
-                              className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                               <X className="w-3 h-3" />
                             </button>
