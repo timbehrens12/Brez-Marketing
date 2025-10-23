@@ -175,45 +175,6 @@ export default function OnboardingPage() {
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [showPaymentToast, setShowPaymentToast] = useState(true)
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('tluca-onboarding-draft')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        
-        // Migrate old operatingHours format (string) to new format (object)
-        if (typeof parsed.operatingHours === 'string') {
-          parsed.operatingHours = {
-            monday: { open: '09:00', close: '17:00', closed: false },
-            tuesday: { open: '09:00', close: '17:00', closed: false },
-            wednesday: { open: '09:00', close: '17:00', closed: false },
-            thursday: { open: '09:00', close: '17:00', closed: false },
-            friday: { open: '09:00', close: '17:00', closed: false },
-            saturday: { open: '09:00', close: '17:00', closed: true },
-            sunday: { open: '09:00', close: '17:00', closed: true },
-          }
-        }
-        
-        // Migrate old teamText/teamPhotos to new teamMembers format
-        if (parsed.teamText || parsed.teamPhotos) {
-          parsed.teamMembers = [{ name: '', role: '', photo: null }]
-          delete parsed.teamText
-          delete parsed.teamPhotos
-        }
-        
-        // Ensure teamMembers exists
-        if (!parsed.teamMembers) {
-          parsed.teamMembers = [{ name: '', role: '', photo: null }]
-        }
-        
-        setFormData({ ...INITIAL_DATA, ...parsed })
-      } catch (e) {
-        console.error('Failed to load draft', e)
-      }
-    }
-  }, [])
-
   // Show payment confirmation toast on mount
   useEffect(() => {
     if (showPaymentToast) {
@@ -226,14 +187,6 @@ export default function OnboardingPage() {
       return () => clearTimeout(timer)
     }
   }, [])
-
-  // Autosave to localStorage
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      localStorage.setItem('tluca-onboarding-draft', JSON.stringify(formData))
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [formData])
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -439,7 +392,6 @@ export default function OnboardingPage() {
 
       if (!response.ok) throw new Error('Submission failed')
 
-      localStorage.removeItem('tluca-onboarding-draft')
       setIsSuccess(true)
       toast.dismiss()
       toast.success('Onboarding submitted successfully!')
@@ -562,18 +514,15 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-white/10 bg-black">
+      {/* Progress Stepper Header */}
+      <div className="sticky top-0 z-40 bg-black border-b border-white/10">
         <div className="max-w-5xl mx-auto px-6 py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">
-            TLUCA SYSTEMS <span className="text-gray-400">/ Onboarding</span>
-          </h1>
-        </div>
-      </div>
-
-      {/* Progress Stepper */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-bold text-white">TLUCA SYSTEMS</h1>
+            <span className="text-sm text-gray-400">
+              Step {currentStep + 1} of {SECTIONS.length}
+            </span>
+          </div>
           <div className="flex items-center justify-between">
             {SECTIONS.map((section, idx) => {
               const Icon = section.icon
