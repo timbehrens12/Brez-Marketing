@@ -181,6 +181,18 @@ export default function OnboardingPage() {
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [showPaymentToast, setShowPaymentToast] = useState(true)
 
+  // Force clean state on mount - clear any cached data
+  useEffect(() => {
+    // Clear any localStorage remnants
+    localStorage.removeItem('tluca-onboarding-draft')
+    
+    // Reset all state to initial values
+    setFormData(INITIAL_DATA)
+    setImagePreviews({})
+    setCurrentStep(0)
+    setErrors({})
+  }, [])
+
   // Show payment confirmation toast on mount
   useEffect(() => {
     if (showPaymentToast) {
