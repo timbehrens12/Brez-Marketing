@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -559,7 +560,19 @@ export default function OnboardingPage() {
       <div className="sticky top-0 z-40 bg-black border-b border-white/10">
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-bold text-white">TLUCA SYSTEMS</h1>
+            <div className="flex items-center gap-4">
+              <Image 
+                src="/brand/new-logo.png" 
+                alt="TLUCA Systems Logo" 
+                width={50} 
+                height={50}
+                className="object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-white">Onboarding Form</h1>
+                <p className="text-sm text-gray-400">Building your custom business solution</p>
+              </div>
+            </div>
             <span className="text-sm text-gray-400">
               Step {currentStep + 1} of {SECTIONS.length}
             </span>
@@ -602,7 +615,7 @@ export default function OnboardingPage() {
 
       {/* Form Content */}
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <Card className="bg-black border-white/10 shadow-2xl">
+        <Card className="bg-black border-white/10 shadow-2xl shadow-white/10" style={{ boxShadow: '0 0 40px rgba(255, 255, 255, 0.1), 0 0 80px rgba(255, 255, 255, 0.05)' }}>
           <CardHeader className="border-b border-white/10">
             <CardTitle className="text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
             <CardDescription className="text-gray-400 text-lg">
