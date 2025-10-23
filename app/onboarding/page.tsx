@@ -173,6 +173,7 @@ export default function OnboardingPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
+  const [showPaymentToast, setShowPaymentToast] = useState(true)
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -210,6 +211,19 @@ export default function OnboardingPage() {
       } catch (e) {
         console.error('Failed to load draft', e)
       }
+    }
+  }, [])
+
+  // Show payment confirmation toast on mount
+  useEffect(() => {
+    if (showPaymentToast) {
+      toast.success('🎉 Payment confirmed! Let\'s build your system.', {
+        duration: 4000,
+      })
+      const timer = setTimeout(() => {
+        setShowPaymentToast(false)
+      }, 4000)
+      return () => clearTimeout(timer)
     }
   }, [])
 
@@ -463,19 +477,12 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero */}
-      <div className="border-b border-white/10 bg-black/40 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-6 py-12 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6">
-            <CheckCircle2 className="w-5 h-5 text-white" />
-            <span className="text-white font-semibold">Payment Confirmed</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
-            Thanks for your payment — let's build your system.
+      {/* Header */}
+      <div className="border-b border-white/10 bg-black">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            TLUCA SYSTEMS <span className="text-gray-400">/ Onboarding</span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            This quick onboarding gives our team everything we need to launch your website, connect your lead system, and start your automations.
-          </p>
         </div>
       </div>
 
@@ -519,11 +526,11 @@ export default function OnboardingPage() {
       </div>
 
       {/* Form Content */}
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <Card className="bg-black/40 border-white/10 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white">{SECTIONS[currentStep].title}</CardTitle>
-            <CardDescription className="text-gray-400">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <Card className="bg-black border-white/10 shadow-2xl">
+          <CardHeader className="border-b border-white/10">
+            <CardTitle className="text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
+            <CardDescription className="text-gray-400 text-lg">
               {currentStep === 0 && "Tell us about your business"}
               {currentStep === 1 && "Share your brand identity"}
               {currentStep === 2 && "Your current online presence"}
@@ -532,7 +539,7 @@ export default function OnboardingPage() {
               {currentStep === 5 && "Review your information before submitting"}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8 p-8">
             {/* Step 0: Business */}
             {currentStep === 0 && (
               <>
