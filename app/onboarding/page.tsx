@@ -8,8 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { CheckCircle2, Upload, X, ChevronRight, ChevronLeft, Mail, Home, Building2, Palette, Globe, MessageSquare, FileText } from 'lucide-react'
+import { CheckCircle2, Upload, X, ChevronRight, ChevronLeft, Mail, Home, Building2, Palette, Globe, MessageSquare, FileText, HelpCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type OnboardingData = {
   // Business
@@ -213,6 +219,29 @@ export default function OnboardingPage() {
     if (!url) return ''
     if (url.startsWith('http://') || url.startsWith('https://')) return url
     return `https://${url}`
+  }
+
+  // Convert 24-hour time to 12-hour AM/PM format
+  const formatTime12Hour = (time24: string) => {
+    const [hours, minutes] = time24.split(':').map(Number)
+    const period = hours >= 12 ? 'PM' : 'AM'
+    const hours12 = hours % 12 || 12
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+  }
+
+  // Generate 12-hour time options
+  const generateTimeOptions = () => {
+    const times: { value: string; label: string }[] = []
+    for (let hour = 0; hour < 24; hour++) {
+      for (let min of [0, 30]) {
+        const time24 = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
+        times.push({
+          value: time24,
+          label: formatTime12Hour(time24)
+        })
+      }
+    }
+    return times
   }
 
   const handleFileUpload = (field: keyof OnboardingData, files: FileList | null, multiple = false) => {
@@ -732,16 +761,14 @@ export default function OnboardingPage() {
                                   [day]: { ...dayData, open: e.target.value }
                                 })
                               }}
-                              className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
+                              className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
+                              style={{ colorScheme: 'dark' }}
                             >
-                              {Array.from({ length: 24 }, (_, i) => {
-                                const hour = i.toString().padStart(2, '0')
-                                return ['00', '30'].map(min => (
-                                  <option key={`${hour}:${min}`} value={`${hour}:${min}`}>
-                                    {`${hour}:${min}`}
-                                  </option>
-                                ))
-                              }).flat()}
+                              {generateTimeOptions().map(({ value, label }) => (
+                                <option key={value} value={value} className="bg-black text-white">
+                                  {label}
+                                </option>
+                              ))}
                             </select>
                             <span className="text-gray-400">to</span>
                             <select
@@ -752,16 +779,14 @@ export default function OnboardingPage() {
                                   [day]: { ...dayData, close: e.target.value }
                                 })
                               }}
-                              className="bg-white/10 border border-white/10 text-white rounded px-2 py-1 text-sm"
+                              className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
+                              style={{ colorScheme: 'dark' }}
                             >
-                              {Array.from({ length: 24 }, (_, i) => {
-                                const hour = i.toString().padStart(2, '0')
-                                return ['00', '30'].map(min => (
-                                  <option key={`${hour}:${min}`} value={`${hour}:${min}`}>
-                                    {`${hour}:${min}`}
-                                  </option>
-                                ))
-                              }).flat()}
+                              {generateTimeOptions().map(({ value, label }) => (
+                                <option key={value} value={value} className="bg-black text-white">
+                                  {label}
+                                </option>
+                              ))}
                             </select>
                             
                             {idx > 0 && (
@@ -1472,7 +1497,7 @@ export default function OnboardingPage() {
                       onCheckedChange={(checked) => updateField('ownsDomain', checked)}
                       className="border-white/20"
                     />
-                    <Label htmlFor="ownsDomain" className="text-white cursor-pointer">I own a domain</Label>
+                    <Label htmlFor="ownsDomain" className="text-white cursor-pointer">I already have a domain</Label>
                   </div>
                   {formData.ownsDomain && (
                     <>
@@ -1480,14 +1505,32 @@ export default function OnboardingPage() {
                         value={formData.ownedDomain}
                         onChange={(e) => updateField('ownedDomain', e.target.value)}
                         className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="yourdomain.com"
+                        placeholder="e.g., yourbusiness.com"
                       />
                       <div>
-                        <Label className="text-white mb-2 block">Who manages DNS?</Label>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label className="text-white">Who has access to manage your domain settings?</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="text-gray-400 hover:text-white">
+                                  <HelpCircle className="w-4 h-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white text-black border-white/20 max-w-xs">
+                                <p className="text-sm">
+                                  DNS (Domain Name System) management means you can log in to your domain registrar 
+                                  (like GoDaddy, Namecheap, etc.) and update settings. We'll need access to point 
+                                  your domain to your new website.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { value: 'client', label: 'I do' },
-                            { value: 'tluca', label: 'TLUCA' },
+                            { value: 'client', label: 'I have access' },
+                            { value: 'tluca', label: 'TLUCA will manage' },
                           ].map((option) => (
                             <button
                               key={option.value}
