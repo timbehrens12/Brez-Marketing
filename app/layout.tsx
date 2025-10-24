@@ -207,7 +207,12 @@ export default function RootLayout({
               alertText: 'text-white',
               formFieldErrorText: 'text-red-400',
               footerActionText: 'text-gray-400',
-              logoBox: 'hidden',
+              logoBox: 'h-16 justify-center',
+              logoImage: 'w-16 h-16',
+            },
+            layout: {
+              logoImageUrl: 'https://i.imgur.com/oPKBPvW.png',
+              logoPlacement: 'inside',
             },
           }}
         >
