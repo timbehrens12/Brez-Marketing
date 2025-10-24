@@ -174,6 +174,7 @@ const SECTIONS = [
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<OnboardingData>(INITIAL_DATA)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -181,6 +182,14 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [showPaymentToast, setShowPaymentToast] = useState(true)
+
+  // Show loading screen for 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoadingScreen(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Force clean state on mount - clear any cached data
   useEffect(() => {
@@ -550,6 +559,45 @@ export default function OnboardingPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    )
+  }
+
+  // Loading Screen
+  if (showLoadingScreen) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center space-y-6 px-6">
+          {/* Checkmark Animation */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full border-4 border-white/20 flex items-center justify-center animate-pulse">
+                <CheckCircle2 className="w-12 h-12 text-green-400 animate-bounce" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-white">Thanks for subscribing</h1>
+          
+          {/* Description */}
+          <p className="text-gray-400 max-w-md mx-auto">
+            After your trial, a payment to TLUCA SYSTEMS will appear on your statement.
+          </p>
+          
+          {/* Powered by section */}
+          <div className="pt-8 text-gray-500 text-sm space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <span>Powered by</span>
+              <span className="font-semibold">stripe</span>
+            </div>
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <a href="/terms" className="hover:text-gray-300 transition-colors">Terms</a>
+              <span>•</span>
+              <a href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</a>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
