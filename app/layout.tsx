@@ -170,7 +170,47 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", jetbrainsMono.className)}>
-        <ClerkProvider>
+        <ClerkProvider
+          appearance={{
+            baseTheme: undefined,
+            variables: {
+              colorPrimary: '#ffffff',
+              colorBackground: '#000000',
+              colorInputBackground: '#0a0a0a',
+              colorInputText: '#ffffff',
+              colorText: '#ffffff',
+              colorTextSecondary: '#a0a0a0',
+              colorDanger: '#ff4444',
+              colorSuccess: '#4ade80',
+              colorWarning: '#fbbf24',
+              borderRadius: '0.5rem',
+            },
+            elements: {
+              formButtonPrimary: 'bg-white text-black hover:bg-gray-200 transition-colors',
+              card: 'bg-black border border-white/10 shadow-2xl shadow-white/10',
+              headerTitle: 'text-white',
+              headerSubtitle: 'text-gray-400',
+              socialButtonsBlockButton: 'bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors',
+              socialButtonsBlockButtonText: 'text-white',
+              formFieldLabel: 'text-white',
+              formFieldInput: 'bg-black border-white/20 text-white focus:border-white/40',
+              footerActionLink: 'text-white hover:text-gray-300',
+              identityPreviewText: 'text-white',
+              identityPreviewEditButton: 'text-white hover:text-gray-300',
+              formFieldInputShowPasswordButton: 'text-gray-400 hover:text-white',
+              dividerLine: 'bg-white/10',
+              dividerText: 'text-gray-400',
+              formHeaderTitle: 'text-white',
+              formHeaderSubtitle: 'text-gray-400',
+              otpCodeFieldInput: 'bg-black border-white/20 text-white',
+              formResendCodeLink: 'text-white hover:text-gray-300',
+              alertText: 'text-white',
+              formFieldErrorText: 'text-red-400',
+              footerActionText: 'text-gray-400',
+              logoBox: 'hidden',
+            },
+          }}
+        >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <SidebarProvider>
               <ConditionalAuthProviders>
