@@ -183,11 +183,11 @@ export default function OnboardingPage() {
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [showPaymentToast, setShowPaymentToast] = useState(true)
 
-  // Show loading screen for 2 seconds
+  // Show loading screen for 4 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowLoadingScreen(false)
-    }, 2000)
+    }, 4000)
     return () => clearTimeout(timer)
   }, [])
 
@@ -566,30 +566,61 @@ export default function OnboardingPage() {
   // Loading Screen
   if (showLoadingScreen) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center space-y-6 px-6">
-          {/* Checkmark Animation */}
-          <div className="flex justify-center mb-6">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center overflow-hidden relative">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute w-96 h-96 -top-48 -left-48 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute w-96 h-96 -bottom-48 -right-48 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
+        <div className="text-center space-y-8 px-6 relative z-10 max-w-2xl">
+          {/* Success Icon */}
+          <div className="flex justify-center mb-8">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full border-4 border-white/20 flex items-center justify-center animate-pulse">
-                <CheckCircle2 className="w-12 h-12 text-green-400 animate-bounce" />
+              {/* Outer ring */}
+              <div className="absolute inset-0 w-32 h-32 rounded-full border-4 border-white/10 animate-ping opacity-20"></div>
+              
+              {/* Middle ring */}
+              <div className="relative w-32 h-32 rounded-full border-4 border-white/20 flex items-center justify-center backdrop-blur-sm"
+                   style={{ 
+                     boxShadow: '0 0 60px rgba(255, 255, 255, 0.1), inset 0 0 60px rgba(255, 255, 255, 0.05)' 
+                   }}>
+                {/* Checkmark */}
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white to-gray-300 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={2.5} />
+                </div>
               </div>
             </div>
           </div>
           
           {/* Title */}
-          <h1 className="text-3xl font-bold text-white">Thanks for subscribing</h1>
+          <div className="space-y-3">
+            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight"
+                style={{ 
+                  textShadow: '0 0 40px rgba(255, 255, 255, 0.3)' 
+                }}>
+              Payment Confirmed
+            </h1>
+            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-white to-transparent mx-auto opacity-50"></div>
+          </div>
           
           {/* Description */}
-          <p className="text-gray-400 max-w-md mx-auto">
-            After your trial, a payment to TLUCA SYSTEMS will appear on your statement.
+          <p className="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
+            Thank you for your payment. Let's get started building your custom business solution.
           </p>
           
-          {/* Powered by section */}
-          <div className="pt-8 text-gray-500 text-sm space-y-2">
+          {/* Loading indicator */}
+          <div className="flex justify-center items-center gap-2 pt-4">
+            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+          
+          {/* Footer */}
+          <div className="pt-12 text-gray-500 text-sm space-y-3">
             <div className="flex items-center justify-center gap-2">
               <span>Powered by</span>
-              <span className="font-semibold">stripe</span>
+              <span className="font-semibold text-gray-400">stripe</span>
             </div>
             <div className="flex items-center justify-center gap-4 text-xs">
               <a href="/terms" className="hover:text-gray-300 transition-colors">Terms</a>
