@@ -810,32 +810,54 @@ Please extract the following information and return it as a valid JSON object on
 }
 
 WEBSITE QUALITY SCORING (0-100):
-BE VERY STRICT AND CRITICAL. Most local business websites are poorly designed and need rebuilding.
-Score the website based on these criteria with HARSH penalties:
+BE EXTREMELY HARSH AND CRITICAL. We are looking for businesses with BAD or NO websites that NEED our help.
+99% of local business websites are terrible and need complete rebuilding. Default to LOW scores.
 
-START AT 100 POINTS, THEN DEDUCT:
-- NO Contact Form/Lead Form: -40 points (CRITICAL - this is the main indicator)
-- NO visible Contact Information (phone/email on homepage): -25 points
-- Outdated/Unprofessional Design (old fonts, poor layout, looks like 2010): -20 points
-- NO Clear Call-to-Action buttons: -10 points
-- NOT Mobile Responsive (fixed width, tiny text): -5 points
+⚠️ CRITICAL SCORING PHILOSOPHY ⚠️
+We want to find businesses with POOR websites or NO websites. Score harshly to identify opportunities.
+If the website looks even remotely professional or modern, it's NOT a good lead for us.
+
+START AT 50 POINTS (NOT 100), THEN DEDUCT:
+- NO Contact Form/Lead Form: -30 points (CRITICAL - we want businesses WITHOUT forms)
+- NO visible Contact Information (phone/email on homepage): -20 points
+- Modern/Professional Design (clean, recent, looks like 2020+): -20 points (we DON'T want these)
+- Has Clear Call-to-Action buttons: -10 points (we DON'T want these)
+- Mobile Responsive and modern: -10 points (we DON'T want these)
+- Has live chat or booking system: -15 points (too advanced for our target)
+- Professional photography: -10 points (indicates they already invested in marketing)
 
 ADDITIONAL DEDUCTIONS:
-- Generic template site with no customization: -10 points
-- Broken images or links: -15 points
-- No clear services/offerings listed: -10 points
-- Cluttered or confusing navigation: -10 points
+- Custom professional design (not template): -15 points (we DON'T want these)
+- Fast loading, optimized: -10 points (we DON'T want these)
+- SEO optimized content: -10 points (we DON'T want these)
+- Multiple pages with good content: -10 points (we DON'T want these)
 
-SCORING EXAMPLES (BE HARSH):
-- 0-20: Terrible (no forms, no contact info, looks abandoned)
-- 21-40: Very Poor (missing forms, outdated design, unprofessional)
-- 41-60: Below Average (basic site, missing key elements like forms)
-- 61-75: Average (has some elements but could be much better)
-- 76-85: Good (professional, has forms and contact info)
-- 86-100: Excellent (modern, professional, all elements present)
+BONUS POINTS (Add these back):
++ Single page or very basic site: +20 points (GOOD - needs our help)
++ Looks like it was built in 2010 or earlier: +20 points (GOOD - outdated)
++ Generic template with no customization: +15 points (GOOD - lazy design)
++ Broken images, dead links, or errors: +20 points (GOOD - abandoned)
++ No clear services or offerings: +15 points (GOOD - poor messaging)
++ Cluttered, confusing, unprofessional: +15 points (GOOD - needs redesign)
++ Just a Facebook page or no real website: +30 points (PERFECT - no website)
 
-CRITICAL: If there is NO contact form or lead capture form, the score MUST be below 60.
-Most local business websites should score 20-50 because they lack proper lead generation.
+SCORING EXAMPLES (MOST SHOULD BE LOW):
+- 0-30: PERFECT LEAD - Terrible site, no forms, outdated, or no website at all
+- 31-50: GREAT LEAD - Very poor site, missing critical elements, needs complete rebuild
+- 51-65: GOOD LEAD - Below average site, missing forms or outdated design
+- 66-75: MAYBE - Has some elements but could be better (borderline)
+- 76-85: NOT A GOOD LEAD - Professional site with forms (they don't need us)
+- 86-100: BAD LEAD - Excellent modern site (already has good marketing)
+
+🎯 TARGET SCORE RANGE: 0-60 (These are our ideal prospects)
+⚠️ AVOID SCORES ABOVE 70: These businesses already have good websites
+
+CRITICAL RULES:
+1. If there IS a contact form or lead capture form, score MUST be 65 or below (they might not need us)
+2. If the site looks modern (2020+), score MUST be 60 or below (not outdated enough)
+3. If the site has professional design AND forms AND mobile responsive, score MUST be 70+ (not a good lead)
+4. Most local business websites should score 15-45 because we want to find businesses that need help
+5. Default to LOW scores - we're looking for opportunities, not compliments
 
 SOCIAL MEDIA EXTRACTION GUIDELINES:
 - Instagram: Look for @username, instagram.com/username, or Instagram links
