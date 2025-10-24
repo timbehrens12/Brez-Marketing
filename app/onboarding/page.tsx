@@ -605,9 +605,20 @@ export default function OnboardingPage() {
           </div>
           
           {/* Description */}
-          <p className="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
-            Thank you for your payment. Let's get started building your custom business solution.
-          </p>
+          <div className="space-y-4">
+            <p className="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
+              Thank you for your payment. Let's get started building your custom business solution.
+            </p>
+            
+            {/* Statement info with fade-in animation */}
+            <div className="text-sm text-gray-500 max-w-lg mx-auto animate-fadeIn" style={{ animationDelay: '0.5s', opacity: 0, animation: 'fadeIn 1s ease-in forwards 0.5s' }}>
+              A payment to{' '}
+              <span className="font-semibold text-white/90 inline-block animate-pulse px-2 py-1 rounded bg-white/5">
+                TLUCA SYSTEMS
+              </span>
+              {' '}will appear on your statement.
+            </div>
+          </div>
           
           {/* Loading indicator */}
           <div className="flex justify-center items-center gap-2 pt-4">
@@ -615,6 +626,19 @@ export default function OnboardingPage() {
             <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
             <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
           </div>
+          
+          <style jsx>{`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
           
           {/* Footer */}
           <div className="pt-12 text-gray-500 text-sm space-y-3">
