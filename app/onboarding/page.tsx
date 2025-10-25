@@ -182,6 +182,17 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [showPaymentToast, setShowPaymentToast] = useState(true)
+  const [operatorCode, setOperatorCode] = useState<string | null>(null)
+
+  // Capture operator code from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const operator = params.get('operator')
+    if (operator) {
+      setOperatorCode(operator.toLowerCase())
+      console.log(`📋 Operator code captured: ${operator}`)
+    }
+  }, [])
 
   // Show loading screen for 4 seconds
   useEffect(() => {
@@ -430,6 +441,8 @@ export default function OnboardingPage() {
         photo_urls: photoUrls,
         certificate_urls: certificateUrls,
         team_member_photos: teamPhotoUrls,
+        // Add operator code for tracking
+        operator_code: operatorCode,
       }
 
       toast.dismiss()

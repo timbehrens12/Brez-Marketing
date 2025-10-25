@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const emailBody = `
 🎉 NEW CLIENT ONBOARDING RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+${data.operator_code ? `👤 OPERATOR: ${data.operator_code.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` : ''}
 📋 BUSINESS INFORMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Business Name: ${data.businessName}
@@ -177,6 +177,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
         dns_manager: data.dnsManager,
         compliance_needs: data.complianceNeeds,
         special_notes: data.specialNotes,
+        operator_code: data.operator_code || null,
       })
       .select()
 
@@ -354,6 +355,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             // Metadata
             submitted_at: new Date().toISOString(),
             formatted_summary: emailBody, // Pre-formatted for easy reading
+            operator_code: data.operator_code || null, // Track which operator's link was used
           }),
         })
         console.log('✅ Sent to Zapier webhook')
