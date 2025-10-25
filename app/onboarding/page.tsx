@@ -329,6 +329,7 @@ export default function OnboardingPage() {
       if (!formData.businessEmail.trim()) newErrors.businessEmail = 'Business email is required'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.businessEmail)) newErrors.businessEmail = 'Invalid email'
       if (!formData.businessPhone.trim()) newErrors.businessPhone = 'Business phone is required'
+      if (!formData.businessNiche.trim()) newErrors.businessNiche = 'Business niche is required'
     }
 
     if (step === 1) { // Branding
@@ -359,6 +360,19 @@ export default function OnboardingPage() {
     }
 
     setErrors(newErrors)
+    
+    // If there are errors, scroll to the first error field
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorField = Object.keys(newErrors)[0]
+      setTimeout(() => {
+        const element = document.getElementById(firstErrorField)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          element.focus()
+        }
+      }, 100)
+    }
+    
     return Object.keys(newErrors).length === 0
   }
 
@@ -756,7 +770,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., TLUCA Systems"
                   />
-                  {errors.businessName && <p className="text-white/70 text-sm mt-1">{errors.businessName}</p>}
+                  {errors.businessName && <p className="text-red-400 text-sm mt-1">{errors.businessName}</p>}
                 </div>
 
                 <div>
@@ -768,7 +782,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., John Doe"
                   />
-                  {errors.contactName && <p className="text-white/70 text-sm mt-1">{errors.contactName}</p>}
+                  {errors.contactName && <p className="text-red-400 text-sm mt-1">{errors.contactName}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -782,7 +796,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., contact@business.com"
                     />
-                    {errors.businessEmail && <p className="text-white/70 text-sm mt-1">{errors.businessEmail}</p>}
+                    {errors.businessEmail && <p className="text-red-400 text-sm mt-1">{errors.businessEmail}</p>}
                   </div>
 
                   <div>
@@ -795,7 +809,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
-                    {errors.businessPhone && <p className="text-white/70 text-sm mt-1">{errors.businessPhone}</p>}
+                    {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
                   </div>
                 </div>
 
@@ -1443,7 +1457,7 @@ export default function OnboardingPage() {
                       </button>
                     ))}
                   </div>
-                  {errors.leadAlertMethod && <p className="text-white/70 text-sm mt-1">{errors.leadAlertMethod}</p>}
+                  {errors.leadAlertMethod && <p className="text-red-400 text-sm mt-1">{errors.leadAlertMethod}</p>}
                 </div>
 
                 {(formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') && (
@@ -1457,7 +1471,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="(555) 123-4567"
                     />
-                    {errors.alertPhone && <p className="text-white/70 text-sm mt-1">{errors.alertPhone}</p>}
+                    {errors.alertPhone && <p className="text-red-400 text-sm mt-1">{errors.alertPhone}</p>}
                   </div>
                 )}
 
@@ -1472,7 +1486,7 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="leads@example.com"
                     />
-                    {errors.alertEmail && <p className="text-white/70 text-sm mt-1">{errors.alertEmail}</p>}
+                    {errors.alertEmail && <p className="text-red-400 text-sm mt-1">{errors.alertEmail}</p>}
                   </div>
                 )}
 
