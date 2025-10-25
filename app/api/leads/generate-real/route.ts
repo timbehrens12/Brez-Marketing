@@ -420,10 +420,12 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       // Randomly select search variation for diversity
       const searchQuery = searchVariations[Math.floor(Math.random() * searchVariations.length)]
       
-      // GEOGRAPHIC VARIATION - Slightly vary search radius and location for diversity
+      // GEOGRAPHIC VARIATION - Expand search radius to find businesses without websites
+      // Since we're filtering for NO website only, we need a wider search area
       const baseRadius = parseInt(location.radius) || 5
-      const radiusVariation = Math.floor(Math.random() * 3) - 1 // -1, 0, or +1 miles
-      const searchRadius = Math.max(1, baseRadius + radiusVariation)
+      const expandedRadius = baseRadius * 3 // Triple the radius to find more businesses without websites
+      const radiusVariation = Math.floor(Math.random() * 5) // 0-5 miles variation for diversity
+      const searchRadius = Math.max(5, expandedRadius + radiusVariation) // Minimum 5 miles
       
       const locationBias = location.city ? `${location.city}, ${location.state || ''}` : ''
       
@@ -571,11 +573,18 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           if (detailsData.status === 'OK' && detailsData.result) {
             const business = detailsData.result
             
-            // Only include businesses that are currently operational
+            // 🎯 CRITICAL FILTER: ONLY include businesses with NO website
+            // This is the primary filter - we ONLY want businesses that need our help
+            if (business.website) {
+              // console.log(`Skipping ${business.name} - has website: ${business.website}`)
+              return null // Skip businesses with websites
+            }
+            
+            // Only include businesses that are currently operational AND have no website
             if (business.business_status === 'OPERATIONAL') {
               const lead = await enrichBusinessData(business, niche, location, place.place_id)
                           if (lead) {
-              // console.log(`Added real business: ${business.name}`)
+              // console.log(`✅ Added real business WITHOUT website: ${business.name}`)
               return lead
             }
             }
