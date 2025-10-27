@@ -685,9 +685,76 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      {/* Left Sidebar - Fixed 1/3 width */}
-      <div className="w-1/3 border-r border-white/10 bg-black/50 backdrop-blur-sm fixed h-screen overflow-y-auto">
+    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+      {/* Mobile Header - Shows only on mobile */}
+      <div className="lg:hidden sticky top-0 z-50 bg-black border-b border-white/10">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Image 
+                src="/tluca-logo.png" 
+                alt="TLUCA Systems Logo" 
+                width={50} 
+                height={50}
+                className="object-contain"
+              />
+              <div>
+                <h1 className="text-lg font-bold text-white">Client Onboarding</h1>
+                <p className="text-xs text-gray-400">Step {currentStep + 1} of {SECTIONS.length}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Mobile Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>{SECTIONS[currentStep].title}</span>
+              <span>{Math.round((currentStep / SECTIONS.length) * 100)}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white transition-all duration-500 ease-out"
+                style={{ width: `${(currentStep / SECTIONS.length) * 100}%` }}
+              />
+            </div>
+          </div>
+          
+          {/* Mobile Step Indicators */}
+          <div className="flex items-center justify-between mt-4 overflow-x-auto pb-2">
+            {SECTIONS.map((section, idx) => {
+              const Icon = section.icon
+              const isActive = idx === currentStep
+              const isCompleted = idx < currentStep
+              
+              return (
+                <div key={section.id} className="flex flex-col items-center gap-1 min-w-[60px]">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                    isCompleted ? 'bg-white border-white' :
+                    isActive ? 'bg-white/20 border-white' :
+                    'bg-transparent border-white/20'
+                  }`}>
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-4 h-4 text-black" />
+                    ) : (
+                      <Icon className={`w-4 h-4 ${
+                        isActive ? 'text-white' : 'text-gray-500'
+                      }`} />
+                    )}
+                  </div>
+                  <span className={`text-[10px] text-center ${
+                    isActive ? 'text-white font-medium' : 'text-gray-500'
+                  }`}>
+                    {section.title.split(' ')[0]}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden lg:block lg:w-1/3 border-r border-white/10 bg-black/50 backdrop-blur-sm fixed h-screen overflow-y-auto">
         <div className="p-8 space-y-8">
           {/* Logo and Title */}
           <div className="space-y-6">
@@ -777,9 +844,9 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {/* Right Content Area - 2/3 width, offset by sidebar */}
-      <div className="ml-[33.333%] w-2/3 min-h-screen">
-        <div className="p-12">
+      {/* Content Area - Full width on mobile, 2/3 width on desktop with offset */}
+      <div className="w-full lg:ml-[33.333%] lg:w-2/3 min-h-screen">
+        <div className="p-4 sm:p-6 lg:p-12">
           <Card className="bg-black border-white/10 shadow-2xl shadow-white/10" style={{ boxShadow: '0 0 40px rgba(255, 255, 255, 0.1), 0 0 80px rgba(255, 255, 255, 0.05)' }}>
             <CardHeader className="border-b border-white/10">
               <CardTitle className="text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
