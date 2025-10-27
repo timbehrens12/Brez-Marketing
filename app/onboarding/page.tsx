@@ -194,11 +194,11 @@ export default function OnboardingPage() {
     }
   }, [])
 
-  // Show loading screen for 4 seconds
+  // Show loading screen for 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowLoadingScreen(false)
-    }, 4000)
+    }, 3000)
     return () => clearTimeout(timer)
   }, [])
 
