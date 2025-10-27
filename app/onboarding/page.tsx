@@ -848,9 +848,9 @@ export default function OnboardingPage() {
       <div className="w-full lg:ml-[33.333%] lg:w-2/3 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-12">
           <Card className="bg-black border-white/10 shadow-2xl shadow-white/10" style={{ boxShadow: '0 0 40px rgba(255, 255, 255, 0.1), 0 0 80px rgba(255, 255, 255, 0.05)' }}>
-            <CardHeader className="border-b border-white/10">
-              <CardTitle className="text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
-              <CardDescription className="text-gray-400 text-lg">
+            <CardHeader className="border-b border-white/10 p-4 sm:p-6">
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
+              <CardDescription className="text-gray-400 text-base sm:text-lg">
                 {currentStep === 0 && "Tell us about your business"}
                 {currentStep === 1 && "Share your brand identity"}
                 {currentStep === 2 && "Your current online presence"}
@@ -859,7 +859,7 @@ export default function OnboardingPage() {
                 {currentStep === 5 && "Review your information before submitting"}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8 p-8">
+            <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
             {/* Step 0: Business */}
             {currentStep === 0 && (
               <>
@@ -992,59 +992,68 @@ export default function OnboardingPage() {
                     {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day, idx) => {
                       const dayData = formData.operatingHours?.[day] || { open: '09:00', close: '17:00', closed: false }
                       return (
-                      <div key={day} className="flex items-center gap-3 bg-white/5 p-3 rounded-lg">
-                        <Checkbox
-                          id={`${day}-closed`}
-                          checked={dayData.closed}
-                          onCheckedChange={(checked) => {
-                            updateField('operatingHours', {
-                              ...formData.operatingHours,
-                              [day]: { ...dayData, closed: !!checked }
-                            })
-                          }}
-                          className="border-white/20"
-                        />
-                        <Label htmlFor={`${day}-closed`} className="text-white capitalize w-24 cursor-pointer">
-                          {day}
-                        </Label>
+                      <div key={day} className="bg-white/5 p-3 rounded-lg space-y-2">
+                        {/* Mobile-optimized layout: stacks vertically on small screens */}
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`${day}-closed`}
+                            checked={dayData.closed}
+                            onCheckedChange={(checked) => {
+                              updateField('operatingHours', {
+                                ...formData.operatingHours,
+                                [day]: { ...dayData, closed: !!checked }
+                              })
+                            }}
+                            className="border-white/20"
+                          />
+                          <Label htmlFor={`${day}-closed`} className="text-white capitalize flex-1 cursor-pointer font-medium">
+                            {day}
+                          </Label>
+                          
+                          {dayData.closed && (
+                            <span className="text-gray-400 text-sm italic">Closed</span>
+                          )}
+                        </div>
                         
                         {!dayData.closed && (
-                          <>
-                            <select
-                              value={dayData.open}
-                              onChange={(e) => {
-                                updateField('operatingHours', {
-                                  ...formData.operatingHours,
-                                  [day]: { ...dayData, open: e.target.value }
-                                })
-                              }}
-                              className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
-                              style={{ colorScheme: 'dark' }}
-                            >
-                              {generateTimeOptions().map(({ value, label }) => (
-                                <option key={value} value={value} className="bg-black text-white">
-                                  {label}
-                                </option>
-                              ))}
-                            </select>
-                            <span className="text-gray-400">to</span>
-                            <select
-                              value={dayData.close}
-                              onChange={(e) => {
-                                updateField('operatingHours', {
-                                  ...formData.operatingHours,
-                                  [day]: { ...dayData, close: e.target.value }
-                                })
-                              }}
-                              className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
-                              style={{ colorScheme: 'dark' }}
-                            >
-                              {generateTimeOptions().map(({ value, label }) => (
-                                <option key={value} value={value} className="bg-black text-white">
-                                  {label}
-                                </option>
-                              ))}
-                            </select>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pl-8">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <select
+                                value={dayData.open}
+                                onChange={(e) => {
+                                  updateField('operatingHours', {
+                                    ...formData.operatingHours,
+                                    [day]: { ...dayData, open: e.target.value }
+                                  })
+                                }}
+                                className="bg-black border border-white/20 text-white rounded px-2 py-2 text-sm flex-1 sm:flex-initial min-w-[120px]"
+                                style={{ colorScheme: 'dark' }}
+                              >
+                                {generateTimeOptions().map(({ value, label }) => (
+                                  <option key={value} value={value} className="bg-black text-white">
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-gray-400 text-sm">to</span>
+                              <select
+                                value={dayData.close}
+                                onChange={(e) => {
+                                  updateField('operatingHours', {
+                                    ...formData.operatingHours,
+                                    [day]: { ...dayData, close: e.target.value }
+                                  })
+                                }}
+                                className="bg-black border border-white/20 text-white rounded px-2 py-2 text-sm flex-1 sm:flex-initial min-w-[120px]"
+                                style={{ colorScheme: 'dark' }}
+                              >
+                                {generateTimeOptions().map(({ value, label }) => (
+                                  <option key={value} value={value} className="bg-black text-white">
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                             
                             {idx > 0 && (
                               <Button
@@ -1059,16 +1068,12 @@ export default function OnboardingPage() {
                                     [day]: { ...prevDayData }
                                   })
                                 }}
-                                className="text-xs text-white/70 hover:text-white"
+                                className="text-xs text-white/70 hover:text-white whitespace-nowrap w-full sm:w-auto"
                               >
                                 Copy from {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][idx - 1]}
                               </Button>
                             )}
-                          </>
-                        )}
-                        
-                        {dayData.closed && (
-                          <span className="text-gray-400 text-sm italic">Closed</span>
+                          </div>
                         )}
                       </div>
                     )})}
@@ -1316,8 +1321,8 @@ export default function OnboardingPage() {
                   {formData.hasMeetTheTeam && (
                     <div className="space-y-4">
                       {formData.teamMembers.map((member, idx) => (
-                        <div key={idx} className="flex items-start gap-3 bg-white/5 p-4 rounded-lg">
-                          <div className="flex-1 space-y-3">
+                        <div key={idx} className="flex flex-col sm:flex-row items-start gap-3 bg-white/5 p-3 sm:p-4 rounded-lg">
+                          <div className="flex-1 space-y-3 w-full">
                             <Input
                               placeholder="Name"
                               value={member.name}
@@ -1378,7 +1383,7 @@ export default function OnboardingPage() {
                                     <img 
                                       src={imagePreviews[member.photo.name]} 
                                       alt={member.photo.name}
-                                      className="w-full h-40 object-contain rounded bg-white/5 p-2"
+                                      className="w-full h-32 sm:h-40 object-contain rounded bg-white/5 p-2"
                                     />
                                     <p className="text-gray-400 text-xs truncate">{member.photo.name}</p>
                                   </div>
@@ -1402,7 +1407,7 @@ export default function OnboardingPage() {
                                 const newMembers = formData.teamMembers.filter((_, i) => i !== idx)
                                 updateField('teamMembers', newMembers)
                               }}
-                              className="text-white/80 hover:text-white"
+                              className="text-white/80 hover:text-white self-end sm:self-start"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -1956,25 +1961,27 @@ export default function OnboardingPage() {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between pt-6 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
               <Button
                 type="button"
                 onClick={handlePrev}
                 disabled={currentStep === 0}
                 variant="outline"
-                className="border-white/10 hover:bg-white/5 text-white disabled:opacity-50"
+                className="border-white/10 hover:bg-white/5 text-white disabled:opacity-50 w-full sm:w-auto order-2 sm:order-1"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Back</span>
               </Button>
 
               {currentStep < SECTIONS.length - 1 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold w-full sm:w-auto order-1 sm:order-2"
                 >
-                  Next
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Continue</span>
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
@@ -1982,9 +1989,9 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Onboarding'}
+                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Onboarding</span><span className="sm:hidden">Submit</span></>}
                   <CheckCircle2 className="w-4 h-4 ml-2" />
                 </Button>
               )}
