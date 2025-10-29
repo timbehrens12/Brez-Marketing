@@ -413,8 +413,20 @@ export default function OnboardingPage() {
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Upload failed:', response.status, errorText)
+        throw new Error('Upload failed')
+      }
+      
       const data = await response.json()
+      console.log('✅ Upload successful:', data)
+      
+      if (!data.secure_url) {
+        console.error('❌ No secure_url in response:', data)
+        return null
+      }
+      
       return data.secure_url
     } catch (error) {
       console.error('Cloudinary upload error:', error)
