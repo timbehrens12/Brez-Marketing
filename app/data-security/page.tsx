@@ -286,8 +286,8 @@ export default function DataSecurity() {
               </p>
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-[#333]">
                 <p className="mb-2 text-gray-300">
-                  <strong>Security Email:</strong> <a href="mailto:tbehrens121@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
-                    tbehrens121@gmail.com
+                  <strong>Security Email:</strong> <a href="mailto:tlucasystems@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
+                    tlucasystems@gmail.com
                   </a>
                 </p>
                 <p className="text-gray-300 mb-3">

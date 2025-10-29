@@ -73,7 +73,7 @@ export default function PrivacyPolicy() {
               </p>
               <p className="mb-4">
                 Email: <a href="mailto:privacy@brezmarketingdashboard.com" className="text-white hover:text-gray-200">
-                  tbehrens121@gmail.com
+                  tlucasystems@gmail.com
                 </a>
               </p>
             </section>

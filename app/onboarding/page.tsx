@@ -323,13 +323,21 @@ export default function OnboardingPage() {
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (step === 0) { // Business
+    if (step === 0) { // Business - ALL FIELDS REQUIRED
       if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required'
       if (!formData.contactName.trim()) newErrors.contactName = 'Contact name is required'
       if (!formData.businessEmail.trim()) newErrors.businessEmail = 'Business email is required'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.businessEmail)) newErrors.businessEmail = 'Invalid email'
       if (!formData.businessPhone.trim()) newErrors.businessPhone = 'Business phone is required'
+      if (!formData.businessAddress.street.trim()) newErrors.businessAddressStreet = 'Street address is required'
+      if (!formData.businessAddress.city.trim()) newErrors.businessAddressCity = 'City is required'
+      if (!formData.businessAddress.state.trim()) newErrors.businessAddressState = 'State is required'
+      if (!formData.businessAddress.zip.trim()) newErrors.businessAddressZip = 'ZIP code is required'
+      if (!formData.businessAddress.country.trim()) newErrors.businessAddressCountry = 'Country is required'
       if (!formData.businessNiche.trim()) newErrors.businessNiche = 'Business niche is required'
+      if (!formData.businessDescription.trim()) newErrors.businessDescription = 'Business description is required'
+      if (!formData.servicesOffered.trim()) newErrors.servicesOffered = 'Services offered is required'
+      if (!formData.serviceAreas.trim()) newErrors.serviceAreas = 'Service areas is required'
     }
 
     if (step === 1) { // Branding
@@ -916,45 +924,65 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-white">Business Address</Label>
-                  <Input
-                    value={formData.businessAddress.street}
-                    onChange={(e) => updateNestedField('businessAddress', 'street', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., 123 Main St"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
+                  <Label className="text-white">Business Address *</Label>
+                  <div>
                     <Input
-                      value={formData.businessAddress.city}
-                      onChange={(e) => updateNestedField('businessAddress', 'city', e.target.value)}
+                      id="businessAddressStreet"
+                      value={formData.businessAddress.street}
+                      onChange={(e) => updateNestedField('businessAddress', 'street', e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="City"
+                      placeholder="e.g., 123 Main St"
                     />
-                    <Input
-                      value={formData.businessAddress.state}
-                      onChange={(e) => updateNestedField('businessAddress', 'state', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="State"
-                    />
+                    {errors.businessAddressStreet && <p className="text-red-400 text-sm mt-1">{errors.businessAddressStreet}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      value={formData.businessAddress.zip}
-                      onChange={(e) => updateNestedField('businessAddress', 'zip', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="ZIP Code"
-                    />
-                    <Input
-                      value={formData.businessAddress.country}
-                      onChange={(e) => updateNestedField('businessAddress', 'country', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="Country"
-                    />
+                    <div>
+                      <Input
+                        id="businessAddressCity"
+                        value={formData.businessAddress.city}
+                        onChange={(e) => updateNestedField('businessAddress', 'city', e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        placeholder="City"
+                      />
+                      {errors.businessAddressCity && <p className="text-red-400 text-sm mt-1">{errors.businessAddressCity}</p>}
+                    </div>
+                    <div>
+                      <Input
+                        id="businessAddressState"
+                        value={formData.businessAddress.state}
+                        onChange={(e) => updateNestedField('businessAddress', 'state', e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        placeholder="State"
+                      />
+                      {errors.businessAddressState && <p className="text-red-400 text-sm mt-1">{errors.businessAddressState}</p>}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Input
+                        id="businessAddressZip"
+                        value={formData.businessAddress.zip}
+                        onChange={(e) => updateNestedField('businessAddress', 'zip', e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        placeholder="ZIP Code"
+                      />
+                      {errors.businessAddressZip && <p className="text-red-400 text-sm mt-1">{errors.businessAddressZip}</p>}
+                    </div>
+                    <div>
+                      <Input
+                        id="businessAddressCountry"
+                        value={formData.businessAddress.country}
+                        onChange={(e) => updateNestedField('businessAddress', 'country', e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        placeholder="Country"
+                      />
+                      {errors.businessAddressCountry && <p className="text-red-400 text-sm mt-1">{errors.businessAddressCountry}</p>}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="businessNiche" className="text-white">Business Niche/Industry</Label>
+                  <Label htmlFor="businessNiche" className="text-white">Business Niche/Industry *</Label>
                   <Input
                     id="businessNiche"
                     value={formData.businessNiche}
@@ -962,10 +990,11 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., Landscaping, Hair Salon, Plumbing, Real Estate, etc."
                   />
+                  {errors.businessNiche && <p className="text-red-400 text-sm mt-1">{errors.businessNiche}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="businessDescription" className="text-white">Short Business Description</Label>
+                  <Label htmlFor="businessDescription" className="text-white">Short Business Description *</Label>
                   <Textarea
                     id="businessDescription"
                     value={formData.businessDescription}
@@ -973,10 +1002,11 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
                     placeholder="What do you do? (e.g., 'We provide residential plumbing services...')"
                   />
+                  {errors.businessDescription && <p className="text-red-400 text-sm mt-1">{errors.businessDescription}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="servicesOffered" className="text-white">Services Offered</Label>
+                  <Label htmlFor="servicesOffered" className="text-white">Services Offered *</Label>
                   <Textarea
                     id="servicesOffered"
                     value={formData.servicesOffered}
@@ -984,6 +1014,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
                     placeholder="One service per line..."
                   />
+                  {errors.servicesOffered && <p className="text-red-400 text-sm mt-1">{errors.servicesOffered}</p>}
                 </div>
 
                 <div>
@@ -1081,7 +1112,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="serviceAreas" className="text-white">Service Areas / Cities Served</Label>
+                  <Label htmlFor="serviceAreas" className="text-white">Service Areas / Cities Served *</Label>
                   <Input
                     id="serviceAreas"
                     value={formData.serviceAreas}
@@ -1089,6 +1120,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="Houston, Austin, Dallas..."
                   />
+                  {errors.serviceAreas && <p className="text-red-400 text-sm mt-1">{errors.serviceAreas}</p>}
                 </div>
               </>
             )}
@@ -2000,7 +2032,7 @@ export default function OnboardingPage() {
         </Card>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Questions? Email <a href="mailto:support@tlucasystems.com" className="text-white hover:underline">support@tlucasystems.com</a>
+          Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
         </p>
         </div>
       </div>

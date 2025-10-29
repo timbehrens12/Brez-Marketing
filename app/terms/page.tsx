@@ -166,8 +166,8 @@ export default function TermsAndConditionsPage() {
               Questions about these Terms can be sent to:
             </p>
             <p className="text-white">
-              <a href="mailto:tbehrens121@gmail.com" className="hover:text-gray-400 transition-colors">
-                tbehrens121@gmail.com
+              <a href="mailto:tlucasystems@gmail.com" className="hover:text-gray-400 transition-colors">
+                tlucasystems@gmail.com
               </a>
             </p>
           </section>
