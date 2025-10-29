@@ -202,6 +202,13 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Scroll to top when success page is shown
+  useEffect(() => {
+    if (isSuccess) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [isSuccess])
+
   // Force clean state on mount - clear any cached data
   useEffect(() => {
     // Clear any localStorage remnants
