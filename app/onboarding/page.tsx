@@ -529,7 +529,7 @@ export default function OnboardingPage() {
                     <h4 className="text-lg font-bold text-white mb-2">Review & Development Start</h4>
                     <p className="text-gray-400">
                       Within the next <span className="text-white font-semibold">24 hours</span>, someone from our team will review your onboarding details 
-                      and begin development of your website and systems. You'll receive an email confirmation when we start.
+                      and begin development of your website and systems. You'll receive a text confirmation when we start.
                     </p>
                   </div>
                 </div>
@@ -558,7 +558,7 @@ export default function OnboardingPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-white" />
-                        Final invoice and next steps
+                        Final invoice (if applicable) and next steps
                       </li>
                     </ul>
                   </div>
@@ -573,8 +573,8 @@ export default function OnboardingPage() {
                     <p className="text-gray-400">
                       If you have any questions in the meantime, feel free to reach out:
                       <br />
-                      <a href="mailto:tbehrens121@gmail.com" className="text-white font-semibold hover:underline">
-                        tbehrens121@gmail.com
+                      <a href="mailto:tlucasystems@gmail.com" className="text-white font-semibold hover:underline">
+                        tlucasystems@gmail.com
                       </a>
                       {' | '}
                       <a href="tel:832-561-4407" className="text-white font-semibold hover:underline">
