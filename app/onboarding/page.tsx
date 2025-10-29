@@ -529,7 +529,7 @@ export default function OnboardingPage() {
                     <h4 className="text-lg font-bold text-white mb-2">Review & Development Start</h4>
                     <p className="text-gray-400">
                       Within the next <span className="text-white font-semibold">24 hours</span>, someone from our team will review your onboarding details 
-                      and begin development of your website and systems. You'll receive a text confirmation when we start.
+                      and begin development of your website and systems. You'll receive text notifications as we progress.
                     </p>
                   </div>
                 </div>
@@ -569,18 +569,25 @@ export default function OnboardingPage() {
                     3
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-white mb-2">Questions?</h4>
-                    <p className="text-gray-400">
-                      If you have any questions in the meantime, feel free to reach out:
-                      <br />
-                      <a href="mailto:tlucasystems@gmail.com" className="text-white font-semibold hover:underline">
-                        tlucasystems@gmail.com
-                      </a>
-                      {' | '}
-                      <a href="tel:832-561-4407" className="text-white font-semibold hover:underline">
-                        832-561-4407
-                      </a>
+                    <h4 className="text-lg font-bold text-white mb-2">Need to Make Changes?</h4>
+                    <p className="text-gray-400 mb-3">
+                      If you need to make any changes or forgot to include something, reply directly to your confirmation email or contact us:
                     </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Mail className="w-4 h-4 text-white" />
+                        <a href="mailto:tlucasystems@gmail.com" className="text-white font-semibold hover:underline">
+                          tlucasystems@gmail.com
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <span className="text-white font-semibold">📱</span>
+                        <a href="tel:832-561-4407" className="text-white font-semibold hover:underline">
+                          832-561-4407
+                        </a>
+                        <span className="text-gray-500 text-sm">(text or call)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
