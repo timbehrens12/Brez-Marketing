@@ -3663,7 +3663,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               value={campaignLead.status}
                               onValueChange={(value) => updateCampaignLeadStatus(campaignLead.id, value)}
                             >
-                                <SelectTrigger className="w-36 h-8 bg-[#2A2A2A] border-[#444] text-gray-300">
+                                <SelectTrigger className="w-48 h-8 bg-[#2A2A2A] border-[#444] text-gray-300 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-[#1A1A1A] border-[#333]">
