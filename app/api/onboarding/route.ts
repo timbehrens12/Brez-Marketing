@@ -373,6 +373,9 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             compliance_needs: data.complianceNeeds,
             special_notes: data.specialNotes,
             
+            // Consent
+            sms_consent: data.smsConsent || false,
+            
             // Metadata
             submitted_at: new Date().toISOString(),
             formatted_summary: emailBody, // Pre-formatted for easy reading

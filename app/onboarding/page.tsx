@@ -100,6 +100,7 @@ type OnboardingData = {
   
   // Consent
   consentConfirmed: boolean
+  smsConsent: boolean
 }
 
 // Add image preview state type
@@ -161,6 +162,7 @@ const INITIAL_DATA: OnboardingData = {
   complianceNeeds: '',
   specialNotes: '',
   consentConfirmed: false,
+  smsConsent: false,
 }
 
 const SECTIONS = [
@@ -947,6 +949,20 @@ export default function OnboardingPage() {
                     />
                     {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
                   </div>
+                </div>
+
+                {/* SMS Consent */}
+                <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="smsConsent"
+                    checked={formData.smsConsent}
+                    onChange={(e) => updateField('smsConsent', e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-white focus:ring-2 focus:ring-white/50"
+                  />
+                  <label htmlFor="smsConsent" className="text-sm text-gray-300 cursor-pointer">
+                    ☑️ I agree to receive SMS updates about my website build and onboarding from TLUCA Systems.
+                  </label>
                 </div>
 
                 <div className="space-y-3">
