@@ -57,6 +57,23 @@ export default function TermsAndConditionsPage() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-bold text-white mb-4">2.1 SMS Communications</h2>
+            <p className="mb-4">
+              We send occasional SMS updates about your order, project progress, and service notifications when you provide consent during onboarding.
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
+              <li>You consent to receive text messages from TLUCA Systems at the phone number you provide</li>
+              <li>Message and data rates may apply based on your carrier's plan</li>
+              <li>Message frequency varies based on your project status</li>
+              <li>You can opt out at any time by replying STOP to any message</li>
+              <li>Reply HELP for assistance or contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a></li>
+            </ul>
+            <p>
+              By providing your phone number and checking the SMS consent box, you agree to these SMS terms.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-bold text-white mb-4">3. Account & Access</h2>
             <p className="mb-4">You are responsible for:</p>
             <ul className="list-disc list-inside space-y-2 ml-4 mb-4">

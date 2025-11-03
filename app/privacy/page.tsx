@@ -22,12 +22,12 @@ export default function PrivacyPolicyPage() {
         {/* Title Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Privacy Policy
+                  Privacy Policy
           </h1>
           <p className="text-gray-400 text-lg">
             Effective Date: October 20, 2025
           </p>
-        </div>
+          </div>
 
         {/* Content */}
         <div className="space-y-8 text-gray-300">
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
             <p>
               By using our services, you consent to the terms outlined in this Privacy Policy.
             </p>
-          </section>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">2. Information We Collect</h2>
@@ -72,7 +72,7 @@ export default function PrivacyPolicyPage() {
                 <li>Data you or your business upload (contacts, leads, form submissions, website content, etc.) is stored securely and remains your property.</li>
               </ul>
             </div>
-          </section>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">3. How We Use Your Information</h2>
@@ -83,11 +83,29 @@ export default function PrivacyPolicyPage() {
               <li>Communicate updates, invoices, and support information</li>
               <li>Personalize your dashboard or website experience</li>
               <li>Comply with legal and tax obligations</li>
-            </ul>
+              <li>Send occasional SMS updates about your order, project progress, and service notifications (with your consent)</li>
+              </ul>
             <p>
               We may use anonymized or aggregated data for internal analytics and performance tracking.
+              </p>
+            </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-white mb-4">3.1 SMS Communications</h2>
+            <p className="mb-4">
+              We send occasional SMS updates about your order, project progress, and service notifications when you provide consent during onboarding. By agreeing to receive SMS communications:
             </p>
-          </section>
+            <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
+              <li>You consent to receive text messages from TLUCA Systems at the phone number you provide</li>
+              <li>Message and data rates may apply based on your carrier's plan</li>
+              <li>Message frequency varies based on your project status</li>
+              <li>You can opt out at any time by replying STOP to any message</li>
+              <li>Reply HELP for assistance or contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a></li>
+              </ul>
+            <p>
+              We do not share your mobile number with third parties for marketing purposes.
+              </p>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">4. Data Sharing</h2>
@@ -97,8 +115,8 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li><strong className="text-white">Service Providers:</strong> For hosting, payments, analytics, and customer communication (e.g., GoHighLevel, Mailgun, Stripe, AWS).</li>
               <li><strong className="text-white">Legal Authorities:</strong> If required by law or to protect our rights and users' safety.</li>
-            </ul>
-          </section>
+              </ul>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">5. Data Retention & Deletion</h2>
@@ -107,8 +125,8 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               You may request early deletion by emailing <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a>.
-            </p>
-          </section>
+              </p>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">6. Security</h2>
@@ -117,8 +135,8 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               While we take reasonable precautions, no online system is 100% secure.
-            </p>
-          </section>
+              </p>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">7. Cookies</h2>
@@ -137,18 +155,18 @@ export default function PrivacyPolicyPage() {
               <li>Access, correct, or delete your personal data</li>
               <li>Request account closure</li>
               <li>Withdraw consent for communications</li>
-            </ul>
+              </ul>
             <p>
               Contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a> to exercise these rights.
             </p>
-          </section>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">9. Policy Updates</h2>
             <p>
               We may update this policy periodically. The latest version will always be available on our website with a revised effective date.
-            </p>
-          </section>
+              </p>
+            </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">10. Contact</h2>
@@ -159,9 +177,9 @@ export default function PrivacyPolicyPage() {
               <a href="mailto:tlucasystems@gmail.com" className="hover:text-gray-400 transition-colors">
                 tlucasystems@gmail.com
               </a>
-            </p>
-          </section>
-        </div>
+              </p>
+            </section>
+          </div>
 
         {/* Back to Home */}
         <div className="text-center mt-16">
