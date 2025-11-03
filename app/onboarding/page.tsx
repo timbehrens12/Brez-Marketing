@@ -961,7 +961,7 @@ export default function OnboardingPage() {
                     className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-white focus:ring-2 focus:ring-white/50"
                   />
                   <label htmlFor="smsConsent" className="text-sm text-gray-300 cursor-pointer">
-                    ☑️ I agree to receive SMS updates about my website build and onboarding from TLUCA Systems.
+                    ☑️ I agree to receive SMS updates about my order, project progress, and service notifications from TLUCA Systems. Message and data rates may apply. Reply STOP to opt out at any time.
                   </label>
                 </div>
 
