@@ -332,21 +332,17 @@ export default function OnboardingPage() {
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (step === 0) { // Business - ALL FIELDS REQUIRED
+    if (step === 0) { // Business - MINIMAL FIELDS FOR TESTING
       if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required'
       if (!formData.contactName.trim()) newErrors.contactName = 'Contact name is required'
       if (!formData.businessEmail.trim()) newErrors.businessEmail = 'Business email is required'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.businessEmail)) newErrors.businessEmail = 'Invalid email'
       if (!formData.businessPhone.trim()) newErrors.businessPhone = 'Business phone is required'
-      if (!formData.businessAddress.street.trim()) newErrors.businessAddressStreet = 'Street address is required'
-      if (!formData.businessAddress.city.trim()) newErrors.businessAddressCity = 'City is required'
-      if (!formData.businessAddress.state.trim()) newErrors.businessAddressState = 'State is required'
-      if (!formData.businessAddress.zip.trim()) newErrors.businessAddressZip = 'ZIP code is required'
-      if (!formData.businessAddress.country.trim()) newErrors.businessAddressCountry = 'Country is required'
-      if (!formData.businessNiche.trim()) newErrors.businessNiche = 'Business niche is required'
-      if (!formData.businessDescription.trim()) newErrors.businessDescription = 'Business description is required'
-      if (!formData.servicesOffered.trim()) newErrors.servicesOffered = 'Services offered is required'
-      if (!formData.serviceAreas.trim()) newErrors.serviceAreas = 'Service areas is required'
+      // Set leadAlertMethod to email if not set, and use businessEmail for alertEmail
+      if (!formData.leadAlertMethod) {
+        updateField('leadAlertMethod', 'email')
+        updateField('alertEmail', formData.businessEmail)
+      }
     }
 
     if (step === 1) { // Branding
@@ -439,9 +435,22 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
 
+    // Set defaults for testing mode
+    const submitData = {
+      ...formData,
+      leadAlertMethod: formData.leadAlertMethod || 'email',
+      alertEmail: formData.alertEmail || formData.businessEmail,
+      // Set default values for optional fields
+      businessAddress: formData.businessAddress.street ? formData.businessAddress : { street: '', city: '', state: '', zip: '', country: 'USA' },
+      businessNiche: formData.businessNiche || 'Test Business',
+      businessDescription: formData.businessDescription || 'Test submission',
+      servicesOffered: formData.servicesOffered || 'Test Services',
+      serviceAreas: formData.serviceAreas || 'Test Area',
+    }
+
     setIsSubmitting(true)
     try {
-      toast.loading('Uploading files to Cloudinary...')
+      toast.loading('Submitting test form...')
 
       // Upload files to Cloudinary
       let logoUrl: string | null = null
@@ -474,10 +483,10 @@ export default function OnboardingPage() {
 
       // Normalize URLs
       const normalizedData = {
-        ...formData,
-        inspirationSites: formData.inspirationSites.map(normalizeUrl).filter(Boolean),
+        ...submitData,
+        inspirationSites: submitData.inspirationSites.map(normalizeUrl).filter(Boolean),
         socialLinks: Object.fromEntries(
-          Object.entries(formData.socialLinks).map(([k, v]) => [k, normalizeUrl(v)])
+          Object.entries(submitData.socialLinks).map(([k, v]) => [k, normalizeUrl(v)])
         ),
         // Add Cloudinary URLs
         logo_url: logoUrl,
@@ -896,9 +905,14 @@ export default function OnboardingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
-            {/* Step 0: Business */}
+            {/* Step 0: Business - TESTING MODE - MINIMAL FIELDS */}
             {currentStep === 0 && (
               <>
+                <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-yellow-400 text-sm font-semibold">🧪 TESTING MODE - Simplified Form</p>
+                  <p className="text-gray-400 text-xs mt-1">Only essential fields required for testing</p>
+                </div>
+
                 <div>
                   <Label htmlFor="businessName" className="text-white">Business Name *</Label>
                   <Input
@@ -930,7 +944,13 @@ export default function OnboardingPage() {
                       id="businessEmail"
                       type="email"
                       value={formData.businessEmail}
-                      onChange={(e) => updateField('businessEmail', e.target.value)}
+                      onChange={(e) => {
+                        updateField('businessEmail', e.target.value)
+                        // Auto-set alertEmail to match businessEmail
+                        if (!formData.alertEmail || formData.alertEmail === formData.businessEmail) {
+                          updateField('alertEmail', e.target.value)
+                        }
+                      }}
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., contact@business.com"
                     />
@@ -949,220 +969,6 @@ export default function OnboardingPage() {
                     />
                     {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
                   </div>
-                </div>
-
-                {/* SMS Consent */}
-                <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="smsConsent"
-                    checked={formData.smsConsent}
-                    onChange={(e) => updateField('smsConsent', e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-white focus:ring-2 focus:ring-white/50"
-                  />
-                  <label htmlFor="smsConsent" className="text-sm text-gray-300 cursor-pointer">
-                    ☑️ I agree to receive SMS updates about my order, project progress, and service notifications from TLUCA Systems. Message and data rates may apply. Reply STOP to opt out at any time.
-                  </label>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-white">Business Address *</Label>
-                  <div>
-                    <Input
-                      id="businessAddressStreet"
-                      value={formData.businessAddress.street}
-                      onChange={(e) => updateNestedField('businessAddress', 'street', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="e.g., 123 Main St"
-                    />
-                    {errors.businessAddressStreet && <p className="text-red-400 text-sm mt-1">{errors.businessAddressStreet}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Input
-                        id="businessAddressCity"
-                        value={formData.businessAddress.city}
-                        onChange={(e) => updateNestedField('businessAddress', 'city', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="City"
-                      />
-                      {errors.businessAddressCity && <p className="text-red-400 text-sm mt-1">{errors.businessAddressCity}</p>}
-                    </div>
-                    <div>
-                      <Input
-                        id="businessAddressState"
-                        value={formData.businessAddress.state}
-                        onChange={(e) => updateNestedField('businessAddress', 'state', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="State"
-                      />
-                      {errors.businessAddressState && <p className="text-red-400 text-sm mt-1">{errors.businessAddressState}</p>}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Input
-                        id="businessAddressZip"
-                        value={formData.businessAddress.zip}
-                        onChange={(e) => updateNestedField('businessAddress', 'zip', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="ZIP Code"
-                      />
-                      {errors.businessAddressZip && <p className="text-red-400 text-sm mt-1">{errors.businessAddressZip}</p>}
-                    </div>
-                    <div>
-                      <Input
-                        id="businessAddressCountry"
-                        value={formData.businessAddress.country}
-                        onChange={(e) => updateNestedField('businessAddress', 'country', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="Country"
-                      />
-                      {errors.businessAddressCountry && <p className="text-red-400 text-sm mt-1">{errors.businessAddressCountry}</p>}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="businessNiche" className="text-white">Business Niche/Industry *</Label>
-                  <Input
-                    id="businessNiche"
-                    value={formData.businessNiche}
-                    onChange={(e) => updateField('businessNiche', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., Landscaping, Hair Salon, Plumbing, Real Estate, etc."
-                  />
-                  {errors.businessNiche && <p className="text-red-400 text-sm mt-1">{errors.businessNiche}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="businessDescription" className="text-white">Short Business Description *</Label>
-                  <Textarea
-                    id="businessDescription"
-                    value={formData.businessDescription}
-                    onChange={(e) => updateField('businessDescription', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
-                    placeholder="What do you do? (e.g., 'We provide residential plumbing services...')"
-                  />
-                  {errors.businessDescription && <p className="text-red-400 text-sm mt-1">{errors.businessDescription}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="servicesOffered" className="text-white">Services Offered *</Label>
-                  <Textarea
-                    id="servicesOffered"
-                    value={formData.servicesOffered}
-                    onChange={(e) => updateField('servicesOffered', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
-                    placeholder="One service per line..."
-                  />
-                  {errors.servicesOffered && <p className="text-red-400 text-sm mt-1">{errors.servicesOffered}</p>}
-                </div>
-
-                <div>
-                  <Label className="text-white mb-3 block">Operating Days/Hours</Label>
-                  <div className="space-y-3">
-                    {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day, idx) => {
-                      const dayData = formData.operatingHours?.[day] || { open: '09:00', close: '17:00', closed: false }
-                      return (
-                      <div key={day} className="bg-white/5 p-3 rounded-lg space-y-2">
-                        {/* Mobile-optimized layout: stacks vertically on small screens */}
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            id={`${day}-closed`}
-                            checked={dayData.closed}
-                            onCheckedChange={(checked) => {
-                              updateField('operatingHours', {
-                                ...formData.operatingHours,
-                                [day]: { ...dayData, closed: !!checked }
-                              })
-                            }}
-                            className="border-white/20"
-                          />
-                          <Label htmlFor={`${day}-closed`} className="text-white capitalize flex-1 cursor-pointer font-medium">
-                            {day}
-                          </Label>
-                          
-                          {dayData.closed && (
-                            <span className="text-gray-400 text-sm italic">Closed</span>
-                          )}
-                        </div>
-                        
-                        {!dayData.closed && (
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pl-8">
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <select
-                                value={dayData.open}
-                                onChange={(e) => {
-                                  updateField('operatingHours', {
-                                    ...formData.operatingHours,
-                                    [day]: { ...dayData, open: e.target.value }
-                                  })
-                                }}
-                                className="bg-black border border-white/20 text-white rounded px-2 py-2 text-sm flex-1 sm:flex-initial min-w-[120px]"
-                                style={{ colorScheme: 'dark' }}
-                              >
-                                {generateTimeOptions().map(({ value, label }) => (
-                                  <option key={value} value={value} className="bg-black text-white">
-                                    {label}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="text-gray-400 text-sm">to</span>
-                              <select
-                                value={dayData.close}
-                                onChange={(e) => {
-                                  updateField('operatingHours', {
-                                    ...formData.operatingHours,
-                                    [day]: { ...dayData, close: e.target.value }
-                                  })
-                                }}
-                                className="bg-black border border-white/20 text-white rounded px-2 py-2 text-sm flex-1 sm:flex-initial min-w-[120px]"
-                                style={{ colorScheme: 'dark' }}
-                              >
-                                {generateTimeOptions().map(({ value, label }) => (
-                                  <option key={value} value={value} className="bg-black text-white">
-                                    {label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            
-                            {idx > 0 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const prevDay = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx - 1] as keyof typeof formData.operatingHours
-                                  const prevDayData = formData.operatingHours?.[prevDay] || { open: '09:00', close: '17:00', closed: false }
-                                  updateField('operatingHours', {
-                                    ...formData.operatingHours,
-                                    [day]: { ...prevDayData }
-                                  })
-                                }}
-                                className="text-xs text-white/70 hover:text-white whitespace-nowrap w-full sm:w-auto"
-                              >
-                                Copy from {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][idx - 1]}
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )})}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="serviceAreas" className="text-white">Service Areas / Cities Served *</Label>
-                  <Input
-                    id="serviceAreas"
-                    value={formData.serviceAreas}
-                    onChange={(e) => updateField('serviceAreas', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="Houston, Austin, Dallas..."
-                  />
-                  {errors.serviceAreas && <p className="text-red-400 text-sm mt-1">{errors.serviceAreas}</p>}
                 </div>
               </>
             )}
@@ -2036,19 +1842,32 @@ export default function OnboardingPage() {
 
             {/* Navigation */}
             <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
-              <Button
-                type="button"
-                onClick={handlePrev}
-                disabled={currentStep === 0}
-                variant="outline"
-                className="border-white/10 hover:bg-white/5 text-white disabled:opacity-50 w-full sm:w-auto order-2 sm:order-1"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Previous</span>
-                <span className="sm:hidden">Back</span>
-              </Button>
+              {/* Hide Previous button in testing mode (step 0) */}
+              {currentStep > 0 && (
+                <Button
+                  type="button"
+                  onClick={handlePrev}
+                  variant="outline"
+                  className="border-white/10 hover:bg-white/5 text-white w-full sm:w-auto order-2 sm:order-1"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Back</span>
+                </Button>
+              )}
 
-              {currentStep < SECTIONS.length - 1 ? (
+              {/* TESTING MODE: Show submit button on step 0 */}
+              {currentStep === 0 ? (
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
+                >
+                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Test</span><span className="sm:hidden">Submit</span></>}
+                  <CheckCircle2 className="w-4 h-4 ml-2" />
+                </Button>
+              ) : currentStep < SECTIONS.length - 1 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
