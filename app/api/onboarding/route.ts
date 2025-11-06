@@ -186,7 +186,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       throw new Error('Failed to save to database')
     }
 
-    console.log('✅ Saved to Supabase:', savedData.id)
+    console.log('✅ Saved to Supabase:', savedData?.[0]?.id)
 
     // Sync to GoHighLevel (if credentials are configured)
     let ghlContactId = null
@@ -268,7 +268,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
               ghl_opportunity_id: ghlOpportunityId,
               ghl_synced_at: new Date().toISOString(),
             })
-            .eq('id', savedData.id)
+            .eq('id', savedData?.[0]?.id)
         }
       } catch (ghlError) {
         console.error('GoHighLevel sync error (non-fatal):', ghlError)
@@ -276,31 +276,48 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       }
     }
 
-    // Send to Zapier webhook (if configured)
-    if (process.env.ZAPIER_WEBHOOK_URL) {
+    // Send to GoHighLevel webhook (if configured)
+    if (process.env.GOHIGHLEVEL_WEBHOOK_URL) {
       try {
-        await fetch(process.env.ZAPIER_WEBHOOK_URL, {
+        // Format contact data for GHL webhook
+        const contactNameParts = data.contactName.split(' ')
+        const firstName = contactNameParts[0] || ''
+        const lastName = contactNameParts.slice(1).join(' ') || ''
+
+        await fetch(process.env.GOHIGHLEVEL_WEBHOOK_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            // Core Info
-            submission_id: savedData.id,
-            business_name: data.businessName,
-            contact_name: data.contactName,
-            business_email: data.businessEmail,
-            business_phone: data.businessPhone,
+            // Core Contact Info (GHL standard fields)
+            firstName: firstName,
+            lastName: lastName,
+            email: data.businessEmail,
+            phone: data.businessPhone,
+            companyName: data.businessName,
+            address1: data.businessAddress?.street || '',
+            city: data.businessAddress?.city || '',
+            state: data.businessAddress?.state || '',
+            postalCode: data.businessAddress?.zip || '',
+            country: data.businessAddress?.country || '',
+            website: data.hasExistingWebsite ? data.currentDomain : '',
+            source: 'Onboarding Form - tlucasystems.com',
+            tags: ['Onboarding', 'Website Build', data.hasExistingWebsite ? 'Existing Website' : 'New Website'],
+            
+            // Submission Metadata
+            submission_id: savedData?.[0]?.id,
+            submitted_at: new Date().toISOString(),
+            operator_code: data.operator_code || null,
             
             // Business Details
-            business_address: data.businessAddress,
             business_niche: data.businessNiche,
             business_description: data.businessDescription,
             services_offered: data.servicesOffered,
             operating_hours: data.operatingHours,
             service_areas: data.serviceAreas,
             
-            // Branding - Images (keep URLs clean for Slack to render)
+            // Branding - Images
             logo_url: data.logo_url || null,
             photo_url_1: data.photo_urls?.[0] || null,
             photo_url_2: data.photo_urls?.[1] || null,
@@ -376,23 +393,21 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             // Consent
             sms_consent: data.smsConsent || false,
             
-            // Metadata
-            submitted_at: new Date().toISOString(),
-            formatted_summary: emailBody, // Pre-formatted for easy reading
-            operator_code: data.operator_code || null, // Track which operator's link was used
+            // Formatted summary for easy reading
+            formatted_summary: emailBody,
           }),
         })
-        console.log('✅ Sent to Zapier webhook')
-      } catch (zapierError) {
-        console.error('Zapier webhook error (non-fatal):', zapierError)
-        // Don't fail the whole request if Zapier fails
+        console.log('✅ Sent to GoHighLevel webhook')
+      } catch (ghlWebhookError) {
+        console.error('GoHighLevel webhook error (non-fatal):', ghlWebhookError)
+        // Don't fail the whole request if GHL webhook fails
       }
     }
 
     return NextResponse.json({ 
       success: true,
       message: 'Onboarding submitted successfully',
-      id: savedData.id,
+      id: savedData?.[0]?.id,
       ghl_synced: !!ghlContactId,
     })
 
