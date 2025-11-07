@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,9 +23,13 @@ export async function POST(req: NextRequest) {
     const firstName = data.first_name || ''
     const lastName = data.last_name || ''
     const fullName = `${firstName} ${lastName}`.trim()
+    const submissionTimestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
-    // Format email content (using new field names)
-    const emailBody = `
+    // Sync to GoHighLevel (if credentials are configured)
+    if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
+      try {
+        // Format email content for GHL notes
+        const emailBody = `
 🎉 NEW CLIENT ONBOARDING RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 BUSINESS INFORMATION
@@ -78,63 +76,9 @@ ${data.domain_preferences ? `Preferences: ${data.domain_preferences}` : ''}
 ${data.internal_notes ? `Notes: ${data.internal_notes}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}
-    `.trim()
+Submitted: ${submissionTimestamp}
+        `.trim()
 
-    // Save to Supabase (using new field names from spec)
-    const { data: savedData, error: dbError } = await supabase
-      .from('onboarding_submissions')
-      .insert({
-        business_name: data.business_name,
-        contact_name: fullName,
-        business_email: data.contact_email,
-        business_phone: data.contact_phone,
-        business_city: data.business_city,
-        business_state: data.business_state,
-        years_in_service: data.years_in_service,
-        business_type: data.business_type,
-        services_primary: data.services_primary || [],
-        services_secondary: data.services_secondary,
-        market_type: data.market_type,
-        service_areas: data.service_areas || [],
-        logo_url: data.logo_url,
-        gallery_urls: data.gallery_urls || [],
-        brand_colors: data.brand_colors,
-        design_constraints: data.design_constraints,
-        about_text: data.about_text,
-        tagline: data.tagline,
-        site_phone: data.site_phone,
-        site_email: data.site_email,
-        business_hours: data.business_hours,
-        preferred_contact: data.preferred_contact,
-        facebook_url: data.facebook_url,
-        instagram_url: data.instagram_url,
-        google_profile_url: data.google_profile_url,
-        has_domain: data.has_domain,
-        domain_current: data.domain_current,
-        request_domain_purchase: data.request_domain_purchase,
-        domain_preferences: data.domain_preferences,
-        internal_notes: data.internal_notes,
-        consent_accepted: data.consent_accepted,
-        form_id: data.form_id,
-        source: data.source,
-        submitted_at: data.submitted_at,
-      })
-      .select()
-
-    if (dbError) {
-      console.error('Supabase error:', dbError)
-      throw new Error('Failed to save to database')
-    }
-
-    console.log('✅ Saved to Supabase:', savedData?.[0]?.id)
-
-    // Sync to GoHighLevel (if credentials are configured)
-    let ghlContactId = null
-    let ghlOpportunityId = null
-    
-    if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
-      try {
         // Create/Update Contact in GoHighLevel
         const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
           method: 'POST',
@@ -164,7 +108,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
         if (ghlContactResponse.ok) {
           const ghlContact = await ghlContactResponse.json()
-          ghlContactId = ghlContact.contact?.id || ghlContact.id
+          const ghlContactId = ghlContact.contact?.id || ghlContact.id
           console.log('✅ Created GoHighLevel contact:', ghlContactId)
 
           // Create Opportunity in GoHighLevel Pipeline
@@ -181,29 +125,19 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
                 pipelineStageId: process.env.GOHIGHLEVEL_STAGE_ID || undefined,
                 name: `Website Build - ${data.business_name}`,
                 contactId: ghlContactId,
-                monetaryValue: 0, // You can set a default value or get from env
+                monetaryValue: 0,
                 status: 'open',
                 source: 'Onboarding Form',
-                notes: emailBody, // Use the formatted email body as notes
+                notes: emailBody,
               }),
             })
 
             if (ghlOpportunityResponse.ok) {
               const ghlOpportunity = await ghlOpportunityResponse.json()
-              ghlOpportunityId = ghlOpportunity.opportunity?.id || ghlOpportunity.id
+              const ghlOpportunityId = ghlOpportunity.opportunity?.id || ghlOpportunity.id
               console.log('✅ Created GoHighLevel opportunity:', ghlOpportunityId)
             }
           }
-
-          // Update Supabase with GoHighLevel IDs
-          await supabase
-            .from('onboarding_submissions')
-            .update({
-              ghl_contact_id: ghlContactId,
-              ghl_opportunity_id: ghlOpportunityId,
-              ghl_synced_at: new Date().toISOString(),
-            })
-            .eq('id', savedData?.[0]?.id)
         }
       } catch (ghlError) {
         console.error('GoHighLevel sync error (non-fatal):', ghlError)
@@ -299,8 +233,7 @@ ${data.has_domain === 'No' && data.request_domain_purchase === 'Yes' ? `**Purcha
 ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
 
 ---
-**Submission ID:** ${savedData?.[0]?.id}
-**Submitted:** ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}
+**Submitted:** ${submissionTimestamp}
 **SMS Consent:** ${data.sms_consent ? 'Yes' : 'No'}
         `.trim()
 
@@ -339,17 +272,6 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
         if (clickupResponse.ok) {
           const clickupTask = await clickupResponse.json()
           console.log('✅ Created ClickUp task:', clickupTask.id)
-          
-          // Optionally save ClickUp task ID to Supabase
-          if (clickupTask.id) {
-            await supabase
-              .from('onboarding_submissions')
-              .update({
-                clickup_task_id: clickupTask.id,
-                clickup_task_url: clickupTask.url,
-              })
-              .eq('id', savedData?.[0]?.id)
-          }
         } else {
           const errorText = await clickupResponse.text()
           console.error('ClickUp API error:', clickupResponse.status, errorText)
@@ -363,7 +285,6 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
     return NextResponse.json({ 
       success: true,
       message: 'Onboarding submitted successfully',
-      id: savedData?.[0]?.id,
     })
 
   } catch (error) {
