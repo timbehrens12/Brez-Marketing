@@ -188,14 +188,12 @@ const SECTIONS = [
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<OnboardingData>(INITIAL_DATA)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
-  const [showPaymentToast, setShowPaymentToast] = useState(true)
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
 
   // Capture operator code from URL on mount
@@ -208,13 +206,6 @@ export default function OnboardingPage() {
     }
   }, [])
 
-  // Show loading screen for 2 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLoadingScreen(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
 
   // Scroll to top when success page is shown
   useEffect(() => {
@@ -235,18 +226,6 @@ export default function OnboardingPage() {
     setErrors({})
   }, [])
 
-  // Show payment confirmation toast on mount
-  useEffect(() => {
-    if (showPaymentToast) {
-      toast.success('🎉 Payment confirmed! Let\'s build your system.', {
-        duration: 4000,
-      })
-      const timer = setTimeout(() => {
-        setShowPaymentToast(false)
-      }, 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [])
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -632,99 +611,6 @@ export default function OnboardingPage() {
     )
   }
 
-  // Loading Screen
-  if (showLoadingScreen) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center overflow-hidden relative">
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute w-96 h-96 -top-48 -left-48 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute w-96 h-96 -bottom-48 -right-48 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-
-        <div className="text-center space-y-8 px-6 relative z-10 max-w-2xl">
-          {/* Success Icon */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              {/* Outer ring */}
-              <div className="absolute inset-0 w-32 h-32 rounded-full border-4 border-white/10 animate-ping opacity-20"></div>
-              
-              {/* Middle ring */}
-              <div className="relative w-32 h-32 rounded-full border-4 border-white/20 flex items-center justify-center backdrop-blur-sm"
-                   style={{ 
-                     boxShadow: '0 0 60px rgba(255, 255, 255, 0.1), inset 0 0 60px rgba(255, 255, 255, 0.05)' 
-                   }}>
-                {/* Checkmark */}
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white to-gray-300 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={2.5} />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Title */}
-          <div className="space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight"
-                style={{ 
-                  textShadow: '0 0 40px rgba(255, 255, 255, 0.3)' 
-                }}>
-              Payment Confirmed
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-white to-transparent mx-auto opacity-50"></div>
-          </div>
-          
-          {/* Description */}
-          <div className="space-y-4">
-            <p className="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
-              Thank you for your payment. Let's get started building your custom business solution.
-            </p>
-            
-            {/* Statement info with fade-in animation */}
-            <div className="text-sm text-gray-500 max-w-lg mx-auto animate-fadeIn" style={{ animationDelay: '0.5s', opacity: 0, animation: 'fadeIn 1s ease-in forwards 0.5s' }}>
-              A payment to{' '}
-              <span className="font-semibold text-white/90 inline-block animate-pulse px-2 py-1 rounded bg-white/5">
-                TLUCA SYSTEMS
-              </span>
-              {' '}will appear on your statement.
-            </div>
-          </div>
-          
-          {/* Loading indicator */}
-          <div className="flex justify-center items-center gap-2 pt-4">
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-          </div>
-          
-          <style jsx>{`
-            @keyframes fadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(10px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-          `}</style>
-          
-          {/* Footer */}
-          <div className="pt-12 text-gray-500 text-sm space-y-3">
-            <div className="flex items-center justify-center gap-2">
-              <span>Powered by</span>
-              <span className="font-semibold text-gray-400">stripe</span>
-            </div>
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <a href="/terms" className="hover:text-gray-300 transition-colors">Terms</a>
-              <span>•</span>
-              <a href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
@@ -930,17 +816,17 @@ export default function OnboardingPage() {
                   {errors.business_name && <p className="text-red-400 text-sm mt-1">{errors.business_name}</p>}
                 </div>
 
-                <div>
+                  <div>
                   <Label htmlFor="owner_name" className="text-white">Owner Full Name *</Label>
-                  <Input
+                    <Input
                     id="owner_name"
                     value={formData.owner_name}
                     onChange={(e) => updateField('owner_name', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="e.g., Payta Smith"
-                  />
+                    />
                   {errors.owner_name && <p className="text-red-400 text-sm mt-1">{errors.owner_name}</p>}
-                </div>
+                  </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -954,7 +840,7 @@ export default function OnboardingPage() {
                       placeholder="(555) 123-4567"
                     />
                     {errors.contact_phone && <p className="text-red-400 text-sm mt-1">{errors.contact_phone}</p>}
-                  </div>
+                </div>
 
                   <div>
                     <Label htmlFor="contact_email" className="text-white">Email for CRM *</Label>
@@ -968,28 +854,28 @@ export default function OnboardingPage() {
                     />
                     {errors.contact_email && <p className="text-red-400 text-sm mt-1">{errors.contact_email}</p>}
                   </div>
-                </div>
+                    </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                    <div>
                     <Label htmlFor="business_city" className="text-white">Business City *</Label>
-                    <Input
+                      <Input
                       id="business_city"
                       value={formData.business_city}
                       onChange={(e) => updateField('business_city', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., Spring"
-                    />
+                      />
                     {errors.business_city && <p className="text-red-400 text-sm mt-1">{errors.business_city}</p>}
-                  </div>
+                    </div>
 
-                  <div>
+                    <div>
                     <Label htmlFor="business_state" className="text-white">State/Province *</Label>
-                    <Input
+                      <Input
                       id="business_state"
                       value={formData.business_state}
                       onChange={(e) => updateField('business_state', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., TX"
                     />
                     {errors.business_state && <p className="text-red-400 text-sm mt-1">{errors.business_state}</p>}
@@ -1036,21 +922,21 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {CONCRETE_SERVICES.map(service => (
                       <div key={service} className="flex items-center space-x-2">
-                        <Checkbox
+                          <Checkbox
                           id={`service-${service}`}
                           checked={formData.services_primary.includes(service)}
-                          onCheckedChange={(checked) => {
+                            onCheckedChange={(checked) => {
                             if (checked) {
                               updateField('services_primary', [...formData.services_primary, service])
                             } else {
                               updateField('services_primary', formData.services_primary.filter(s => s !== service))
                             }
-                          }}
-                          className="border-white/20"
-                        />
+                            }}
+                            className="border-white/20"
+                          />
                         <Label htmlFor={`service-${service}`} className="text-white cursor-pointer text-sm">
                           {service}
-                        </Label>
+                          </Label>
                       </div>
                     ))}
                   </div>
@@ -1066,7 +952,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
                     placeholder="e.g., Stamped concrete and resurfacing..."
                   />
-                </div>
+                        </div>
               </>
             )}
 
@@ -1092,8 +978,8 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                   {errors.market_type && <p className="text-red-400 text-sm mt-2">{errors.market_type}</p>}
-                </div>
-
+                            </div>
+                            
                 <div>
                   <Label className="text-white mb-3 block">Cities/Areas Served *</Label>
                   <p className="text-gray-400 text-sm mb-3">Add cities or areas where you provide services</p>
@@ -1110,14 +996,14 @@ export default function OnboardingPage() {
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                       placeholder="e.g., Spring, TX"
                     />
-                    <Button
-                      type="button"
+                              <Button
+                                type="button"
                       onClick={addServiceArea}
                       className="bg-white hover:bg-gray-200 text-black"
                     >
                       Add
-                    </Button>
-                  </div>
+                              </Button>
+                          </div>
                   {formData.service_areas.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {formData.service_areas.map((area, idx) => (
@@ -1133,9 +1019,9 @@ export default function OnboardingPage() {
                           >
                             <X className="w-4 h-4" />
                           </button>
-                        </div>
+                      </div>
                       ))}
-                    </div>
+                  </div>
                   )}
                   {errors.service_areas && <p className="text-red-400 text-sm mt-2">{errors.service_areas}</p>}
                 </div>
@@ -1285,7 +1171,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label htmlFor="design_constraints" className="text-white">Anything to avoid in design? (optional)</Label>
-                  <Textarea
+                    <Textarea
                     id="design_constraints"
                     value={formData.design_constraints}
                     onChange={(e) => updateField('design_constraints', e.target.value)}
@@ -1314,7 +1200,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label htmlFor="tagline" className="text-white">Tagline / Slogan (optional)</Label>
-                  <Input
+                    <Input
                     id="tagline"
                     value={formData.tagline}
                     onChange={(e) => updateField('tagline', e.target.value)}
@@ -1354,12 +1240,12 @@ export default function OnboardingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="site_phone" className="text-white">Phone to Display *</Label>
-                        <Input
+                    <Input
                           id="site_phone"
                           type="tel"
                           value={formData.site_phone}
                           onChange={(e) => updateField('site_phone', formatPhoneNumber(e.target.value))}
-                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                           placeholder="(555) 123-4567"
                         />
                         {errors.site_phone && <p className="text-red-400 text-sm mt-1">{errors.site_phone}</p>}
@@ -1367,16 +1253,16 @@ export default function OnboardingPage() {
 
                       <div>
                         <Label htmlFor="site_email" className="text-white">Email to Display *</Label>
-                        <Input
+                      <Input
                           id="site_email"
                           type="email"
                           value={formData.site_email}
                           onChange={(e) => updateField('site_email', e.target.value)}
-                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                           placeholder="hello@business.com"
-                        />
+                      />
                         {errors.site_email && <p className="text-red-400 text-sm mt-1">{errors.site_email}</p>}
-                      </div>
+                    </div>
                     </div>
                   </>
                 )}
@@ -1386,19 +1272,19 @@ export default function OnboardingPage() {
                     <p className="text-gray-400 text-sm">
                       Site will display: <span className="text-white">{formData.contact_phone}</span> and <span className="text-white">{formData.contact_email}</span>
                     </p>
-                  </div>
+                </div>
                 )}
 
                 <div>
                   <Label className="text-white mb-3 block">Business Hours *</Label>
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day, idx) => {
                       const dayData = formData.business_hours?.[day] || { open: '08:00', close: '17:00', closed: false }
                       const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                       return (
                         <div key={day} className="bg-white/5 p-3 rounded-lg space-y-2">
-                          <div className="flex items-center gap-3">
-                            <Checkbox
+                  <div className="flex items-center gap-3">
+                    <Checkbox
                               id={`${day}-closed`}
                               checked={dayData.closed}
                               onCheckedChange={(checked) => {
@@ -1407,15 +1293,15 @@ export default function OnboardingPage() {
                                   [day]: { ...dayData, closed: !!checked }
                                 })
                               }}
-                              className="border-white/20"
-                            />
+                      className="border-white/20"
+                    />
                             <Label htmlFor={`${day}-closed`} className="text-white flex-1 cursor-pointer font-medium">
                               {dayNames[idx]}
                             </Label>
                             {dayData.closed && (
                               <span className="text-gray-400 text-sm italic">Closed</span>
                             )}
-                          </div>
+                  </div>
                           {!dayData.closed && (
                             <div className="flex items-center gap-2 pl-8">
                               <select
@@ -1453,13 +1339,13 @@ export default function OnboardingPage() {
                                   </option>
                                 ))}
                               </select>
-                            </div>
-                          )}
-                        </div>
+                    </div>
+                  )}
+                </div>
                       )
                     })}
+                      </div>
                   </div>
-                </div>
 
                 <div>
                   <Label className="text-white mb-3 block">Preferred Contact Method *</Label>
@@ -1487,29 +1373,29 @@ export default function OnboardingPage() {
             {/* Step 6: G) Social & GBP */}
             {currentStep === 6 && (
               <>
-                <div>
+                  <div>
                   <Label htmlFor="facebook_url" className="text-white">Facebook URL (optional)</Label>
-                  <Input
+                    <Input
                     id="facebook_url"
                     type="url"
                     value={formData.facebook_url}
                     onChange={(e) => updateField('facebook_url', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="https://facebook.com/yourbusiness"
-                  />
-                </div>
+                    />
+                  </div>
 
-                <div>
+                  <div>
                   <Label htmlFor="instagram_url" className="text-white">Instagram URL (optional)</Label>
-                  <Input
+                    <Input
                     id="instagram_url"
                     type="url"
                     value={formData.instagram_url}
                     onChange={(e) => updateField('instagram_url', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="https://instagram.com/yourbusiness"
-                  />
-                </div>
+                    />
+                  </div>
 
                 <div>
                   <Label htmlFor="google_profile_url" className="text-white">Google Business Profile URL (optional)</Label>
@@ -1521,7 +1407,7 @@ export default function OnboardingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     placeholder="https://g.page/r/XXXX"
                   />
-                </div>
+                      </div>
               </>
             )}
 
@@ -1561,42 +1447,42 @@ export default function OnboardingPage() {
                       placeholder="https://yourbusiness.com"
                     />
                     {errors.domain_current && <p className="text-red-400 text-sm mt-1">{errors.domain_current}</p>}
-                  </div>
-                )}
+                    </div>
+                    )}
 
                 {formData.has_domain === 'No' && (
                   <>
-                    <div>
+                      <div>
                       <Label className="text-white mb-3 block">Would you like us to purchase & manage it for you? *</Label>
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         {['Yes', 'No'].map(option => (
-                          <button
+                            <button
                             key={option}
-                            type="button"
+                              type="button"
                             onClick={() => updateField('request_domain_purchase', option)}
-                            className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                              className={`px-4 py-3 rounded-lg border-2 transition-all ${
                               formData.request_domain_purchase === option
-                                ? 'border-white bg-white/10'
-                                : 'border-white/10 bg-white/5 hover:border-white/20'
-                            }`}
-                          >
+                                  ? 'border-white bg-white/10'
+                                  : 'border-white/10 bg-white/5 hover:border-white/20'
+                              }`}
+                            >
                             <span className="text-white">{option}</span>
-                          </button>
-                        ))}
-                      </div>
+                            </button>
+                          ))}
+                        </div>
                       {errors.request_domain_purchase && <p className="text-red-400 text-sm mb-4">{errors.request_domain_purchase}</p>}
-                    </div>
+                </div>
 
-                    <div>
+                <div>
                       <Label htmlFor="domain_preferences" className="text-white">Desired domain ideas (optional)</Label>
-                      <Input
+                  <Input
                         id="domain_preferences"
                         value={formData.domain_preferences}
                         onChange={(e) => updateField('domain_preferences', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                         placeholder="e.g., paytasconcrete.com, paytasconstruction.com"
-                      />
-                    </div>
+                  />
+                </div>
                   </>
                 )}
               </>
@@ -1637,16 +1523,16 @@ export default function OnboardingPage() {
             <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
               {/* Hide Previous button in testing mode (step 0) */}
               {currentStep > 0 && (
-                <Button
-                  type="button"
-                  onClick={handlePrev}
-                  variant="outline"
+              <Button
+                type="button"
+                onClick={handlePrev}
+                variant="outline"
                   className="border-white/10 hover:bg-white/5 text-white w-full sm:w-auto order-2 sm:order-1"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Previous</span>
-                  <span className="sm:hidden">Back</span>
-                </Button>
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Back</span>
+              </Button>
               )}
 
               {/* Show submit button only on final step */}
