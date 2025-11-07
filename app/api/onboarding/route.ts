@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const data = await req.json()
 
     // Validate required fields (new spec structure)
-    if (!data.business_name || !data.owner_name || !data.contact_email || !data.contact_phone) {
+    if (!data.business_name || !data.first_name || !data.last_name || !data.contact_email || !data.contact_phone) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Parse owner name for GHL contact mapping
-    const contactNameParts = data.owner_name.split(' ')
-    const firstName = contactNameParts[0] || ''
-    const lastName = contactNameParts.slice(1).join(' ') || ''
+    // Use first_name and last_name directly
+    const firstName = data.first_name || ''
+    const lastName = data.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim()
 
     // Format email content (using new field names)
     const emailBody = `
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 📋 BUSINESS INFORMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Business Name: ${data.business_name}
-Owner: ${data.owner_name}
+Owner: ${fullName}
 Email: ${data.contact_email}
 Phone: ${data.contact_phone}
 City: ${data.business_city}
@@ -86,7 +86,7 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       .from('onboarding_submissions')
       .insert({
         business_name: data.business_name,
-        contact_name: data.owner_name,
+        contact_name: fullName,
         business_email: data.contact_email,
         business_phone: data.contact_phone,
         business_city: data.business_city,
@@ -220,9 +220,8 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            // Parse owner name for GHL contact mapping
-            firstName: firstName,
-            lastName: lastName,
+            first_name: data.first_name,
+            last_name: data.last_name,
             email: data.contact_email,
             phone: data.contact_phone,
             companyName: data.business_name,

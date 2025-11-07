@@ -21,7 +21,8 @@ import {
 type OnboardingData = {
   // A) Business & Contact
   business_name: string
-  owner_name: string
+  first_name: string
+  last_name: string
   contact_phone: string
   contact_email: string
   business_city: string
@@ -97,7 +98,8 @@ type ImagePreviews = {
 const INITIAL_DATA: OnboardingData = {
   // A) Business & Contact
   business_name: '',
-  owner_name: '',
+  first_name: '',
+  last_name: '',
   contact_phone: '',
   contact_email: '',
   business_city: '',
@@ -362,7 +364,8 @@ export default function OnboardingPage() {
 
     if (step === 0) { // A) Business & Contact
       if (!formData.business_name.trim()) newErrors.business_name = 'Business name is required'
-      if (!formData.owner_name.trim()) newErrors.owner_name = 'Owner name is required'
+      if (!formData.first_name.trim()) newErrors.first_name = 'First name is required'
+      if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
       if (!formData.contact_phone.trim()) newErrors.contact_phone = 'Phone is required'
       if (!formData.contact_email.trim()) newErrors.contact_email = 'Email is required'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) newErrors.contact_email = 'Invalid email'
@@ -515,7 +518,8 @@ export default function OnboardingPage() {
         
         // A) Business & Contact
         business_name: formData.business_name,
-        owner_name: formData.owner_name,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
         contact_phone: formData.contact_phone,
         contact_email: formData.contact_email,
         business_city: formData.business_city,
@@ -825,17 +829,33 @@ export default function OnboardingPage() {
                   {errors.business_name && <p className="text-red-400 text-sm mt-1">{errors.business_name}</p>}
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                  <Label htmlFor="owner_name" className="text-white">Owner Full Name *</Label>
+                    <Label htmlFor="first_name" className="text-white">First Name *</Label>
                     <Input
-                    id="owner_name"
-                    value={formData.owner_name}
-                    onChange={(e) => updateField('owner_name', e.target.value)}
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => updateField('first_name', e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., Payta Smith"
+                      placeholder="e.g., Payta"
                     />
-                  {errors.owner_name && <p className="text-red-400 text-sm mt-1">{errors.owner_name}</p>}
+                    {errors.first_name && <p className="text-red-400 text-sm mt-1">{errors.first_name}</p>}
                   </div>
+
+                  <div>
+                    <Label htmlFor="last_name" className="text-white">Last Name *</Label>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => updateField('last_name', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      placeholder="e.g., Smith"
+                    />
+                    {errors.last_name && <p className="text-red-400 text-sm mt-1">{errors.last_name}</p>}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
