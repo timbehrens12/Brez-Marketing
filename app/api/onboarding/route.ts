@@ -10,174 +10,106 @@ export async function POST(req: NextRequest) {
   try {
     const data = await req.json()
 
-    // Validate required fields
-    if (!data.businessName || !data.contactName || !data.businessEmail || !data.businessPhone) {
+    // Validate required fields based on new spec
+    if (!data.business_name || !data.owner_name || !data.contact_email || !data.contact_phone) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: business_name, owner_name, contact_email, contact_phone' },
         { status: 400 }
       )
     }
 
-    if (!data.leadAlertMethod) {
+    if (!data.business_city || !data.business_state || !data.years_in_service || !data.business_type) {
       return NextResponse.json(
-        { error: 'Lead alert method is required' },
+        { error: 'Missing required fields: business_city, business_state, years_in_service, business_type' },
         { status: 400 }
       )
     }
 
-    // Format email content
-    const emailBody = `
-🎉 NEW CLIENT ONBOARDING RECEIVED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${data.operator_code ? `👤 OPERATOR: ${data.operator_code.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` : ''}
-📋 BUSINESS INFORMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Business Name: ${data.businessName}
-Contact: ${data.contactName}
-Email: ${data.businessEmail}
-Phone: ${data.businessPhone}
+    if (!data.services_primary || data.services_primary.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one service must be selected' },
+        { status: 400 }
+      )
+    }
 
-Address:
-${data.businessAddress.street || '—'}
-${data.businessAddress.city || '—'}, ${data.businessAddress.state || '—'} ${data.businessAddress.zip || '—'}
-${data.businessAddress.country || '—'}
+    if (!data.market_type || !data.service_areas || data.service_areas.length === 0) {
+      return NextResponse.json(
+        { error: 'Market type and at least one service area required' },
+        { status: 400 }
+      )
+    }
 
-Niche/Industry: ${data.businessNiche || '—'}
-Description: ${data.businessDescription || '—'}
-Services Offered:
-${data.servicesOffered || '—'}
+    if (!data.about_text) {
+      return NextResponse.json(
+        { error: 'About text is required' },
+        { status: 400 }
+      )
+    }
 
-Operating Hours:
-${data.operatingHours ? Object.entries(data.operatingHours).map(([day, hours]: [string, any]) => 
-  `  ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
-).join('\n') : '—'}
-Service Areas: ${data.serviceAreas || '—'}
+    if (!data.site_phone || !data.site_email || !data.preferred_contact) {
+      return NextResponse.json(
+        { error: 'Site contact details required' },
+        { status: 400 }
+      )
+    }
 
-🎨 BRANDING & DESIGN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Logo: ${data.logoFile ? '✓ Uploaded' : '—'}
-Photos: ${data.photoFiles?.length || 0} files
-Certificates: ${data.certFiles?.length || 0} files
-Color Scheme: ${data.colorScheme}
-Slogan: ${data.slogan || '—'}
-Brand Guidelines: ${data.brandGuidelines ? '✓ Uploaded' : '—'}
+    if (!data.has_domain) {
+      return NextResponse.json(
+        { error: 'Domain ownership status required' },
+        { status: 400 }
+      )
+    }
 
-About Us Section: ${data.hasAboutUs ? '✓ Yes' : '✗ No'}
-${data.hasAboutUs ? `\n${data.aboutUsText}\n` : ''}
+    if (!data.consent_accepted) {
+      return NextResponse.json(
+        { error: 'Consent must be accepted' },
+        { status: 400 }
+      )
+    }
 
-Meet the Team: ${data.hasMeetTheTeam ? '✓ Yes' : '✗ No'}
-${data.hasMeetTheTeam && data.teamMembers ? data.teamMembers.map((member: any) => 
-  `  • ${member.name || '(unnamed)'} - ${member.role || '(no role)'} ${member.photo ? '✓ Photo' : '✗ No photo'}`
-).join('\n') : ''}
+    // Parse owner_name into firstName and lastName for GHL
+    const ownerNameParts = data.owner_name.trim().split(' ')
+    const firstName = ownerNameParts[0] || ''
+    const lastName = ownerNameParts.slice(1).join(' ') || ''
 
-Inspiration Sites:
-${data.inspirationSites?.filter((s: string) => s).join('\n') || '—'}
-
-🌐 ONLINE PRESENCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Existing Website: ${data.hasExistingWebsite ? '✓ Yes' : '✗ No'}
-${data.hasExistingWebsite ? `Current Domain: ${data.currentDomain}` : ''}
-${!data.hasExistingWebsite && data.needDomainHelp ? `Needs domain help: ✓\nDesired domain: ${data.desiredDomain}` : ''}
-
-Google Business Profile: ${data.hasGoogleBusiness ? '✓ Yes' : '✗ No'}
-${data.hasGoogleBusiness ? `Gmail: ${data.googleBusinessEmail}` : ''}
-${!data.hasGoogleBusiness && data.needGoogleSetup ? 'Needs Google setup: ✓' : ''}
-
-Social Links:
-Facebook: ${data.socialLinks?.facebook || '—'}
-Instagram: ${data.socialLinks?.instagram || '—'}
-TikTok: ${data.socialLinks?.tiktok || '—'}
-LinkedIn: ${data.socialLinks?.linkedin || '—'}
-Yelp: ${data.socialLinks?.yelp || '—'}
-Other: ${data.socialLinks?.other || '—'}
-
-📞 LEADS & COMMUNICATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Lead Alert Method: ${data.leadAlertMethod}
-${data.leadAlertMethod !== 'email' ? `Alert Phone: ${data.alertPhone}` : ''}
-${data.leadAlertMethod !== 'text' ? `Alert Email: ${data.alertEmail}` : ''}
-
-Lead Form Fields:
-${data.leadFormFields?.join(', ') || '—'}
-
-Extra Lead Form Requests:
-${data.extraLeadFormRequests || '—'}
-
-Bookings/Payments: ${data.bookingsPayments}
-${data.bookingsPayments !== 'none' ? `Notes: ${data.bookingsPaymentsNotes}` : ''}
-
-Portfolio Section: ${data.hasPortfolio ? '✓ Yes' : '✗ No'}
-${data.hasPortfolio ? `Portfolio Files: ${data.portfolioFiles?.length || 0} files` : ''}
-
-Reviews Section: ${data.hasReviews ? '✓ Yes' : '✗ No'}
-
-📝 FINAL DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Owns Domain: ${data.ownsDomain ? '✓ Yes' : '✗ No'}
-${data.ownsDomain ? `Domain: ${data.ownedDomain}\nDNS Manager: ${data.dnsManager}` : ''}
-
-Compliance Needs: ${data.complianceNeeds || '—'}
-
-Special Notes:
-${data.specialNotes || '—'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}
-    `.trim()
-
-    // Save to Supabase
+    // Save to Supabase (using new field names)
     const { data: savedData, error: dbError } = await supabase
       .from('onboarding_submissions')
       .insert({
-        business_name: data.businessName,
-        contact_name: data.contactName,
-        business_email: data.businessEmail,
-        business_phone: data.businessPhone,
-        business_address: data.businessAddress || {},
-        business_niche: data.businessNiche,
-        business_description: data.businessDescription,
-        services_offered: data.servicesOffered,
-        operating_hours: data.operatingHours,
-        service_areas: data.serviceAreas,
-        
-        logo_file: data.logoFile,
-        photo_files: data.photoFiles || [],
-        cert_files: data.certFiles || [],
-        color_scheme: data.colorScheme,
-        slogan: data.slogan,
-        brand_guidelines: data.brandGuidelines,
-        has_about_us: data.hasAboutUs || false,
-        about_us_text: data.aboutUsText,
-        has_meet_the_team: data.hasMeetTheTeam || false,
-        team_members: data.teamMembers || [],
-        inspiration_sites: data.inspirationSites || [],
-        
-        has_existing_website: data.hasExistingWebsite || false,
-        current_domain: data.currentDomain,
-        need_domain_help: data.needDomainHelp || false,
-        desired_domain: data.desiredDomain,
-        has_google_business: data.hasGoogleBusiness || false,
-        google_business_email: data.googleBusinessEmail,
-        need_google_setup: data.needGoogleSetup || false,
-        social_links: data.socialLinks || {},
-        
-        lead_alert_method: data.leadAlertMethod,
-        alert_phone: data.alertPhone,
-        alert_email: data.alertEmail,
-        lead_form_fields: data.leadFormFields || [],
-        extra_lead_form_requests: data.extraLeadFormRequests,
-        bookings_payments: data.bookingsPayments,
-        bookings_payments_notes: data.bookingsPaymentsNotes,
-        has_portfolio: data.hasPortfolio || false,
-        portfolio_files: data.portfolioFiles || [],
-        has_reviews: data.hasReviews || false,
-        
-        owns_domain: data.ownsDomain || false,
-        owned_domain: data.ownedDomain,
-        dns_manager: data.dnsManager,
-        compliance_needs: data.complianceNeeds,
-        special_notes: data.specialNotes,
-        operator_code: data.operator_code || null,
+        business_name: data.business_name,
+        owner_name: data.owner_name,
+        contact_phone: data.contact_phone,
+        contact_email: data.contact_email,
+        business_city: data.business_city,
+        business_state: data.business_state,
+        years_in_service: data.years_in_service,
+        business_type: data.business_type,
+        services_primary: data.services_primary || [],
+        services_secondary: data.services_secondary || '',
+        market_type: data.market_type,
+        service_areas: data.service_areas || [],
+        logo_url: data.logo_url || '',
+        gallery_urls: data.gallery_urls || [],
+        brand_colors: data.brand_colors || '',
+        design_constraints: data.design_constraints || '',
+        about_text: data.about_text,
+        tagline: data.tagline || '',
+        site_phone: data.site_phone,
+        site_email: data.site_email,
+        business_hours: data.business_hours || {},
+        preferred_contact: data.preferred_contact,
+        facebook_url: data.facebook_url || '',
+        instagram_url: data.instagram_url || '',
+        google_profile_url: data.google_profile_url || '',
+        has_domain: data.has_domain,
+        domain_current: data.domain_current || '',
+        request_domain_purchase: data.request_domain_purchase || '',
+        domain_preferences: data.domain_preferences || '',
+        internal_notes: data.internal_notes || '',
+        consent_accepted: data.consent_accepted,
+        form_id: data.form_id || 'waas_onboarding_v1',
+        source: data.source || 'stripe_onboarding_site',
+        submitted_at: data.submitted_at || new Date().toISOString(),
       })
       .select()
 
@@ -188,7 +120,54 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
     console.log('✅ Saved to Supabase:', savedData?.[0]?.id)
 
-    // Sync to GoHighLevel (if credentials are configured)
+    // Send to GoHighLevel webhook (primary method)
+    const webhookUrl = process.env.GOHIGHLEVEL_WEBHOOK_URL || process.env.NEXT_PUBLIC_GHL_WEBHOOK_URL
+    
+    if (webhookUrl) {
+      try {
+        // Format payload for GHL webhook - send the entire payload as-is
+        // GHL workflow will map fields as configured
+        const webhookPayload = {
+          // Core contact fields for GHL mapping
+          firstName: firstName,
+          lastName: lastName,
+          email: data.contact_email,
+          phone: data.contact_phone,
+          companyName: data.business_name,
+          city: data.business_city,
+          state: data.business_state,
+          source: data.source || 'stripe_onboarding_site',
+          tags: ['onboarding_submitted', 'waas_build'],
+          
+          // Send all form data for workflow use
+          ...data,
+          
+          // Add submission metadata
+          submission_id: savedData?.[0]?.id,
+        }
+
+        const webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+        })
+
+        if (!webhookResponse.ok) {
+          console.error('GHL webhook error:', webhookResponse.status, await webhookResponse.text())
+        } else {
+          console.log('✅ Sent to GoHighLevel webhook')
+        }
+      } catch (ghlWebhookError) {
+        console.error('GoHighLevel webhook error (non-fatal):', ghlWebhookError)
+        // Don't fail the whole request if GHL webhook fails
+      }
+    } else {
+      console.warn('⚠️ GHL webhook URL not configured')
+    }
+
+    // Optional: Also sync via GHL API if credentials are configured
     let ghlContactId = null
     let ghlOpportunityId = null
     
@@ -203,26 +182,23 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
           },
           body: JSON.stringify({
             locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
-            firstName: data.contactName.split(' ')[0],
-            lastName: data.contactName.split(' ').slice(1).join(' ') || '',
-            email: data.businessEmail,
-            phone: data.businessPhone,
-            companyName: data.businessName,
-            address1: data.businessAddress?.street || '',
-            city: data.businessAddress?.city || '',
-            state: data.businessAddress?.state || '',
-            postalCode: data.businessAddress?.zip || '',
-            country: data.businessAddress?.country || '',
-            website: data.hasExistingWebsite ? data.currentDomain : '',
-            source: 'Onboarding Form - tlucasystems.com',
-            tags: ['Onboarding', 'Website Build', data.hasExistingWebsite ? 'Existing Website' : 'New Website'],
+            firstName: firstName,
+            lastName: lastName,
+            email: data.contact_email,
+            phone: data.contact_phone,
+            companyName: data.business_name,
+            city: data.business_city,
+            state: data.business_state,
+            source: data.source || 'stripe_onboarding_site',
+            tags: ['onboarding_submitted', 'waas_build'],
             customFields: [
-              { key: 'services_offered', value: data.servicesOffered || '' },
-              { key: 'operating_hours', value: data.operatingHours || '' },
-              { key: 'service_areas', value: data.serviceAreas || '' },
-              { key: 'lead_alert_method', value: data.leadAlertMethod },
-              { key: 'color_scheme', value: data.colorScheme || '' },
-              { key: 'special_notes', value: data.specialNotes || '' },
+              { key: 'business_type', value: data.business_type || '' },
+              { key: 'years_in_service', value: data.years_in_service || '' },
+              { key: 'services_primary', value: (data.services_primary || []).join(', ') },
+              { key: 'market_type', value: data.market_type || '' },
+              { key: 'service_areas', value: (data.service_areas || []).join(', ') },
+              { key: 'preferred_contact', value: data.preferred_contact || '' },
+              { key: 'has_domain', value: data.has_domain || '' },
             ],
           }),
         })
@@ -232,175 +208,18 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
           ghlContactId = ghlContact.contact?.id || ghlContact.id
           console.log('✅ Created GoHighLevel contact:', ghlContactId)
 
-          // Create Opportunity in GoHighLevel Pipeline
-          if (process.env.GOHIGHLEVEL_PIPELINE_ID) {
-            const ghlOpportunityResponse = await fetch(`https://rest.gohighlevel.com/v1/opportunities/`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
-                pipelineId: process.env.GOHIGHLEVEL_PIPELINE_ID,
-                pipelineStageId: process.env.GOHIGHLEVEL_STAGE_ID || undefined,
-                name: `Website Build - ${data.businessName}`,
-                contactId: ghlContactId,
-                monetaryValue: 0, // You can set a default value or get from env
-                status: 'open',
-                source: 'Onboarding Form',
-                notes: emailBody, // Use the formatted email body as notes
-              }),
-            })
-
-            if (ghlOpportunityResponse.ok) {
-              const ghlOpportunity = await ghlOpportunityResponse.json()
-              ghlOpportunityId = ghlOpportunity.opportunity?.id || ghlOpportunity.id
-              console.log('✅ Created GoHighLevel opportunity:', ghlOpportunityId)
-            }
-          }
-
-          // Update Supabase with GoHighLevel IDs
+          // Update Supabase with GoHighLevel ID
           await supabase
             .from('onboarding_submissions')
             .update({
               ghl_contact_id: ghlContactId,
-              ghl_opportunity_id: ghlOpportunityId,
               ghl_synced_at: new Date().toISOString(),
             })
             .eq('id', savedData?.[0]?.id)
         }
       } catch (ghlError) {
-        console.error('GoHighLevel sync error (non-fatal):', ghlError)
+        console.error('GoHighLevel API sync error (non-fatal):', ghlError)
         // Don't fail the whole request if GHL sync fails
-      }
-    }
-
-    // Send to GoHighLevel webhook (if configured)
-    if (process.env.GOHIGHLEVEL_WEBHOOK_URL) {
-      try {
-        // Format contact data for GHL webhook
-        const contactNameParts = data.contactName.split(' ')
-        const firstName = contactNameParts[0] || ''
-        const lastName = contactNameParts.slice(1).join(' ') || ''
-
-        await fetch(process.env.GOHIGHLEVEL_WEBHOOK_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            // Core Contact Info (GHL standard fields)
-            firstName: firstName,
-            lastName: lastName,
-            email: data.businessEmail,
-            phone: data.businessPhone,
-            companyName: data.businessName,
-            address1: data.businessAddress?.street || '',
-            city: data.businessAddress?.city || '',
-            state: data.businessAddress?.state || '',
-            postalCode: data.businessAddress?.zip || '',
-            country: data.businessAddress?.country || '',
-            website: data.hasExistingWebsite ? data.currentDomain : '',
-            source: 'Onboarding Form - tlucasystems.com',
-            tags: ['Onboarding', 'Website Build', data.hasExistingWebsite ? 'Existing Website' : 'New Website'],
-            
-            // Submission Metadata
-            submission_id: savedData?.[0]?.id,
-            submitted_at: new Date().toISOString(),
-            operator_code: data.operator_code || null,
-            
-            // Business Details
-            business_niche: data.businessNiche,
-            business_description: data.businessDescription,
-            services_offered: data.servicesOffered,
-            operating_hours: data.operatingHours,
-            service_areas: data.serviceAreas,
-            
-            // Branding - Images
-            logo_url: data.logo_url || null,
-            photo_url_1: data.photo_urls?.[0] || null,
-            photo_url_2: data.photo_urls?.[1] || null,
-            photo_url_3: data.photo_urls?.[2] || null,
-            photo_url_4: data.photo_urls?.[3] || null,
-            photo_url_5: data.photo_urls?.[4] || null,
-            certificate_url_1: data.certificate_urls?.[0] || null,
-            certificate_url_2: data.certificate_urls?.[1] || null,
-            certificate_url_3: data.certificate_urls?.[2] || null,
-            team_member_1_name: data.teamMembers?.[0]?.name || null,
-            team_member_1_role: data.teamMembers?.[0]?.role || null,
-            team_member_1_photo: data.team_member_photos?.[0] || null,
-            team_member_2_name: data.teamMembers?.[1]?.name || null,
-            team_member_2_role: data.teamMembers?.[1]?.role || null,
-            team_member_2_photo: data.team_member_photos?.[1] || null,
-            team_member_3_name: data.teamMembers?.[2]?.name || null,
-            team_member_3_role: data.teamMembers?.[2]?.role || null,
-            team_member_3_photo: data.team_member_photos?.[2] || null,
-            team_member_4_name: data.teamMembers?.[3]?.name || null,
-            team_member_4_role: data.teamMembers?.[3]?.role || null,
-            team_member_4_photo: data.team_member_photos?.[3] || null,
-            team_member_5_name: data.teamMembers?.[4]?.name || null,
-            team_member_5_role: data.teamMembers?.[4]?.role || null,
-            team_member_5_photo: data.team_member_photos?.[4] || null,
-            team_member_6_name: data.teamMembers?.[5]?.name || null,
-            team_member_6_role: data.teamMembers?.[5]?.role || null,
-            team_member_6_photo: data.team_member_photos?.[5] || null,
-            team_member_7_name: data.teamMembers?.[6]?.name || null,
-            team_member_7_role: data.teamMembers?.[6]?.role || null,
-            team_member_7_photo: data.team_member_photos?.[6] || null,
-            team_member_8_name: data.teamMembers?.[7]?.name || null,
-            team_member_8_role: data.teamMembers?.[7]?.role || null,
-            team_member_8_photo: data.team_member_photos?.[7] || null,
-            team_member_9_name: data.teamMembers?.[8]?.name || null,
-            team_member_9_role: data.teamMembers?.[8]?.role || null,
-            team_member_9_photo: data.team_member_photos?.[8] || null,
-            team_member_10_name: data.teamMembers?.[9]?.name || null,
-            team_member_10_role: data.teamMembers?.[9]?.role || null,
-            team_member_10_photo: data.team_member_photos?.[9] || null,
-            portfolio_count: data.portfolioFiles?.length || 0,
-            color_scheme: data.colorScheme,
-            slogan: data.slogan || null,
-            has_about_us: data.hasAboutUs,
-            about_us_text: data.hasAboutUs ? data.aboutUsText : null,
-            has_meet_the_team: data.hasMeetTheTeam,
-            inspiration_sites: data.inspirationSites,
-            
-            // Online Presence
-            has_existing_website: data.hasExistingWebsite,
-            current_domain: data.currentDomain,
-            need_domain_help: data.needDomainHelp,
-            desired_domain: data.desiredDomain,
-            has_google_business: data.hasGoogleBusiness,
-            google_business_email: data.googleBusinessEmail,
-            social_links: data.socialLinks,
-            
-            // Leads & Communication
-            lead_alert_method: data.leadAlertMethod,
-            alert_phone: data.alertPhone,
-            alert_email: data.alertEmail,
-            lead_form_fields: data.leadFormFields,
-            bookings_payments: data.bookingsPayments,
-            has_portfolio: data.hasPortfolio,
-            has_reviews: data.hasReviews,
-            
-            // Final Details
-            owns_domain: data.ownsDomain,
-            owned_domain: data.ownedDomain,
-            dns_manager: data.dnsManager,
-            compliance_needs: data.complianceNeeds,
-            special_notes: data.specialNotes,
-            
-            // Consent
-            sms_consent: data.smsConsent || false,
-            
-            // Formatted summary for easy reading
-            formatted_summary: emailBody,
-          }),
-        })
-        console.log('✅ Sent to GoHighLevel webhook')
-      } catch (ghlWebhookError) {
-        console.error('GoHighLevel webhook error (non-fatal):', ghlWebhookError)
-        // Don't fail the whole request if GHL webhook fails
       }
     }
 
@@ -411,12 +230,11 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       ghl_synced: !!ghlContactId,
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Onboarding submission error:', error)
     return NextResponse.json(
-      { error: 'Failed to process onboarding' },
+      { error: error.message || 'Failed to process onboarding' },
       { status: 500 }
     )
   }
 }
-

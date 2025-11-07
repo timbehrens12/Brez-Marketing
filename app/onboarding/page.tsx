@@ -2,251 +2,206 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { CheckCircle2, Upload, X, ChevronRight, ChevronLeft, Mail, Home, Building2, Palette, Globe, MessageSquare, FileText, HelpCircle } from 'lucide-react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { CheckCircle2, Upload, X, ChevronRight, ChevronLeft, Building2, Briefcase, MapPin, Palette, FileText, Globe, MessageSquare, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
+// Business types for dropdown
+const BUSINESS_TYPES = [
+  'Concrete',
+  'Roofing',
+  'Landscaping',
+  'HVAC',
+  'Plumbing',
+  'Electrical',
+  'General Contracting',
+  'Painting',
+  'Flooring',
+  'Other'
+]
+
+// Service options for concrete (can be expanded)
+const CONCRETE_SERVICES = [
+  'Driveways',
+  'Patios',
+  'Foundations',
+  'Slabs',
+  'Walkways',
+  'Stamped',
+  'Retaining Walls',
+  'Repair'
+]
+
+// Service area suggestions
+const SERVICE_AREA_SUGGESTIONS = [
+  'Spring', 'The Woodlands', 'Conroe', 'Tomball', 'Cypress',
+  'Katy', 'Houston', 'Magnolia', 'Montgomery', 'Willis'
+]
 
 type OnboardingData = {
-  // Business
-  businessName: string
-  contactName: string
-  businessEmail: string
-  businessPhone: string
-  businessAddress: {
-    street: string
-    city: string
-    state: string
-    zip: string
-    country: string
-  }
-  businessNiche: string
-  businessDescription: string
-  servicesOffered: string
-  operatingHours: {
-    monday: { open: string; close: string; closed: boolean }
-    tuesday: { open: string; close: string; closed: boolean }
-    wednesday: { open: string; close: string; closed: boolean }
-    thursday: { open: string; close: string; closed: boolean }
-    friday: { open: string; close: string; closed: boolean }
-    saturday: { open: string; close: string; closed: boolean }
-    sunday: { open: string; close: string; closed: boolean }
-  }
-  serviceAreas: string
-  
-  // Branding
-  logoFile: File | null
-  photoFiles: File[]
-  certFiles: File[]
-  colorScheme: 'light' | 'dark' | 'neutral' | 'no-preference'
-  slogan: string
-  brandGuidelines: File | null
-  hasAboutUs: boolean
-  aboutUsText: string
-  hasMeetTheTeam: boolean
-  teamMembers: Array<{
-    name: string
-    role: string
-    photo: File | null
-  }>
-  inspirationSites: string[]
-  
-  // Online Presence
-  hasExistingWebsite: boolean
-  currentDomain: string
-  needDomainHelp: boolean
-  desiredDomain: string
-  hasGoogleBusiness: boolean
-  googleBusinessEmail: string
-  needGoogleSetup: boolean
-  socialLinks: {
-    facebook: string
-    instagram: string
-    tiktok: string
-    linkedin: string
-    yelp: string
-    other: string
-  }
-  
-  // Leads & Communication
-  leadAlertMethod: 'text' | 'email' | 'both' | ''
-  alertPhone: string
-  alertEmail: string
-  leadFormFields: string[]
-  extraLeadFormRequests: string
-  bookingsPayments: 'none' | 'booking' | 'payments' | 'both'
-  bookingsPaymentsNotes: string
-  hasPortfolio: boolean
-  portfolioFiles: File[]
-  hasReviews: boolean
-  
-  // Final Details
-  ownsDomain: boolean
-  ownedDomain: string
-  dnsManager: 'client' | 'tluca' | ''
-  complianceNeeds: string
-  specialNotes: string
-  
-  // Consent
-  consentConfirmed: boolean
-  smsConsent: boolean
-}
+  // A) Business & Contact
+  business_name: string
+  owner_name: string
+  contact_phone: string
+  contact_email: string
+  business_city: string
+  business_state: string
+  years_in_service: string
+  business_type: string
 
-// Add image preview state type
-type ImagePreviews = {
-  [key: string]: string // filename -> data URL
+  // B) Services
+  services_primary: string[]
+  services_secondary: string
+
+  // C) Service Areas
+  market_type: 'Residential' | 'Commercial' | 'Both' | ''
+  service_areas: string[]
+
+  // D) Branding & Media
+  logo_url: string
+  gallery_urls: string[]
+  brand_colors: string
+  design_constraints: string
+
+  // E) About & Messaging
+  about_text: string
+  tagline: string
+
+  // F) Site Contact Details
+  site_phone: string
+  site_email: string
+  business_hours: {
+    mon: { open: string; close: string; closed: boolean }
+    tue: { open: string; close: string; closed: boolean }
+    wed: { open: string; close: string; closed: boolean }
+    thu: { open: string; close: string; closed: boolean }
+    fri: { open: string; close: string; closed: boolean }
+    sat: { open: string; close: string; closed: boolean }
+    sun: { open: string; close: string; closed: boolean }
+  }
+  preferred_contact: 'Phone' | 'Text' | 'Email' | ''
+
+  // G) Social & GBP
+  facebook_url: string
+  instagram_url: string
+  google_profile_url: string
+
+  // H) Domain
+  has_domain: 'Yes' | 'No' | ''
+  domain_current: string
+  request_domain_purchase: 'Yes' | 'No' | ''
+  domain_preferences: string
+
+  // I) Final
+  internal_notes: string
+  consent_accepted: boolean
 }
 
 const INITIAL_DATA: OnboardingData = {
-  businessName: '',
-  contactName: '',
-  businessEmail: '',
-  businessPhone: '',
-  businessAddress: { street: '', city: '', state: '', zip: '', country: 'USA' },
-  businessNiche: '',
-  businessDescription: '',
-  servicesOffered: '',
-  operatingHours: {
-    monday: { open: '09:00', close: '17:00', closed: false },
-    tuesday: { open: '09:00', close: '17:00', closed: false },
-    wednesday: { open: '09:00', close: '17:00', closed: false },
-    thursday: { open: '09:00', close: '17:00', closed: false },
-    friday: { open: '09:00', close: '17:00', closed: false },
-    saturday: { open: '09:00', close: '17:00', closed: true },
-    sunday: { open: '09:00', close: '17:00', closed: true },
+  business_name: '',
+  owner_name: '',
+  contact_phone: '',
+  contact_email: '',
+  business_city: '',
+  business_state: '',
+  years_in_service: '',
+  business_type: '',
+  services_primary: [],
+  services_secondary: '',
+  market_type: '',
+  service_areas: [],
+  logo_url: '',
+  gallery_urls: [],
+  brand_colors: '',
+  design_constraints: '',
+  about_text: '',
+  tagline: '',
+  site_phone: '',
+  site_email: '',
+  business_hours: {
+    mon: { open: '08:00', close: '17:00', closed: false },
+    tue: { open: '08:00', close: '17:00', closed: false },
+    wed: { open: '08:00', close: '17:00', closed: false },
+    thu: { open: '08:00', close: '17:00', closed: false },
+    fri: { open: '08:00', close: '17:00', closed: false },
+    sat: { open: '09:00', close: '13:00', closed: false },
+    sun: { open: '', close: '', closed: true }
   },
-  serviceAreas: '',
-  logoFile: null,
-  photoFiles: [],
-  certFiles: [],
-  colorScheme: 'no-preference',
-  slogan: '',
-  brandGuidelines: null,
-  hasAboutUs: false,
-  aboutUsText: '',
-  hasMeetTheTeam: false,
-  teamMembers: [{ name: '', role: '', photo: null }],
-  inspirationSites: ['', '', ''],
-  hasExistingWebsite: false,
-  currentDomain: '',
-  needDomainHelp: false,
-  desiredDomain: '',
-  hasGoogleBusiness: false,
-  googleBusinessEmail: '',
-  needGoogleSetup: false,
-  socialLinks: { facebook: '', instagram: '', tiktok: '', linkedin: '', yelp: '', other: '' },
-  leadAlertMethod: '',
-  alertPhone: '',
-  alertEmail: '',
-  leadFormFields: ['Name', 'Email', 'Phone', 'Service Interested In', 'Message'],
-  extraLeadFormRequests: '',
-  bookingsPayments: 'none',
-  bookingsPaymentsNotes: '',
-  hasPortfolio: false,
-  portfolioFiles: [],
-  hasReviews: false,
-  ownsDomain: false,
-  ownedDomain: '',
-  dnsManager: '',
-  complianceNeeds: '',
-  specialNotes: '',
-  consentConfirmed: false,
-  smsConsent: false,
+  preferred_contact: '',
+  facebook_url: '',
+  instagram_url: '',
+  google_profile_url: '',
+  has_domain: '',
+  domain_current: '',
+  request_domain_purchase: '',
+  domain_preferences: '',
+  internal_notes: '',
+  consent_accepted: false
 }
 
 const SECTIONS = [
-  { id: 'business', title: 'Business', icon: Building2 },
-  { id: 'branding', title: 'Branding', icon: Palette },
-  { id: 'online', title: 'Online Presence', icon: Globe },
-  { id: 'leads', title: 'Leads & Communication', icon: MessageSquare },
-  { id: 'final', title: 'Final Details', icon: FileText },
-  { id: 'review', title: 'Review & Submit', icon: CheckCircle2 },
+  { id: 'business', title: 'Business & Contact', icon: Building2 },
+  { id: 'services', title: 'Services', icon: Briefcase },
+  { id: 'areas', title: 'Service Areas', icon: MapPin },
+  { id: 'branding', title: 'Branding & Media', icon: Palette },
+  { id: 'about', title: 'About & Messaging', icon: FileText },
+  { id: 'contact', title: 'Site Contact', icon: MessageSquare },
+  { id: 'social', title: 'Social & GBP', icon: Globe },
+  { id: 'domain', title: 'Domain', icon: Globe },
+  { id: 'final', title: 'Final', icon: Lock }
 ]
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<OnboardingData>(INITIAL_DATA)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
-  const [showPaymentToast, setShowPaymentToast] = useState(true)
-  const [operatorCode, setOperatorCode] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [logoPreview, setLogoPreview] = useState<string>('')
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
+  const [serviceAreaInput, setServiceAreaInput] = useState('')
 
-  // Capture operator code from URL on mount
+  // Load from localStorage on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const operator = params.get('operator')
-    if (operator) {
-      setOperatorCode(operator.toLowerCase())
-      console.log(`📋 Operator code captured: ${operator}`)
+    const saved = localStorage.getItem('waas_onboarding_draft')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setFormData(parsed)
+      } catch (e) {
+        console.error('Failed to load draft:', e)
+      }
     }
   }, [])
 
-  // Show loading screen for 2 seconds
+  // Autosave to localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowLoadingScreen(false)
-    }, 2000)
+      localStorage.setItem('waas_onboarding_draft', JSON.stringify(formData))
+    }, 500)
     return () => clearTimeout(timer)
-  }, [])
+  }, [formData])
 
-  // Scroll to top when success page is shown
-  useEffect(() => {
-    if (isSuccess) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }, [isSuccess])
-
-  // Force clean state on mount - clear any cached data
-  useEffect(() => {
-    // Clear any localStorage remnants
-    localStorage.removeItem('tluca-onboarding-draft')
-    
-    // Reset all state to initial values
-    setFormData(INITIAL_DATA)
-    setImagePreviews({})
-    setCurrentStep(0)
-    setErrors({})
-  }, [])
-
-  // Show payment confirmation toast on mount
-  useEffect(() => {
-    if (showPaymentToast) {
-      toast.success('🎉 Payment confirmed! Let\'s build your system.', {
-        duration: 4000,
-      })
-      const timer = setTimeout(() => {
-        setShowPaymentToast(false)
-      }, 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [])
-
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: keyof OnboardingData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
 
-  const updateNestedField = (parent: string, field: string, value: any) => {
+  const updateNestedField = (parent: keyof OnboardingData, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [parent]: { ...(prev as any)[parent], [field]: value }
+      [parent]: { ...(prev[parent] as any), [field]: value }
     }))
   }
 
@@ -263,129 +218,56 @@ export default function OnboardingPage() {
     return `https://${url}`
   }
 
-  // Convert 24-hour time to 12-hour AM/PM format
-  const formatTime12Hour = (time24: string) => {
-    const [hours, minutes] = time24.split(':').map(Number)
-    const period = hours >= 12 ? 'PM' : 'AM'
-    const hours12 = hours % 12 || 12
-    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
-  }
-
-  // Generate 12-hour time options
-  const generateTimeOptions = () => {
-    const times: { value: string; label: string }[] = []
-    for (let hour = 0; hour < 24; hour++) {
-      for (let min of [0, 30]) {
-        const time24 = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
-        times.push({
-          value: time24,
-          label: formatTime12Hour(time24)
-        })
-      }
-    }
-    return times
-  }
-
-  const handleFileUpload = (field: keyof OnboardingData, files: FileList | null, multiple = false) => {
-    if (!files || files.length === 0) return
-    
-    const fileArray = Array.from(files)
-    const validFiles = fileArray.filter(f => {
-      const isValidSize = f.size <= 10 * 1024 * 1024 // 10MB
-      const isValidType = f.type.startsWith('image/') || f.type === 'application/pdf'
-      if (!isValidSize) toast.error(`${f.name} is too large (max 10MB)`)
-      if (!isValidType) toast.error(`${f.name} must be an image or PDF`)
-      return isValidSize && isValidType
-    })
-
-    // Generate previews for images
-    const newPreviews = { ...imagePreviews }
-    validFiles.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          newPreviews[file.name] = e.target?.result as string
-          setImagePreviews({ ...newPreviews })
-        }
-        reader.readAsDataURL(file)
-      }
-    })
-
-    if (multiple) {
-      setFormData(prev => ({ ...prev, [field]: [...(prev[field] as File[]), ...validFiles] }))
-    } else {
-      setFormData(prev => ({ ...prev, [field]: validFiles[0] || null }))
-    }
-  }
-
-  const removeFile = (field: keyof OnboardingData, index?: number) => {
-    if (typeof index === 'number') {
-      setFormData(prev => ({
-        ...prev,
-        [field]: (prev[field] as File[]).filter((_, i) => i !== index)
-      }))
-    } else {
-      setFormData(prev => ({ ...prev, [field]: null }))
-    }
-  }
-
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (step === 0) { // Business - MINIMAL FIELDS FOR TESTING
-      if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required'
-      if (!formData.contactName.trim()) newErrors.contactName = 'Contact name is required'
-      if (!formData.businessEmail.trim()) newErrors.businessEmail = 'Business email is required'
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.businessEmail)) newErrors.businessEmail = 'Invalid email'
-      if (!formData.businessPhone.trim()) newErrors.businessPhone = 'Business phone is required'
-      // Set leadAlertMethod to email if not set, and use businessEmail for alertEmail
-      if (!formData.leadAlertMethod) {
-        updateField('leadAlertMethod', 'email')
-        updateField('alertEmail', formData.businessEmail)
+    if (step === 0) { // Business & Contact
+      if (!formData.business_name.trim()) newErrors.business_name = 'Required'
+      if (!formData.owner_name.trim()) newErrors.owner_name = 'Required'
+      if (!formData.contact_phone.trim()) newErrors.contact_phone = 'Required'
+      if (!formData.contact_email.trim()) newErrors.contact_email = 'Required'
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) newErrors.contact_email = 'Invalid email'
+      if (!formData.business_city.trim()) newErrors.business_city = 'Required'
+      if (!formData.business_state.trim()) newErrors.business_state = 'Required'
+      if (!formData.years_in_service.trim()) newErrors.years_in_service = 'Required'
+      if (!formData.business_type.trim()) newErrors.business_type = 'Required'
+    }
+
+    if (step === 1) { // Services
+      if (formData.services_primary.length === 0) newErrors.services_primary = 'Select at least one service'
+    }
+
+    if (step === 2) { // Service Areas
+      if (!formData.market_type) newErrors.market_type = 'Required'
+      if (formData.service_areas.length === 0) newErrors.service_areas = 'Add at least one service area'
+    }
+
+    if (step === 4) { // About & Messaging
+      if (!formData.about_text.trim()) newErrors.about_text = 'Required (2-4 sentences)'
+    }
+
+    if (step === 5) { // Site Contact
+      if (!formData.site_phone.trim()) newErrors.site_phone = 'Required'
+      if (!formData.contact_email.trim()) newErrors.site_email = 'Required'
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.site_email)) newErrors.site_email = 'Invalid email'
+      if (!formData.preferred_contact) newErrors.preferred_contact = 'Required'
+    }
+
+    if (step === 7) { // Domain
+      if (!formData.has_domain) newErrors.has_domain = 'Required'
+      if (formData.has_domain === 'Yes' && !formData.domain_current.trim()) {
+        newErrors.domain_current = 'Required'
+      }
+      if (formData.has_domain === 'No' && !formData.request_domain_purchase) {
+        newErrors.request_domain_purchase = 'Required'
       }
     }
 
-    if (step === 1) { // Branding
-      if (formData.hasAboutUs && !formData.aboutUsText.trim()) newErrors.aboutUsText = 'About Us text is required'
-      if (formData.hasMeetTheTeam && formData.teamMembers.some(m => m.name && !m.photo)) {
-        newErrors.teamMembers = 'All team members with names must have photos'
-      }
-    }
-
-    // Step 2 (Online Presence) - no required fields, always passes
-    if (step === 2) {
-      // Online Presence has no required fields
-    }
-
-    if (step === 3) { // Leads & Communication
-      if (!formData.leadAlertMethod) newErrors.leadAlertMethod = 'Lead alert method is required'
-      if (formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') {
-        if (!formData.alertPhone.trim()) newErrors.alertPhone = 'Alert phone is required'
-      }
-      if (formData.leadAlertMethod === 'email' || formData.leadAlertMethod === 'both') {
-        if (!formData.alertEmail.trim()) newErrors.alertEmail = 'Alert email is required'
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.alertEmail)) newErrors.alertEmail = 'Invalid email'
-      }
-    }
-
-    if (step === 5) { // Review & Submit
-      if (!formData.consentConfirmed) newErrors.consentConfirmed = 'You must confirm the information is accurate'
+    if (step === 8) { // Final
+      if (!formData.consent_accepted) newErrors.consent_accepted = 'Required'
     }
 
     setErrors(newErrors)
-    
-    // If there are errors, scroll to the first error field
-    if (Object.keys(newErrors).length > 0) {
-      const firstErrorField = Object.keys(newErrors)[0]
-      setTimeout(() => {
-        const element = document.getElementById(firstErrorField)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          element.focus()
-        }
-      }, 100)
-    }
-    
     return Object.keys(newErrors).length === 0
   }
 
@@ -401,7 +283,7 @@ export default function OnboardingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
+  const uploadFileToCDN = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -411,111 +293,151 @@ export default function OnboardingPage() {
         body: formData,
       })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Upload failed:', response.status, errorText)
-        throw new Error('Upload failed')
-      }
+      if (!response.ok) throw new Error('Upload failed')
       
       const data = await response.json()
-      console.log('✅ Upload successful:', data)
-      
-      if (!data.secure_url) {
-        console.error('❌ No secure_url in response:', data)
-        return null
-      }
-      
-      return data.secure_url
+      return data.secure_url || null
     } catch (error) {
-      console.error('Cloudinary upload error:', error)
+      console.error('Upload error:', error)
       return null
     }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File too large (max 10MB)')
+      return
+    }
+
+    setLogoFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => setLogoPreview(e.target?.result as string)
+
+    toast.loading('Uploading logo...')
+    const url = await uploadFileToCDN(file)
+    toast.dismiss()
+
+    if (url) {
+      updateField('logo_url', url)
+      toast.success('Logo uploaded')
+    } else {
+      toast.error('Upload failed')
+    }
+  }
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    if (galleryFiles.length + files.length > 10) {
+      toast.error('Maximum 10 images allowed')
+      return
+    }
+
+    const validFiles = files.filter(f => {
+      if (f.size > 10 * 1024 * 1024) {
+        toast.error(`${f.name} is too large (max 10MB)`)
+        return false
+      }
+      return true
+    })
+
+    setGalleryFiles(prev => [...prev, ...validFiles])
+
+    // Generate previews
+    validFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setGalleryPreviews(prev => [...prev, e.target?.result as string])
+      }
+      reader.readAsDataURL(file)
+    })
+
+    toast.loading(`Uploading ${validFiles.length} image(s)...`)
+    const urls = await Promise.all(validFiles.map(uploadFileToCDN))
+    toast.dismiss()
+
+    const successfulUrls = urls.filter(Boolean) as string[]
+    if (successfulUrls.length > 0) {
+      updateField('gallery_urls', [...formData.gallery_urls, ...successfulUrls])
+      toast.success(`Uploaded ${successfulUrls.length} image(s)`)
+    }
+  }
+
+  const addServiceArea = () => {
+    const area = serviceAreaInput.trim()
+    if (area && !formData.service_areas.includes(area)) {
+      updateField('service_areas', [...formData.service_areas, area])
+      setServiceAreaInput('')
+    }
+  }
+
+  const removeServiceArea = (area: string) => {
+    updateField('service_areas', formData.service_areas.filter(a => a !== area))
   }
 
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
 
-    // Set defaults for testing mode
-    const submitData = {
-      ...formData,
-      leadAlertMethod: formData.leadAlertMethod || 'email',
-      alertEmail: formData.alertEmail || formData.businessEmail,
-      // Set default values for optional fields
-      businessAddress: formData.businessAddress.street ? formData.businessAddress : { street: '', city: '', state: '', zip: '', country: 'USA' },
-      businessNiche: formData.businessNiche || 'Test Business',
-      businessDescription: formData.businessDescription || 'Test submission',
-      servicesOffered: formData.servicesOffered || 'Test Services',
-      serviceAreas: formData.serviceAreas || 'Test Area',
-    }
-
     setIsSubmitting(true)
     try {
-      toast.loading('Submitting test form...')
-
-      // Upload files to Cloudinary
-      let logoUrl: string | null = null
-      let photoUrls: string[] = []
-      let certificateUrls: string[] = []
-      let teamPhotoUrls: (string | null)[] = []
-
-      if (formData.logoFile) {
-        logoUrl = await uploadFileToCloudinary(formData.logoFile)
+      // Upload remaining files
+      if (logoFile && !formData.logo_url) {
+        toast.loading('Uploading logo...')
+        const logoUrl = await uploadFileToCDN(logoFile)
+        if (logoUrl) updateField('logo_url', logoUrl)
+        toast.dismiss()
       }
 
-      for (const photo of formData.photoFiles) {
-        const url = await uploadFileToCloudinary(photo)
-        if (url) photoUrls.push(url)
-      }
-
-      for (const cert of formData.certFiles) {
-        const url = await uploadFileToCloudinary(cert)
-        if (url) certificateUrls.push(url)
-      }
-
-      for (const member of formData.teamMembers) {
-        if (member.photo) {
-          const url = await uploadFileToCloudinary(member.photo)
-          teamPhotoUrls.push(url)
-        } else {
-          teamPhotoUrls.push(null)
+      if (galleryFiles.length > 0) {
+        toast.loading('Uploading gallery images...')
+        const urls = await Promise.all(galleryFiles.map(uploadFileToCDN))
+        const successfulUrls = urls.filter(Boolean) as string[]
+        if (successfulUrls.length > 0) {
+          updateField('gallery_urls', [...formData.gallery_urls, ...successfulUrls])
         }
+        toast.dismiss()
       }
 
-      // Normalize URLs
-      const normalizedData = {
-        ...submitData,
-        inspirationSites: submitData.inspirationSites.map(normalizeUrl).filter(Boolean),
-        socialLinks: Object.fromEntries(
-          Object.entries(submitData.socialLinks).map(([k, v]) => [k, normalizeUrl(v)])
-        ),
-        // Add Cloudinary URLs
-        logo_url: logoUrl,
-        photo_urls: photoUrls,
-        certificate_urls: certificateUrls,
-        team_member_photos: teamPhotoUrls,
-        // Add operator code for tracking
-        operator_code: operatorCode,
+      // Prepare payload
+      const payload = {
+        form_id: 'waas_onboarding_v1',
+        source: 'stripe_onboarding_site',
+        submitted_at: new Date().toISOString(),
+        ...formData,
+        // Normalize URLs
+        facebook_url: normalizeUrl(formData.facebook_url),
+        instagram_url: normalizeUrl(formData.instagram_url),
+        google_profile_url: normalizeUrl(formData.google_profile_url),
+        domain_current: normalizeUrl(formData.domain_current),
       }
 
-      toast.dismiss()
-      toast.loading('Submitting your onboarding...')
+      toast.loading('Submitting...')
 
+      // POST to API route (which handles GHL webhook)
       const response = await fetch('/api/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(normalizedData),
+        body: JSON.stringify(payload),
       })
 
-      if (!response.ok) throw new Error('Submission failed')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Submission failed')
+      }
+
+      // Clear localStorage
+      localStorage.removeItem('waas_onboarding_draft')
 
       setIsSuccess(true)
       toast.dismiss()
-      toast.success('Onboarding submitted successfully!')
-    } catch (error) {
+      toast.success('Submitted successfully!')
+    } catch (error: any) {
       toast.dismiss()
-      toast.error('Failed to submit onboarding. Please try again.')
-      console.error(error)
-    } finally {
+      toast.error(error.message || 'Submission failed. Please try again.')
       setIsSubmitting(false)
     }
   }
@@ -523,1358 +445,683 @@ export default function OnboardingPage() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <Card className="max-w-3xl w-full bg-black border-white/10 shadow-2xl">
+        <Card className="max-w-2xl w-full bg-black border-white/10 shadow-2xl">
           <CardHeader className="text-center space-y-6 pb-8 border-b border-white/10">
             <div className="mx-auto w-24 h-24 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/20">
               <CheckCircle2 className="w-12 h-12 text-white" />
             </div>
-            <div>
-              <CardTitle className="text-4xl font-bold text-white mb-4">Thank You! 🎉</CardTitle>
-              <CardDescription className="text-gray-400 text-xl leading-relaxed">
-                Your onboarding submission has been received.
-              </CardDescription>
-            </div>
+            <CardTitle className="text-3xl font-bold text-white">
+              Thanks — we've got everything we need.
+            </CardTitle>
+            <CardDescription className="text-gray-400 text-lg">
+              We'll start your build now. You'll receive a confirmation and timeline in your dashboard. If we need anything else, we'll text or email you at {formData.contact_phone} / {formData.contact_email}.
+            </CardDescription>
           </CardHeader>
-
-          <CardContent className="p-8 space-y-8">
-            {/* Our Promise */}
-            <div className="text-center space-y-4">
-              <h3 className="text-2xl font-bold text-white">Our Promise</h3>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                We're committed to making your experience <span className="text-white font-semibold">exceptional</span>. 
-                Your business deserves systems that work flawlessly, and that's exactly what we'll deliver.
-              </p>
-            </div>
-
-            {/* What Happens Next */}
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-white text-center mb-6">What Happens Next</h3>
-              
-              <div className="space-y-4">
-                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
-                    1
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-white mb-2">Review & Development Start</h4>
-                    <p className="text-gray-400">
-                      Within the next <span className="text-white font-semibold">24 hours</span>, someone from our team will review your onboarding details 
-                      and begin development of your website and systems. You'll receive text notifications as we progress.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-white mb-2">Project Completion</h4>
-                    <p className="text-gray-400">
-                      Once your site and systems are complete, you'll receive an email containing:
-                    </p>
-                    <ul className="mt-3 space-y-2 text-gray-400">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                        Website & CRM login credentials
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                        Tutorial and walkthrough documentation
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                        System details and setup guide
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                        Final invoice (if applicable) and next steps
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 items-start p-4 rounded-lg border border-white/10 bg-white/5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
-                    3
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-white mb-2">Need to Make Changes?</h4>
-                    <p className="text-gray-400 mb-3">
-                      If you need to make any changes or forgot to include something, reply directly to your confirmation email or contact us:
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Mail className="w-4 h-4 text-white" />
-                        <a href="mailto:tlucasystems@gmail.com" className="text-white font-semibold hover:underline">
-                          tlucasystems@gmail.com
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <span className="text-white font-semibold">📱</span>
-                        <a href="tel:832-561-4407" className="text-white font-semibold hover:underline">
-                          832-561-4407
-                        </a>
-                        <span className="text-gray-500 text-sm">(text or call)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Call to Action */}
-            <div className="text-center pt-6 border-t border-white/10">
-              <p className="text-gray-400 text-lg">
-                We're excited to build your business systems! 🚀
-              </p>
-            </div>
+          <CardContent className="pt-8">
+            <Button
+              onClick={() => router.push('/dashboard')}
+              className="w-full bg-white hover:bg-gray-200 text-black font-semibold"
+            >
+              Return to Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  // Loading Screen
-  if (showLoadingScreen) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center overflow-hidden relative">
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute w-96 h-96 -top-48 -left-48 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute w-96 h-96 -bottom-48 -right-48 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-
-        <div className="text-center space-y-8 px-6 relative z-10 max-w-2xl">
-          {/* Success Icon */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              {/* Outer ring */}
-              <div className="absolute inset-0 w-32 h-32 rounded-full border-4 border-white/10 animate-ping opacity-20"></div>
-              
-              {/* Middle ring */}
-              <div className="relative w-32 h-32 rounded-full border-4 border-white/20 flex items-center justify-center backdrop-blur-sm"
-                   style={{ 
-                     boxShadow: '0 0 60px rgba(255, 255, 255, 0.1), inset 0 0 60px rgba(255, 255, 255, 0.05)' 
-                   }}>
-                {/* Checkmark */}
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white to-gray-300 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={2.5} />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Title */}
-          <div className="space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight"
-                style={{ 
-                  textShadow: '0 0 40px rgba(255, 255, 255, 0.3)' 
-                }}>
-              Payment Confirmed
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-white to-transparent mx-auto opacity-50"></div>
-          </div>
-          
-          {/* Description */}
-          <div className="space-y-4">
-            <p className="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">
-              Thank you for your payment. Let's get started building your custom business solution.
-            </p>
-            
-            {/* Statement info with fade-in animation */}
-            <div className="text-sm text-gray-500 max-w-lg mx-auto animate-fadeIn" style={{ animationDelay: '0.5s', opacity: 0, animation: 'fadeIn 1s ease-in forwards 0.5s' }}>
-              A payment to{' '}
-              <span className="font-semibold text-white/90 inline-block animate-pulse px-2 py-1 rounded bg-white/5">
-                TLUCA SYSTEMS
-              </span>
-              {' '}will appear on your statement.
-            </div>
-          </div>
-          
-          {/* Loading indicator */}
-          <div className="flex justify-center items-center gap-2 pt-4">
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-          </div>
-          
-          <style jsx>{`
-            @keyframes fadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(10px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-          `}</style>
-          
-          {/* Footer */}
-          <div className="pt-12 text-gray-500 text-sm space-y-3">
-            <div className="flex items-center justify-center gap-2">
-              <span>Powered by</span>
-              <span className="font-semibold text-gray-400">stripe</span>
-            </div>
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <a href="/terms" className="hover:text-gray-300 transition-colors">Terms</a>
-              <span>•</span>
-              <a href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  const generateTimeOptions = () => {
+    const times: { value: string; label: string }[] = []
+    for (let hour = 0; hour < 24; hour++) {
+      for (let min of [0, 30]) {
+        const time24 = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
+        const period = hour >= 12 ? 'PM' : 'AM'
+        const hours12 = hour % 12 || 12
+        times.push({
+          value: time24,
+          label: `${hours12}:${min.toString().padStart(2, '0')} ${period}`
+        })
+      }
+    }
+    return times
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
-      {/* Mobile Header - Shows only on mobile */}
-      <div className="lg:hidden sticky top-0 z-50 bg-black border-b border-white/10">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Image 
-                src="/tluca-logo.png" 
-                alt="TLUCA Systems Logo" 
-                width={50} 
-                height={50}
-                className="object-contain"
-              />
-              <div>
-                <h1 className="text-lg font-bold text-white">Client Onboarding</h1>
-                <p className="text-xs text-gray-400">Step {currentStep + 1} of {SECTIONS.length}</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between text-sm text-gray-400 mb-2">
+            <span>Step {currentStep + 1} of {SECTIONS.length}</span>
+            <span>{Math.round(((currentStep + 1) / SECTIONS.length) * 100)}%</span>
           </div>
-          
-          {/* Mobile Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>{SECTIONS[currentStep].title}</span>
-              <span>{Math.round((currentStep / SECTIONS.length) * 100)}%</span>
-            </div>
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white transition-all duration-500 ease-out"
-                style={{ width: `${(currentStep / SECTIONS.length) * 100}%` }}
-              />
-            </div>
-          </div>
-          
-          {/* Mobile Step Indicators */}
-          <div className="flex items-center justify-between mt-4 overflow-x-auto pb-2">
-            {SECTIONS.map((section, idx) => {
-              const Icon = section.icon
-              const isActive = idx === currentStep
-              const isCompleted = idx < currentStep
-              
-              return (
-                <div key={section.id} className="flex flex-col items-center gap-1 min-w-[60px]">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
-                    isCompleted ? 'bg-white border-white' :
-                    isActive ? 'bg-white/20 border-white' :
-                    'bg-transparent border-white/20'
-                  }`}>
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-black" />
-                    ) : (
-                      <Icon className={`w-4 h-4 ${
-                        isActive ? 'text-white' : 'text-gray-500'
-                      }`} />
-                    )}
-                  </div>
-                  <span className={`text-[10px] text-center ${
-                    isActive ? 'text-white font-medium' : 'text-gray-500'
-                  }`}>
-                    {section.title.split(' ')[0]}
-                  </span>
-                </div>
-              )
-            })}
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-white transition-all duration-500"
+              style={{ width: `${((currentStep + 1) / SECTIONS.length) * 100}%` }}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Desktop Sidebar - Hidden on mobile */}
-      <div className="hidden lg:block lg:w-1/3 border-r border-white/10 bg-black/50 backdrop-blur-sm fixed h-screen overflow-y-auto">
-        <div className="p-8 space-y-8">
-          {/* Logo and Title */}
-          <div className="space-y-6">
-            <div className="flex justify-center">
-              <Image 
-                src="/tluca-logo.png" 
-                alt="TLUCA Systems Logo" 
-                width={80} 
-                height={80}
-                className="object-contain"
-              />
-            </div>
-            <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold text-white">Client Onboarding</h1>
-              <p className="text-sm text-gray-400 leading-relaxed">
-                Please complete all 6 steps to provide us with the information we need to build your solution.
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="space-y-3">
-            {SECTIONS.map((section, idx) => {
-              const Icon = section.icon
-              const isActive = idx === currentStep
-              const isCompleted = idx < currentStep
-              
-              return (
-                <div 
-                  key={section.id} 
-                  className={`flex items-start gap-4 p-4 rounded-lg transition-all ${
-                    isActive ? 'bg-white/10 border border-white/20' : 
-                    isCompleted ? 'bg-white/5 border border-white/10' : 
-                    'border border-transparent'
-                  }`}
-                >
-                  {/* Step Number/Icon */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                    isCompleted ? 'bg-white border-white' :
-                    isActive ? 'bg-white/20 border-white' :
-                    'bg-transparent border-white/20'
-                  }`}>
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-black" />
-                    ) : (
-                      <Icon className={`w-5 h-5 ${
-                        isActive ? 'text-white' : 'text-gray-500'
-                      }`} />
-                    )}
-                  </div>
-                  
-                  {/* Step Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-semibold uppercase tracking-wide ${
-                        isActive ? 'text-white' : 'text-gray-500'
-                      }`}>
-                        Step {idx + 1}
-                      </span>
-                    </div>
-                    <p className={`text-sm font-medium ${
-                      isActive ? 'text-white' : 
-                      isCompleted ? 'text-gray-300' : 
-                      'text-gray-500'
-                    }`}>
-                      {section.title}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="pt-4 border-t border-white/10">
-            <div className="flex justify-between text-sm text-gray-400 mb-2">
-              <span>Progress</span>
-              <span>{Math.round((currentStep / SECTIONS.length) * 100)}%</span>
-            </div>
-            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white transition-all duration-500 ease-out"
-                style={{ width: `${(currentStep / SECTIONS.length) * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Area - Full width on mobile, 2/3 width on desktop with offset */}
-      <div className="w-full lg:ml-[33.333%] lg:w-2/3 min-h-screen">
-        <div className="p-4 sm:p-6 lg:p-12">
-          <Card className="bg-black border-white/10 shadow-2xl shadow-white/10" style={{ boxShadow: '0 0 40px rgba(255, 255, 255, 0.1), 0 0 80px rgba(255, 255, 255, 0.05)' }}>
-            <CardHeader className="border-b border-white/10 p-4 sm:p-6">
-              <CardTitle className="text-2xl sm:text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
-              <CardDescription className="text-gray-400 text-base sm:text-lg">
-                {currentStep === 0 && "Tell us about your business"}
-                {currentStep === 1 && "Share your brand identity"}
-                {currentStep === 2 && "Your current online presence"}
-                {currentStep === 3 && "How you want to capture and receive leads"}
-                {currentStep === 4 && "Additional details and special requirements"}
-                {currentStep === 5 && "Review your information before submitting"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
-            {/* Step 0: Business - TESTING MODE - MINIMAL FIELDS */}
+        <Card className="bg-black border-white/10">
+          <CardHeader>
+            <CardTitle className="text-2xl">{SECTIONS[currentStep].title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Section A: Business & Contact */}
             {currentStep === 0 && (
-              <>
-                <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                  <p className="text-yellow-400 text-sm font-semibold">🧪 TESTING MODE - Simplified Form</p>
-                  <p className="text-gray-400 text-xs mt-1">Only essential fields required for testing</p>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="business_name">Business Name *</Label>
+                  <Input
+                    id="business_name"
+                    value={formData.business_name}
+                    onChange={(e) => updateField('business_name', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                  {errors.business_name && <p className="text-red-400 text-sm mt-1">{errors.business_name}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="businessName" className="text-white">Business Name *</Label>
+                  <Label htmlFor="owner_name">Owner Full Name *</Label>
                   <Input
-                    id="businessName"
-                    value={formData.businessName}
-                    onChange={(e) => updateField('businessName', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., TLUCA Systems"
+                    id="owner_name"
+                    value={formData.owner_name}
+                    onChange={(e) => updateField('owner_name', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
                   />
-                  {errors.businessName && <p className="text-red-400 text-sm mt-1">{errors.businessName}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="contactName" className="text-white">Owner / Main Contact *</Label>
-                  <Input
-                    id="contactName"
-                    value={formData.contactName}
-                    onChange={(e) => updateField('contactName', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., John Doe"
-                  />
-                  {errors.contactName && <p className="text-red-400 text-sm mt-1">{errors.contactName}</p>}
+                  {errors.owner_name && <p className="text-red-400 text-sm mt-1">{errors.owner_name}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="businessEmail" className="text-white">Business Email *</Label>
+                    <Label htmlFor="contact_phone">Phone for CRM *</Label>
                     <Input
-                      id="businessEmail"
-                      type="email"
-                      value={formData.businessEmail}
-                      onChange={(e) => {
-                        updateField('businessEmail', e.target.value)
-                        // Auto-set alertEmail to match businessEmail
-                        if (!formData.alertEmail || formData.alertEmail === formData.businessEmail) {
-                          updateField('alertEmail', e.target.value)
-                        }
-                      }}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="e.g., contact@business.com"
+                      id="contact_phone"
+                      type="tel"
+                      value={formData.contact_phone}
+                      onChange={(e) => updateField('contact_phone', formatPhoneNumber(e.target.value))}
+                      className="bg-white/5 border-white/10 text-white"
+                      placeholder="(555) 123-4567"
                     />
-                    {errors.businessEmail && <p className="text-red-400 text-sm mt-1">{errors.businessEmail}</p>}
+                    {errors.contact_phone && <p className="text-red-400 text-sm mt-1">{errors.contact_phone}</p>}
                   </div>
 
                   <div>
-                    <Label htmlFor="businessPhone" className="text-white">Business Phone *</Label>
+                    <Label htmlFor="contact_email">Email for CRM *</Label>
                     <Input
-                      id="businessPhone"
-                      type="tel"
-                      value={formData.businessPhone}
-                      onChange={(e) => updateField('businessPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="(555) 123-4567"
+                      id="contact_email"
+                      type="email"
+                      value={formData.contact_email}
+                      onChange={(e) => updateField('contact_email', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
                     />
-                    {errors.businessPhone && <p className="text-red-400 text-sm mt-1">{errors.businessPhone}</p>}
+                    {errors.contact_email && <p className="text-red-400 text-sm mt-1">{errors.contact_email}</p>}
                   </div>
                 </div>
-              </>
-            )}
 
-            {/* Step 1: Branding */}
-            {currentStep === 1 && (
-              <>
-                <div>
-                  <Label className="text-white mb-2 block">Logo Upload (PNG/SVG preferred)</Label>
-                  <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.add('border-white', 'bg-white/10')
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        handleFileUpload('logoFile', e.dataTransfer.files)
-                      }
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload('logoFile', e.target.files)}
-                      className="hidden"
-                      id="logo-upload"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="business_city">Business City *</Label>
+                    <Input
+                      id="business_city"
+                      value={formData.business_city}
+                      onChange={(e) => updateField('business_city', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
                     />
-                    <label htmlFor="logo-upload" className="cursor-pointer block">
-                      {formData.logoFile ? (
-                        <div className="space-y-3">
-                          {imagePreviews[formData.logoFile.name] ? (
-                            <div className="relative">
-                              <img 
-                                src={imagePreviews[formData.logoFile.name]} 
-                                alt="Logo preview"
-                                className="max-h-48 mx-auto rounded object-contain bg-white/10 p-4"
-                              />
-                              <p className="text-gray-400 text-sm mt-2 text-center">{formData.logoFile.name}</p>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-2 animate-pulse">
-                              <CheckCircle2 className="w-5 h-5 text-green-500" />
-                              <span className="text-white">Loading preview...</span>
-                            </div>
-                          )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => { e.preventDefault(); removeFile('logoFile') }}
-                            className="text-white/70 hover:text-white w-full"
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Remove Logo
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="w-8 h-8 mx-auto text-gray-400" />
-                          <p className="text-gray-400">Click or drag & drop logo here</p>
-                          <p className="text-gray-500 text-xs">PNG or SVG preferred</p>
-                        </div>
-                      )}
-                    </label>
+                    {errors.business_city && <p className="text-red-400 text-sm mt-1">{errors.business_city}</p>}
                   </div>
-                </div>
 
-                <div>
-                  <Label className="text-white mb-2 block">General Photos (Business, Location, Work)</Label>
-                  <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.add('border-white', 'bg-white/10')
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        handleFileUpload('photoFiles', e.dataTransfer.files, true)
-                      }
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handleFileUpload('photoFiles', e.target.files, true)}
-                      className="hidden"
-                      id="photos-upload"
+                  <div>
+                    <Label htmlFor="business_state">State/Province *</Label>
+                    <Input
+                      id="business_state"
+                      value={formData.business_state}
+                      onChange={(e) => updateField('business_state', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                      placeholder="TX"
                     />
-                    <label htmlFor="photos-upload" className="cursor-pointer block">
-                      <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-400">Click or drag & drop photos here</p>
-                      <p className="text-gray-500 text-xs">{formData.photoFiles.length} file(s) selected</p>
-                    </label>
-                  </div>
-                  {formData.photoFiles.length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {formData.photoFiles.map((file, idx) => (
-                        <div key={idx} className="relative group">
-                          {imagePreviews[file.name] ? (
-                            <img 
-                              src={imagePreviews[file.name]} 
-                              alt={file.name}
-                              className="aspect-square rounded object-cover bg-white/5"
-                            />
-                          ) : (
-                            <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
-                              Loading...
-                            </div>
-                          )}
-                          <button
-                            onClick={() => removeFile('photoFiles', idx)}
-                            className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="text-white mb-2 block">Certifications / Licenses</Label>
-                  <div 
-                    className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.add('border-white', 'bg-white/10')
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        handleFileUpload('certFiles', e.dataTransfer.files, true)
-                      }
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      multiple
-                      onChange={(e) => handleFileUpload('certFiles', e.target.files, true)}
-                      className="hidden"
-                      id="certs-upload"
-                    />
-                    <label htmlFor="certs-upload" className="cursor-pointer block">
-                      <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-400">Click or drag & drop certificates here</p>
-                      <p className="text-gray-500 text-xs">{formData.certFiles.length} file(s) selected</p>
-                    </label>
+                    {errors.business_state && <p className="text-red-400 text-sm mt-1">{errors.business_state}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-white mb-2 block">Color Scheme Preference</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {['light', 'dark', 'neutral', 'no-preference'].map((scheme) => (
-                      <button
-                        key={scheme}
-                        type="button"
-                        onClick={() => updateField('colorScheme', scheme)}
-                        className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                          formData.colorScheme === scheme
-                            ? 'border-white bg-white/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
-                      >
-                        <span className="text-white capitalize">{scheme.replace('-', ' ')}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="slogan" className="text-white">Slogan / Tagline (optional)</Label>
+                  <Label htmlFor="years_in_service">Years in Service *</Label>
                   <Input
-                    id="slogan"
-                    value={formData.slogan}
-                    onChange={(e) => updateField('slogan', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="Systems That Scale"
+                    id="years_in_service"
+                    value={formData.years_in_service}
+                    onChange={(e) => updateField('years_in_service', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    placeholder="Since 2017 or 10+ years"
                   />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="hasAboutUs"
-                      checked={formData.hasAboutUs}
-                      onCheckedChange={(checked) => updateField('hasAboutUs', checked)}
-                      className="border-white/20"
-                    />
-                    <Label htmlFor="hasAboutUs" className="text-white cursor-pointer">Include "About Us" section</Label>
-                  </div>
-                  {formData.hasAboutUs && (
-                    <Textarea
-                      value={formData.aboutUsText}
-                      onChange={(e) => updateField('aboutUsText', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white min-h-32"
-                      placeholder="Tell your story..."
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="hasMeetTheTeam"
-                      checked={formData.hasMeetTheTeam}
-                      onCheckedChange={(checked) => updateField('hasMeetTheTeam', checked)}
-                      className="border-white/20"
-                    />
-                    <Label htmlFor="hasMeetTheTeam" className="text-white cursor-pointer">Include "Meet the Team" section</Label>
-                  </div>
-                  {formData.hasMeetTheTeam && (
-                    <div className="space-y-4">
-                      {formData.teamMembers.map((member, idx) => (
-                        <div key={idx} className="flex flex-col sm:flex-row items-start gap-3 bg-white/5 p-3 sm:p-4 rounded-lg">
-                          <div className="flex-1 space-y-3 w-full">
-                            <Input
-                              placeholder="Name"
-                              value={member.name}
-                              onChange={(e) => {
-                                const newMembers = [...formData.teamMembers]
-                                newMembers[idx].name = e.target.value
-                                updateField('teamMembers', newMembers)
-                              }}
-                              className="bg-white/10 border-white/10 text-white"
-                            />
-                            <Input
-                              placeholder="Role/Title"
-                              value={member.role}
-                              onChange={(e) => {
-                                const newMembers = [...formData.teamMembers]
-                                newMembers[idx].role = e.target.value
-                                updateField('teamMembers', newMembers)
-                              }}
-                              className="bg-white/10 border-white/10 text-white"
-                            />
-                            <div 
-                              className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center hover:border-white/40 transition-colors cursor-pointer"
-                              onDragOver={(e) => {
-                                e.preventDefault()
-                                e.currentTarget.classList.add('border-white', 'bg-white/10')
-                              }}
-                              onDragLeave={(e) => {
-                                e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault()
-                                e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                                const file = e.dataTransfer.files?.[0]
-                                if (file) {
-                                  const newMembers = [...formData.teamMembers]
-                                  newMembers[idx].photo = file
-                                  updateField('teamMembers', newMembers)
-                                }
-                              }}
-                            >
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) {
-                                    const newMembers = [...formData.teamMembers]
-                                    newMembers[idx].photo = file
-                                    updateField('teamMembers', newMembers)
-                                  }
-                                }}
-                                className="hidden"
-                                id={`team-photo-${idx}`}
-                              />
-                              <label htmlFor={`team-photo-${idx}`} className="cursor-pointer block">
-                                {member.photo && imagePreviews[member.photo.name] ? (
-                                  <div className="space-y-2">
-                                    <img 
-                                      src={imagePreviews[member.photo.name]} 
-                                      alt={member.photo.name}
-                                      className="w-full h-32 sm:h-40 object-contain rounded bg-white/5 p-2"
-                                    />
-                                    <p className="text-gray-400 text-xs truncate">{member.photo.name}</p>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
-                                    <p className="text-gray-400 text-sm">
-                                      {member.photo ? 'Loading...' : 'Click or drag photo'}
-                                    </p>
-                                  </>
-                                )}
-                              </label>
-                            </div>
-                          </div>
-                          {formData.teamMembers.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newMembers = formData.teamMembers.filter((_, i) => i !== idx)
-                                updateField('teamMembers', newMembers)
-                              }}
-                              className="text-white/80 hover:text-white self-end sm:self-start"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          updateField('teamMembers', [...formData.teamMembers, { name: '', role: '', photo: null }])
-                        }}
-                        className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10"
-                      >
-                        + Add Team Member
-                      </Button>
-                    </div>
-                  )}
+                  {errors.years_in_service && <p className="text-red-400 text-sm mt-1">{errors.years_in_service}</p>}
                 </div>
 
                 <div>
-                  <Label className="text-white mb-2 block">Inspiration Sites (up to 3 URLs)</Label>
-                  {formData.inspirationSites.map((url, idx) => (
-                    <Input
-                      key={idx}
-                      value={url}
-                      onChange={(e) => {
-                        const newSites = [...formData.inspirationSites]
-                        newSites[idx] = e.target.value
-                        updateField('inspirationSites', newSites)
-                      }}
-                      className="bg-white/5 border-white/10 text-white mb-2"
-                      placeholder={`Inspiration site ${idx + 1}`}
-                    />
-                  ))}
+                  <Label htmlFor="business_type">Business Type *</Label>
+                  <select
+                    id="business_type"
+                    value={formData.business_type}
+                    onChange={(e) => updateField('business_type', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 text-white rounded-md px-3 py-2"
+                  >
+                    <option value="">Select...</option>
+                    {BUSINESS_TYPES.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  {errors.business_type && <p className="text-red-400 text-sm mt-1">{errors.business_type}</p>}
                 </div>
-              </>
+              </div>
             )}
 
-            {/* Step 2: Online Presence */}
-            {currentStep === 2 && (
-              <>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="hasExistingWebsite"
-                      checked={formData.hasExistingWebsite}
-                      onCheckedChange={(checked) => updateField('hasExistingWebsite', checked)}
-                      className="border-white/20"
-                    />
-                    <Label htmlFor="hasExistingWebsite" className="text-white cursor-pointer">I have an existing website</Label>
-                  </div>
-                  {formData.hasExistingWebsite ? (
-                    <Input
-                      value={formData.currentDomain}
-                      onChange={(e) => updateField('currentDomain', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="Current domain (e.g., example.com)"
-                    />
-                  ) : (
-                    <div className="space-y-2 pl-7">
-                      <div className="flex items-center gap-3">
+            {/* Section B: Services */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Main Services *</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    {CONCRETE_SERVICES.map(service => (
+                      <div key={service} className="flex items-center space-x-2">
                         <Checkbox
-                          id="needDomainHelp"
-                          checked={formData.needDomainHelp}
-                          onCheckedChange={(checked) => updateField('needDomainHelp', checked)}
-                          className="border-white/20"
-                        />
-                        <Label htmlFor="needDomainHelp" className="text-white cursor-pointer">Need help purchasing a domain?</Label>
-                      </div>
-                      <Input
-                        value={formData.desiredDomain}
-                        onChange={(e) => updateField('desiredDomain', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="Desired domain name"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="hasGoogleBusiness"
-                      checked={formData.hasGoogleBusiness}
-                      onCheckedChange={(checked) => updateField('hasGoogleBusiness', checked)}
-                      className="border-white/20"
-                    />
-                    <Label htmlFor="hasGoogleBusiness" className="text-white cursor-pointer">I have a Google Business Profile</Label>
-                  </div>
-                  {formData.hasGoogleBusiness ? (
-                    <Input
-                      value={formData.googleBusinessEmail}
-                      onChange={(e) => updateField('googleBusinessEmail', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="Gmail used to manage it"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-3 pl-7">
-                      <Checkbox
-                        id="needGoogleSetup"
-                        checked={formData.needGoogleSetup}
-                        onCheckedChange={(checked) => updateField('needGoogleSetup', checked)}
-                        className="border-white/20"
-                      />
-                      <Label htmlFor="needGoogleSetup" className="text-white cursor-pointer">Need help setting one up?</Label>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="text-white mb-3 block">Social Media Links</Label>
-                  <p className="text-gray-400 text-sm mb-3">Enter full URLs or just your handle (e.g., @yourbusiness)</p>
-                  <div className="space-y-3">
-                    {Object.entries(formData.socialLinks).map(([platform, url]) => (
-                      <div key={platform}>
-                        <Label htmlFor={`social-${platform}`} className="text-gray-400 capitalize text-sm">{platform}</Label>
-                        <Input
-                          id={`social-${platform}`}
-                          value={url}
-                          onChange={(e) => updateNestedField('socialLinks', platform, e.target.value)}
-                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                          placeholder={`https://${platform}.com/... or @handle`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Step 3: Leads & Communication */}
-            {currentStep === 3 && (
-              <>
-                <div>
-                  <Label className="text-white mb-2 block">Lead Alert Method *</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: 'text', label: 'Text' },
-                      { value: 'email', label: 'Email' },
-                      { value: 'both', label: 'Both' },
-                    ].map((method) => (
-                      <button
-                        key={method.value}
-                        type="button"
-                        onClick={() => updateField('leadAlertMethod', method.value)}
-                        className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                          formData.leadAlertMethod === method.value
-                            ? 'border-white bg-white/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
-                      >
-                        <span className="text-white">{method.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {errors.leadAlertMethod && <p className="text-red-400 text-sm mt-1">{errors.leadAlertMethod}</p>}
-                </div>
-
-                {(formData.leadAlertMethod === 'text' || formData.leadAlertMethod === 'both') && (
-                  <div>
-                    <Label htmlFor="alertPhone" className="text-white">Best Phone for SMS Alerts *</Label>
-                    <Input
-                      id="alertPhone"
-                      type="tel"
-                      value={formData.alertPhone}
-                      onChange={(e) => updateField('alertPhone', formatPhoneNumber(e.target.value))}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="(555) 123-4567"
-                    />
-                    {errors.alertPhone && <p className="text-red-400 text-sm mt-1">{errors.alertPhone}</p>}
-                  </div>
-                )}
-
-                {(formData.leadAlertMethod === 'email' || formData.leadAlertMethod === 'both') && (
-                  <div>
-                    <Label htmlFor="alertEmail" className="text-white">Best Email for Lead Alerts *</Label>
-                    <Input
-                      id="alertEmail"
-                      type="email"
-                      value={formData.alertEmail}
-                      onChange={(e) => updateField('alertEmail', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="leads@example.com"
-                    />
-                    {errors.alertEmail && <p className="text-red-400 text-sm mt-1">{errors.alertEmail}</p>}
-                  </div>
-                )}
-
-                <div>
-                  <Label className="text-white mb-2 block">Desired Lead Form Fields</Label>
-                  <p className="text-gray-400 text-sm mb-3">Select the information you want to collect from potential customers on your website's contact form</p>
-                  <div className="space-y-2">
-                    {['Name', 'Email', 'Phone', 'Service Interested In', 'Message', 'Company', 'Budget', 'Timeline'].map((field) => (
-                      <div key={field} className="flex items-center gap-3">
-                        <Checkbox
-                          id={`field-${field}`}
-                          checked={formData.leadFormFields.includes(field)}
+                          id={`service-${service}`}
+                          checked={formData.services_primary.includes(service)}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              updateField('leadFormFields', [...formData.leadFormFields, field])
+                              updateField('services_primary', [...formData.services_primary, service])
                             } else {
-                              updateField('leadFormFields', formData.leadFormFields.filter(f => f !== field))
+                              updateField('services_primary', formData.services_primary.filter(s => s !== service))
                             }
                           }}
-                          className="border-white/20"
                         />
-                        <Label htmlFor={`field-${field}`} className="text-white cursor-pointer">{field}</Label>
+                        <Label htmlFor={`service-${service}`} className="cursor-pointer">{service}</Label>
                       </div>
                     ))}
                   </div>
+                  {errors.services_primary && <p className="text-red-400 text-sm mt-1">{errors.services_primary}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="extraLeadFormRequests" className="text-white">Extra Lead Form Requests</Label>
+                  <Label htmlFor="services_secondary">Other Services (optional)</Label>
                   <Textarea
-                    id="extraLeadFormRequests"
-                    value={formData.extraLeadFormRequests}
-                    onChange={(e) => updateField('extraLeadFormRequests', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-20"
-                    placeholder="Any custom fields or special requirements..."
+                    id="services_secondary"
+                    value={formData.services_secondary}
+                    onChange={(e) => updateField('services_secondary', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    rows={3}
                   />
                 </div>
+              </div>
+            )}
 
+            {/* Section C: Service Areas */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-white mb-2 block">Bookings / Payments Needs</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { value: 'none', label: 'None' },
-                      { value: 'booking', label: 'Booking' },
-                      { value: 'payments', label: 'Payments' },
-                      { value: 'both', label: 'Both' },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => updateField('bookingsPayments', option.value)}
-                        className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                          formData.bookingsPayments === option.value
-                            ? 'border-white bg-white/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
-                      >
-                        <span className="text-white">{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {formData.bookingsPayments !== 'none' && (
-                    <Textarea
-                      value={formData.bookingsPaymentsNotes}
-                      onChange={(e) => updateField('bookingsPaymentsNotes', e.target.value)}
-                      className="bg-white/5 border-white/10 text-white min-h-20 mt-3"
-                      placeholder="Details about booking/payment needs..."
-                    />
-                  )}
+                  <Label>Serve Residential / Commercial / Both *</Label>
+                  <RadioGroup
+                    value={formData.market_type}
+                    onValueChange={(value) => updateField('market_type', value)}
+                    className="mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Residential" id="residential" />
+                      <Label htmlFor="residential" className="cursor-pointer">Residential</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Commercial" id="commercial" />
+                      <Label htmlFor="commercial" className="cursor-pointer">Commercial</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Both" id="both" />
+                      <Label htmlFor="both" className="cursor-pointer">Both</Label>
+                    </div>
+                  </RadioGroup>
+                  {errors.market_type && <p className="text-red-400 text-sm mt-1">{errors.market_type}</p>}
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="hasPortfolio"
-                      checked={formData.hasPortfolio}
-                      onCheckedChange={(checked) => updateField('hasPortfolio', checked)}
-                      className="border-white/20"
+                <div>
+                  <Label>Cities/Areas Served *</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      value={serviceAreaInput}
+                      onChange={(e) => setServiceAreaInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addServiceArea())}
+                      className="bg-white/5 border-white/10 text-white"
+                      placeholder="Add city..."
                     />
-                    <Label htmlFor="hasPortfolio" className="text-white cursor-pointer">Include portfolio section</Label>
+                    <Button type="button" onClick={addServiceArea} variant="outline">Add</Button>
                   </div>
-                  {formData.hasPortfolio && (
-                    <div 
-                      className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        e.currentTarget.classList.add('border-white', 'bg-white/10')
-                      }}
-                      onDragLeave={(e) => {
-                        e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        e.currentTarget.classList.remove('border-white', 'bg-white/10')
-                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                          handleFileUpload('portfolioFiles', e.dataTransfer.files, true)
-                        }
-                      }}
-                    >
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {SERVICE_AREA_SUGGESTIONS.map(area => (
+                      <Button
+                        key={area}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (!formData.service_areas.includes(area)) {
+                            updateField('service_areas', [...formData.service_areas, area])
+                          }
+                        }}
+                        className={formData.service_areas.includes(area) ? 'bg-white/20' : ''}
+                      >
+                        {area}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.service_areas.map(area => (
+                      <div key={area} className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
+                        <span>{area}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeServiceArea(area)}
+                          className="ml-1 hover:text-red-400"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.service_areas && <p className="text-red-400 text-sm mt-1">{errors.service_areas}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Section D: Branding & Media */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Logo (optional)</Label>
+                  <div className="mt-2">
+                    {logoPreview ? (
+                      <div className="relative inline-block">
+                        <img src={logoPreview} alt="Logo preview" className="h-24 w-24 object-contain border border-white/10 rounded" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoFile(null)
+                            setLogoPreview('')
+                            updateField('logo_url', '')
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center cursor-pointer hover:border-white/40">
+                        <Upload className="w-8 h-8 mx-auto mb-2" />
+                        <span>Click to upload logo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Project Photos (optional, max 10)</Label>
+                  <div className="mt-2">
+                    <label className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center cursor-pointer hover:border-white/40">
+                      <Upload className="w-8 h-8 mx-auto mb-2" />
+                      <span>Click to upload photos</span>
                       <input
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={(e) => handleFileUpload('portfolioFiles', e.target.files, true)}
+                        onChange={handleGalleryUpload}
                         className="hidden"
-                        id="portfolio-upload"
                       />
-                      <label htmlFor="portfolio-upload" className="cursor-pointer block">
-                        <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-gray-400">Click or drag & drop portfolio items here</p>
-                        <p className="text-gray-500 text-xs">{formData.portfolioFiles.length} file(s) selected</p>
-                      </label>
+                    </label>
+                    <div className="grid grid-cols-4 gap-2 mt-4">
+                      {galleryPreviews.map((preview, idx) => (
+                        <div key={idx} className="relative">
+                          <img src={preview} alt={`Preview ${idx}`} className="w-full h-24 object-cover rounded border border-white/10" />
+                        </div>
+                      ))}
                     </div>
-                    )}
-                    {formData.portfolioFiles.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {formData.portfolioFiles.map((file, idx) => (
-                          <div key={idx} className="relative group">
-                            {imagePreviews[file.name] ? (
-                              <img 
-                                src={imagePreviews[file.name]} 
-                                alt={file.name}
-                                className="aspect-square rounded object-cover bg-white/5"
-                              />
-                            ) : (
-                              <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
-                                Loading...
-                              </div>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => removeFile('portfolioFiles', idx)}
-                              className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="hasReviews"
-                    checked={formData.hasReviews}
-                    onCheckedChange={(checked) => updateField('hasReviews', checked)}
-                    className="border-white/20"
-                  />
-                  <Label htmlFor="hasReviews" className="text-white cursor-pointer">Include reviews section</Label>
-                </div>
-              </>
-            )}
-
-            {/* Step 4: Final Details */}
-            {currentStep === 4 && (
-              <>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="ownsDomain"
-                      checked={formData.ownsDomain}
-                      onCheckedChange={(checked) => updateField('ownsDomain', checked)}
-                      className="border-white/20"
-                    />
-                    <Label htmlFor="ownsDomain" className="text-white cursor-pointer">I already have a domain</Label>
                   </div>
-                  {formData.ownsDomain && (
-                    <>
-                      <Input
-                        value={formData.ownedDomain}
-                        onChange={(e) => updateField('ownedDomain', e.target.value)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="e.g., yourbusiness.com"
-                      />
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Label className="text-white">Who has access to manage your domain settings?</Label>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button type="button" className="text-gray-400 hover:text-white">
-                                  <HelpCircle className="w-4 h-4" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-white text-black border-white/20 max-w-xs">
-                                <p className="text-sm">
-                                  DNS (Domain Name System) management means you can log in to your domain registrar 
-                                  (like GoDaddy, Namecheap, etc.) and update settings. We'll need access to point 
-                                  your domain to your new website.
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { value: 'client', label: 'I have access' },
-                            { value: 'tluca', label: 'TLUCA will manage' },
-                          ].map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => updateField('dnsManager', option.value)}
-                              className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                                formData.dnsManager === option.value
-                                  ? 'border-white bg-white/10'
-                                  : 'border-white/10 bg-white/5 hover:border-white/20'
-                              }`}
-                            >
-                              <span className="text-white">{option.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 <div>
-                  <Label htmlFor="complianceNeeds" className="text-white">Compliance Needs (HIPAA, FINRA, etc.)</Label>
+                  <Label htmlFor="brand_colors">Brand Colors (optional)</Label>
                   <Input
-                    id="complianceNeeds"
-                    value={formData.complianceNeeds}
-                    onChange={(e) => updateField('complianceNeeds', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="None, or list requirements..."
+                    id="brand_colors"
+                    value={formData.brand_colors}
+                    onChange={(e) => updateField('brand_colors', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    placeholder="#111111, #b22222, #ffffff"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="specialNotes" className="text-white">Anything We're Missing?</Label>
-                  <p className="text-sm text-gray-400 mb-2">Let us know if there's anything else you'd like us to include, any custom features you need, or special requests</p>
+                  <Label htmlFor="design_constraints">Anything to avoid in design? (optional)</Label>
                   <Textarea
-                    id="specialNotes"
-                    value={formData.specialNotes}
-                    onChange={(e) => updateField('specialNotes', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-32 placeholder:text-gray-500"
-                    placeholder="e.g., 'Need a customer portal', 'Want integration with X software', 'Special booking system requirements', 'Custom payment processing'..."
+                    id="design_constraints"
+                    value={formData.design_constraints}
+                    onChange={(e) => updateField('design_constraints', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    rows={3}
                   />
                 </div>
-              </>
+              </div>
             )}
 
-            {/* Step 5: Review */}
+            {/* Section E: About & Messaging */}
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="about_text">About Paragraph * (2-4 sentences)</Label>
+                  <Textarea
+                    id="about_text"
+                    value={formData.about_text}
+                    onChange={(e) => updateField('about_text', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    rows={4}
+                    placeholder="We pour high-quality concrete for homeowners and builders..."
+                  />
+                  {errors.about_text && <p className="text-red-400 text-sm mt-1">{errors.about_text}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="tagline">Tagline / Slogan (optional)</Label>
+                  <Input
+                    id="tagline"
+                    value={formData.tagline}
+                    onChange={(e) => updateField('tagline', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    placeholder="Built to last. Poured with pride."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Section F: Site Contact Details */}
             {currentStep === 5 && (
-              <>
-                <div className="space-y-6">
-                  {/* Business Information */}
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-white text-lg">Business Information</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(0)} className="text-white/70 hover:text-white">
-                        Edit
-                      </Button>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Business Name:</strong> {formData.businessName || '—'}</p>
-                      <p><strong className="text-gray-300">Contact:</strong> {formData.contactName || '—'}</p>
-                      <p><strong className="text-gray-300">Email:</strong> {formData.businessEmail || '—'}</p>
-                      <p><strong className="text-gray-300">Phone:</strong> {formData.businessPhone || '—'}</p>
-                      {formData.businessAddress.street && (
-                        <p><strong className="text-gray-300">Address:</strong> {formData.businessAddress.street}, {formData.businessAddress.city}, {formData.businessAddress.state} {formData.businessAddress.zip}</p>
-                      )}
-                      {formData.businessNiche && <p><strong className="text-gray-300">Industry:</strong> {formData.businessNiche}</p>}
-                      {formData.businessDescription && <p><strong className="text-gray-300">Description:</strong> {formData.businessDescription}</p>}
-                      {formData.servicesOffered && <p><strong className="text-gray-300">Services:</strong> {formData.servicesOffered}</p>}
-                      {formData.serviceAreas && <p><strong className="text-gray-300">Service Areas:</strong> {formData.serviceAreas}</p>}
-                    </div>
-                  </div>
-
-                  {/* Branding & Design */}
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-white text-lg">Branding & Design</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)} className="text-white/70 hover:text-white">
-                        Edit
-                      </Button>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Logo:</strong> {formData.logoFile ? '✓ Uploaded' : 'Not uploaded'}</p>
-                      <p><strong className="text-gray-300">Photos:</strong> {formData.photoFiles.length} file(s)</p>
-                      <p><strong className="text-gray-300">Certificates:</strong> {formData.certFiles.length} file(s)</p>
-                      <p><strong className="text-gray-300">Color Scheme:</strong> {formData.colorScheme.replace('-', ' ')}</p>
-                      {formData.slogan && <p><strong className="text-gray-300">Slogan:</strong> {formData.slogan}</p>}
-                      <p><strong className="text-gray-300">About Us Section:</strong> {formData.hasAboutUs ? 'Yes' : 'No'}</p>
-                      <p><strong className="text-gray-300">Meet the Team Section:</strong> {formData.hasMeetTheTeam ? `Yes (${formData.teamMembers.length} members)` : 'No'}</p>
-                      {formData.inspirationSites.filter(s => s).length > 0 && (
-                        <p><strong className="text-gray-300">Inspiration Sites:</strong> {formData.inspirationSites.filter(s => s).length} provided</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Online Presence */}
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-white text-lg">Online Presence</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(2)} className="text-white/70 hover:text-white">
-                        Edit
-                      </Button>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Existing Website:</strong> {formData.hasExistingWebsite ? `Yes (${formData.currentDomain})` : 'No'}</p>
-                      {!formData.hasExistingWebsite && formData.desiredDomain && (
-                        <p><strong className="text-gray-300">Desired Domain:</strong> {formData.desiredDomain}</p>
-                      )}
-                      <p><strong className="text-gray-300">Google Business Profile:</strong> {formData.hasGoogleBusiness ? 'Yes' : 'No'}</p>
-                      {Object.entries(formData.socialLinks).filter(([_, v]) => v).length > 0 && (
-                        <p><strong className="text-gray-300">Social Media:</strong> {Object.entries(formData.socialLinks).filter(([_, v]) => v).map(([k]) => k).join(', ')}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Leads & Communication */}
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-white text-lg">Leads & Communication</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(3)} className="text-white/70 hover:text-white">
-                        Edit
-                      </Button>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Lead Alert Method:</strong> {formData.leadAlertMethod || '—'}</p>
-                      {formData.alertPhone && <p><strong className="text-gray-300">Alert Phone:</strong> {formData.alertPhone}</p>}
-                      {formData.alertEmail && <p><strong className="text-gray-300">Alert Email:</strong> {formData.alertEmail}</p>}
-                      <p><strong className="text-gray-300">Lead Form Fields:</strong> {formData.leadFormFields.length} fields</p>
-                      <p><strong className="text-gray-300">Bookings/Payments:</strong> {formData.bookingsPayments}</p>
-                      <p><strong className="text-gray-300">Portfolio Section:</strong> {formData.hasPortfolio ? `Yes (${formData.portfolioFiles.length} items)` : 'No'}</p>
-                      <p><strong className="text-gray-300">Reviews Section:</strong> {formData.hasReviews ? 'Yes' : 'No'}</p>
-                    </div>
-                  </div>
-
-                  {/* Final Details */}
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-white text-lg">Final Details</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setCurrentStep(4)} className="text-white/70 hover:text-white">
-                        Edit
-                      </Button>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-400">
-                      <p><strong className="text-gray-300">Domain Ownership:</strong> {formData.ownsDomain ? `Yes (${formData.ownedDomain})` : 'No'}</p>
-                      {formData.ownsDomain && <p><strong className="text-gray-300">DNS Management:</strong> {formData.dnsManager === 'client' ? 'I have access' : 'TLUCA will manage'}</p>}
-                      {formData.complianceNeeds && <p><strong className="text-gray-300">Compliance Needs:</strong> {formData.complianceNeeds}</p>}
-                      {formData.specialNotes && <p><strong className="text-gray-300">Special Requests:</strong> {formData.specialNotes}</p>}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-white/10">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="consentConfirmed"
-                      checked={formData.consentConfirmed}
-                      onCheckedChange={(checked) => updateField('consentConfirmed', checked)}
-                      className="border-white/20 mt-1"
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="site_phone">Phone to Display *</Label>
+                    <Input
+                      id="site_phone"
+                      type="tel"
+                      value={formData.site_phone}
+                      onChange={(e) => updateField('site_phone', formatPhoneNumber(e.target.value))}
+                      className="bg-white/5 border-white/10 text-white"
                     />
-                    <Label htmlFor="consentConfirmed" className="text-white cursor-pointer leading-relaxed">
-                      I confirm the information is accurate and authorize TLUCA Systems to begin work.
-                    </Label>
+                    <div className="mt-1">
+                      <Checkbox
+                        id="use_contact_phone"
+                        checked={formData.site_phone === formData.contact_phone}
+                        onCheckedChange={(checked) => {
+                          if (checked) updateField('site_phone', formData.contact_phone)
+                        }}
+                      />
+                      <Label htmlFor="use_contact_phone" className="ml-2 text-sm">Use same as contact phone</Label>
+                    </div>
+                    {errors.site_phone && <p className="text-red-400 text-sm mt-1">{errors.site_phone}</p>}
                   </div>
-                  {errors.consentConfirmed && <p className="text-white/70 text-sm mt-2">{errors.consentConfirmed}</p>}
+
+                  <div>
+                    <Label htmlFor="site_email">Email to Display *</Label>
+                    <Input
+                      id="site_email"
+                      type="email"
+                      value={formData.site_email}
+                      onChange={(e) => updateField('site_email', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <div className="mt-1">
+                      <Checkbox
+                        id="use_contact_email"
+                        checked={formData.site_email === formData.contact_email}
+                        onCheckedChange={(checked) => {
+                          if (checked) updateField('site_email', formData.contact_email)
+                        }}
+                      />
+                      <Label htmlFor="use_contact_email" className="ml-2 text-sm">Use same as contact email</Label>
+                    </div>
+                    {errors.site_email && <p className="text-red-400 text-sm mt-1">{errors.site_email}</p>}
+                  </div>
                 </div>
-              </>
+
+                <div>
+                  <Label>Business Hours *</Label>
+                  <div className="space-y-2 mt-2">
+                    {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
+                      const dayData = formData.business_hours[day]
+                      const dayLabels = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
+                      return (
+                        <div key={day} className="flex items-center gap-2 bg-white/5 p-2 rounded">
+                          <Checkbox
+                            checked={dayData.closed}
+                            onCheckedChange={(checked) => {
+                              updateNestedField('business_hours', day, { ...dayData, closed: !!checked })
+                            }}
+                          />
+                          <Label className="w-24">{dayLabels[day]}</Label>
+                          {!dayData.closed && (
+                            <>
+                              <select
+                                value={dayData.open}
+                                onChange={(e) => {
+                                  updateNestedField('business_hours', day, { ...dayData, open: e.target.value })
+                                }}
+                                className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
+                              >
+                                {generateTimeOptions().map(({ value, label }) => (
+                                  <option key={value} value={value}>{label}</option>
+                                ))}
+                              </select>
+                              <span>to</span>
+                              <select
+                                value={dayData.close}
+                                onChange={(e) => {
+                                  updateNestedField('business_hours', day, { ...dayData, close: e.target.value })
+                                }}
+                                className="bg-black border border-white/20 text-white rounded px-2 py-1 text-sm"
+                              >
+                                {generateTimeOptions().map(({ value, label }) => (
+                                  <option key={value} value={value}>{label}</option>
+                                ))}
+                              </select>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Preferred Contact Method *</Label>
+                  <RadioGroup
+                    value={formData.preferred_contact}
+                    onValueChange={(value) => updateField('preferred_contact', value)}
+                    className="mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Phone" id="pref-phone" />
+                      <Label htmlFor="pref-phone" className="cursor-pointer">Phone</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Text" id="pref-text" />
+                      <Label htmlFor="pref-text" className="cursor-pointer">Text</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Email" id="pref-email" />
+                      <Label htmlFor="pref-email" className="cursor-pointer">Email</Label>
+                    </div>
+                  </RadioGroup>
+                  {errors.preferred_contact && <p className="text-red-400 text-sm mt-1">{errors.preferred_contact}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Section G: Social & GBP */}
+            {currentStep === 6 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="facebook_url">Facebook URL (optional)</Label>
+                  <Input
+                    id="facebook_url"
+                    type="url"
+                    value={formData.facebook_url}
+                    onChange={(e) => updateField('facebook_url', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="instagram_url">Instagram URL (optional)</Label>
+                  <Input
+                    id="instagram_url"
+                    type="url"
+                    value={formData.instagram_url}
+                    onChange={(e) => updateField('instagram_url', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="google_profile_url">Google Business Profile URL (optional)</Label>
+                  <Input
+                    id="google_profile_url"
+                    type="url"
+                    value={formData.google_profile_url}
+                    onChange={(e) => updateField('google_profile_url', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Section H: Domain */}
+            {currentStep === 7 && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Do you already own a domain? *</Label>
+                  <RadioGroup
+                    value={formData.has_domain}
+                    onValueChange={(value) => updateField('has_domain', value)}
+                    className="mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Yes" id="has-domain-yes" />
+                      <Label htmlFor="has-domain-yes" className="cursor-pointer">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="No" id="has-domain-no" />
+                      <Label htmlFor="has-domain-no" className="cursor-pointer">No</Label>
+                    </div>
+                  </RadioGroup>
+                  {errors.has_domain && <p className="text-red-400 text-sm mt-1">{errors.has_domain}</p>}
+                </div>
+
+                {formData.has_domain === 'Yes' && (
+                  <div>
+                    <Label htmlFor="domain_current">Domain URL *</Label>
+                    <Input
+                      id="domain_current"
+                      type="url"
+                      value={formData.domain_current}
+                      onChange={(e) => updateField('domain_current', e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    {errors.domain_current && <p className="text-red-400 text-sm mt-1">{errors.domain_current}</p>}
+                  </div>
+                )}
+
+                {formData.has_domain === 'No' && (
+                  <>
+                    <div>
+                      <Label>Would you like us to purchase & manage it for you? *</Label>
+                      <RadioGroup
+                        value={formData.request_domain_purchase}
+                        onValueChange={(value) => updateField('request_domain_purchase', value)}
+                        className="mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Yes" id="request-yes" />
+                          <Label htmlFor="request-yes" className="cursor-pointer">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="No" id="request-no" />
+                          <Label htmlFor="request-no" className="cursor-pointer">No</Label>
+                        </div>
+                      </RadioGroup>
+                      {errors.request_domain_purchase && <p className="text-red-400 text-sm mt-1">{errors.request_domain_purchase}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="domain_preferences">Desired domain ideas (optional)</Label>
+                      <Input
+                        id="domain_preferences"
+                        value={formData.domain_preferences}
+                        onChange={(e) => updateField('domain_preferences', e.target.value)}
+                        className="bg-white/5 border-white/10 text-white"
+                        placeholder="paytasconcrete.com, paytasconstruction.com"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Section I: Final */}
+            {currentStep === 8 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="internal_notes">Notes for our team (optional)</Label>
+                  <Textarea
+                    id="internal_notes"
+                    value={formData.internal_notes}
+                    onChange={(e) => updateField('internal_notes', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <Checkbox
+                    id="consent_accepted"
+                    checked={formData.consent_accepted}
+                    onCheckedChange={(checked) => updateField('consent_accepted', !!checked)}
+                  />
+                  <Label htmlFor="consent_accepted" className="cursor-pointer">
+                    I confirm the info is accurate and authorize build. *
+                  </Label>
+                </div>
+                {errors.consent_accepted && <p className="text-red-400 text-sm">{errors.consent_accepted}</p>}
+              </div>
             )}
 
             {/* Navigation */}
-            <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
-              {/* Hide Previous button in testing mode (step 0) */}
-              {currentStep > 0 && (
-                <Button
-                  type="button"
-                  onClick={handlePrev}
-                  variant="outline"
-                  className="border-white/10 hover:bg-white/5 text-white w-full sm:w-auto order-2 sm:order-1"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Previous</span>
-                  <span className="sm:hidden">Back</span>
-                </Button>
-              )}
+            <div className="flex justify-between gap-4 pt-6 border-t border-white/10">
+              <Button
+                type="button"
+                onClick={handlePrev}
+                disabled={currentStep === 0}
+                variant="outline"
+                className="border-white/10 hover:bg-white/5 text-white"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
 
-              {/* TESTING MODE: Show submit button on step 0 */}
-              {currentStep === 0 ? (
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
-                >
-                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Test</span><span className="sm:hidden">Submit</span></>}
-                  <CheckCircle2 className="w-4 h-4 ml-2" />
-                </Button>
-              ) : currentStep < SECTIONS.length - 1 ? (
+              {currentStep < SECTIONS.length - 1 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold w-full sm:w-auto order-1 sm:order-2"
+                  className="bg-white hover:bg-gray-200 text-black"
                 >
-                  <span className="hidden sm:inline">Next</span>
-                  <span className="sm:hidden">Continue</span>
+                  Next
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
@@ -1882,22 +1129,16 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
+                  className="bg-white hover:bg-gray-200 text-black"
                 >
-                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Onboarding</span><span className="sm:hidden">Submit</span></>}
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
                   <CheckCircle2 className="w-4 h-4 ml-2" />
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
-
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
-        </p>
-        </div>
       </div>
     </div>
   )
 }
-
