@@ -240,6 +240,126 @@ Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
       }
     }
 
+    // Create task in ClickUp for operators (if configured)
+    if (process.env.CLICKUP_API_KEY && process.env.CLICKUP_LIST_ID) {
+      try {
+        // Format task description with all onboarding data
+        const clickupDescription = `
+# 🎉 New Website Build Request
+
+## 👤 Client Information
+**Name:** ${fullName}
+**Business:** ${data.business_name}
+**Email:** ${data.contact_email}
+**Phone:** ${data.contact_phone}
+**Location:** ${data.business_city}, ${data.business_state}
+**Years in Service:** ${data.years_in_service}
+**Business Type:** ${data.business_type}
+
+## 🛠️ Services Offered
+**Primary Services:** ${(data.services_primary || []).join(', ')}
+${data.services_secondary ? `**Other Services:** ${data.services_secondary}` : ''}
+
+## 📍 Service Areas
+**Market Type:** ${data.market_type}
+**Areas Served:** ${(data.service_areas || []).join(', ')}
+
+## 🎨 Branding & Media
+${data.logo_url ? `**Logo:** ${data.logo_url}` : '**Logo:** Not provided'}
+${data.gallery_urls && data.gallery_urls.length > 0 ? `**Gallery Images (${data.gallery_urls.length}):**\n${data.gallery_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Gallery Images:** None provided'}
+${data.brand_colors ? `**Brand Colors:** ${data.brand_colors}` : ''}
+${data.design_constraints ? `**Design Constraints:** ${data.design_constraints}` : ''}
+
+## 📝 About & Messaging
+**About Text:**
+${data.about_text}
+
+${data.tagline ? `**Tagline:** ${data.tagline}` : ''}
+
+## 📞 Site Contact Details
+**Display Phone:** ${data.site_phone}
+**Display Email:** ${data.site_email}
+**Preferred Contact:** ${data.preferred_contact}
+
+**Business Hours:**
+${data.business_hours ? Object.entries(data.business_hours).map(([day, hours]: [string, any]) => 
+  `- ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
+).join('\n') : 'Not provided'}
+
+## 🌐 Social Media & Online Presence
+${data.facebook_url ? `**Facebook:** ${data.facebook_url}` : ''}
+${data.instagram_url ? `**Instagram:** ${data.instagram_url}` : ''}
+${data.google_profile_url ? `**Google Business:** ${data.google_profile_url}` : ''}
+
+## 🔗 Domain Information
+**Has Domain:** ${data.has_domain}
+${data.has_domain === 'Yes' ? `**Current Domain:** ${data.domain_current}` : ''}
+${data.has_domain === 'No' && data.request_domain_purchase === 'Yes' ? `**Purchase Domain:** Yes\n**Domain Preferences:** ${data.domain_preferences || 'None specified'}` : ''}
+
+${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
+
+---
+**Submission ID:** ${savedData?.[0]?.id}
+**Submitted:** ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}
+**SMS Consent:** ${data.sms_consent ? 'Yes' : 'No'}
+        `.trim()
+
+        const clickupPayload = {
+          name: `Website Build - ${data.business_name}`,
+          description: clickupDescription,
+          markdown_description: clickupDescription,
+          status: 'to do',
+          priority: 3, // Normal priority
+          tags: ['onboarding', 'website-build', data.business_type?.toLowerCase().replace(/\s+/g, '-')],
+          custom_fields: [
+            {
+              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_NAME,
+              value: fullName
+            },
+            {
+              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_EMAIL,
+              value: data.contact_email
+            },
+            {
+              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_PHONE,
+              value: data.contact_phone
+            }
+          ].filter(field => field.id) // Only include custom fields if IDs are configured
+        }
+
+        const clickupResponse = await fetch(`https://api.clickup.com/api/v2/list/${process.env.CLICKUP_LIST_ID}/task`, {
+          method: 'POST',
+          headers: {
+            'Authorization': process.env.CLICKUP_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clickupPayload),
+        })
+
+        if (clickupResponse.ok) {
+          const clickupTask = await clickupResponse.json()
+          console.log('✅ Created ClickUp task:', clickupTask.id)
+          
+          // Optionally save ClickUp task ID to Supabase
+          if (clickupTask.id) {
+            await supabase
+              .from('onboarding_submissions')
+              .update({
+                clickup_task_id: clickupTask.id,
+                clickup_task_url: clickupTask.url,
+              })
+              .eq('id', savedData?.[0]?.id)
+          }
+        } else {
+          const errorText = await clickupResponse.text()
+          console.error('ClickUp API error:', clickupResponse.status, errorText)
+        }
+      } catch (clickupError) {
+        console.error('ClickUp integration error (non-fatal):', clickupError)
+        // Don't fail the whole request if ClickUp fails
+      }
+    }
+
     return NextResponse.json({ 
       success: true,
       message: 'Onboarding submitted successfully',
