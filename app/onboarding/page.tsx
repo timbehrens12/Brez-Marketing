@@ -1208,6 +1208,7 @@ export default function OnboardingPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
           Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
