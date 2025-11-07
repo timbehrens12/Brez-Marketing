@@ -487,43 +487,111 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Step {currentStep + 1} of {SECTIONS.length}</span>
-            <span>{Math.round(((currentStep + 1) / SECTIONS.length) * 100)}%</span>
+    <div className="min-h-screen bg-black text-white flex">
+      {/* Left Sidebar Navigation */}
+      <div className="hidden lg:flex lg:w-1/3 lg:flex-col lg:border-r lg:border-white/10 lg:bg-black/50">
+        <div className="p-6 lg:p-12">
+          <div className="space-y-8">
+            {SECTIONS.map((section, idx) => {
+              const Icon = section.icon
+              const isActive = currentStep === idx
+              const isCompleted = currentStep > idx
+              
+              return (
+                <div key={section.id} className="flex items-start gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                      isActive 
+                        ? 'bg-white text-black border-white' 
+                        : isCompleted 
+                        ? 'bg-white/20 border-white/30 text-white' 
+                        : 'bg-white/5 border-white/10 text-gray-500'
+                    }`}>
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
+                    </div>
+                    {idx < SECTIONS.length - 1 && (
+                      <div className={`w-0.5 h-8 mt-2 ${
+                        isCompleted ? 'bg-white/30' : 'bg-white/10'
+                      }`} />
+                    )}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className={`text-xs font-medium mb-1 ${
+                      isActive ? 'text-white' : 
+                      isCompleted ? 'text-gray-300' : 
+                      'text-gray-500'
+                    }`}>
+                      Step {idx + 1}
+                    </p>
+                    <p className={`text-sm font-medium ${
+                      isActive ? 'text-white' : 
+                      isCompleted ? 'text-gray-300' : 
+                      'text-gray-500'
+                    }`}>
+                      {section.title}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
-          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white transition-all duration-500"
-              style={{ width: `${((currentStep + 1) / SECTIONS.length) * 100}%` }}
-            />
+
+          {/* Progress Indicator */}
+          <div className="pt-8 mt-8 border-t border-white/10">
+            <div className="flex justify-between text-sm text-gray-400 mb-2">
+              <span>Progress</span>
+              <span>{Math.round(((currentStep + 1) / SECTIONS.length) * 100)}%</span>
+            </div>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white transition-all duration-500 ease-out"
+                style={{ width: `${((currentStep + 1) / SECTIONS.length) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
+      </div>
 
-        <Card className="bg-black border-white/10">
-          <CardHeader>
-            <CardTitle className="text-2xl">{SECTIONS[currentStep].title}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+      {/* Content Area - Full width on mobile, 2/3 width on desktop with offset */}
+      <div className="w-full lg:ml-[33.333%] lg:w-2/3 min-h-screen">
+        <div className="p-4 sm:p-6 lg:p-12">
+          <Card className="bg-black border-white/10 shadow-2xl shadow-white/10" style={{ boxShadow: '0 0 40px rgba(255, 255, 255, 0.1), 0 0 80px rgba(255, 255, 255, 0.05)' }}>
+            <CardHeader className="border-b border-white/10 p-4 sm:p-6">
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-white">{SECTIONS[currentStep].title}</CardTitle>
+              <CardDescription className="text-gray-400 text-base sm:text-lg">
+                {currentStep === 0 && "Tell us about your business"}
+                {currentStep === 1 && "What services do you offer?"}
+                {currentStep === 2 && "Where do you serve customers?"}
+                {currentStep === 3 && "Share your brand identity"}
+                {currentStep === 4 && "Tell your story"}
+                {currentStep === 5 && "How should customers contact you?"}
+                {currentStep === 6 && "Your online presence"}
+                {currentStep === 7 && "Domain information"}
+                {currentStep === 8 && "Final details and confirmation"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
             {/* Section A: Business & Contact */}
             {currentStep === 0 && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="business_name">Business Name *</Label>
+                  <Label htmlFor="business_name" className="text-white">Business Name *</Label>
                   <Input
                     id="business_name"
                     value={formData.business_name}
                     onChange={(e) => updateField('business_name', e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    placeholder="e.g., Payta's Concrete & Construction"
                   />
                   {errors.business_name && <p className="text-red-400 text-sm mt-1">{errors.business_name}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="owner_name">Owner Full Name *</Label>
+                  <Label htmlFor="owner_name" className="text-white">Owner Full Name *</Label>
                   <Input
                     id="owner_name"
                     value={formData.owner_name}
@@ -535,7 +603,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contact_phone">Phone for CRM *</Label>
+                    <Label htmlFor="contact_phone" className="text-white">Phone for CRM *</Label>
                     <Input
                       id="contact_phone"
                       type="tel"
@@ -548,7 +616,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="contact_email">Email for CRM *</Label>
+                    <Label htmlFor="contact_email" className="text-white">Email for CRM *</Label>
                     <Input
                       id="contact_email"
                       type="email"
@@ -562,7 +630,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="business_city">Business City *</Label>
+                    <Label htmlFor="business_city" className="text-white">Business City *</Label>
                     <Input
                       id="business_city"
                       value={formData.business_city}
@@ -573,7 +641,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="business_state">State/Province *</Label>
+                    <Label htmlFor="business_state" className="text-white">State/Province *</Label>
                     <Input
                       id="business_state"
                       value={formData.business_state}
@@ -586,7 +654,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="years_in_service">Years in Service *</Label>
+                  <Label htmlFor="years_in_service" className="text-white">Years in Service *</Label>
                   <Input
                     id="years_in_service"
                     value={formData.years_in_service}
@@ -598,7 +666,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="business_type">Business Type *</Label>
+                  <Label htmlFor="business_type" className="text-white">Business Type *</Label>
                   <select
                     id="business_type"
                     value={formData.business_type}
@@ -619,7 +687,7 @@ export default function OnboardingPage() {
             {currentStep === 1 && (
               <div className="space-y-4">
                 <div>
-                  <Label>Main Services *</Label>
+                  <Label className="text-white">Main Services *</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     {CONCRETE_SERVICES.map(service => (
                       <div key={service} className="flex items-center space-x-2">
@@ -642,7 +710,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="services_secondary">Other Services (optional)</Label>
+                  <Label htmlFor="services_secondary" className="text-white">Other Services (optional)</Label>
                   <Textarea
                     id="services_secondary"
                     value={formData.services_secondary}
@@ -658,7 +726,7 @@ export default function OnboardingPage() {
             {currentStep === 2 && (
               <div className="space-y-4">
                 <div>
-                  <Label>Serve Residential / Commercial / Both *</Label>
+                  <Label className="text-white">Serve Residential / Commercial / Both *</Label>
                   <RadioGroup
                     value={formData.market_type}
                     onValueChange={(value) => updateField('market_type', value)}
@@ -681,7 +749,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label>Cities/Areas Served *</Label>
+                  <Label className="text-white">Cities/Areas Served *</Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       value={serviceAreaInput}
@@ -733,7 +801,7 @@ export default function OnboardingPage() {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div>
-                  <Label>Logo (optional)</Label>
+                  <Label className="text-white">Logo (optional)</Label>
                   <div className="mt-2">
                     {logoPreview ? (
                       <div className="relative inline-block">
@@ -766,7 +834,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label>Project Photos (optional, max 10)</Label>
+                  <Label className="text-white">Project Photos (optional, max 10)</Label>
                   <div className="mt-2">
                     <label className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center cursor-pointer hover:border-white/40">
                       <Upload className="w-8 h-8 mx-auto mb-2" />
@@ -790,7 +858,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="brand_colors">Brand Colors (optional)</Label>
+                  <Label htmlFor="brand_colors" className="text-white">Brand Colors (optional)</Label>
                   <Input
                     id="brand_colors"
                     value={formData.brand_colors}
@@ -801,7 +869,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="design_constraints">Anything to avoid in design? (optional)</Label>
+                  <Label htmlFor="design_constraints" className="text-white">Anything to avoid in design? (optional)</Label>
                   <Textarea
                     id="design_constraints"
                     value={formData.design_constraints}
@@ -817,7 +885,7 @@ export default function OnboardingPage() {
             {currentStep === 4 && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="about_text">About Paragraph * (2-4 sentences)</Label>
+                  <Label htmlFor="about_text" className="text-white">About Paragraph * (2-4 sentences)</Label>
                   <Textarea
                     id="about_text"
                     value={formData.about_text}
@@ -830,7 +898,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="tagline">Tagline / Slogan (optional)</Label>
+                  <Label htmlFor="tagline" className="text-white">Tagline / Slogan (optional)</Label>
                   <Input
                     id="tagline"
                     value={formData.tagline}
@@ -847,7 +915,7 @@ export default function OnboardingPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="site_phone">Phone to Display *</Label>
+                    <Label htmlFor="site_phone" className="text-white">Phone to Display *</Label>
                     <Input
                       id="site_phone"
                       type="tel"
@@ -869,7 +937,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="site_email">Email to Display *</Label>
+                    <Label htmlFor="site_email" className="text-white">Email to Display *</Label>
                     <Input
                       id="site_email"
                       type="email"
@@ -892,7 +960,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label>Business Hours *</Label>
+                  <Label className="text-white">Business Hours *</Label>
                   <div className="space-y-2 mt-2">
                     {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
                       const dayData = formData.business_hours[day]
@@ -905,7 +973,7 @@ export default function OnboardingPage() {
                               updateNestedField('business_hours', day, { ...dayData, closed: !!checked })
                             }}
                           />
-                          <Label className="w-24">{dayLabels[day]}</Label>
+                          <Label className="w-24 text-white">{dayLabels[day]}</Label>
                           {!dayData.closed && (
                             <>
                               <select
@@ -940,7 +1008,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label>Preferred Contact Method *</Label>
+                  <Label className="text-white">Preferred Contact Method *</Label>
                   <RadioGroup
                     value={formData.preferred_contact}
                     onValueChange={(value) => updateField('preferred_contact', value)}
@@ -968,7 +1036,7 @@ export default function OnboardingPage() {
             {currentStep === 6 && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="facebook_url">Facebook URL (optional)</Label>
+                  <Label htmlFor="facebook_url" className="text-white">Facebook URL (optional)</Label>
                   <Input
                     id="facebook_url"
                     type="url"
@@ -979,7 +1047,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="instagram_url">Instagram URL (optional)</Label>
+                  <Label htmlFor="instagram_url" className="text-white">Instagram URL (optional)</Label>
                   <Input
                     id="instagram_url"
                     type="url"
@@ -990,7 +1058,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="google_profile_url">Google Business Profile URL (optional)</Label>
+                  <Label htmlFor="google_profile_url" className="text-white">Google Business Profile URL (optional)</Label>
                   <Input
                     id="google_profile_url"
                     type="url"
@@ -1006,7 +1074,7 @@ export default function OnboardingPage() {
             {currentStep === 7 && (
               <div className="space-y-4">
                 <div>
-                  <Label>Do you already own a domain? *</Label>
+                  <Label className="text-white">Do you already own a domain? *</Label>
                   <RadioGroup
                     value={formData.has_domain}
                     onValueChange={(value) => updateField('has_domain', value)}
@@ -1026,7 +1094,7 @@ export default function OnboardingPage() {
 
                 {formData.has_domain === 'Yes' && (
                   <div>
-                    <Label htmlFor="domain_current">Domain URL *</Label>
+                    <Label htmlFor="domain_current" className="text-white">Domain URL *</Label>
                     <Input
                       id="domain_current"
                       type="url"
@@ -1041,7 +1109,7 @@ export default function OnboardingPage() {
                 {formData.has_domain === 'No' && (
                   <>
                     <div>
-                      <Label>Would you like us to purchase & manage it for you? *</Label>
+                      <Label className="text-white">Would you like us to purchase & manage it for you? *</Label>
                       <RadioGroup
                         value={formData.request_domain_purchase}
                         onValueChange={(value) => updateField('request_domain_purchase', value)}
@@ -1060,7 +1128,7 @@ export default function OnboardingPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="domain_preferences">Desired domain ideas (optional)</Label>
+                      <Label htmlFor="domain_preferences" className="text-white">Desired domain ideas (optional)</Label>
                       <Input
                         id="domain_preferences"
                         value={formData.domain_preferences}
@@ -1078,7 +1146,7 @@ export default function OnboardingPage() {
             {currentStep === 8 && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="internal_notes">Notes for our team (optional)</Label>
+                  <Label htmlFor="internal_notes" className="text-white">Notes for our team (optional)</Label>
                   <Textarea
                     id="internal_notes"
                     value={formData.internal_notes}
@@ -1094,7 +1162,7 @@ export default function OnboardingPage() {
                     checked={formData.consent_accepted}
                     onCheckedChange={(checked) => updateField('consent_accepted', !!checked)}
                   />
-                  <Label htmlFor="consent_accepted" className="cursor-pointer">
+                  <Label htmlFor="consent_accepted" className="cursor-pointer text-white">
                     I confirm the info is accurate and authorize build. *
                   </Label>
                 </div>
@@ -1103,25 +1171,27 @@ export default function OnboardingPage() {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between gap-4 pt-6 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
               <Button
                 type="button"
                 onClick={handlePrev}
                 disabled={currentStep === 0}
                 variant="outline"
-                className="border-white/10 hover:bg-white/5 text-white"
+                className="border-white/10 hover:bg-white/5 text-white disabled:opacity-50 w-full sm:w-auto order-2 sm:order-1"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Back</span>
               </Button>
 
               {currentStep < SECTIONS.length - 1 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-white hover:bg-gray-200 text-black"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold w-full sm:w-auto order-1 sm:order-2"
                 >
-                  Next
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Continue</span>
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
@@ -1129,15 +1199,19 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-200 text-black"
+                  className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit'}
+                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Onboarding</span><span className="sm:hidden">Submit</span></>}
                   <CheckCircle2 className="w-4 h-4 ml-2" />
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
+
+        <p className="text-center text-gray-500 text-sm mt-6">
+          Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
+        </p>
       </div>
     </div>
   )
