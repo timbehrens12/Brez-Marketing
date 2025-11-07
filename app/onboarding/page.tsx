@@ -203,6 +203,9 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
+  
+  // TESTING MODE - Set to true to only show first step
+  const TESTING_MODE = true
 
   // Capture operator code from URL on mount
   useEffect(() => {
@@ -510,6 +513,22 @@ export default function OnboardingPage() {
         return `https://${url}`
       }
 
+      // TESTING MODE: Fill in dummy data for required fields
+      const testData = TESTING_MODE ? {
+        services_primary: formData.services_primary.length > 0 ? formData.services_primary : ['Test Service'],
+        services_secondary: formData.services_secondary || 'Test secondary services',
+        market_type: formData.market_type || 'Both',
+        service_areas: formData.service_areas.length > 0 ? formData.service_areas : ['Test City'],
+        about_text: formData.about_text || 'This is a test submission for ClickUp integration testing. This business provides quality services.',
+        tagline: formData.tagline || 'Test Tagline',
+        site_phone: formData.site_phone || formData.contact_phone,
+        site_email: formData.site_email || formData.contact_email,
+        preferred_contact: formData.preferred_contact || 'Email',
+        has_domain: formData.has_domain || 'No',
+        request_domain_purchase: formData.request_domain_purchase || 'No',
+        consent_accepted: true,
+      } : {}
+
       // Prepare payload according to spec
       const payload = {
         form_id: 'waas_onboarding_v1',
@@ -528,12 +547,12 @@ export default function OnboardingPage() {
         business_type: formData.business_type,
         
         // B) Services
-        services_primary: formData.services_primary,
-        services_secondary: formData.services_secondary || '',
+        services_primary: TESTING_MODE ? testData.services_primary : formData.services_primary,
+        services_secondary: TESTING_MODE ? testData.services_secondary : (formData.services_secondary || ''),
         
         // C) Service Areas
-        market_type: formData.market_type,
-        service_areas: formData.service_areas,
+        market_type: TESTING_MODE ? testData.market_type : formData.market_type,
+        service_areas: TESTING_MODE ? testData.service_areas : formData.service_areas,
         
         // D) Branding & Media
         logo_url: logoUrl || '',
@@ -542,14 +561,14 @@ export default function OnboardingPage() {
         design_constraints: formData.design_constraints || '',
         
         // E) About & Messaging
-        about_text: formData.about_text,
-        tagline: formData.tagline || '',
+        about_text: TESTING_MODE ? testData.about_text : formData.about_text,
+        tagline: TESTING_MODE ? testData.tagline : (formData.tagline || ''),
         
         // F) Site Contact Details
-        site_phone: formData.site_phone,
-        site_email: formData.site_email,
+        site_phone: TESTING_MODE ? testData.site_phone : formData.site_phone,
+        site_email: TESTING_MODE ? testData.site_email : formData.site_email,
         business_hours: formData.business_hours,
-        preferred_contact: formData.preferred_contact,
+        preferred_contact: TESTING_MODE ? testData.preferred_contact : formData.preferred_contact,
         
         // G) Social & GBP
         facebook_url: normalizeUrl(formData.facebook_url),
@@ -557,14 +576,14 @@ export default function OnboardingPage() {
         google_profile_url: normalizeUrl(formData.google_profile_url),
         
         // H) Domain
-        has_domain: formData.has_domain,
+        has_domain: TESTING_MODE ? testData.has_domain : formData.has_domain,
         domain_current: formData.domain_current || '',
-        request_domain_purchase: formData.request_domain_purchase || '',
+        request_domain_purchase: TESTING_MODE ? testData.request_domain_purchase : (formData.request_domain_purchase || ''),
         domain_preferences: formData.domain_preferences || '',
         
         // I) Final
         internal_notes: formData.internal_notes || '',
-        consent_accepted: formData.consent_accepted,
+        consent_accepted: TESTING_MODE ? testData.consent_accepted : formData.consent_accepted,
         
         // SMS Consent
         sms_consent: formData.sms_consent || false,
@@ -627,8 +646,15 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+      {/* Testing Mode Banner */}
+      {TESTING_MODE && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-500 text-black text-center py-2 px-4 font-bold">
+          🧪 TESTING MODE - Only Step 1 Required - Dummy Data Auto-Filled
+        </div>
+      )}
+      
       {/* Mobile Header - Shows only on mobile */}
-      <div className="lg:hidden sticky top-0 z-50 bg-black border-b border-white/10">
+      <div className={`lg:hidden sticky ${TESTING_MODE ? 'top-10' : 'top-0'} z-50 bg-black border-b border-white/10`}>
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -1562,7 +1588,7 @@ export default function OnboardingPage() {
             {/* Navigation */}
             <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/10">
               {/* Hide Previous button in testing mode (step 0) */}
-              {currentStep > 0 && (
+              {currentStep > 0 && !TESTING_MODE && (
               <Button
                 type="button"
                 onClick={handlePrev}
@@ -1575,15 +1601,15 @@ export default function OnboardingPage() {
               </Button>
               )}
 
-              {/* Show submit button only on final step */}
-              {currentStep === SECTIONS.length - 1 ? (
+              {/* Show submit button on final step OR in testing mode on step 0 */}
+              {(currentStep === SECTIONS.length - 1 || TESTING_MODE) ? (
                 <Button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                   className="bg-white hover:bg-gray-200 text-black font-semibold disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
                 >
-                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">Submit Onboarding</span><span className="sm:hidden">Submit</span></>}
+                  {isSubmitting ? 'Submitting...' : <><span className="hidden sm:inline">{TESTING_MODE ? 'Test Submit' : 'Submit Onboarding'}</span><span className="sm:hidden">Submit</span></>}
                   <CheckCircle2 className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
