@@ -79,6 +79,9 @@ type OnboardingData = {
   internal_notes: string
   consent_accepted: boolean
   
+  // SMS Consent
+  sms_consent: boolean
+  
   // Hidden/System
   form_id: string
   source: string
@@ -151,6 +154,9 @@ const INITIAL_DATA: OnboardingData = {
   // I) Final
   internal_notes: '',
   consent_accepted: false,
+  
+  // SMS Consent
+  sms_consent: false,
   
   // Hidden/System
   form_id: 'waas_onboarding_v1',
@@ -555,6 +561,9 @@ export default function OnboardingPage() {
         // I) Final
         internal_notes: formData.internal_notes || '',
         consent_accepted: formData.consent_accepted,
+        
+        // SMS Consent
+        sms_consent: formData.sms_consent || false,
       }
 
       toast.dismiss()
@@ -830,7 +839,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contact_phone" className="text-white">Phone for CRM *</Label>
+                    <Label htmlFor="contact_phone" className="text-white">Phone *</Label>
                     <Input
                       id="contact_phone"
                       type="tel"
@@ -840,10 +849,21 @@ export default function OnboardingPage() {
                       placeholder="(555) 123-4567"
                     />
                     {errors.contact_phone && <p className="text-red-400 text-sm mt-1">{errors.contact_phone}</p>}
+                    <div className="flex items-start gap-2 mt-3">
+                      <Checkbox
+                        id="sms_consent"
+                        checked={formData.sms_consent}
+                        onCheckedChange={(checked) => updateField('sms_consent', checked)}
+                        className="border-white/20 mt-1"
+                      />
+                      <Label htmlFor="sms_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
+                        I agree to receive text messages regarding my project status and updates. Message and data rates may apply.
+                      </Label>
+                  </div>
                 </div>
 
                   <div>
-                    <Label htmlFor="contact_email" className="text-white">Email for CRM *</Label>
+                    <Label htmlFor="contact_email" className="text-white">Email *</Label>
                     <Input
                       id="contact_email"
                       type="email"
