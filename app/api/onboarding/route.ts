@@ -177,6 +177,10 @@ Submitted: ${submissionTimestamp}
     // Create task in ClickUp for operators (if configured)
     if (process.env.CLICKUP_API_KEY && process.env.CLICKUP_LIST_ID) {
       try {
+        console.log('🔵 Starting ClickUp integration...')
+        console.log('🔵 List ID:', process.env.CLICKUP_LIST_ID)
+        console.log('🔵 API Key present:', !!process.env.CLICKUP_API_KEY)
+        
         // Format task description with all onboarding data
         const clickupDescription = `
 # 🎉 New Website Build Request
@@ -237,28 +241,50 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
 **SMS Consent:** ${data.sms_consent ? 'Yes' : 'No'}
         `.trim()
 
-        const clickupPayload = {
+        // Build payload - ClickUp API is picky about field names
+        const clickupPayload: any = {
           name: `Website Build - ${data.business_name}`,
           description: clickupDescription,
-          markdown_description: clickupDescription,
           status: 'to do',
-          priority: 3, // Normal priority
-          tags: ['onboarding', 'website-build', data.business_type?.toLowerCase().replace(/\s+/g, '-')],
-          custom_fields: [
-            {
-              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_NAME,
-              value: fullName
-            },
-            {
-              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_EMAIL,
-              value: data.contact_email
-            },
-            {
-              id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_PHONE,
-              value: data.contact_phone
-            }
-          ].filter(field => field.id) // Only include custom fields if IDs are configured
+          priority: 3,
         }
+
+        // Add tags only if they exist and are valid
+        const tags = ['onboarding', 'website-build']
+        if (data.business_type) {
+          const businessTypeTag = data.business_type.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+          if (businessTypeTag) tags.push(businessTypeTag)
+        }
+        if (tags.length > 0) {
+          clickupPayload.tags = tags
+        }
+
+        // Add custom fields only if configured
+        const customFields: any[] = []
+        if (process.env.CLICKUP_CUSTOM_FIELD_CLIENT_NAME) {
+          customFields.push({
+            id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_NAME,
+            value: fullName
+          })
+        }
+        if (process.env.CLICKUP_CUSTOM_FIELD_CLIENT_EMAIL) {
+          customFields.push({
+            id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_EMAIL,
+            value: data.contact_email
+          })
+        }
+        if (process.env.CLICKUP_CUSTOM_FIELD_CLIENT_PHONE) {
+          customFields.push({
+            id: process.env.CLICKUP_CUSTOM_FIELD_CLIENT_PHONE,
+            value: data.contact_phone
+          })
+        }
+        if (customFields.length > 0) {
+          clickupPayload.custom_fields = customFields
+        }
+
+        console.log('🔵 ClickUp payload:', JSON.stringify(clickupPayload, null, 2))
+        console.log('🔵 Making request to:', `https://api.clickup.com/api/v2/list/${process.env.CLICKUP_LIST_ID}/task`)
 
         const clickupResponse = await fetch(`https://api.clickup.com/api/v2/list/${process.env.CLICKUP_LIST_ID}/task`, {
           method: 'POST',
@@ -269,17 +295,40 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
           body: JSON.stringify(clickupPayload),
         })
 
+        const responseText = await clickupResponse.text()
+        console.log('🔵 ClickUp response status:', clickupResponse.status)
+        console.log('🔵 ClickUp response:', responseText)
+
         if (clickupResponse.ok) {
-          const clickupTask = await clickupResponse.json()
-          console.log('✅ Created ClickUp task:', clickupTask.id)
+          try {
+            const clickupTask = JSON.parse(responseText)
+            console.log('✅ Created ClickUp task:', clickupTask.id || clickupTask.task?.id)
+            console.log('✅ ClickUp task URL:', clickupTask.url || clickupTask.task?.url)
+          } catch (parseError) {
+            console.log('✅ ClickUp task created (response parsed):', responseText)
+          }
         } else {
-          const errorText = await clickupResponse.text()
-          console.error('ClickUp API error:', clickupResponse.status, errorText)
+          console.error('❌ ClickUp API error:', clickupResponse.status)
+          console.error('❌ Error response:', responseText)
+          
+          // Try to parse error for better logging
+          try {
+            const errorJson = JSON.parse(responseText)
+            console.error('❌ Error details:', JSON.stringify(errorJson, null, 2))
+          } catch (e) {
+            console.error('❌ Raw error text:', responseText)
+          }
         }
-      } catch (clickupError) {
-        console.error('ClickUp integration error (non-fatal):', clickupError)
+      } catch (clickupError: any) {
+        console.error('❌ ClickUp integration error (non-fatal):', clickupError)
+        console.error('❌ Error message:', clickupError.message)
+        console.error('❌ Error stack:', clickupError.stack)
         // Don't fail the whole request if ClickUp fails
       }
+    } else {
+      console.log('⚠️ ClickUp not configured - missing API_KEY or LIST_ID')
+      console.log('⚠️ CLICKUP_API_KEY present:', !!process.env.CLICKUP_API_KEY)
+      console.log('⚠️ CLICKUP_LIST_ID present:', !!process.env.CLICKUP_LIST_ID)
     }
 
     return NextResponse.json({ 
