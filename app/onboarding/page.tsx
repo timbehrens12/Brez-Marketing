@@ -622,8 +622,13 @@ export default function OnboardingPage() {
             </div>
             <div>
               <CardTitle className="text-4xl font-bold text-white mb-4">Thanks — we've got everything we need.</CardTitle>
-              <CardDescription className="text-gray-400 text-xl leading-relaxed">
-                We'll start your build now. You'll receive a confirmation and timeline in your dashboard. If we need anything else, we'll text or email you at {formData.contact_phone} / {formData.contact_email}.
+              <CardDescription className="text-gray-400 text-xl leading-relaxed space-y-4">
+                <p>
+                  Someone from our team will review your details and start your build immediately. You'll receive SMS updates as we progress through each stage of your project.
+                </p>
+                <p className="text-gray-500 text-lg">
+                  If you forgot to include any details or have questions, text your representative at {formData.contact_phone} or email us at {formData.contact_email}.
+                </p>
               </CardDescription>
             </div>
           </CardHeader>
