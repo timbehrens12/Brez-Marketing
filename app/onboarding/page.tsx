@@ -909,7 +909,7 @@ export default function OnboardingPage() {
                         className="border-white/20 mt-1"
                       />
                       <Label htmlFor="sms_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        I agree to receive text messages regarding my project status and updates. Message and data rates may apply.
+                        I agree to receive text messages from +1 833-847-1549 regarding my project status and updates. Message and data rates may apply.
                       </Label>
                   </div>
                 </div>
