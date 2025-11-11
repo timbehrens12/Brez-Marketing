@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -1582,7 +1583,15 @@ export default function OnboardingPage() {
                       className="border-white/20 mt-1"
                     />
                     <Label htmlFor="consent_accepted" className="text-white cursor-pointer leading-relaxed">
-                      I confirm the info is accurate and authorize build. *
+                      I confirm the info is accurate and authorize build. By submitting, you agree to our{' '}
+                      <Link href="/terms" className="underline hover:text-gray-300 transition-colors">
+                        Terms & Conditions
+                      </Link>
+                      {' '}and{' '}
+                      <Link href="/privacy" className="underline hover:text-gray-300 transition-colors">
+                        Privacy Policy
+                      </Link>
+                      . *
                     </Label>
                   </div>
                   {errors.consent_accepted && <p className="text-red-400 text-sm mt-2">{errors.consent_accepted}</p>}
@@ -1632,9 +1641,20 @@ export default function OnboardingPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
-        </p>
+        <div className="text-center text-gray-500 text-sm mt-6 space-y-2">
+          <p>
+            Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
+          </p>
+          <p className="flex items-center justify-center gap-2 flex-wrap">
+            <Link href="/privacy" className="text-gray-400 hover:text-white underline transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/terms" className="text-gray-400 hover:text-white underline transition-colors">
+              Terms & Conditions
+            </Link>
+          </p>
+        </div>
         </div>
       </div>
     </div>
