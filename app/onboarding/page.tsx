@@ -206,7 +206,7 @@ export default function OnboardingPage() {
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
   
   // TESTING MODE - Set to true to only show first step
-  const TESTING_MODE = true
+  const TESTING_MODE = false
 
   // Capture operator code from URL on mount
   useEffect(() => {
@@ -856,7 +856,7 @@ export default function OnboardingPage() {
                     value={formData.business_name}
                     onChange={(e) => updateField('business_name', e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., Payta's Concrete & Construction"
+                    placeholder="e.g., Smith's Construction & Services"
                   />
                   {errors.business_name && <p className="text-red-400 text-sm mt-1">{errors.business_name}</p>}
                 </div>
@@ -870,7 +870,7 @@ export default function OnboardingPage() {
                       value={formData.first_name}
                       onChange={(e) => updateField('first_name', e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="e.g., Payta"
+                      placeholder="e.g., John"
                     />
                     {errors.first_name && <p className="text-red-400 text-sm mt-1">{errors.first_name}</p>}
                   </div>
@@ -936,7 +936,7 @@ export default function OnboardingPage() {
                       value={formData.business_city}
                       onChange={(e) => updateField('business_city', e.target.value)}
                         className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="e.g., Spring"
+                      placeholder="e.g., Houston"
                       />
                     {errors.business_city && <p className="text-red-400 text-sm mt-1">{errors.business_city}</p>}
                     </div>
@@ -1022,7 +1022,7 @@ export default function OnboardingPage() {
                     value={formData.services_secondary}
                     onChange={(e) => updateField('services_secondary', e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-24"
-                    placeholder="e.g., Stamped concrete and resurfacing..."
+                    placeholder="e.g., Additional services or specialties..."
                   />
                         </div>
               </>
@@ -1066,7 +1066,7 @@ export default function OnboardingPage() {
                         }
                       }}
                       className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                      placeholder="e.g., Spring, TX"
+                      placeholder="e.g., Houston, TX"
                     />
                               <Button
                                 type="button"
@@ -1265,7 +1265,7 @@ export default function OnboardingPage() {
                     value={formData.about_text}
                     onChange={(e) => updateField('about_text', e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-32"
-                    placeholder="We pour high-quality concrete for homeowners and builders throughout the Spring area. With over 10 years of experience, we specialize in driveways, patios, and foundations..."
+                    placeholder="We provide high-quality services to customers throughout the area. With over 10 years of experience, we specialize in [your main services]..."
                   />
                   {errors.about_text && <p className="text-red-400 text-sm mt-1">{errors.about_text}</p>}
                 </div>
@@ -1277,7 +1277,7 @@ export default function OnboardingPage() {
                     value={formData.tagline}
                     onChange={(e) => updateField('tagline', e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    placeholder="e.g., Built to last. Poured with pride."
+                    placeholder="e.g., Quality service you can trust."
                   />
                 </div>
               </>
@@ -1552,7 +1552,7 @@ export default function OnboardingPage() {
                         value={formData.domain_preferences}
                         onChange={(e) => updateField('domain_preferences', e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                        placeholder="e.g., paytasconcrete.com, paytasconstruction.com"
+                        placeholder="e.g., yourbusiness.com, yourcompany.com"
                   />
                 </div>
                   </>
