@@ -370,7 +370,6 @@ export default function OnboardingPage() {
       if (!formData.business_name.trim()) newErrors.business_name = 'Business name is required'
       if (!formData.first_name.trim()) newErrors.first_name = 'First name is required'
       if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
-      if (!formData.contact_phone.trim()) newErrors.contact_phone = 'Phone is required'
       if (!formData.contact_email.trim()) newErrors.contact_email = 'Email is required'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) newErrors.contact_email = 'Invalid email'
       if (!formData.business_city.trim()) newErrors.business_city = 'City is required'
@@ -628,7 +627,7 @@ export default function OnboardingPage() {
                   Someone from our team will review your details and start your build immediately. You'll receive SMS updates as we progress through each stage of your project.
                 </p>
                 <p className="text-gray-500 text-lg">
-                  If you forgot to include any details or have questions, text your representative at {formData.contact_phone} or email us at {formData.contact_email}.
+                  If you forgot to include any details or have questions, {formData.contact_phone ? `text your representative at ${formData.contact_phone} or ` : ''}email us at {formData.contact_email}.
                 </p>
               </CardDescription>
             </div>
@@ -891,7 +890,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contact_phone" className="text-white">Phone *</Label>
+                    <Label htmlFor="contact_phone" className="text-white">Phone</Label>
                     <Input
                       id="contact_phone"
                       type="tel"
