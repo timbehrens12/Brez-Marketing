@@ -66,7 +66,7 @@ export default function TermsAndConditionsPage() {
               <li>Message and data rates may apply based on your carrier's plan</li>
               <li>Message frequency varies based on your project status</li>
               <li>You can opt out at any time by replying STOP to any message</li>
-              <li>Reply HELP for assistance or contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a></li>
+              <li>Reply HELP for assistance or contact <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a></li>
             </ul>
             <p>
               By providing your phone number and checking the SMS consent box, you agree to these SMS terms.
@@ -183,8 +183,8 @@ export default function TermsAndConditionsPage() {
               Questions about these Terms can be sent to:
             </p>
             <p className="text-white">
-              <a href="mailto:tlucasystems@gmail.com" className="hover:text-gray-400 transition-colors">
-                tlucasystems@gmail.com
+              <a href="mailto:help@tlucasystems.com" className="hover:text-gray-400 transition-colors">
+                help@tlucasystems.com
               </a>
             </p>
           </section>

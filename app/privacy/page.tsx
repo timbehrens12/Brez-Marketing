@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
               <li>Message and data rates may apply based on your carrier's plan</li>
               <li>Message frequency varies based on your project status</li>
               <li>You can opt out at any time by replying STOP to any message</li>
-              <li>Reply HELP for assistance or contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a></li>
+              <li>Reply HELP for assistance or contact <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a></li>
               </ul>
             <p>
               We do not share your mobile number with third parties for marketing purposes.
@@ -124,7 +124,7 @@ export default function PrivacyPolicyPage() {
               Your data is stored securely as long as your account is active. If your subscription ends, we retain backups for up to 30 days before permanent deletion.
             </p>
             <p>
-              You may request early deletion by emailing <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a>.
+              You may request early deletion by emailing <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a>.
               </p>
             </section>
 
@@ -157,7 +157,7 @@ export default function PrivacyPolicyPage() {
               <li>Withdraw consent for communications</li>
               </ul>
             <p>
-              Contact <a href="mailto:tlucasystems@gmail.com" className="text-white hover:text-gray-400 underline transition-colors">tlucasystems@gmail.com</a> to exercise these rights.
+              Contact <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a> to exercise these rights.
             </p>
             </section>
 
@@ -174,8 +174,8 @@ export default function PrivacyPolicyPage() {
               If you have any privacy concerns or requests, contact us at:
             </p>
             <p className="text-white">
-              <a href="mailto:tlucasystems@gmail.com" className="hover:text-gray-400 transition-colors">
-                tlucasystems@gmail.com
+              <a href="mailto:help@tlucasystems.com" className="hover:text-gray-400 transition-colors">
+                help@tlucasystems.com
               </a>
               </p>
             </section>

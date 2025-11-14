@@ -645,11 +645,11 @@ function ContactSection() {
                 </h3>
               </div>
               <a
-                href="mailto:tlucasystems@gmail.com"
+                href="mailto:help@tlucasystems.com"
                 className="text-xl font-bold hover:underline break-all block"
                 style={{ color: COLORS.text }}
               >
-                tlucasystems@gmail.com
+                help@tlucasystems.com
               </a>
             </CardContent>
           </Card>
@@ -733,7 +733,7 @@ function Footer() {
               </li>
               <li>
                 <a href="mailto:tlucasystems@gmail.com" className="hover:underline break-all">
-                  tlucasystems@gmail.com
+                  help@tlucasystems.com
                 </a>
               </li>
             </ul>

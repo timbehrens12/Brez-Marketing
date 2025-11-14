@@ -72,8 +72,8 @@ export default function PrivacyPolicy() {
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
               <p className="mb-4">
-                Email: <a href="mailto:privacy@brezmarketingdashboard.com" className="text-white hover:text-gray-200">
-                  tlucasystems@gmail.com
+                Email: <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-200">
+                  help@tlucasystems.com
                 </a>
               </p>
             </section>

@@ -1642,7 +1642,7 @@ export default function OnboardingPage() {
 
         <div className="text-center text-gray-500 text-sm mt-6 space-y-2">
           <p>
-            Questions? Email <a href="mailto:tlucasystems@gmail.com" className="text-white hover:underline">tlucasystems@gmail.com</a>
+            Questions? Email <a href="mailto:help@tlucasystems.com" className="text-white hover:underline">help@tlucasystems.com</a>
           </p>
           <p className="flex items-center justify-center gap-2 flex-wrap">
             <Link href="/privacy" className="text-gray-400 hover:text-white underline transition-colors">

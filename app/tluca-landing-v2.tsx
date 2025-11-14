@@ -357,11 +357,11 @@ function ContactSection() {
                 <h3 className="text-xl font-bold" style={{ color: COLORS.platinum }}>Email Us</h3>
               </div>
               <a
-                href="mailto:tlucasystems@gmail.com"
+                href="mailto:help@tlucasystems.com"
                 className="text-2xl font-bold hover:underline break-all"
                 style={{ color: COLORS.silver }}
               >
-                tlucasystems@gmail.com
+                help@tlucasystems.com
               </a>
             </CardContent>
           </Card>
@@ -413,7 +413,7 @@ function Footer() {
             <h4 className="font-bold mb-4" style={{ color: COLORS.silver }}>Contact</h4>
             <ul className="space-y-3" style={{ color: COLORS.steel }}>
               <li><a href="tel:832-561-4407" className="hover:underline">832-561-4407</a></li>
-              <li><a href="mailto:tlucasystems@gmail.com" className="hover:underline break-all">tlucasystems@gmail.com</a></li>
+              <li><a href="mailto:help@tlucasystems.com" className="hover:underline break-all">help@tlucasystems.com</a></li>
             </ul>
           </div>
         </div>
