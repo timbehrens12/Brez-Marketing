@@ -57,19 +57,66 @@ export default function TermsAndConditionsPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-white mb-4">2.1 SMS Communications</h2>
-            <p className="mb-4">
-              We send occasional SMS updates about your order, project progress, and service notifications when you provide consent during onboarding.
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
-              <li>You consent to receive text messages from TLUCA Systems at the phone number you provide</li>
-              <li>Message and data rates may apply based on your carrier's plan</li>
-              <li>Message frequency varies based on your project status</li>
-              <li>You can opt out at any time by replying STOP to any message</li>
-              <li>Reply HELP for assistance or contact <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a></li>
-            </ul>
-            <p>
-              By providing your phone number and checking the SMS consent box, you agree to these SMS terms.
+            <h2 className="text-2xl font-bold text-white mb-4">2.1 SMS/Text Messaging Terms of Service</h2>
+            
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Program Name: TLUCA Systems Transactional Messaging</h3>
+              <p className="mb-4">
+                TLUCA Systems sends transactional SMS messages related to your account, orders, and services you have requested. These messages may include appointment reminders, order confirmations, project status updates, account notifications, and service-related communications.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Opt-Out Instructions</h3>
+              <p className="mb-2">
+                You can cancel the SMS service at any time. Simply text <strong className="text-white">"STOP"</strong> to the shortcode or phone number from which you received the message. Upon sending "STOP," we will confirm your unsubscribe status via SMS. Following this confirmation, you will no longer receive SMS messages from us.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Rejoining Instructions</h3>
+              <p>
+                To rejoin, sign up as you did initially through our onboarding form or contact us at <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a>, and we will resume sending SMS messages to you.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Help Instructions</h3>
+              <p>
+                If you experience issues with the messaging program, reply with the keyword <strong className="text-white">"HELP"</strong> for more assistance, or reach out directly to <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a> or call us at 832-561-4407.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Carrier Liability Disclaimer</h3>
+              <p>
+                Carriers are not liable for delayed or undelivered messages.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Message and Data Rates</h3>
+              <p>
+                As always, message and data rates may apply for messages sent to you from us and to us from you. Message frequency varies. For questions about your text plan or data plan, contact your wireless provider.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Privacy Policy</h3>
+              <p>
+                For privacy-related inquiries, please refer to our <a href="/privacy" className="text-white hover:text-gray-400 underline transition-colors">Privacy Policy</a>.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">Compliance</h3>
+              <p>
+                This SMS program complies with industry standards and applicable laws, including the CTIA Short Code Monitoring Handbook guidelines and TCPA requirements.
+              </p>
+            </div>
+
+            <p className="mt-4">
+              By providing your phone number and checking the SMS consent box, you agree to these SMS terms and conditions.
             </p>
           </section>
 

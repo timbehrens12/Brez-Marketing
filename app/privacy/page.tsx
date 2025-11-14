@@ -102,9 +102,16 @@ export default function PrivacyPolicyPage() {
               <li>You can opt out at any time by replying STOP to any message</li>
               <li>Reply HELP for assistance or contact <a href="mailto:help@tlucasystems.com" className="text-white hover:text-gray-400 underline transition-colors">help@tlucasystems.com</a></li>
               </ul>
-            <p>
-              We do not share your mobile number with third parties for marketing purposes.
+            
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-4">
+              <h3 className="text-lg font-semibold text-white mb-2">Mobile Information Privacy</h3>
+              <p className="mb-2">
+                <strong className="text-white">No mobile information will be shared with third parties/affiliates for marketing/promotional purposes.</strong> Information sharing to subcontractors in support services, such as customer service is permitted. All other use case categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties, except for aggregators and providers of the Text Message services.
               </p>
+              <p>
+                Text messaging originator opt-in data and consent will not be shared with any third parties, except for aggregators and providers of the Text Message services.
+              </p>
+            </div>
             </section>
 
           <section>
@@ -112,10 +119,16 @@ export default function PrivacyPolicyPage() {
             <p className="mb-4">
               We do not sell or rent your personal data. We only share limited information with:
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong className="text-white">Service Providers:</strong> For hosting, payments, analytics, and customer communication (e.g., GoHighLevel, Mailgun, Stripe, AWS).</li>
+            <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
+              <li><strong className="text-white">Service Providers:</strong> For hosting, payments, analytics, and customer communication (e.g., GoHighLevel, Mailgun, Stripe, AWS). Information sharing to subcontractors in support services, such as customer service is permitted.</li>
               <li><strong className="text-white">Legal Authorities:</strong> If required by law or to protect our rights and users' safety.</li>
-              </ul>
+            </ul>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <p className="text-white font-semibold mb-2">Important: Text Messaging Data Exclusion</p>
+              <p>
+                <strong className="text-white">All the above categories exclude text messaging originator opt-in data and consent;</strong> this information will not be shared with any third parties, excluding aggregators and providers of the Text Message services.
+              </p>
+            </div>
             </section>
 
           <section>
