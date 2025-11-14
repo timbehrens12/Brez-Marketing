@@ -908,7 +908,7 @@ export default function OnboardingPage() {
                         className="border-white/20 mt-1"
                       />
                       <Label htmlFor="sms_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        By checking this box, I consent to receive transactional messages related to my account, orders, or services I have requested from TLUCA Systems. These messages may include appointment reminders, order confirmations, and account notifications among others. Message frequency may vary. Message & Data rates may apply. Reply HELP for help or STOP to opt-out.
+                        By checking this box, I consent to receive transactional messages related to my account, orders, or services I have requested from TLUCA Systems. These messages may include appointment reminders, order confirmations, and account notifications among others. Message frequency may vary. Message & Data rates may apply. Reply HELP for help or STOP to opt-out. For assistance, email help@tlucasystems.com
                       </Label>
                   </div>
                 </div>
