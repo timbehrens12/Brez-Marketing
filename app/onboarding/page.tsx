@@ -909,7 +909,7 @@ export default function OnboardingPage() {
                         className="border-white/20 mt-1"
                       />
                       <Label htmlFor="sms_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        I agree to receive text messages from +1 833-847-1549 regarding my project status and updates. Message and data rates may apply.
+                        By checking this box, I consent to receive transactional messages related to my account, orders, or services I have requested from TLUCA Systems. These messages may include appointment reminders, order confirmations, and account notifications among others. Message frequency may vary. Message & Data rates may apply. Reply HELP for help or STOP to opt-out.
                       </Label>
                   </div>
                 </div>
