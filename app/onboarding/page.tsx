@@ -206,7 +206,7 @@ export default function OnboardingPage() {
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
   
   // TESTING MODE - Set to true to only show first step
-  const TESTING_MODE = false
+  const TESTING_MODE = true
 
   // Capture operator code from URL on mount
   useEffect(() => {
