@@ -82,8 +82,8 @@ type OnboardingData = {
   consent_accepted: boolean
   
   // SMS Consent
-  sms_marketing_consent: boolean
-  sms_transactional_consent: boolean
+  sms_consent_marketing: boolean
+  sms_consent_transactional: boolean
   
   // Hidden/System
   form_id: string
@@ -160,8 +160,8 @@ const INITIAL_DATA: OnboardingData = {
   consent_accepted: false,
   
   // SMS Consent
-  sms_marketing_consent: false,
-  sms_transactional_consent: false,
+  sms_consent_marketing: false,
+  sms_consent_transactional: false,
   
   // Hidden/System
   form_id: 'waas_onboarding_v1',
@@ -588,8 +588,8 @@ export default function OnboardingPage() {
         consent_accepted: TESTING_MODE ? testData.consent_accepted : formData.consent_accepted,
         
         // SMS Consent
-        sms_marketing_consent: formData.sms_marketing_consent || false,
-        sms_transactional_consent: formData.sms_transactional_consent || false,
+        sms_consent_marketing: formData.sms_consent_marketing || false,
+        sms_consent_transactional: formData.sms_consent_transactional || false,
       }
 
       toast.dismiss()
@@ -889,7 +889,7 @@ export default function OnboardingPage() {
                     />
                     {errors.last_name && <p className="text-red-400 text-sm mt-1">{errors.last_name}</p>}
                   </div>
-                </div>
+                  </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -904,37 +904,31 @@ export default function OnboardingPage() {
                     />
                     {errors.contact_phone && <p className="text-red-400 text-sm mt-1">{errors.contact_phone}</p>}
                     
-                    {/* SMS Marketing Consent */}
-                    <div className="flex items-start gap-3 mt-4">
-                      <Checkbox
-                        id="sms_marketing_consent"
-                        checked={formData.sms_marketing_consent}
-                        onCheckedChange={(checked) => updateField('sms_marketing_consent', checked)}
-                        className="border-white/20 mt-1 flex-shrink-0"
-                      />
-                      <Label htmlFor="sms_marketing_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        I consent to receive marketing text messages from TLUCA Systems at the phone number provided. Frequency may vary. Message & data rates may apply. Text HELP for assistance, reply STOP to opt out.
-                      </Label>
-                    </div>
+                    {/* SMS Consent Checkboxes */}
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          id="sms_consent_marketing"
+                          checked={formData.sms_consent_marketing}
+                          onCheckedChange={(checked) => updateField('sms_consent_marketing', checked)}
+                          className="border-white/20 mt-1"
+                        />
+                        <Label htmlFor="sms_consent_marketing" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
+                          I consent to receive marketing text messages from TLUCA Systems at the phone number provided. Frequency may vary. Message & data rates may apply. Text HELP for assistance, reply STOP to opt out.
+                        </Label>
+                      </div>
 
-                    {/* SMS Transactional Consent */}
-                    <div className="flex items-start gap-3 mt-3">
-                      <Checkbox
-                        id="sms_transactional_consent"
-                        checked={formData.sms_transactional_consent}
-                        onCheckedChange={(checked) => updateField('sms_transactional_consent', checked)}
-                        className="border-white/20 mt-1 flex-shrink-0"
-                      />
-                      <Label htmlFor="sms_transactional_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        I consent to receive non-marketing text messages from TLUCA Systems about my order updates, appointment reminders etc. Message & data rates may apply.
-                      </Label>
-                    </div>
-
-                    {/* Terms & Privacy Links */}
-                    <div className="mt-2 ml-7">
-                      <Link href="/terms" className="text-blue-400 hover:underline text-sm font-medium">Terms of Service</Link>
-                      <span className="text-gray-400 mx-1 text-sm">&</span>
-                      <Link href="/privacy" className="text-blue-400 hover:underline text-sm font-medium">Privacy Policy</Link>
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          id="sms_consent_transactional"
+                          checked={formData.sms_consent_transactional}
+                          onCheckedChange={(checked) => updateField('sms_consent_transactional', checked)}
+                          className="border-white/20 mt-1"
+                        />
+                        <Label htmlFor="sms_consent_transactional" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
+                          I consent to receive non-marketing text messages from TLUCA Systems about my order updates, appointment reminders etc. Message & data rates may apply.
+                        </Label>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1678,7 +1672,7 @@ export default function OnboardingPage() {
             <Link href="/terms" className="text-gray-400 hover:text-white underline transition-colors">
               Terms & Conditions
             </Link>
-          </p>
+        </p>
         </div>
         </div>
       </div>

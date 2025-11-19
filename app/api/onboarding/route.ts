@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
       try {
         // Format email content for GHL notes
-        const emailBody = `
+    const emailBody = `
 🎉 NEW CLIENT ONBOARDING RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 BUSINESS INFORMATION
@@ -75,12 +75,9 @@ ${data.domain_preferences ? `Preferences: ${data.domain_preferences}` : ''}
 
 ${data.internal_notes ? `Notes: ${data.internal_notes}` : ''}
 
-SMS Marketing Consent: ${data.sms_marketing_consent ? 'Yes' : 'No'}
-SMS Transactional Consent: ${data.sms_transactional_consent ? 'Yes' : 'No'}
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Submitted: ${submissionTimestamp}
-        `.trim()
+    `.trim()
 
         // Create/Update Contact in GoHighLevel
         const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
@@ -249,8 +246,8 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
 
 ---
 **Submitted:** ${submissionTimestamp}
-**SMS Marketing Consent:** ${data.sms_marketing_consent ? 'Yes' : 'No'}
-**SMS Transactional Consent:** ${data.sms_transactional_consent ? 'Yes' : 'No'}
+**SMS Consent - Marketing:** ${data.sms_consent_marketing ? 'Yes' : 'No'}
+**SMS Consent - Transactional:** ${data.sms_consent_transactional ? 'Yes' : 'No'}
         `.trim()
 
         // Build payload - ClickUp API is picky about field names
