@@ -75,6 +75,9 @@ ${data.domain_preferences ? `Preferences: ${data.domain_preferences}` : ''}
 
 ${data.internal_notes ? `Notes: ${data.internal_notes}` : ''}
 
+SMS Marketing Consent: ${data.sms_marketing_consent ? 'Yes' : 'No'}
+SMS Transactional Consent: ${data.sms_transactional_consent ? 'Yes' : 'No'}
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Submitted: ${submissionTimestamp}
         `.trim()
@@ -246,7 +249,8 @@ ${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
 
 ---
 **Submitted:** ${submissionTimestamp}
-**SMS Consent:** ${data.sms_consent ? 'Yes' : 'No'}
+**SMS Marketing Consent:** ${data.sms_marketing_consent ? 'Yes' : 'No'}
+**SMS Transactional Consent:** ${data.sms_transactional_consent ? 'Yes' : 'No'}
         `.trim()
 
         // Build payload - ClickUp API is picky about field names

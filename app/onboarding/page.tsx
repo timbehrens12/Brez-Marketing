@@ -82,7 +82,8 @@ type OnboardingData = {
   consent_accepted: boolean
   
   // SMS Consent
-  sms_consent: boolean
+  sms_marketing_consent: boolean
+  sms_transactional_consent: boolean
   
   // Hidden/System
   form_id: string
@@ -159,7 +160,8 @@ const INITIAL_DATA: OnboardingData = {
   consent_accepted: false,
   
   // SMS Consent
-  sms_consent: false,
+  sms_marketing_consent: false,
+  sms_transactional_consent: false,
   
   // Hidden/System
   form_id: 'waas_onboarding_v1',
@@ -586,7 +588,8 @@ export default function OnboardingPage() {
         consent_accepted: TESTING_MODE ? testData.consent_accepted : formData.consent_accepted,
         
         // SMS Consent
-        sms_consent: formData.sms_consent || false,
+        sms_marketing_consent: formData.sms_marketing_consent || false,
+        sms_transactional_consent: formData.sms_transactional_consent || false,
       }
 
       toast.dismiss()
@@ -900,16 +903,39 @@ export default function OnboardingPage() {
                       placeholder="(555) 123-4567"
                     />
                     {errors.contact_phone && <p className="text-red-400 text-sm mt-1">{errors.contact_phone}</p>}
-                    <div className="flex items-start gap-2 mt-3">
+                    
+                    {/* SMS Marketing Consent */}
+                    <div className="flex items-start gap-3 mt-4">
                       <Checkbox
-                        id="sms_consent"
-                        checked={formData.sms_consent}
-                        onCheckedChange={(checked) => updateField('sms_consent', checked)}
-                        className="border-white/20 mt-1"
+                        id="sms_marketing_consent"
+                        checked={formData.sms_marketing_consent}
+                        onCheckedChange={(checked) => updateField('sms_marketing_consent', checked)}
+                        className="border-white/20 mt-1 flex-shrink-0"
                       />
-                      <Label htmlFor="sms_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
-                        By checking this box, I consent to receive transactional messages related to my account, orders, or services I have requested from TLUCA Systems. These messages may include appointment reminders, order confirmations, and account notifications among others. Message frequency may vary. Message & Data rates may apply. Reply HELP for help or STOP to opt-out. For assistance, email help@tlucasystems.com
+                      <Label htmlFor="sms_marketing_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
+                        I consent to receive marketing text messages from TLUCA Systems at the phone number provided. Frequency may vary. Message & data rates may apply. Text HELP for assistance, reply STOP to opt out.
                       </Label>
+                    </div>
+
+                    {/* SMS Transactional Consent */}
+                    <div className="flex items-start gap-3 mt-3">
+                      <Checkbox
+                        id="sms_transactional_consent"
+                        checked={formData.sms_transactional_consent}
+                        onCheckedChange={(checked) => updateField('sms_transactional_consent', checked)}
+                        className="border-white/20 mt-1 flex-shrink-0"
+                      />
+                      <Label htmlFor="sms_transactional_consent" className="text-gray-400 text-sm cursor-pointer leading-relaxed">
+                        I consent to receive non-marketing text messages from TLUCA Systems about my order updates, appointment reminders etc. Message & data rates may apply.
+                      </Label>
+                    </div>
+
+                    {/* Terms & Privacy Links */}
+                    <div className="mt-2 ml-7">
+                      <Link href="/terms" className="text-blue-400 hover:underline text-sm font-medium">Terms of Service</Link>
+                      <span className="text-gray-400 mx-1 text-sm">&</span>
+                      <Link href="/privacy" className="text-blue-400 hover:underline text-sm font-medium">Privacy Policy</Link>
+                    </div>
                   </div>
                 </div>
 
