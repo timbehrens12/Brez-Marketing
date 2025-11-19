@@ -945,7 +945,7 @@ export default function OnboardingPage() {
                     />
                     {errors.contact_email && <p className="text-red-400 text-sm mt-1">{errors.contact_email}</p>}
                   </div>
-                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
