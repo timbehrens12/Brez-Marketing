@@ -931,7 +931,6 @@ export default function OnboardingPage() {
                       </div>
                     </div>
                   </div>
-                </div>
 
                   <div>
                     <Label htmlFor="contact_email" className="text-white">Email *</Label>
