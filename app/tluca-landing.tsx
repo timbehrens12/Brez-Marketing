@@ -69,6 +69,29 @@ function HeroSection() {
         }}
       />
       
+      {/* Navigation */}
+      <header className="absolute top-0 left-0 right-0 z-20">
+        <nav className="max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold" style={{ color: COLORS.text }}>
+            TLUCA
+          </Link>
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/#services" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Services</Link>
+            <Link href="/#process" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Process</Link>
+            <Link href="/about" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>About</Link>
+            <Link href="/#contact" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Contact</Link>
+          </div>
+          <Button
+            size="sm"
+            className="hidden md:inline-flex px-5 py-2.5 font-semibold rounded-lg"
+            style={{ backgroundColor: COLORS.accent, color: COLORS.dark }}
+            onClick={scrollToContact}
+          >
+            Get Started
+          </Button>
+        </nav>
+      </header>
+
       <div className="max-w-7xl mx-auto text-center relative z-10">
         {/* Badge */}
         <div 
@@ -189,7 +212,7 @@ function ServicesSection() {
   ]
 
   return (
-    <section className="py-32 px-6 lg:px-8" style={{ backgroundColor: COLORS.gray }}>
+    <section id="services" className="py-32 px-6 lg:px-8" style={{ backgroundColor: COLORS.gray }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
           <div 
@@ -301,7 +324,7 @@ function ProcessSection() {
   ]
 
   return (
-    <section className="py-32 px-6 lg:px-8 relative" style={{ backgroundColor: COLORS.dark }}>
+    <section id="process" className="py-32 px-6 lg:px-8 relative" style={{ backgroundColor: COLORS.dark }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
           <div 
@@ -703,6 +726,11 @@ function Footer() {
               Quick Links
             </h4>
             <ul className="space-y-3" style={{ color: COLORS.textDark }}>
+              <li>
+                <Link href="/about" className="hover:underline">
+                  About Us
+                </Link>
+              </li>
               <li>
                 <Link href="/privacy" className="hover:underline">
                   Privacy Policy
