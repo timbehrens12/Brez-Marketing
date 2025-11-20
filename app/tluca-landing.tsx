@@ -122,7 +122,7 @@ function HeroSection() {
           style={{ color: COLORS.textLight }}
         >
           Complete website solutions built for service businesses. 
-          From design to deployment, we handle everything so you can focus on your clients.
+          From design to deployment, I handle everything so you can focus on your clients.
         </p>
 
         {/* CTA Buttons */}
@@ -224,7 +224,7 @@ function ServicesSection() {
           >
             <Layers className="w-4 h-4" style={{ color: COLORS.textLight }} />
             <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              What We Build
+              What I Build
             </span>
           </div>
           <h2 
@@ -304,22 +304,22 @@ function ProcessSection() {
     {
       number: "01",
       title: "Discovery & Planning",
-      description: "We learn about your business, target audience, and goals. Together, we map out the perfect solution."
+      description: "I learn about your business, target audience, and goals to map out the perfect solution."
     },
     {
       number: "02",
       title: "Design & Development",
-      description: "Our team builds your website, sets up integrations, and configures all automations to your specifications."
+      description: "I build your website, set up integrations, and configure all automations to your specifications."
     },
     {
       number: "03",
       title: "Testing & Refinement",
-      description: "We test every feature, optimize performance, and refine until everything works flawlessly."
+      description: "I test every feature, optimize performance, and refine until everything works flawlessly."
     },
     {
       number: "04",
       title: "Launch & Support",
-      description: "Go live with confidence. We provide training, documentation, and ongoing support as you grow."
+      description: "Go live with confidence. I provide training, documentation, and ongoing support as you grow."
     }
   ]
 
@@ -336,7 +336,7 @@ function ProcessSection() {
           >
             <Clock className="w-4 h-4" style={{ color: COLORS.textLight }} />
             <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              Our Process
+              My Process
             </span>
           </div>
           <h2 
@@ -349,7 +349,7 @@ function ProcessSection() {
             className="text-xl max-w-2xl mx-auto"
             style={{ color: COLORS.textLight }}
           >
-            From initial consultation to launch, we handle everything. Typically 3-4 weeks from start to finish.
+            From initial consultation to launch, I handle everything. Typically 3-4 weeks from start to finish.
           </p>
         </div>
 
@@ -530,7 +530,7 @@ function PricingSection() {
             className="text-xl max-w-2xl mx-auto"
             style={{ color: COLORS.textLight }}
           >
-            Every business is unique. We build custom solutions based on your specific needs and budget.
+            Every business is unique. I build custom solutions based on your specific needs and budget.
           </p>
         </div>
 
@@ -614,7 +614,7 @@ function ContactSection() {
             className="text-xl"
             style={{ color: COLORS.textLight }}
           >
-            Let's discuss your project and build something great together.
+            Let's discuss your project and build something great for your business.
           </p>
         </div>
 

@@ -29,7 +29,7 @@ const AboutPage = () => {
             Driving Growth for Service-Based Businesses
           </h1>
           <p className="text-lg sm:text-xl text-gray-300">
-            We are TLUCA Systems—a dedicated team of strategists, designers, and developers passionate about building high-performance digital solutions that deliver real results.
+            I am TLUCA Systems—a strategist, designer, and developer passionate about building high-performance digital solutions that deliver real results.
           </p>
         </div>
       </section>
@@ -47,17 +47,17 @@ const AboutPage = () => {
               </div>
             </div>
             <div className="md:col-span-2">
-              <h2 className="text-3xl font-bold mb-4">Meet Our Founder</h2>
+              <h2 className="text-3xl font-bold mb-4">Meet the Founder</h2>
               <h3 className="text-2xl text-gray-300 mb-6">Tim Behrens</h3>
               <div className="space-y-4 text-gray-400">
                 <p>
-                  With a deep-rooted passion for technology and a keen eye for business strategy, Tim Behrens founded TLUCA Systems to bridge the gap between powerful digital tools and the service industries that need them most.
+                  With a deep-rooted passion for technology and a keen eye for business strategy, I founded TLUCA Systems to bridge the gap between powerful digital tools and the service industries that need them most.
                 </p>
                 <p>
-                  Tim believes that every service business, from local contractors to specialized consultants, deserves a robust online presence that not only looks professional but functions as a core driver of growth. His hands-on approach ensures that every project we undertake is tailored to the unique challenges and goals of our clients.
+                  I believe that every service business, from local contractors to specialized consultants, deserves a robust online presence that not only looks professional but functions as a core driver of growth. My hands-on approach ensures that every project I undertake is tailored to the unique challenges and goals of my clients.
                 </p>
                 <p>
-                  He is committed to delivering transparent, results-oriented solutions that empower business owners to succeed in an increasingly digital world.
+                  I am committed to delivering transparent, results-oriented solutions that empower business owners to succeed in an increasingly digital world.
                 </p>
               </div>
             </div>
@@ -68,7 +68,7 @@ const AboutPage = () => {
       {/* Our Mission & Values Section */}
       <section className="bg-white/5 py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
+          <h2 className="text-3xl font-bold mb-4">My Mission</h2>
           <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
             To empower service-based businesses with streamlined, powerful, and automated digital systems that convert leads, save time, and drive sustainable growth.
           </p>
@@ -81,7 +81,7 @@ const AboutPage = () => {
                 <CardTitle className="text-xl">Results-Driven</CardTitle>
               </CardHeader>
               <CardContent className="text-gray-400">
-                We focus on measurable outcomes. Your success is our benchmark.
+                I focus on measurable outcomes. Your success is my benchmark.
               </CardContent>
             </Card>
             <Card className="bg-black border-white/10 text-center">
@@ -92,7 +92,7 @@ const AboutPage = () => {
                 <CardTitle className="text-xl">Client Partnership</CardTitle>
               </CardHeader>
               <CardContent className="text-gray-400">
-                We work with you, not just for you, building lasting relationships.
+                I work with you, not just for you, building lasting relationships.
               </CardContent>
             </Card>
             <Card className="bg-black border-white/10 text-center">
@@ -103,7 +103,7 @@ const AboutPage = () => {
                 <CardTitle className="text-xl">Innovation & Efficiency</CardTitle>
               </CardHeader>
               <CardContent className="text-gray-400">
-                We leverage the latest technology to build smart, automated systems.
+                I leverage the latest technology to build smart, automated systems.
               </CardContent>
             </Card>
           </div>
