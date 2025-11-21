@@ -187,14 +187,14 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
     <div className="h-full w-full border-r bg-sidebar border-sidebar-border flex flex-col">
       {/* Merged Header + Build Bar */}
       <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <img
-              src="https://i.imgur.com/NVFBzeK.png"
-              alt="Wheel Viz 2"
-              className="h-13 w-auto object-contain"
-            />
-          </div>
+        <div className="flex items-center justify-center mb-3">
+          <img
+            src="https://i.imgur.com/NVFBzeK.png"
+            alt="Wheel Viz 2"
+            className="h-13 w-auto object-contain"
+          />
+        </div>
+        <div className="flex justify-end">
           <Button
             variant="ghost"
             size="icon"
