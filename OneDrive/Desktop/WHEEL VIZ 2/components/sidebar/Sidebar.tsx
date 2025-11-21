@@ -16,7 +16,11 @@ import {
   Cog,
   Zap,
   Settings,
-  Package
+  Package,
+  Car,
+  Wrench,
+  Gauge,
+  Hexagon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -176,7 +180,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <CircleDot className={`w-6 h-6 ${selectedProducts.wheel ? 'text-blue-500' : 'text-gray-400'}`} />
+              <Hexagon className={`w-6 h-6 ${selectedProducts.wheel ? 'text-blue-500' : 'text-gray-400'}`} />
               {selectedProducts.wheel && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -204,7 +208,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Cog className={`w-6 h-6 ${selectedProducts.tire ? 'text-slate-500' : 'text-gray-400'}`} />
+              <CircleDot className={`w-6 h-6 ${selectedProducts.tire ? 'text-slate-500' : 'text-gray-400'}`} />
               {selectedProducts.tire && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -232,7 +236,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Zap className={`w-6 h-6 ${selectedProducts.suspension ? 'text-orange-500' : 'text-gray-400'}`} />
+              <Wrench className={`w-6 h-6 ${selectedProducts.suspension ? 'text-orange-500' : 'text-gray-400'}`} />
               {selectedProducts.suspension && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -260,7 +264,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Settings className={`w-6 h-6 ${selectedProducts.spacer ? 'text-gray-500' : 'text-gray-400'}`} />
+              <Gauge className={`w-6 h-6 ${selectedProducts.spacer ? 'text-gray-500' : 'text-gray-400'}`} />
               {selectedProducts.spacer && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
