@@ -399,7 +399,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
         </div>
 
         {/* Generate Button - Fancy Styling */}
-        <div className="btn-wrapper w-full">
+        <div className="btn-wrapper" style={{ width: '100%' }}>
           <button
             onClick={handleGenerate}
             disabled={!Object.keys(selectedProducts).length}
