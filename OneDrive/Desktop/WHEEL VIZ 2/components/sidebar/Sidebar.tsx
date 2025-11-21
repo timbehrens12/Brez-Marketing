@@ -192,7 +192,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             <img
               src="https://i.imgur.com/NVFBzeK.png"
               alt="Wheel Viz 2"
-              className="h-10 w-auto object-contain"
+              className="h-13 w-auto object-contain"
             />
           </div>
           <Button
