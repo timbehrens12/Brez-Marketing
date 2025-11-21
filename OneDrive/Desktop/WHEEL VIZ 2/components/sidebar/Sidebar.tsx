@@ -405,9 +405,6 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             disabled={!Object.keys(selectedProducts).length}
             className="btn w-full"
           >
-            <svg className="btn-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L13.09 8.26L19.35 9.35L13.09 10.44L12 16.7L10.91 10.44L4.65 9.35L10.91 8.26L12 2Z"/>
-            </svg>
             <div className="txt-wrapper">
               <div className="txt-1">
                 <span className="btn-letter">G</span>
@@ -426,6 +423,9 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 <span className="btn-letter">d</span>
               </div>
             </div>
+            <svg className="btn-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L19.35 9.35L13.09 10.44L12 16.7L10.91 10.44L4.65 9.35L10.91 8.26L12 2Z"/>
+            </svg>
           </button>
         </div>
       </div>
