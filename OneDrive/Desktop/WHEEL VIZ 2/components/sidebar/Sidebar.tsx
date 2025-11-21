@@ -23,6 +23,52 @@ import {
   Hexagon
 } from 'lucide-react';
 
+// Custom SVG Icons for automotive products
+const WheelIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+    <path d="M12 3V6M12 18V21M3 12H6M18 12H21M7.05 7.05L9.17 9.17M14.83 14.83L16.95 16.95M7.05 16.95L9.17 14.83M14.83 9.17L16.95 7.05" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
+
+const TireIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="2"/>
+    <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2"/>
+    <path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
+
+const SuspensionIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="7" y="4" width="10" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="8" r="2" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="16" r="2" stroke="currentColor" strokeWidth="2"/>
+    <path d="M9 4v4M15 16v4" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
+
+const SpacerIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="8" width="18" height="8" rx="1" stroke="currentColor" strokeWidth="2"/>
+    <rect x="5" y="10" width="14" height="4" rx="1" fill="currentColor"/>
+    <path d="M7 4v4M17 16v4M7 16v4M17 4v4" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
+
+const AccessoryIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+    <circle cx="15" cy="9" r="1.5" fill="currentColor"/>
+    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    <circle cx="9" cy="15" r="1.5" fill="currentColor"/>
+    <circle cx="15" cy="15" r="1.5" fill="currentColor"/>
+  </svg>
+);
+
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
@@ -90,7 +136,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             className="w-10 h-10 hover:scale-105 transition-transform"
             title="Wheels"
           >
-            <CircleDot className="w-5 h-5" />
+            <WheelIcon />
           </Button>
 
           <Button
@@ -100,7 +146,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             className="w-10 h-10 hover:scale-105 transition-transform"
             title="Tires"
           >
-            <Cog className="w-5 h-5" />
+            <TireIcon />
           </Button>
 
           <Button
@@ -110,7 +156,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             className="w-10 h-10 hover:scale-105 transition-transform"
             title="Suspension"
           >
-            <Zap className="w-5 h-5" />
+            <SuspensionIcon />
           </Button>
 
           <Button
@@ -120,7 +166,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             className="w-10 h-10 hover:scale-105 transition-transform"
             title="Spacers"
           >
-            <Settings className="w-5 h-5" />
+            <SpacerIcon />
           </Button>
 
           <Button
@@ -130,7 +176,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             className="w-10 h-10 hover:scale-105 transition-transform"
             title="Accessories"
           >
-            <Package className="w-5 h-5" />
+            <AccessoryIcon />
           </Button>
         </div>
       </div>
@@ -180,7 +226,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Hexagon className={`w-6 h-6 ${selectedProducts.wheel ? 'text-blue-500' : 'text-gray-400'}`} />
+              <WheelIcon />
               {selectedProducts.wheel && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -208,7 +254,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <CircleDot className={`w-6 h-6 ${selectedProducts.tire ? 'text-slate-500' : 'text-gray-400'}`} />
+              <TireIcon />
               {selectedProducts.tire && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -236,7 +282,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Wrench className={`w-6 h-6 ${selectedProducts.suspension ? 'text-orange-500' : 'text-gray-400'}`} />
+              <SuspensionIcon />
               {selectedProducts.suspension && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -264,7 +310,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Gauge className={`w-6 h-6 ${selectedProducts.spacer ? 'text-gray-500' : 'text-gray-400'}`} />
+              <SpacerIcon />
               {selectedProducts.spacer && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -292,7 +338,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <Package className={`w-6 h-6 ${selectedProducts.accessory ? 'text-yellow-500' : 'text-gray-400'}`} />
+              <AccessoryIcon />
               {selectedProducts.accessory && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
