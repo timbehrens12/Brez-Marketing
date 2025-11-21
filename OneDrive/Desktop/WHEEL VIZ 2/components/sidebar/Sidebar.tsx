@@ -206,7 +206,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           <span className="text-sm text-emerald-600 font-semibold">${totalPrice}</span>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-2 mb-2">
           {/* Selected Products - Compact Square Cards */}
           <div className="flex flex-col items-center relative">
             <div
@@ -349,16 +349,14 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Generate Button */}
-        <div className="mt-3">
-          <Button
-            onClick={handleGenerate}
-            disabled={!Object.keys(selectedProducts).length}
-            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
-          >
-            Generate Build
-          </Button>
-        </div>
+        {/* Generate Button - Spans Full Width */}
+        <Button
+          onClick={handleGenerate}
+          disabled={!Object.keys(selectedProducts).length}
+          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white h-12"
+        >
+          Generate Build
+        </Button>
       </div>
 
       <Tabs
