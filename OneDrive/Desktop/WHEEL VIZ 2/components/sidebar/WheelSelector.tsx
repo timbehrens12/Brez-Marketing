@@ -21,7 +21,7 @@ const FITMENT_WHEELS = [
     offset: 35,
     boltPattern: '5x114.3',
     price: 1295,
-    imageUrl: 'https://i.imgur.com/placeholder1.jpg',
+    imageUrl: 'https://i.imgur.com/7b7S0bn.png',
     productUrl: 'https://fitmentindustries.com/products/volk-racing-ce28n-18x9-5-35-hyper-black'
   },
   {
@@ -35,7 +35,7 @@ const FITMENT_WHEELS = [
     offset: 22,
     boltPattern: '5x114.3',
     price: 1595,
-    imageUrl: 'https://i.imgur.com/placeholder2.jpg',
+    imageUrl: 'https://i.imgur.com/o6LRJZr.png',
     productUrl: 'https://fitmentindustries.com/products/bbs-fi-r-19x9-5-22-diamond-black'
   },
   {
@@ -49,7 +49,7 @@ const FITMENT_WHEELS = [
     offset: 25,
     boltPattern: '5x114.3',
     price: 1895,
-    imageUrl: 'https://i.imgur.com/placeholder3.jpg',
+    imageUrl: 'https://i.imgur.com/LKnghBP.png',
     productUrl: 'https://fitmentindustries.com/products/work-equip-03-18x10-5-25-bronze'
   },
   {
@@ -63,7 +63,7 @@ const FITMENT_WHEELS = [
     offset: 30,
     boltPattern: '5x114.3',
     price: 2195,
-    imageUrl: 'https://i.imgur.com/placeholder4.jpg',
+    imageUrl: 'https://i.imgur.com/LoJwUdw.png',
     productUrl: 'https://fitmentindustries.com/products/hre-p1-20x10-5-30-flow-form-silver'
   },
   {
@@ -77,7 +77,7 @@ const FITMENT_WHEELS = [
     offset: 20,
     boltPattern: '5x114.3',
     price: 1795,
-    imageUrl: 'https://i.imgur.com/placeholder5.jpg',
+    imageUrl: 'https://i.imgur.com/Y7d2ox8.png',
     productUrl: 'https://fitmentindustries.com/products/rotiform-blq-19x9-5-20-matte-bronze'
   },
   {
@@ -91,7 +91,7 @@ const FITMENT_WHEELS = [
     offset: 25,
     boltPattern: '5x114.3',
     price: 1995,
-    imageUrl: 'https://i.imgur.com/placeholder6.jpg',
+    imageUrl: 'https://i.imgur.com/bAtSVRV.png',
     productUrl: 'https://fitmentindustries.com/products/avant-garde-m590-19x9-5-25-diamond-cut-black'
   },
   {
@@ -105,7 +105,7 @@ const FITMENT_WHEELS = [
     offset: 22,
     boltPattern: '5x114.3',
     price: 1395,
-    imageUrl: 'https://i.imgur.com/placeholder7.jpg',
+    imageUrl: 'https://i.imgur.com/7XWHhJ6.png',
     productUrl: 'https://fitmentindustries.com/products/enkei-ts-10-18x9-5-22-matte-gunmetal'
   },
   {
@@ -119,7 +119,7 @@ const FITMENT_WHEELS = [
     offset: 35,
     boltPattern: '5x114.3',
     price: 1695,
-    imageUrl: 'https://i.imgur.com/placeholder8.jpg',
+    imageUrl: 'https://i.imgur.com/0bir2Rr.png',
     productUrl: 'https://fitmentindustries.com/products/forgestar-f14-18x9-5-35-gloss-black'
   }
 ];
