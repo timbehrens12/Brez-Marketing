@@ -190,7 +190,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <img
-              src="https://i.imgur.com/1vg0ss3.png"
+              src="https://i.imgur.com/NVFBzeK.png"
               alt="Wheel Viz 2"
               className="h-10 w-auto object-contain"
             />
