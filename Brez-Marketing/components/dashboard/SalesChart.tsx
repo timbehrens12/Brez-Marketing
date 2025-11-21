@@ -6,7 +6,7 @@ import { ComparisonPicker, type ComparisonType } from "@/components/ComparisonPi
 import type { DateRange } from "react-day-picker"
 import type { MetricData } from "@/types/metrics"
 import { format, isSameDay, isValid, parseISO, endOfDay } from "date-fns"
-import { toZonedTime } from "date-fns-tz"
+
 
 interface SalesChartProps {
   data: MetricData[]
@@ -32,8 +32,8 @@ export function SalesChart({
   const filteredData = data.filter((point) => {
     if (!dateRange?.from || !dateRange?.to) return true
     const pointDate = parseISO(point.date)
-    const rangeStart = toZonedTime(dateRange.from, timezone)
-    const rangeEnd = toZonedTime(endOfDay(dateRange.to), timezone)
+    const rangeStart = dateRange.from
+    const rangeEnd = endOfDay(dateRange.to)
     return pointDate >= rangeStart && pointDate <= rangeEnd
   })
 
@@ -44,7 +44,7 @@ export function SalesChart({
     }
 
     try {
-      const date = toZonedTime(parseISO(tickItem), timezone)
+      const date = parseISO(tickItem)
       if (isValid(date)) {
         return format(date, "MMM d")
       }
@@ -61,7 +61,7 @@ export function SalesChart({
     }
 
     try {
-      const date = toZonedTime(parseISO(label), timezone)
+      const date = parseISO(label)
       if (isValid(date)) {
         return format(date, "MMM d, yyyy")
       }

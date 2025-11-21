@@ -112,7 +112,12 @@ export function ComparisonPicker({ comparisonType, customRange, onComparisonChan
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent 
+          className="w-auto p-0 data-[state=closed]:animate-none data-[state=open]:animate-none" 
+          align="end"
+          forceMount
+          sideOffset={5}
+        >
           <Calendar
             initialFocus
             mode="range"

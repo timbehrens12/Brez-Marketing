@@ -11,7 +11,8 @@ import {
   Sparkles, Image as ImageIcon, Activity, ArrowRight, 
   CalendarIcon, Check, ChevronsUpDown, Clock, Download, 
   FacebookIcon, MoreHorizontal, PenTool, SettingsIcon, 
-  Terminal, User2, Wrench, CalendarRange, Percent, Info
+  Terminal, User2, Wrench, CalendarRange, Percent, Info, 
+  HelpCircle
 } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
@@ -54,6 +55,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
+import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
+import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -108,6 +111,10 @@ declare global {
     _disableAutoMetaFetch?: boolean;
     _activeFetchIds?: Set<number | string>;
     _metaFetchLock?: boolean;
+    _lastManualRefresh?: number;
+    _lastMetaRefresh?: number;
+    _metaApiRequests?: number;
+    _canMakeMetaApiRequest?: boolean;
   }
 }
 
@@ -115,6 +122,8 @@ declare global {
 if (typeof window !== 'undefined') {
   window._activeFetchIds = window._activeFetchIds || new Set();
   window._metaFetchLock = window._metaFetchLock || false;
+  window._lastManualRefresh = window._lastManualRefresh || 0;
+  window._lastMetaRefresh = window._lastMetaRefresh || 0;
 }
 
 // Helper function to check if a fetch is in progress globally
@@ -164,6 +173,128 @@ type MetricDataState = {
   isLoading: boolean;
   lastUpdated: Date | null;
 }
+
+// Add these constants near the top of the file, after the imports
+const META_API_COOLDOWN = 5000; // 5 seconds between campaign status checks
+const META_GLOBAL_COOLDOWN = 15000; // 15 seconds between global refreshes
+const META_MAX_CONCURRENT_REQUESTS = 3; // Maximum concurrent requests to Meta API
+
+// Add a request queue to manage campaign status checks
+const requestQueue: {campaignId: string, brandId: string, callback: (data: any) => void}[] = [];
+let processingQueue = false;
+
+// Function to process the queue of Meta API requests with controlled concurrency
+function processRequestQueue() {
+  if (processingQueue || requestQueue.length === 0) return;
+  
+  processingQueue = true;
+  console.log(`[Meta] Processing request queue (${requestQueue.length} items)`);
+  
+  let activeRequests = 0;
+  
+  const processNext = () => {
+    if (requestQueue.length === 0) {
+      processingQueue = false;
+      return;
+    }
+    
+    if (activeRequests >= META_MAX_CONCURRENT_REQUESTS) {
+      return;
+    }
+    
+    const request = requestQueue.shift();
+    if (!request) return;
+    
+    activeRequests++;
+    
+    fetchCampaignStatus(request.campaignId, request.brandId)
+      .then(data => {
+        request.callback(data);
+      })
+      .catch(error => {
+        console.error('[Meta] Error in queue processing:', error);
+      })
+      .finally(() => {
+        activeRequests--;
+        setTimeout(processNext, META_API_COOLDOWN);
+      });
+    
+    // Process next item if we haven't reached concurrency limit
+    if (activeRequests < META_MAX_CONCURRENT_REQUESTS && requestQueue.length > 0) {
+      processNext();
+    }
+  };
+  
+  processNext();
+}
+
+// Helper function to fetch campaign status with proper error handling
+async function fetchCampaignStatus(campaignId: string, brandId: string) {
+  try {
+    const response = await fetch('/api/meta/campaign-status-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        campaignId, 
+        brandId,
+        forceRefresh: false, // Only use force refresh when explicitly needed
+      })
+    });
+    
+    if (!response.ok) {
+      if (response.status === 429) {
+        console.log(`[Meta] Rate limited for campaign ${campaignId}`);
+        // Return a special object for rate limiting
+        return { rateLimited: true };
+      }
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('[Meta] Campaign status fetch error:', error);
+    throw error;
+  }
+}
+
+// Add a queue method to add campaign status checks to the queue
+function queueCampaignStatusCheck(campaignId: string, brandId: string, callback: (data: any) => void) {
+  requestQueue.push({ campaignId, brandId, callback });
+  if (!processingQueue) {
+    processRequestQueue();
+  }
+}
+
+// Add a debug flag to control verbosity
+const DEBUG_LOGGING = false;
+
+// Replace console.log statements with this logger
+const logger = {
+  debug: (...args: any[]) => {
+    if (DEBUG_LOGGING) {
+      console.log(...args);
+    }
+  },
+  info: (...args: any[]) => {
+    console.log(...args);
+  },
+  warn: console.warn,
+  error: console.error
+};
+
+// Add a throttle mechanism at the top of the file
+const throttleMap = new Map<string, number>();
+const throttle = (key: string, minInterval: number = 3000): boolean => {
+  const now = Date.now();
+  const last = throttleMap.get(key) || 0;
+  
+  if (now - last < minInterval) {
+    return false; // Throttled
+  }
+  
+  throttleMap.set(key, now);
+  return true; // Not throttled
+};
 
 export function MetaTab({ 
   dateRange, 
@@ -433,163 +564,93 @@ export function MetaTab({
 
   // Function to fetch Meta campaigns data
   const fetchCampaigns = async (forceRefresh = false) => {
-    if (!brandId) return [];
+    if (!brandId) return;
     
-    // Generate a unique ID for this fetch request
-    const fetchId = Date.now();
+    // Construct the API URL
+    let url = `/api/meta/campaigns?brandId=${brandId}`;
+    let dateRangeQuery = '';
     
-    // Check if a fetch is already in progress - critical to prevent loops
-    if (isMetaFetchInProgress() && !forceRefresh) {
-      console.log(`[MetaTab] ⚠️ Fetch already in progress, skipping redundant fetch (fetchId: ${fetchId})`);
-      return [];
-    }
-    
-    // Check if the campaigns data is already cached and dates haven't changed
-    const fromDate = dateRange?.from?.toISOString().split('T')[0];
-    const toDate = dateRange?.to?.toISOString().split('T')[0];
-    
-    // Skip fetch if we already have data for this date range and it's not a forced refresh
-    if (!forceRefresh && campaigns.length > 0 && lastFetchedDates.current.from === fromDate && lastFetchedDates.current.to === toDate) {
-      console.log(`[MetaTab] 🔄 Using cached campaign data for date range: ${fromDate} to ${toDate} (fetchId: ${fetchId})`);
-      return campaigns;
-    }
-    
-    // Try to acquire a fetch lock
-    if (!acquireMetaFetchLock(fetchId)) {
-      console.log(`[MetaTab] ⛔ Failed to acquire fetch lock, skipping fetch (fetchId: ${fetchId})`);
-      return [];
-    }
-    
-    // Only show loading indicator if it's a manual refresh or there are no campaigns yet
-    if (forceRefresh || campaigns.length === 0) {
-      setIsLoadingCampaigns(true);
+    if (dateRange?.from && dateRange?.to) {
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
+      dateRangeQuery = `&from=${fromDate}&to=${toDate}`;
+      url += dateRangeQuery;
+      logger.debug(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
+    } else {
+      logger.debug('[MetaTab] Fetching campaigns with no specific date range (likely lifetime)');
     }
     
     if (forceRefresh) {
-      setIsRefreshing(true);
+      url += `&forceRefresh=true`;
+      logger.debug('[MetaTab] Force refreshing campaigns');
     }
     
-    // Log the fetch request
-    console.log(`[MetaTab] 🔍 Fetching campaigns (fetchId: ${fetchId}, forceRefresh: ${forceRefresh})`);
+    // Apply throttling to prevent too many fetches, especially non-forced ones
+    const fetchKey = `fetch-campaigns-${brandId}-${dateRangeQuery}`;
+    if (!forceRefresh && !throttle(fetchKey, 15000)) { // Throttle non-forced refreshes for the same range
+      logger.debug(`[MetaTab] Throttled campaign fetch for range ${dateRangeQuery} - skipping`);
+      return;
+    }
+    
+    // Only set loading state if campaigns aren't already loaded or if forcing refresh
+    if (campaigns.length === 0 || forceRefresh) {
+      setIsLoadingCampaigns(true);
+    }
     
     try {
-      let url = `/api/meta/campaigns?brandId=${brandId}`;
+      logger.debug(`[MetaTab] Fetching URL: ${url}`);
+      const response = await fetch(url, {
+        cache: 'no-store', // Prevent browser caching
+        headers: {
+          'Cache-Control': 'no-cache', // Tell server/proxy not to cache
+          'Pragma': 'no-cache', // For older HTTP/1.0 compatibility
+          'Expires': '0', // Expire immediately
+        }
+      });
       
-      // Add forceRefresh parameter if needed
-      if (forceRefresh) {
-        url += `&forceRefresh=true`;
-      }
-      
-      // Add date range parameters if available
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-        
-        console.log(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate} (fetchId: ${fetchId})`);
-      } else {
-        console.log(`[MetaTab] Fetching campaigns without date range (fetchId: ${fetchId})`);
-      }
-      
-      // Create an AbortController to cancel the request if needed
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
-      
-      try {
-        const response = await fetch(url, {
-          signal: controller.signal,
-          cache: 'no-cache', // Avoid browser cache
-          headers: {
-            'x-fetch-id': fetchId.toString() // Help debug with request ID
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch campaign data (status ${response.status})`);
+      if (!response.ok) {
+        // Handle specific errors like 429 (Rate Limit) potentially
+        throw new Error(`Failed to fetch campaigns: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-        
-        // Only update state if component is still mounted
-        if (!isMounted.current) {
-          console.log(`[MetaTab] Component unmounted, not updating state (fetchId: ${fetchId})`);
-          return data.campaigns || [];
-        }
-        
-        // Check if the response data looks valid
-        if (!data.campaigns || !Array.isArray(data.campaigns)) {
-          console.warn(`[MetaTab] Invalid campaign data received (fetchId: ${fetchId})`);
-          return [];
-        }
-        
-        // Format and set the campaigns data
-        const formattedCampaigns = formatCampaigns(data.campaigns);
-        
-        // Compare with existing data to avoid unnecessary state updates
-        const existingCampaignsJson = JSON.stringify(campaigns);
-        const newCampaignsJson = JSON.stringify(formattedCampaigns);
-        
-        if (existingCampaignsJson !== newCampaignsJson) {
-          console.log(`[MetaTab] Campaign data changed, updating state (fetchId: ${fetchId})`);
-          setCampaigns(formattedCampaigns);
-          setCachedCampaigns(formattedCampaigns); // Cache for reuse
-          
-          // Update the lastFetchedDates ref with current date range
-          if (dateRange?.from && dateRange?.to) {
-            lastFetchedDates.current = {
-              from: dateRange.from.toISOString().split('T')[0],
-              to: dateRange.to.toISOString().split('T')[0]
-            };
-            console.log(`[MetaTab] Updated lastFetchedDates to: ${JSON.stringify(lastFetchedDates.current)}`);
-          }
-        } else {
-          console.log(`[MetaTab] Campaign data unchanged, skipping update (fetchId: ${fetchId})`);
-        }
-        
-        setLastRefresh(new Date());
-        
-        // If it was a manual refresh, show a success notification
-        if (forceRefresh) {
-          // Show success toast using sonner toast
-          toast.success("Campaigns refreshed", {
-            description: `Successfully refreshed ${data.campaigns.length} campaigns`
-          });
-        }
-        
-        return data.campaigns;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        
-        if ((error as Error).name === 'AbortError') {
-          console.log(`[MetaTab] Fetch aborted (fetchId: ${fetchId})`);
-          return [];
-        }
-        
-        throw error; // Re-throw for outer catch
-      }
-    } catch (error: unknown) {
-      console.error(`[MetaTab] Error fetching campaigns (fetchId: ${fetchId}):`, error);
-      setError("Failed to load campaign data. Please try again.");
       
-      // Show error toast only on manual refresh
-      if (forceRefresh) {
-        toast.error("Error refreshing campaigns", {
-          description: "Failed to refresh campaign data. Please try again."
-        });
+      // *** DETAILED API RESPONSE LOGGING ***
+      console.log("[MetaTab DEBUG] Raw API Response Data:", JSON.stringify(data, null, 2)); 
+      if (data && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+          console.log("[MetaTab DEBUG] First Campaign OBJECT from API:", JSON.stringify(data.campaigns[0], null, 2));
+          console.log(`[MetaTab DEBUG] First Campaign METRICS from API: spend=${data.campaigns[0]?.spent}, impressions=${data.campaigns[0]?.impressions}, clicks=${data.campaigns[0]?.clicks}`);
+      } else {
+          console.log("[MetaTab DEBUG] API response did not contain a valid campaigns array.");
+      }
+      // *** END DETAILED LOGGING ***
+
+      if (!data || !Array.isArray(data.campaigns)) {
+        logger.warn('[MetaTab] Invalid campaign data received from API');
+        setCampaigns([]);
+        setCachedCampaigns([]);
+        return [];
       }
       
-      return [];
+      // Cache campaigns in component state
+      setCampaigns(data.campaigns);
+      setCachedCampaigns(data.campaigns);
+      
+      logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
+      
+      window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
+        detail: { count: data.campaigns.length }
+      }));
+      
+      return data.campaigns;
+    } catch (error) {
+      logger.error("Error fetching campaigns:", error);
+      toast.error("Failed to load campaigns", { description: (error as Error).message });
+      // Don't clear campaigns on error, keep potentially stale data
+      return campaigns; // Return existing campaigns on error
     } finally {
-      // Always hide the loading state
-      setIsLoadingCampaigns(false);
-      setIsRefreshing(false);
-      
-      // Always release the lock
-      releaseMetaFetchLock(fetchId);
-      
-      console.log(`[MetaTab] Campaign fetch complete (fetchId: ${fetchId})`);
+      // Add a small delay before removing loading state for smoother UX
+      setTimeout(() => setIsLoadingCampaigns(false), 300);
     }
   };
 
@@ -1153,6 +1214,14 @@ export function MetaTab({
 
   // Function to force clear and re-sync Meta data
   const refreshMetaData = async () => {
+    // Add rate limiting protection
+    if (window._lastMetaRefresh && Date.now() - window._lastMetaRefresh < META_GLOBAL_COOLDOWN) {
+      console.log(`[Meta] Skipping refresh due to cooldown (${Math.ceil((window._lastMetaRefresh + META_GLOBAL_COOLDOWN - Date.now()) / 1000)}s remaining)`);
+      return false;
+    }
+    
+    window._lastMetaRefresh = Date.now();
+    
     if (!brandId) return
     
     setIsSyncing(true)
@@ -1187,6 +1256,11 @@ export function MetaTab({
       toast.error("Failed to refresh Meta data. Please try again.")
     } finally {
       setIsSyncing(false)
+    }
+    
+    // Add this to the window object to track the last refresh time
+    if (typeof window !== 'undefined') {
+      window._lastMetaRefresh = Date.now();
     }
   }
 
@@ -1237,8 +1311,8 @@ Created: ${data.connection?.created_at ? new Date(data.connection.created_at).to
       }
       
       diagnosticInfo += '\n---- DATABASE DATA ----\n'
-      diagnosticInfo += `Data in meta_ad_insights: ${data.existing_data?.has_data ? 'Yes' : 'No'}\n
-
+      diagnosticInfo += `Data in meta_ad_insights: ${data.existing_data?.has_data ? 'Yes' : 'No'}\n`
+      
       diagnosticInfo += '\n---- RECOMMENDATION ----\n'
       if (!data.campaigns?.data?.length) {
         diagnosticInfo += 'Create an active campaign in Meta Ads Manager to generate data.\n'
@@ -1267,11 +1341,11 @@ Created: ${data.connection?.created_at ? new Date(data.connection.created_at).to
         method: 'POST'
       })
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Meta data: ${response.status}`)
-      }
-      
-      const data = await response.json()
+        if (!response.ok) {
+          throw new Error(`Failed to fetch Meta data: ${response.status}`)
+        }
+        
+        const data = await response.json()
       console.log('Meta data test fetch result:', data)
       
       if (data.success && data.insights && data.insights.length > 0) {
@@ -2343,6 +2417,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
+  // Add this state near other state declarations
+  const [campaignReachLoaded, setCampaignReachLoaded] = useState(false);
+  
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -3228,7 +3305,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      // Fetch data for current period
+      // Fetch data for current period - use the reach API to get real summed reach
       const response = await fetch(`/api/metrics/meta/single/reach?${params.toString()}`)
       
       // Fetch data for previous period
@@ -3244,11 +3321,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setReachData({
+    setReachData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
-          isLoading: false,
-          lastUpdated: new Date()
+      isLoading: false, 
+      lastUpdated: new Date()
         })
         console.log(`Reach data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
@@ -3322,6 +3399,67 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
+  // Fetch budget data directly from the database
+  const fetchBudgetDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch budget: Missing date range or brand ID")
+      return
+    }
+    
+    setBudgetData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'budget')
+      
+      // Set date parameters
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Budget for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/budget?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'budget')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/budget?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setBudgetData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Budget data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Budget data:", data.error || prevData.error)
+        setBudgetData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Budget fetch:", error)
+      setBudgetData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
     await Promise.all([
@@ -3334,8 +3472,9 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerResultDirectly(),
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
-      fetchReachDirectly(),
-      fetchLinkClicksDirectly()
+      // Skip fetchReachDirectly() since we get this from campaigns now
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly()
     ])
   }
 
@@ -3384,6 +3523,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
+    setBudgetData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -3448,6 +3588,697 @@ Try creating at least one active campaign in Meta Ads Manager.
       refreshAllMetricsDirectly()
     }
   }, [isRefreshingData])
+  
+  // Manual refresh button handler
+  const handleManualRefresh = () => {
+    if (window._lastManualRefresh && Date.now() - window._lastManualRefresh < META_GLOBAL_COOLDOWN) {
+      toast(`Please wait ${Math.ceil((window._lastManualRefresh + META_GLOBAL_COOLDOWN - Date.now()) / 1000)} seconds before refreshing again.`);
+      return;
+    }
+
+    window._lastManualRefresh = Date.now();
+    
+    // Clear existing request queue to prevent stale requests
+    requestQueue.length = 0;
+    processingQueue = false;
+    
+    // Continue with refresh but with controlled fetching
+    refreshAllMetaData(brandId);
+  };
+
+  // Store a stable reference to the refresh function
+  const refreshAllMetricsDirectlyRef = useRef(refreshAllMetricsDirectly);
+
+  // Update the ref when the function changes
+  useEffect(() => {
+    refreshAllMetricsDirectlyRef.current = refreshAllMetricsDirectly;
+  }, [refreshAllMetricsDirectly]);
+
+  // Add a listener for the metaDataRefreshed event from the dashboard
+  useEffect(() => {
+    // Define the event handler
+    const handleMetaDataRefreshed = (event: CustomEvent) => {
+      // Check if this event is for our brand
+      if (event.detail?.brandId === brandId) {
+        console.log("Received metaDataRefreshed event", event.detail);
+        
+        // If forceRefresh is set to true in the event, force a full refresh
+        if (event.detail?.forceRefresh) {
+          console.log("Force refresh requested, fetching latest campaigns data");
+          
+          // Force a fetch from the API to get the most up-to-date data
+          fetchCampaigns();
+        }
+        
+        // Always refresh the metrics display
+        refreshAllMetricsDirectlyRef.current();
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+
+    // Cleanup on component unmount
+    return () => {
+      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+    };
+  }, [brandId]);
+
+  // Function to manually sync Meta insights data
+  const syncMetaInsights = async () => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      toast.error("Cannot sync data - missing brand ID or date range");
+      return;
+    }
+    
+    toast.info("Syncing Meta insights data...", {
+      description: "This might take a moment depending on the date range.",
+      duration: 5000
+    });
+    
+    setIsManuallyRefreshing(true);
+    
+    try {
+      // Format dates in YYYY-MM-DD format
+      const startDate = dateRange.from.toISOString().split('T')[0];
+      const endDate = dateRange.to.toISOString().split('T')[0];
+      
+      const response = await fetch('/api/meta/insights/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          brandId,
+          startDate,
+          endDate,
+          forceRefresh: true
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync Meta insights');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success("Meta insights synced successfully", {
+          description: `Synced ${result.count || 0} records from Meta.`,
+          duration: 5000
+        });
+        
+        // After successful sync, refresh the data
+        refreshMetaData();
+      } else {
+        throw new Error(result.error || 'Failed to sync Meta insights');
+      }
+    } catch (error) {
+      console.error('Error syncing Meta insights:', error);
+      toast.error("Failed to sync Meta insights", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 5000
+      });
+    } finally {
+      setIsManuallyRefreshing(false);
+    }
+  };
+
+  // Add debug mode state
+  const [debugMode, setDebugMode] = useState(false);
+  
+  // Toggle debug mode with key combo (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setDebugMode(prev => !prev);
+        console.log('Debug mode toggled:', !debugMode);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [debugMode]);
+
+  // Debug date ranges
+  const debugDateRange = async () => {
+    if (!brandId) return;
+    
+    // Get current date
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get date range strings if available
+    const fromDateStr = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : today;
+    const toDateStr = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : today;
+    
+    console.log(`[MetaTab DEBUG] Current date range: ${fromDateStr} to ${toDateStr}`);
+    
+    try {
+      // Call debug endpoint
+      const response = await fetch(`/api/meta/debug-dates?brandId=${brandId}&date=${today}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[MetaTab DEBUG] Date debug results:', data);
+        
+        // Show debug info in toast
+        toast.info(`Date Debug Info`, {
+          description: `Today's date: ${today}, DB records: ${data.todayDataCount}, Sample dates: ${data.sampleDates.slice(0,3).join(', ')}`,
+          duration: 10000
+        });
+      }
+    } catch (error) {
+      console.error('Error in debug date range:', error);
+    }
+  };
+
+  // Format the campaigns data from the API response
+  const formatCampaigns = (campaigns: any[] = []) => {
+    // Add has_data_in_range flag to each campaign
+    return campaigns.map(campaign => {
+      // Ensure daily_insights exists and is an array
+      const daily_insights = campaign.daily_insights || [];
+      
+      // Deep copy to avoid reference issues
+      const formattedCampaign = {
+        ...campaign,
+        // Make sure these values are properly typed
+        budget: parseFloat(campaign.budget || 0),
+        spent: parseFloat(campaign.spent || 0),
+        impressions: parseInt(campaign.impressions || 0, 10),
+        reach: parseInt(campaign.reach || 0, 10),
+        clicks: parseInt(campaign.clicks || 0, 10),
+        conversions: parseInt(campaign.conversions || 0, 10),
+        ctr: parseFloat(campaign.ctr || 0),
+        cpc: parseFloat(campaign.cpc || 0),
+        cost_per_conversion: parseFloat(campaign.cost_per_conversion || 0),
+        roas: parseFloat(campaign.roas || 0),
+        adset_budget_total: parseFloat(campaign.adset_budget_total || 0),
+        daily_insights
+      };
+      
+      return formattedCampaign;
+    });
+  };
+  
+  // Function to refresh ad set budgets for all campaigns
+  const refreshCampaignAdSetBudgets = async () => {
+    if (!brandId) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      // Call API endpoint to refresh ad sets for all campaigns
+      const response = await fetch(`/api/meta/adsets/refresh-all?brandId=${brandId}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh ad set budgets');
+      }
+      
+      const data = await response.json();
+      
+      // Show success toast
+      toast.success("Ad set budgets refreshed", {
+        description: `Updated budget totals for ${data.refreshedCampaigns || 0} campaigns`,
+      });
+      
+      // Refresh campaigns to show updated budgets
+      await fetchCampaigns(true);
+      
+      return data;
+    } catch (error) {
+      console.error('[MetaTab] Error refreshing ad set budgets:', error);
+      
+      toast.error("Failed to refresh ad set budgets", {
+        description: "There was an error refreshing ad set budgets. Please try again.",
+      });
+      
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const refreshAllData = useCallback(async () => {
+    // Show loading toast notification
+    toast.loading("Refreshing all Meta data for selected date range...", { id: "meta-refresh-all" });
+    
+    setIsLoadingCampaigns(true);
+    
+    try {
+      // Step 1: Refresh campaigns for the date range
+      await fetchCampaigns(true);
+      
+      // Step 2: Refresh ad set budgets for all campaigns
+      await refreshCampaignAdSetBudgets();
+      
+      // Success message
+      toast.success("Data refreshed successfully", { id: "meta-refresh-all" });
+      
+      // Also refresh metrics if available
+      if (refreshMetricsDirectly) {
+        refreshMetricsDirectly();
+      }
+    } catch (error) {
+      console.error("Error refreshing all data:", error);
+      
+      // Error message
+      toast.error("Error refreshing data", { 
+        id: "meta-refresh-all",
+        description: "There was a problem refreshing Meta data. Please try again."
+      });
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  }, [fetchCampaigns, refreshCampaignAdSetBudgets, refreshMetricsDirectly]);
+  
+  // Refresh data when date range changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      console.log("[MetaTab] Date range changed, refreshing data");
+      
+      // Only auto-fetch on date change if initial load has been completed
+      if (initialLoadStarted) {
+        // Don't auto-refresh on initial mount to avoid duplicate fetches
+        fetchCampaigns(false);
+      }
+    }
+  }, [dateRange, fetchCampaigns, initialLoadStarted]);
+
+  // Add a global refresh handler that is used by the main refresh button and auto-refresh
+  const refreshAllMetaData = async (triggerBrandId: string): Promise<boolean> => {
+    console.log(`[MetaTab] 🔄 Global refresh triggered for brandId: ${triggerBrandId}`);
+    
+    // Skip if a fetch is already in progress
+    if (isMetaFetchInProgress()) {
+      console.log(`[MetaTab] ⚠️ Global refresh skipped - fetch already in progress`);
+      return false;
+    }
+    
+    // Generate a unique request ID for this refresh
+    const refreshId = `global-refresh-${Date.now()}`;
+    
+    // Acquire a global lock for this refresh operation
+    if (!acquireMetaFetchLock(refreshId)) {
+      console.log(`[MetaTab] ⛔ Failed to acquire global lock for refresh`);
+      return false;
+    }
+    
+    try {
+      console.log(`[MetaTab] 🚀 Starting global refresh (${refreshId})`);
+      
+      // Step 1: Fetch fresh data from Meta API and update database
+      const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Refresh-ID': refreshId
+        }
+      });
+      
+      if (!syncResponse.ok) {
+        console.error(`[MetaTab] Failed to sync Meta data from API: ${syncResponse.status}`);
+        toast.error("Failed to refresh Meta data from API");
+        return false;
+      }
+      
+      console.log(`[MetaTab] ✅ Meta API sync completed`);
+      
+      // Step 2: Refresh campaigns with latest data
+      await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Refresh-ID': refreshId
+        }
+      });
+      
+      console.log(`[MetaTab] ✅ Campaign data refreshed`);
+      
+      // Step 2.5: Explicitly trigger a campaign status check via direct API call for top campaigns
+      try {
+        console.log(`[MetaTab] 🔍 Explicitly checking campaign statuses`);
+        if (campaigns && campaigns.length > 0) {
+          // Get top 3 active campaigns to check
+          const topCampaigns = [...campaigns]
+            .filter(c => c.status.toUpperCase() === 'ACTIVE')
+            .slice(0, 3);
+          
+          // Check each campaign status with direct API call
+          for (const campaign of topCampaigns) {
+            console.log(`[MetaTab] Checking status for campaign: ${campaign.campaign_id}`);
+            await fetch('/api/meta/campaign-status-check', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Refresh-ID': refreshId
+              },
+              body: JSON.stringify({
+                brandId: triggerBrandId,
+                campaignId: campaign.campaign_id,
+                refreshStatus: true,
+                forceRefresh: true
+              })
+            });
+          }
+          console.log(`[MetaTab] ✅ Direct campaign status checks completed`);
+        }
+      } catch (statusError) {
+        console.error(`[MetaTab] Error during direct campaign status checks:`, statusError);
+      }
+      
+      // Step 3: Refresh ad sets data
+      await fetch(`/api/meta/update-campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Refresh-ID': refreshId
+        }
+      });
+      
+      console.log(`[MetaTab] ✅ Ad set budgets refreshed`);
+      
+      // Step 4: Refresh metrics for the dashboard
+      await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Refresh-ID': refreshId
+        }
+      });
+      
+      console.log(`[MetaTab] ✅ Metrics refreshed`);
+      
+      // Success! Dispatch a custom event to notify any components that might be listening
+      if (typeof window !== 'undefined') {
+        // Dispatch more specific events to ensure all components react
+        console.log(`[MetaTab] 📣 Dispatching detailed refresh events`);
+        
+        // Legacy event
+        window.dispatchEvent(new CustomEvent('meta-data-refreshed', {
+          detail: {
+            success: true,
+            refreshId,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        
+        // Dispatch additional events to make sure components notice
+        window.dispatchEvent(new CustomEvent('page-refresh', {
+          detail: {
+            brandId: triggerBrandId, 
+            timestamp: Date.now(),
+            source: 'metatab-refresh'
+          }
+        }));
+        
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
+          detail: {
+            brandId: triggerBrandId,
+            timestamp: Date.now(),
+            forceRefresh: true,
+            source: 'metatab-refresh'
+          }
+        }));
+        
+        // Also dispatch event on document for cross-iframe compatibility
+        document.dispatchEvent(new CustomEvent('meta-refresh-all', {
+          detail: {
+            brandId: triggerBrandId,
+            timestamp: Date.now()
+          }
+        }));
+      }
+      
+      toast.success("Meta data refreshed successfully");
+      return true;
+    } catch (error) {
+      console.error(`[MetaTab] Error during global refresh:`, error);
+      toast.error("Failed to refresh Meta data");
+      return false;
+    } finally {
+      // Always release the lock when done
+      releaseMetaFetchLock(refreshId);
+    }
+  };
+
+  // Update the effect that handles auto-refresh to use the global refresh handler
+  useEffect(() => {
+    // Skip if auto-refresh is disabled or the component is unmounting
+    if (window._disableAutoMetaFetch || !isMounted.current) return;
+    
+    // Only run the auto-refresh if we have a brand ID
+    if (brandId) {
+      console.log(`[MetaTab] Setting up 5-minute auto-refresh for Meta data`);
+      
+      // Set up a 5-minute interval for auto-refresh
+      const intervalId = setInterval(() => {
+        // Only refresh if the component is still mounted and the page is visible
+        if (isMounted.current && document.visibilityState === 'visible') {
+          console.log(`[MetaTab] Auto-refresh triggered`);
+          refreshAllMetaData(brandId).then(success => {
+            if (success) {
+              console.log(`[MetaTab] Auto-refresh completed successfully`);
+            } else {
+              console.log(`[MetaTab] Auto-refresh completed with errors`);
+            }
+          });
+        }
+      }, 5 * 60 * 1000); // 5 minutes in milliseconds
+      
+      // Clean up the interval when the component unmounts
+      return () => {
+        clearInterval(intervalId);
+        console.log(`[MetaTab] Cleaned up 5-minute auto-refresh interval`);
+      };
+    }
+  }, [brandId]);
+
+  // Listen for global page refresh event
+  useEffect(() => {
+    // Skip if component is unmounted
+    if (!isMounted.current) return;
+    
+    // Define the event handler
+    const handleGlobalRefresh = () => {
+      console.log(`[MetaTab] Global page refresh detected`);
+      
+      // Only refresh if we have a brand ID
+      if (!brandId) {
+        console.log(`[MetaTab] No brand ID available, skipping refresh`);
+        return;
+      }
+      
+      // Trigger the refresh with the current brand ID
+      refreshAllMetaData(brandId).then(success => {
+        if (success) {
+          console.log(`[MetaTab] Global refresh completed successfully`);
+        } else {
+          console.log(`[MetaTab] Global refresh completed with errors`);
+        }
+      });
+    };
+    
+    // Register the event listener for the global refresh button
+    window.addEventListener('page-refresh', handleGlobalRefresh);
+    
+    // Expose the refresh function to the window for external access
+    if (typeof window !== 'undefined') {
+      // @ts-ignore - Add the refresh function to the window object
+      window._refreshMetaData = () => refreshAllMetaData(brandId);
+    }
+    
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener('page-refresh', handleGlobalRefresh);
+      
+      // Clean up the exposed function
+      if (typeof window !== 'undefined') {
+        // @ts-ignore
+        delete window._refreshMetaData;
+      }
+    };
+  }, [brandId, refreshAllMetaData]);
+
+  // Add a proper date comparison function to avoid infinite loops
+  const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {
+    if (!date1 && !date2) return true;
+    if (!date1 || !date2) return false;
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+
+  // Store previous date range for comparison
+  const prevDateRangeRef = useRef<{ from?: Date; to?: Date } | undefined>(undefined);
+
+  // Update the useEffect hook that handles date range changes
+  useEffect(() => {
+    const currentFrom = dateRange?.from?.toISOString();
+    const currentTo = dateRange?.to?.toISOString();
+    const previousFrom = prevDateRangeRef.current?.from?.toISOString();
+    const previousTo = prevDateRangeRef.current?.to?.toISOString();
+
+    // Check if the dates have actually changed
+    const datesChanged = currentFrom !== previousFrom || currentTo !== previousTo;
+
+    if (datesChanged) {
+      logger.debug('[MetaTab] Date range actually changed:', 
+        `(${previousFrom?.split('T')[0]} - ${previousTo?.split('T')[0]})`, '->',
+        `(${currentFrom?.split('T')[0]} - ${currentTo?.split('T')[0]})`);
+
+      // Store the new date range as the previous one for the next render
+      // Make sure to store a plain object or the relevant date parts if DateRange is complex
+      prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
+
+      // Fetch campaigns with the new date range (force refresh to get new data)
+      if (throttle('date-range-change-fetch', 2000)) {
+          fetchCampaigns(true);
+      } else {
+          logger.debug('[MetaTab] Throttled fetch due to rapid date change.')
+      }
+
+    } else {
+      // Check if the dateRange object itself is undefined now when it wasn't before (or vice-versa)
+      const rangePresenceChanged = (!!dateRange !== !!prevDateRangeRef.current);
+      if (rangePresenceChanged) {
+        logger.debug('[MetaTab] Date range presence changed.');
+        prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
+        if (throttle('date-range-presence-change-fetch', 2000)) {
+           fetchCampaigns(true); // Fetch if range added/removed
+        } else {
+          logger.debug('[MetaTab] Throttled fetch due to rapid date presence change.')
+        }
+      } else {
+        logger.debug('[MetaTab] Date range object updated, but dates are the same. Skipping fetch.');
+      }
+    }
+
+  }, [dateRange, brandId, fetchCampaigns]);
+
+  // Remove or comment out the previous useEffect hook handling date range persistence/stabilization
+  // as this new hook handles the core logic of fetching on change.
+  /*
+  useEffect(() => {
+    // ... previous stabilization logic ...
+  }, [dateRange]);
+  */
+
+  // Add this effect to track when campaigns with reach data are loaded
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      // Check if at least one campaign has reach data
+      const hasReachData = campaigns.some(campaign => campaign.reach && campaign.reach > 0);
+      
+      if (hasReachData) {
+        setCampaignReachLoaded(true);
+        console.log("[MetaTab] Campaigns with reach data detected:", 
+          campaigns.map(c => ({ name: c.name || c.campaign_name, reach: c.reach }))
+        );
+      } else {
+        // If we have campaigns but no reach data yet, wait a bit and then check again
+        // This handles cases where the campaign data loads but reach values are delayed
+        const checkAgainTimeout = setTimeout(() => {
+          console.log("[MetaTab] No reach data found in campaigns, will use fallback value");
+          setCampaignReachLoaded(true); // Mark as loaded anyway after timeout so UI doesn't stay in loading state
+        }, 3000); // Wait 3 seconds then stop loading state
+        
+        return () => clearTimeout(checkAgainTimeout);
+      }
+    } else {
+      setCampaignReachLoaded(false);
+    }
+  }, [campaigns]);
+
+  // Add debug logging to better understand what values we're getting
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0 && debugMode) {
+      console.log("[MetaTab] Campaign reach values:", 
+        campaigns.map(c => ({ 
+          name: c.name || c.campaign_name, 
+          reach: c.reach, 
+          status: c.status,
+          dateRange: dateRange
+        }))
+      );
+    }
+  }, [campaigns, dateRange, debugMode]);
+
+  // Add a useRef to store the campaign reach values from the table
+  const campaignTableReachRef = useRef<Map<string, number>>(new Map());
+
+  // Add a state to track when campaign table reach data is available
+  const [campaignTableReachReady, setCampaignTableReachReady] = useState(false);
+
+  // Add a function to update reach values from the campaign table
+  const updateCampaignTableReach = useCallback((campaignId: string, reachValue: number) => {
+    campaignTableReachRef.current.set(campaignId, reachValue);
+    if (!campaignTableReachReady) setCampaignTableReachReady(true);
+    
+    if (debugMode) {
+      console.log(`[MetaTab] Campaign table reach updated for ${campaignId}: ${reachValue}`);
+      console.log(`[MetaTab] Total campaign table reach sum: ${Array.from(campaignTableReachRef.current.values()).reduce((sum, val) => sum + val, 0)}`);
+    }
+  }, [debugMode, campaignTableReachReady]);
+
+  // Add an event listener to catch reach values from the campaign table
+  useEffect(() => {
+    const handleCampaignReachUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.campaignId && typeof e.detail.reachValue === 'number') {
+        updateCampaignTableReach(e.detail.campaignId, e.detail.reachValue);
+      }
+    };
+    
+    window.addEventListener('campaign-reach-update' as any, handleCampaignReachUpdate);
+    return () => {
+      window.removeEventListener('campaign-reach-update' as any, handleCampaignReachUpdate);
+    };
+  }, [updateCampaignTableReach]);
+
+  // Modify the MetricCard for Reach to use campaign table reach values
+  <MetricCard
+    title={
+      <div className="flex items-center gap-1.5">
+        <Users className="h-4 w-4 text-purple-400" />
+        <span className="ml-0.5">Reach</span>
+      </div>
+    }
+    value={useMemo(() => {
+      // Sum values from the campaign table reach map
+      if (campaignTableReachReady && campaignTableReachRef.current.size > 0) {
+        const sum = Array.from(campaignTableReachRef.current.values()).reduce((total, reach) => total + reach, 0);
+        
+        if (debugMode) {
+          console.log(`[MetaTab] Using campaign table reach sum: ${sum}`);
+        }
+        
+        return sum;
+      }
+      
+      // Fallback to simple campaign.reach sum
+      return campaigns.reduce((total, campaign) => total + (Number(campaign.reach) || 0), 0);
+    }, [campaigns, campaignTableReachReady, debugMode])}
+    data={[]}
+    loading={isLoadingCampaigns}
+    hideChange={true}
+    valueFormat="number"
+    hideGraph={true}
+  />
+
+  // Now let's modify the CampaignWidget component to emit reach values when they're calculated
+  <CampaignWidget 
+    brandId={brandId || ''}
+    campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
+    isLoading={isLoadingCampaigns}
+    isSyncing={isSyncing}
+    dateRange={dateRange}
+    onRefresh={fetchCampaigns}
+    onReachUpdate={(campaignId, reachValue) => updateCampaignTableReach(campaignId, reachValue)}
+    onSync={async () => {
+      // ... existing onSync implementation ...
+    }}
+  />
 
   return (
     <TooltipProvider>
@@ -3550,10 +4381,11 @@ Try creating at least one active campaign in Meta Ads Manager.
         <div className="flex items-center mb-4">
           <LineChart className="h-5 w-5 text-gray-400 mr-2" />
           <h2 className="text-lg font-semibold">Meta Data Overview - All Ads Combined</h2>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center">
             <Badge variant="outline" className="bg-gray-900/30 text-gray-400 border-gray-800 px-2">
               Aggregated Metrics
             </Badge>
+            <MetaFixButton brandId={brandId} />
           </div>
         </div>
         
@@ -3627,16 +4459,26 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Reach</span>
               </div>
             }
-            value={reachData.value}
+            value={useMemo(() => {
+              // Sum values from the campaign table reach map
+              if (campaignTableReachReady && campaignTableReachRef.current.size > 0) {
+                const sum = Array.from(campaignTableReachRef.current.values()).reduce((total, reach) => total + reach, 0);
+                
+                if (debugMode) {
+                  console.log(`[MetaTab] Using campaign table reach sum: ${sum}`);
+                }
+                
+                return sum;
+              }
+              
+              // Fallback to simple campaign.reach sum
+              return campaigns.reduce((total, campaign) => total + (Number(campaign.reach) || 0), 0);
+            }, [campaigns, campaignTableReachReady, debugMode])}
             data={[]}
-            loading={reachData.isLoading || isManuallyRefreshing}
+            loading={isLoadingCampaigns}
             hideChange={true}
             valueFormat="number"
             hideGraph={true}
-            previousValue={reachData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
           <MetricCard
@@ -3777,46 +4619,27 @@ Try creating at least one active campaign in Meta Ads Manager.
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
+          
+          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
         </div>
       </div>
       
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
-        <CampaignWidget 
-          brandId={brandId || ''}
-          campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-          isLoading={isLoadingCampaigns}
-          isSyncing={isSyncing}
-          dateRange={dateRange}
-          onRefresh={fetchCampaigns}
-          onSync={async () => {
-            toast.loading("Syncing Meta campaigns...", { id: "meta-campaigns-sync" })
-            
-            try {
-              const response = await fetch(`/api/meta/campaigns/sync`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  brandId,
-                  forceRefresh: true
-                }),
-              })
-              
-              if (response.ok) {
-                toast.success("Meta campaigns synced", { id: "meta-campaigns-sync" })
-                // Reload campaigns after sync
-                fetchCampaigns()
-              } else {
-                toast.error("Failed to sync Meta campaigns", { id: "meta-campaigns-sync" })
-              }
-            } catch (error) {
-              console.error("Error syncing Meta campaigns:", error)
-              toast.error("Error syncing Meta campaigns", { id: "meta-campaigns-sync" })
-            }
-          }}
-        />
+        {campaigns.length > 0 || isLoadingCampaigns ? (
+          <CampaignWidget 
+            key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
+            brandId={brandId || ''}
+            campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
+            isLoading={isLoadingCampaigns}
+            isSyncing={isSyncing}
+            dateRange={dateRange}
+            onRefresh={() => {
+              fetchCampaigns(true);
+            }}
+            onSync={syncMetaInsights}
+          />
+        ) : null}
       </div>
               </>
             )

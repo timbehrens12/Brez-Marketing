@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -11,7 +11,8 @@ export async function GET(request: Request) {
 
   try {
     // Get the Shopify connection for this brand
-    const { data: connection } = await supabase
+    const supabase = getSupabaseClient()
+  const { data: connection } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('brand_id', brandId)
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch data from Shopify API using the stored access token
-    const shopifyResponse = await fetch(`https://${connection.store_url}/admin/api/2024-01/orders/count.json`, {
+    const shopifyResponse = await fetch(`https://${connection.shop}/admin/api/2024-01/orders/count.json`, {
       headers: {
         'X-Shopify-Access-Token': connection.access_token,
       },

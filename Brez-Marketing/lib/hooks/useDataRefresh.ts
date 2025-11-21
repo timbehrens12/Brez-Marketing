@@ -33,7 +33,8 @@ export function useDataRefresh(
     
     // Clean up on unmount
     return () => clearInterval(intervalId)
-  }, [...dependencies])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies)
 
   return { lastRefreshed, isRefreshing, refresh }
 } 

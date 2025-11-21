@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Specialized API endpoint for fetching Clicks data directly
+ * Specialized API endpoint for fetching Meta Clicks data directly
  * This endpoint is optimized for speed and simplicity, fetching only
  * what's needed for the Clicks widget
  */
@@ -10,122 +10,75 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const from = url.searchParams.get('from')
-    const to = url.searchParams.get('to')
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
-    
-    // Check if this is a yesterday preset
     const isYesterdayPreset = preset === 'yesterday'
-    
-    // Log the request
-    console.log(`CLICKS METRIC API: Fetching Clicks for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
-    
-    // Validate required parameters
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+
+    console.log(`CLICKS SINGLE METRIC API (from meta_ad_daily_insights): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+
+    if (!brandId || !fromDate || !toDate) {
+      return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
     
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Date range is required' }, { status: 400 })
-    }
-    
-    // Initialize Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Get Meta connection
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
-    
-    if (connectionError) {
-      console.log(`Error retrieving Meta connection: ${JSON.stringify(connectionError)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta connection' }, { status: 500 })
-    }
-    
-    if (!connection) {
-      console.log(`No active Meta connection found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
-    }
-    
-    // Special handling for yesterday preset to ensure exact date
-    let fromDate = from
-    let toDate = to
-    
     if (isYesterdayPreset) {
-      // Use exactly yesterday's date
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
       fromDate = yesterday.toISOString().split('T')[0]
-      toDate = fromDate // Force same day
-      console.log(`CLICKS METRIC API: Using exact yesterday date ${fromDate}`)
+      toDate = fromDate 
+      console.log(`CLICKS SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
-    
-    // Query meta_ad_insights for just the data we need
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
+
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_ad_daily_insights') 
       .select('date, clicks')
-      .eq('connection_id', connection.id)
+      .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
+    if (dbError) {
+      console.error(`CLICKS SINGLE METRIC API: Error retrieving from meta_ad_daily_insights:`, dbError)
+      return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
-    
-    // Filter to ensure exact date match for yesterday
-    let filteredInsights = insights || []
-    
-    if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
+
+    let filteredStats = dailyStats || []
+    if (isYesterdayPreset) { 
+      filteredStats = filteredStats.filter(item => {
         const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
-      console.log(`CLICKS METRIC API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
     }
     
-    // If no data, return zeros
-    if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate}`)
+    if (!filteredStats || filteredStats.length === 0) {
+      console.log(`[CLICKS SINGLE METRIC API] No data found for ${fromDate} to ${toDate}, returning 0`)
       return NextResponse.json({ 
         value: 0,
-        _meta: {
-          from: fromDate,
-          to: toDate,
-          records: 0
-        }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_ad_daily_insights' }
       })
     }
-    
-    // Calculate the sum of clicks
-    const totalClicks = filteredInsights.reduce((sum, item) => {
-      const clicks = typeof item.clicks === 'string' ? parseFloat(item.clicks) : item.clicks
-      return sum + (isNaN(clicks) ? 0 : clicks)
+
+    const totalClicks = filteredStats.reduce((sum, item) => {
+      const clicksVal = parseInt(item.clicks || '0')
+      return sum + (isNaN(clicksVal) ? 0 : clicksVal)
     }, 0)
     
-    // Return the result
     const result = {
-      value: Math.round(totalClicks), // Round to nearest integer for clicks
+      value: totalClicks,
       _meta: {
         from: fromDate,
         to: toDate,
-        records: filteredInsights.length,
-        dates: filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0])
+        records: filteredStats.length,
+        source: 'meta_ad_daily_insights'
       }
     }
-    
-    console.log(`CLICKS METRIC API: Returning Clicks = ${result.value}`)
-    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Clicks metric endpoint:', error)
+    console.error('CLICKS SINGLE METRIC API: Error in endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

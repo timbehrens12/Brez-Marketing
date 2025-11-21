@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, isSameDay, differenceInDays, endOfDay, startOfDay, subDays } from 'date-fns'
 import { MetricLineChart } from '@/components/metrics/MetricLineChart'
 import { Loader2, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
@@ -42,6 +42,50 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   const [connectionId, setConnectionId] = useState<string | null>(null)
   const [isLoadingConnection, setIsLoadingConnection] = useState(true)
 
+  // Listen for requests to share order data with other components
+  useEffect(() => {
+    const handleRequestData = () => {
+      // console.log('[SalesByProduct] Received request for product data');
+      // If we have orders, share them
+      if (ordersCache && ordersCache.length > 0) {
+        // console.log('[SalesByProduct] Responding with cached orders:', ordersCache.length);
+        window.dispatchEvent(new CustomEvent('salesByProductData', {
+          detail: {
+            orders: ordersCache,
+            totalProducts: products.length,
+            selectedProductId
+          }
+        }));
+      } else {
+        // console.log('[SalesByProduct] No cached orders to share, will try to fetch');
+        // Attempt to fetch orders and then share them
+        fetchProducts().then(() => {
+          if (ordersCache && ordersCache.length > 0) {
+            // console.log('[SalesByProduct] Responding with freshly fetched orders:', ordersCache.length);
+            window.dispatchEvent(new CustomEvent('salesByProductData', {
+              detail: {
+                orders: ordersCache,
+                totalProducts: products.length,
+                selectedProductId
+              }
+            }));
+          }
+        });
+      }
+    };
+    
+    // Listen for requests for our data
+    window.addEventListener('requestSalesByProductData', handleRequestData);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('requestSalesByProductData', handleRequestData);
+    };
+  }, [products, selectedProductId]);
+  
+  // Add a variable to cache orders
+  const [ordersCache, setOrdersCache] = useState<any[]>([]);
+
   // First, get the connection_id for the brand
   useEffect(() => {
     const fetchConnectionId = async () => {
@@ -65,10 +109,10 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         }
         
         if (data) {
-          console.log('Found connection ID for brand:', data.id);
+          // console.log('Found connection ID for brand:', data.id);
           setConnectionId(data.id);
         } else {
-          console.log('No active Shopify connection found for brand:', brandId);
+          // console.log('No active Shopify connection found for brand:', brandId);
           setError('No Shopify connection found');
         }
       } catch (err) {
@@ -95,14 +139,21 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         return;
       }
       
-      const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
-      const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      // Always use the exact date range from props - don't override the user's selection
+      const fromDate = dateRange.from;
+      const toDate = endOfDay(dateRange.to);
       
-      console.log('Fetching products for connection:', connectionId, 'from:', formattedFrom, 'to:', formattedTo)
+      // console.log('[SalesByProduct] Using date range from props:', 
+      //   format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
+      
+      const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      
+      // console.log('Fetching products for connection:', connectionId, 'from:', formattedFrom, 'to:', formattedTo)
       
       const { data: orders, error } = await supabase
         .from('shopify_orders')
-        .select('line_items, created_at')
+        .select('line_items, created_at, total_price, id, customer_id')
         .eq('connection_id', connectionId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
@@ -115,13 +166,17 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       }
       
       if (!orders || orders.length === 0) {
-        console.log('No orders found for the selected date range')
+        // console.log('No orders found for the selected date range')
         setProducts([])
         setIsLoading(false)
+        setOrdersCache([]) // Clear cache since we have no orders
         return
       }
       
-      console.log(`Found ${orders.length} orders with connection_id: ${connectionId}`)
+      // console.log(`Found ${orders.length} orders with connection_id: ${connectionId}`)
+      
+      // Cache the orders for emergency use by other components
+      setOrdersCache(orders)
       
       // Process orders to extract unique products and their sales data
       const productMap = new Map<string, Product>()
@@ -189,10 +244,21 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         return
       }
       
-      const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
-      const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      // Always use the exact date range from props - don't override the user's selection
+      const fromDate = dateRange.from;
+      const toDate = endOfDay(dateRange.to);
       
-      console.log('Fetching sales data for product:', selectedProductId, 'connection:', connectionId)
+      // console.log('[SalesByProduct] Using date range from props for product data:', 
+      //   format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
+      
+      const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+      
+      // console.log('Fetching sales data for product:', selectedProductId, 'connection:', connectionId, 'time now:', new Date().toISOString())
+      // console.log('Using date range for query:', formattedFrom, 'to', formattedTo); // Add log for debugging
+      
+      // Force cache bypass by adding timestamp to ensure fresh data
+      const timestamp = Date.now()
       
       const { data: orders, error } = await supabase
         .from('shopify_orders')
@@ -200,6 +266,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         .eq('connection_id', connectionId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
+        .order('created_at', { ascending: false })
       
       if (error) {
         console.error('Error fetching orders:', error)
@@ -209,19 +276,22 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       }
       
       if (!orders || orders.length === 0) {
-        console.log('No orders found for the selected date range')
+        // console.log('No orders found for the selected date range')
         setSalesData([])
         setIsLoading(false)
         return
       }
       
-      console.log(`Found ${orders.length} orders for product data`)
+      // console.log(`Found ${orders.length} orders for product data, most recent:`, orders[0]?.created_at)
       
       // Process orders to extract sales data for the selected product
-      const salesByDate = new Map<string, { value: number, quantity: number }>()
+      const salesByDate = new Map<string, { value: number, quantity: number, hour: number }>()
       
       orders.forEach((order: any) => {
-        const orderDate = format(parseISO(order.created_at), 'yyyy-MM-dd')
+        // Parse the created_at timestamp correctly to get both date and time
+        const orderTimestamp = parseISO(order.created_at)
+        const orderHour = orderTimestamp.getHours()
+        const orderDate = format(orderTimestamp, 'yyyy-MM-dd')
         const lineItems = order.line_items || []
         
         lineItems.forEach((item: any) => {
@@ -232,43 +302,92 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
           const price = parseFloat(item.price) || 0
           const totalPrice = quantity * price
           
-          if (salesByDate.has(orderDate)) {
-            const data = salesByDate.get(orderDate)!
+          const key = `${orderDate}T${orderHour}`
+          
+          if (salesByDate.has(key)) {
+            const data = salesByDate.get(key)!
             data.value += totalPrice
             data.quantity += quantity
           } else {
-            salesByDate.set(orderDate, {
+            salesByDate.set(key, {
               value: totalPrice,
-              quantity
+              quantity,
+              hour: orderHour
             })
           }
         })
       })
       
-      // Fill in missing dates in the range
+      // Fill in missing dates/hours in the range
       const start = new Date(dateRange.from)
       const end = new Date(dateRange.to)
       const currentDate = new Date(start)
       
-      while (currentDate <= end) {
-        const dateStr = format(currentDate, 'yyyy-MM-dd')
-        
-        if (!salesByDate.has(dateStr)) {
-          salesByDate.set(dateStr, { value: 0, quantity: 0 })
+      // For single day view, we want to fill in all hours of the day
+      if (isSameDay(dateRange.from, dateRange.to)) {
+        const dateStr = format(start, 'yyyy-MM-dd')
+        // Create entries for each hour (0-23)
+        for (let hour = 0; hour < 24; hour++) {
+          const key = `${dateStr}T${hour}`
+          if (!salesByDate.has(key)) {
+            salesByDate.set(key, { value: 0, quantity: 0, hour })
+          }
         }
-        
-        currentDate.setDate(currentDate.getDate() + 1)
+      } else {
+        // For multi-day view, create one entry per day
+        while (currentDate <= end) {
+          const dateStr = format(currentDate, 'yyyy-MM-dd')
+          // Use noon (12) as the default hour for daily data display
+          const key = `${dateStr}T12`
+          if (!salesByDate.has(key)) {
+            salesByDate.set(key, { value: 0, quantity: 0, hour: 12 })
+          }
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
       }
       
-      // Convert map to array and sort by date
+      // Convert map to array and create appropriate data format for the chart
       const salesArray = Array.from(salesByDate.entries())
-        .map(([date, data]) => ({
-          date,
-          value: data.value,
-          quantity: data.quantity
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(([key, data]) => {
+          const [datePart, hourStr] = key.split('T')
+          const hour = parseInt(hourStr)
+          const date = parseISO(datePart)
+          
+          // Single day view
+          if (isSameDay(dateRange.from, dateRange.to)) {
+            return {
+              date: datePart,
+              hour,
+              displayHour: hour % 4 === 0 ? (hour === 0 ? '12am' : hour < 12 ? `${hour}am` : hour === 12 ? '12pm' : `${hour-12}pm`) : '',
+              formattedTime: hour === 0 ? '12am' : hour < 12 ? `${hour}am` : hour === 12 ? '12pm' : `${hour-12}pm`,
+              formattedDate: format(date, 'MMM dd'),
+              value: data.value,
+              quantity: data.quantity
+            }
+          } 
+          // Multi-day view
+          else {
+            return {
+              date: datePart,
+              displayDate: format(date, 'MMM dd'),
+              value: data.value,
+              quantity: data.quantity
+            }
+          }
+        })
+        // Sort by date and hour
+        .sort((a, b) => {
+          // With type checking to avoid undefined error
+          if ('hour' in a && 'hour' in b && typeof a.hour === 'number' && typeof b.hour === 'number') {
+            // For single day, sort by hour
+            return a.hour - b.hour
+          } else {
+            // For multi-day, sort by date
+            return a.date.localeCompare(b.date)
+          }
+        })
       
+      // console.log('Processed sales data:', salesArray)
       setSalesData(salesArray)
       
     } catch (err) {
@@ -293,6 +412,36 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     }
   }, [connectionId, selectedProductId, dateRange.from, dateRange.to, isRefreshing, fetchProductSalesData]);
   
+  // Add a more aggressive refresh trigger
+  useEffect(() => {
+    // Listen for the page-refresh event
+    const handlePageRefresh = (event: any) => {
+      // console.log('SalesByProduct: Received page-refresh event, refreshing product data');
+      if (connectionId && selectedProductId) {
+        fetchProducts();
+        fetchProductSalesData();
+      }
+    };
+
+    window.addEventListener('page-refresh', handlePageRefresh);
+    
+    // Also listen for the metaDataRefreshed event for backward compatibility
+    window.addEventListener('metaDataRefreshed', handlePageRefresh);
+    
+    // Listen for Shopify refresh events
+    window.addEventListener('force-shopify-refresh', handlePageRefresh);
+    window.addEventListener('global-refresh-all', handlePageRefresh);
+    window.addEventListener('force-widget-refresh', handlePageRefresh);
+    
+    return () => {
+      window.removeEventListener('page-refresh', handlePageRefresh);
+      window.removeEventListener('metaDataRefreshed', handlePageRefresh);
+      window.removeEventListener('force-shopify-refresh', handlePageRefresh);
+      window.removeEventListener('global-refresh-all', handlePageRefresh);
+      window.removeEventListener('force-widget-refresh', handlePageRefresh);
+    };
+  }, [connectionId, selectedProductId, fetchProducts, fetchProductSalesData]);
+  
   // Get the selected product details
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId)
@@ -313,8 +462,8 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   }
   
   return (
-    <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
-      <CardHeader className="p-4 pb-2">
+    <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 shadow-md overflow-hidden">
+      <CardHeader className="p-3 pb-1.5">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-gray-200">
             <div className="flex items-center gap-2">
@@ -331,12 +480,14 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
               <ShoppingBag className="h-4 w-4" />
             </div>
           </CardTitle>
-          {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+          <div className="flex items-center">
+            {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-white" />}
+          </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-4 pt-2">
-        {isLoadingConnection ? (
+      <CardContent className="p-3 pt-2">
+        {isLoadingConnection || isRefreshing ? (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full bg-gray-700" />
             <Skeleton className="h-[120px] w-full bg-gray-700" />
@@ -384,13 +535,14 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
                   </div>
                 </div>
                 
-                <div className="h-[120px]">
+                <div className="h-[220px]">
                   <MetricLineChart 
                     data={salesData}
                     dateRange={dateRange}
                     valuePrefix="$"
                     valueFormat="currency"
                     color="#4ade80"
+                    height={220}
                   />
                 </div>
               </>

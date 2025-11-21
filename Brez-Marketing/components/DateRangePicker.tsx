@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+
 
 // Add custom styles to hide the default navigation buttons
 const calendarStyles = `
@@ -33,26 +35,35 @@ interface DateRangePickerProps {
     to: Date;
   };
   setDateRange: (range: { from: Date; to: Date }) => void;
+  disabled?: boolean;
+  loading?: boolean;
 }
+
+// Get user's timezone - the backend can handle any timezone
+const getUserTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 const presets = [
   {
     name: 'Today',
     value: 'today',
-    getDate: () => ({
-      from: startOfDay(new Date()),
-      to: endOfDay(new Date())
-    })
+    getDate: () => {
+      // Use current date in user's timezone
+      const now = new Date()
+      
+      return {
+        from: startOfDay(now),
+        to: endOfDay(now)
+      }
+    }
   },
   {
     name: 'Yesterday',
     value: 'yesterday',
     getDate: () => {
-      // Create yesterday's date
-      const yesterday = subDays(new Date(), 1);
-      
-      // Format dates - use the same date for both from and to
-      const yesterdayStart = startOfDay(yesterday);
+      // Get yesterday's date in user's timezone
+      const now = new Date()
+      const yesterday = subDays(now, 1)
+      const yesterdayStart = startOfDay(yesterday)
       
       // Add a special parameter to the date object - use the same date for both
       const date = {
@@ -62,27 +73,42 @@ const presets = [
         _preset: 'yesterday'
       };
       
-      console.log('Setting yesterday preset with special marker - same date for both');
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
-      
       return date;
     }
   },
   {
     name: 'Last 7 days',
     value: 'last7',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 7)),
-      to: endOfDay(subDays(new Date(), 1))
-    })
+    getDate: () => {
+      const today = new Date();
+      // Use startOfDay for the end date (yesterday) to avoid timezone rollover
+      const yesterdayStart = startOfDay(subDays(today, 1));
+      const sevenDaysAgoStart = startOfDay(subDays(today, 7));
+      
+              // console.log(`Setting last 7 days: ${format(sevenDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayStart, 'yyyy-MM-dd')}`);
+      
+      return {
+        from: sevenDaysAgoStart,
+        to: yesterdayStart // Use start of yesterday
+      };
+    }
   },
   {
     name: 'Last 30 days',
     value: 'last30',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 30)),
-      to: endOfDay(subDays(new Date(), 1))
-    })
+    getDate: () => {
+      const today = new Date();
+      // Use startOfDay for the end date (yesterday) to avoid timezone rollover
+      const yesterdayStart = startOfDay(subDays(today, 1));
+      const thirtyDaysAgoStart = startOfDay(subDays(today, 30));
+      
+              // console.log(`Setting last 30 days: ${format(thirtyDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayStart, 'yyyy-MM-dd')}`);
+      
+      return {
+        from: thirtyDaysAgoStart,
+        to: yesterdayStart // Use start of yesterday
+      };
+    }
   },
   {
     name: 'This week',
@@ -108,14 +134,14 @@ const presets = [
       };
       
       // Add detailed logging for debugging
-      console.log(`"This week" calculation:`, {
-        today: safeToday.toISOString(),
-        dayOfWeek,
-        startDate: dateRange.from.toISOString(),
-        endDate: dateRange.to.toISOString(),
-        startFormatted: format(dateRange.from, 'yyyy-MM-dd'),
-        endFormatted: format(dateRange.to, 'yyyy-MM-dd')
-      });
+      // console.log(`"This week" calculation:`, {
+      //   today: safeToday.toISOString(),
+      //   dayOfWeek,
+      //   startDate: dateRange.from.toISOString(),
+      //   endDate: dateRange.to.toISOString(),
+      //   startFormatted: format(dateRange.from, 'yyyy-MM-dd'),
+      //   endFormatted: format(dateRange.to, 'yyyy-MM-dd')
+      // });
       
       return dateRange;
     }
@@ -131,10 +157,21 @@ const presets = [
   {
     name: 'Last month',
     value: 'lastMonth',
-    getDate: () => ({
-      from: startOfDay(startOfMonth(subMonths(new Date(), 1))),
-      to: endOfDay(endOfMonth(subMonths(new Date(), 1)))
-    })
+    getDate: () => {
+      const today = new Date();
+      const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDayOfPreviousMonth = new Date(firstDayOfCurrentMonth);
+      lastDayOfPreviousMonth.setDate(lastDayOfPreviousMonth.getDate() - 1);
+      const firstDayOfPreviousMonth = new Date(lastDayOfPreviousMonth.getFullYear(), lastDayOfPreviousMonth.getMonth(), 1);
+      
+      // console.log(`Setting last month: ${format(firstDayOfPreviousMonth, 'yyyy-MM-dd')} to ${format(lastDayOfPreviousMonth, 'yyyy-MM-dd')}`);
+      
+      return {
+        from: startOfDay(firstDayOfPreviousMonth),
+        // Use startOfDay for the end date to avoid timezone rollover
+        to: startOfDay(lastDayOfPreviousMonth) 
+      };
+    }
   },
   {
     name: 'This year',
@@ -152,9 +189,15 @@ const presets = [
     value: 'lastYear',
     getDate: () => {
       const lastYear = new Date().getFullYear() - 1;
+      const firstDayOfLastYear = new Date(lastYear, 0, 1);
+      const lastDayOfLastYear = new Date(lastYear, 11, 31);
+      
+      // console.log(`Setting last year: ${format(firstDayOfLastYear, 'yyyy-MM-dd')} to ${format(lastDayOfLastYear, 'yyyy-MM-dd')}`);
+      
       return {
-        from: startOfDay(new Date(lastYear, 0, 1)),
-        to: endOfDay(new Date(lastYear, 11, 31))
+        from: startOfDay(firstDayOfLastYear),
+        // Use startOfDay for the end date to avoid timezone rollover
+        to: startOfDay(lastDayOfLastYear)
       };
     }
   }
@@ -166,7 +209,7 @@ function isAfterOrSameMonth(date1: Date, date2: Date): boolean {
   return date1.getMonth() >= date2.getMonth();
 }
 
-export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProps) {
+export function DateRangePicker({ dateRange, setDateRange, disabled = false, loading = false }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
@@ -182,8 +225,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     if (isOpen) {
       setTempDateRange(dateRange)
       setSelectionStep('start')
-      // Set current month to show current month on right, previous month on left
-      setCurrentMonth(prevMonth => subMonths(new Date(), 1))
+      // Set current month to show the month of the selected date range, or current month if no selection
+      const monthToShow = dateRange?.from ? startOfMonth(dateRange.from) : subMonths(new Date(), 1)
+      setCurrentMonth(monthToShow)
       
       // Determine if the current dateRange matches any preset
       setActivePreset(getActivePresetFromDateRange(dateRange))
@@ -271,6 +315,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
+    if (disabled || loading) return; // Prevent changes when disabled or loading
+    
     // Get the date range from the preset
     const newRange = preset.getDate()
     
@@ -294,8 +340,6 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       // Keep the special marker using type assertion
       (newRange as any)._preset = 'yesterday';
       
-      console.log(`Setting yesterday preset with special marker - exact same date for both`);
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
     }
     else if (preset.value === 'thisWeek') {
       // Additional validation for this week preset
@@ -308,18 +352,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.from = startOfDay(startDate);
       newRange.to = endOfDay(today);
       
-      console.log(`Setting this week preset with explicit date calculation`);
-      console.log(`Date range: ${format(newRange.from, 'yyyy-MM-dd')} to ${format(newRange.to, 'yyyy-MM-dd')}`);
     }
     
     // Set the active preset
     setActivePreset(preset.value)
     
-    // Important: explicitly log what we're setting to help with debugging
-    console.log(`Setting date range from preset ${preset.value}: `, {
-      from: format(newRange.from, 'yyyy-MM-dd'),
-      to: format(newRange.to, 'yyyy-MM-dd')
-    });
     
     setTempDateRange(newRange)
     setSelectionStep('complete')
@@ -333,6 +370,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleApply = () => {
+    if (disabled) return; // Prevent changes when disabled
+    
     if (tempDateRange?.from) {
       // If only from date is selected, use same date for both
       const finalRange = {
@@ -340,11 +379,6 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         to: tempDateRange.to || tempDateRange.from
       };
       
-      // Log what we're applying
-      console.log('Applying date range:', {
-        from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0]
-      });
       
       setDateRange(finalRange);
     }
@@ -380,24 +414,44 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     }
   }
 
+
+
   return (
     <div className="grid gap-2">
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen && !disabled && !loading} onOpenChange={(open) => !disabled && !loading && setIsOpen(open)}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="w-[260px] justify-start text-left font-normal bg-[#111111] text-white border-[#222222] hover:bg-[#222222]"
+            disabled={disabled || loading}
+            className={cn(
+              "min-w-[260px] w-auto max-w-[320px] justify-between text-left font-normal bg-[#1A1A1A] text-gray-400 border-[#333]",
+              (disabled || loading)
+                ? "opacity-60 cursor-not-allowed" 
+                : "hover:bg-[#222] hover:text-white"
+            )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 text-white" />
-            {dateRange?.from ? (
-              getSelectedPresetLabel(dateRange)
-            ) : (
-              <span>Pick a date</span>
+            <div className="flex items-center flex-1 min-w-0">
+              <CalendarIcon className="mr-2 h-4 w-4 text-gray-400 flex-shrink-0" />
+              <span className="truncate">
+                {dateRange?.from ? (
+                  getSelectedPresetLabel(dateRange)
+                ) : (
+                  "Pick a date"
+                )}
+              </span>
+            </div>
+            {(disabled || loading) && (
+              <span className="ml-2 text-xs text-gray-500 flex-shrink-0">(Loading...)</span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="space-y-4 p-4 bg-[#111111] text-white">
+        <PopoverContent 
+          className="w-auto p-0 data-[state=closed]:animate-none data-[state=open]:animate-none" 
+          align="start"
+          forceMount
+          sideOffset={5}
+        >
+          <div className="space-y-4 p-4 bg-[#111111] text-white rounded-md border border-[#222222]">
             <div className="flex">
               <div className="border-r pr-4 flex flex-col space-y-1">
                 {presets.map((preset) => (

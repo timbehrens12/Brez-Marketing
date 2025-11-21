@@ -3,7 +3,26 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
-  console.log('Shopify webhook received at /api/webhooks/shopify/orders')
+  console.log('🔒 SECURE: Shopify webhook received at /api/webhooks/shopify/orders')
+  
+  // 🔒 SECURITY: Rate limiting for webhooks to prevent abuse
+  const clientIP = request.headers.get('x-forwarded-for') || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown'
+  
+  const { rateLimiter } = await import('@/lib/rate-limiter')
+  const rateLimitResult = await rateLimiter.limit(
+    `webhook-shopify:${clientIP}`,
+    { interval: 60, limit: 100 } // 100 webhooks per minute per IP
+  )
+  
+  if (!rateLimitResult.success) {
+    console.warn(`🚨 SECURITY: Webhook rate limit exceeded from IP: ${clientIP}`)
+    return NextResponse.json(
+      { error: 'Rate limit exceeded' }, 
+      { status: 429 }
+    )
+  }
   
   try {
     // Verify Shopify webhook
@@ -45,14 +64,15 @@ export async function POST(request: NextRequest) {
         .update(rawBody, 'utf8')
         .digest('base64')
       
-      if (calculatedHmac !== hmacHeader) {
-        console.error('HMAC verification failed')
+      // 🔒 SECURITY: Use timing-safe comparison to prevent timing attacks
+      if (!crypto.timingSafeEqual(Buffer.from(calculatedHmac), Buffer.from(hmacHeader))) {
+        console.error('🚨 SECURITY: HMAC verification failed for webhook')
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
       }
       
-      console.log('HMAC verification successful')
+      console.log('🔒 SECURE: HMAC verification successful')
     } catch (error) {
-      console.error('Error verifying HMAC:', error)
+      console.error('🚨 SECURITY: Error verifying HMAC:', error)
       return NextResponse.json({ error: 'HMAC verification failed' }, { status: 500 })
     }
     
@@ -101,33 +121,23 @@ export async function POST(request: NextRequest) {
     const { error: orderError } = await supabase
       .from('shopify_orders')
       .upsert([{
+        id: parseInt(order.id),
         connection_id: connection.id,
         brand_id: connection.brand_id,
         user_id: connection.user_id,
-        order_id: order.id.toString(),
         order_number: order.order_number,
         total_price: parseFloat(order.total_price),
         subtotal_price: parseFloat(order.subtotal_price),
         total_tax: parseFloat(order.total_tax),
         total_discounts: parseFloat(order.total_discounts),
         created_at: order.created_at,
-        customer: {
-          id: order.customer?.id,
-          email: order.customer?.email,
-          first_name: order.customer?.first_name,
-          last_name: order.customer?.last_name,
-          orders_count: order.customer?.orders_count
-        },
-        line_items: order.line_items.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          quantity: item.quantity,
-          price: parseFloat(item.price),
-          sku: item.sku,
-          product_id: item.product_id,
-          variant_id: item.variant_id
-        }))
-      }], { onConflict: 'order_id' })
+        financial_status: order.financial_status,
+        fulfillment_status: order.fulfillment_status,
+        customer_email: order.email,
+        currency: order.currency,
+        customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
+        line_items: order.line_items || []
+      }], { onConflict: 'id' })
     
     if (orderError) {
       console.error('Error storing order:', orderError)

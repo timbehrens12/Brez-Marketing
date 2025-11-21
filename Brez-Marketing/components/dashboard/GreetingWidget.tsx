@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth, parseISO, isSameDay, isAfter, isBefore, differenceInDays } from "date-fns"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -17,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger 
 } from "@/components/ui/tooltip"
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { formatCurrencyCompact, formatNumberCompact } from '@/lib/formatters'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@clerk/nextjs'
@@ -266,7 +265,7 @@ export function GreetingWidget({
   const [hasEnoughData, setHasEnoughData] = useState(false)
   const [currentPeriod, setCurrentPeriod] = useState<'daily' | 'monthly'>('daily')
   const [userName, setUserName] = useState<string>("")
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
 
   // Helper function to create empty metrics
   const createEmptyMetrics = (): Metrics => ({
@@ -429,13 +428,13 @@ export function GreetingWidget({
     setError(null);
 
     try {
-      console.log('Fetching period data...');
+      // console.log('Fetching period data...');
 
       const shopifyConnection = connections.find(c => c.platform_type === 'shopify' && c.status === 'active');
       const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
 
       if (shopifyConnection) {
-        console.log('Fetching daily data...');
+        // console.log('Fetching daily data...');
         const { from: dailyFrom, to: dailyTo } = getPeriodDates('daily');
         
         // Fetch data with previous days for 7-day performance chart
@@ -459,7 +458,7 @@ export function GreetingWidget({
         }
 
         // Fetch previous period data for comparison
-        console.log('Fetching previous daily data...');
+        // console.log('Fetching previous daily data...');
         const { from: previousDailyFrom, to: previousDailyTo } = getPeriodDates('daily', true);
         
         const previousDailyResult = await fetchPeriodMetrics(
@@ -485,7 +484,7 @@ export function GreetingWidget({
         );
 
         // Similar updates for monthly data
-        console.log('Fetching monthly data...');
+        // console.log('Fetching monthly data...');
         const { from: monthlyFrom, to: monthlyTo } = getPeriodDates('monthly');
         
         const monthlyResult = await fetchPeriodMetrics(
@@ -863,6 +862,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           .from('shopify_orders')
           .select('id, total_price, created_at, line_items')
           .eq('connection_id', connectionId)
+          .eq('brand_id', brandId)
           .gte('created_at', sixDaysAgo.toISOString())
           .lte('created_at', to.toISOString());
         
@@ -873,9 +873,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           
           // Step 2: Get Meta ad data for the entire 7-day period
           const { data: adData, error: adError } = await supabase
-            .from('meta_ad_insights')
-            .select('spend, impressions, clicks, date')
-            .eq('connection_id', connectionId)
+            .from('meta_ad_daily_insights')
+            .select('spent, impressions, clicks, date')
+            .eq('brand_id', brandId)
             .gte('date', format(sixDaysAgo, 'yyyy-MM-dd'))
             .lte('date', format(to, 'yyyy-MM-dd'));
           
@@ -893,7 +893,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             currentDay.setHours(0, 0, 0, 0);
             nextDay.setHours(0, 0, 0, 0);
             
-            // Filter orders for this day
+            // Filter orders for this day (database timestamps have timezone info)
             const dayOrders = salesData.filter(order => {
               const orderDate = new Date(order.created_at);
               return orderDate >= currentDay && orderDate < nextDay;
@@ -949,9 +949,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
               
               // Sum up ad spend for the day
               dayAdSpend = dayAdInsights.reduce((sum, insight) => {
-                const spend = typeof insight.spend === 'string' 
-                  ? parseFloat(insight.spend) 
-                  : (insight.spend || 0);
+                const spend = typeof insight.spent === 'string' 
+                  ? parseFloat(insight.spent) 
+                  : (insight.spent || 0);
                 return sum + spend;
               }, 0);
               
@@ -1043,6 +1043,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         .from('shopify_orders')
         .select('id, total_price, created_at, line_items')
         .eq('connection_id', connectionId)
+        .eq('brand_id', brandId)
         .gte('created_at', from.toISOString())
         .lte('created_at', to.toISOString());
       
@@ -1112,11 +1113,11 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         console.log('No Shopify orders found for the period, falling back to simulation');
       }
       
-      // Step 2: Get Meta ad spend data if available
+      // Step 2: Get Meta ad spend data from campaign stats (consistent with Campaign Performance widget)
       const { data: adData, error: adError } = await supabase
-        .from('meta_ad_insights')
+        .from('meta_campaign_daily_stats')
         .select('spend, impressions, clicks')
-        .eq('connection_id', connectionId)
+        .eq('brand_id', brandId)
         .gte('date', format(from, 'yyyy-MM-dd'))
         .lte('date', format(to, 'yyyy-MM-dd'));
       
@@ -1382,13 +1383,59 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
   
   // When component loads, trigger the data load
   useEffect(() => {
+    let cancelled = false
+
     if (user) {
       setUserName(user.firstName || "")
     }
     
     // Fetch real data from database when component mounts
-    fetchPeriodData();
+    const loadData = async () => {
+      if (!cancelled) {
+        await fetchPeriodData();
+      }
+    }
+    
+    loadData();
+
+    return () => {
+      cancelled = true
+    }
   }, [brandId, connections]); // Re-run when brandId or connections change
+  
+  // Listen for refresh events
+  useEffect(() => {
+    let cancelled = false;
+    
+    const handleRefresh = async (event: any) => {
+      if (cancelled) return;
+      console.log('[GreetingWidget] Received refresh event, reloading data');
+      
+      setIsRefreshing(true);
+      try {
+        await fetchPeriodData();
+      } catch (error) {
+        console.error('[GreetingWidget] Error during refresh:', error);
+      } finally {
+        setIsRefreshing(false);
+        setLastRefreshed(new Date());
+      }
+    };
+    
+    // Listen for various refresh events
+    window.addEventListener('force-shopify-refresh', handleRefresh);
+    window.addEventListener('global-refresh-all', handleRefresh);
+    window.addEventListener('refresh-all-widgets', handleRefresh);
+    window.addEventListener('metaDataRefreshed', handleRefresh); // 🔧 FIX: Listen to Meta sync completion
+    
+    return () => {
+      cancelled = true;
+      window.removeEventListener('force-shopify-refresh', handleRefresh);
+      window.removeEventListener('global-refresh-all', handleRefresh);
+      window.removeEventListener('refresh-all-widgets', handleRefresh);
+      window.removeEventListener('metaDataRefreshed', handleRefresh); // 🔧 FIX: Clean up Meta listener
+    };
+  }, [brandId, connections]);
   
   // Handle period changes
   useEffect(() => {
@@ -1401,8 +1448,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
   useEffect(() => {
     if (!brandId || connections.length === 0) return;
     
+    let cancelled = false
+    
     // Initial data fetch
-    fetchPeriodData();
+    const initialLoad = async () => {
+      if (!cancelled) {
+        await fetchPeriodData();
+      }
+    }
+    
+    initialLoad();
     
     // Function to refresh daily data
     const refreshDailyData = () => {
@@ -1485,7 +1540,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     };
     
     // Set up hourly refresh for daily data
-    const hourlyRefreshInterval = setInterval(refreshDailyData, 60 * 60 * 1000); // Every hour
+    const hourlyRefreshInterval = setInterval(refreshDailyData, 4 * 60 * 60 * 1000); // Every 4 hours (reduced from 1 hour)
     
     // Check if we need to perform the monthly refresh
     const checkForMonthlyRefresh = () => {
@@ -1500,10 +1555,11 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     checkForMonthlyRefresh();
     
     // Check for monthly refresh every hour
-    const monthlyCheckInterval = setInterval(checkForMonthlyRefresh, 60 * 60 * 1000);
+    const monthlyCheckInterval = setInterval(checkForMonthlyRefresh, 24 * 60 * 60 * 1000); // Check daily instead of hourly
     
     // Cleanup intervals on unmount
     return () => {
+      cancelled = true
       clearInterval(hourlyRefreshInterval);
       clearInterval(monthlyCheckInterval);
     };
@@ -1841,7 +1897,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 <div className="text-sm leading-relaxed space-y-4">
                   {isLoadingMonthlyAnalysis ? (
                     <div className="flex flex-col items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400 mb-2" />
                       <p>Generating AI analysis...</p>
                     </div>
                   ) : monthlyAiAnalysis ? (
@@ -2034,22 +2090,22 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="flex justify-between items-center mb-2">
                                 <span className="text-sm font-medium">{campaign.name}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                                  <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas && typeof campaign.roas === 'number' ? campaign.roas.toFixed(1) : '0.0'}x</span>
                                 </div>
                               </div>
                               
                               <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
                                 <div className="flex flex-col">
                                   <span className="text-gray-500">Revenue</span>
-                                  <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
+                                  <span className="text-white font-medium">${(campaign.roas || 0) * (campaign.cpa || 0) * (campaign.conversions || 0)}</span>
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="text-gray-500">Spend</span>
-                                  <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
+                                  <span className="text-white font-medium">${(campaign.cpa || 0) * (campaign.conversions || 0)}</span>
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="text-gray-500">CTR</span>
-                                  <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
+                                  <span className="text-white font-medium">{campaign.ctr ? (typeof campaign.ctr === 'string' ? parseFloat(campaign.ctr).toFixed(1) : (typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(1) : '0.0')) : '0.0'}%</span>
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="text-gray-500">Conversions</span>
@@ -2062,7 +2118,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                   <div
                                     className="h-full bg-blue-500 rounded-full"
                                     style={{
-                                      width: `${(campaign.roas / 4) * 100}%`
+                                      width: `${Math.min(100, Math.max(0, ((campaign.roas || 0) / 4) * 100))}%`
                                     }}
                                   ></div>
                                 </div>
@@ -2497,7 +2553,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 <div className="text-sm leading-relaxed space-y-4">
                   {isLoadingDailyAnalysis ? (
                     <div className="flex flex-col items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+                      <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
                       <p>Generating AI analysis...</p>
                     </div>
                   ) : dailyAiAnalysis ? (
@@ -2683,22 +2739,22 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-medium">{campaign.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas && typeof campaign.roas === 'number' ? campaign.roas.toFixed(1) : '0.0'}x</span>
                   </div>
                 </div>
                 
                         <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
                           <div className="flex flex-col">
                             <span className="text-gray-500">Revenue</span>
-                                <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
+                                <span className="text-white font-medium">${(campaign.roas || 0) * (campaign.cpa || 0) * (campaign.conversions || 0)}</span>
                   </div>
                           <div className="flex flex-col">
                             <span className="text-gray-500">Spend</span>
-                                <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
+                                <span className="text-white font-medium">${(campaign.cpa || 0) * (campaign.conversions || 0)}</span>
                   </div>
                           <div className="flex flex-col">
                             <span className="text-gray-500">CTR</span>
-                                <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
+                                <span className="text-white font-medium">{campaign.ctr ? (typeof campaign.ctr === 'string' ? parseFloat(campaign.ctr).toFixed(1) : (typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(1) : '0.0')) : '0.0'}%</span>
                           </div>
                           <div className="flex flex-col">
                                 <span className="text-gray-500">Conversions</span>
@@ -2709,9 +2765,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex items-center gap-2 mt-3">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full"
+                              className="h-full bg-gray-500 rounded-full"
                               style={{
-                                width: `${(campaign.roas / 4) * 100}%`
+                                width: `${Math.min(100, Math.max(0, ((campaign.roas || 0) / 4) * 100))}%`
                               }}
                             ></div>
                   </div>

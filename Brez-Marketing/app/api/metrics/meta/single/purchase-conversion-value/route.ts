@@ -10,148 +10,84 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const from = url.searchParams.get('from')
-    const to = url.searchParams.get('to')
-    
-    // Log the request
-    console.log(`PURCHASE CONVERSION VALUE API: Fetching for brand ${brandId} from ${from} to ${to}`)
-    
-    // Validate required parameters
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    const isYesterdayPreset = preset === 'yesterday'
+
+    console.log(`PURCHASE_VALUE SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+
+    if (!brandId || !fromDate || !toDate) {
+      return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
     
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Date range is required' }, { status: 400 })
-    }
-    
-    // Initialize Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Get Meta connection
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
+    if (isYesterdayPreset) {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate 
+      console.log(`PURCHASE_VALUE SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
+    }
+
+    // Avg Purchase Value = (Total Purchase Value) / (Total Number of Purchases/Conversions)
+    // We need 'conversions' (assuming this is total purchase value) and a way to count distinct purchase actions.
+    // For simplicity, if 'conversions' in meta_campaign_daily_stats is total value, and we need a count of conversion events,
+    // this might require adjustment if 'conversions' is just a count.
+    // Assuming 'conversions' is total value and we need to count records with conversions > 0 for number of purchase events.
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_campaign_daily_stats') 
+      .select('date, conversions') // Assuming 'conversions' column stores the purchase value for that day
       .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
+      .gte('date', fromDate)
+      .lte('date', toDate)
     
-    if (connectionError) {
-      console.log(`Error retrieving Meta connection: ${JSON.stringify(connectionError)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta connection' }, { status: 500 })
+    if (dbError) {
+      console.error(`PURCHASE_VALUE SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
-    if (!connection) {
-      console.log(`No active Meta connection found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
+    let filteredStats = dailyStats || []
+    if (isYesterdayPreset) { 
+      filteredStats = filteredStats.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
+      })
     }
     
-    // Query meta_ad_insights for purchase_conversion_value and action_values data as fallback
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
-      .select('date, purchase_conversion_value, action_values')
-      .eq('connection_id', connection.id)
-      .gte('date', from)
-      .lte('date', to)
-    
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
-    }
-    
-    // If no data, return zeros
-    if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
+    if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: {
-          from,
-          to,
-          records: 0
-        }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
-    
-    // Filter out records with null or undefined purchase_conversion_value
-    const validInsightsWithStoredValues = insights.filter(item => 
-      item.purchase_conversion_value !== null && 
-      item.purchase_conversion_value !== undefined &&
-      parseFloat(item.purchase_conversion_value) > 0
-    )
-    
-    let totalValue = 0
-    let dataSource = 'database'
-    
-    // Check if we have valid stored purchase_conversion_value
-    if (validInsightsWithStoredValues.length > 0) {
-      // Calculate the sum of purchase_conversion_value
-      totalValue = validInsightsWithStoredValues.reduce((sum, item) => {
-        const value = typeof item.purchase_conversion_value === 'string' 
-          ? parseFloat(item.purchase_conversion_value) 
-          : item.purchase_conversion_value
+
+    const totalPurchaseValue = filteredStats.reduce((sum, item) => {
+      const value = parseFloat(item.conversions || '0') // Assuming 'conversions' field is the purchase value
         return sum + (isNaN(value) ? 0 : value)
       }, 0)
-    } else {
-      // Fallback: Calculate from action_values JSON
-      dataSource = 'calculated'
-      
-      insights.forEach(insight => {
-        if (insight.action_values && Array.isArray(insight.action_values)) {
-          insight.action_values.forEach((actionValue: any) => {
-            if (
-              actionValue.action_type === 'purchase' || 
-              actionValue.action_type === 'offsite_conversion.fb_pixel_purchase'
-            ) {
-              const value = parseFloat(actionValue.value) || 0
-              totalValue += value
-            }
-          })
-        }
-      })
-    }
     
-    // If no valid records or total is 0, return zero
-    if (totalValue === 0) {
-      return NextResponse.json({
-        value: 0,
-        _meta: {
-          from,
-          to,
-          records: 0,
-          hasValidData: false
-        }
-      })
-    }
-    
-    // Calculate the average based on valid records count
-    const recordCount = validInsightsWithStoredValues.length > 0 
-      ? validInsightsWithStoredValues.length 
-      : insights.length
-    
-    const averageValue = totalValue / recordCount
-    
-    // Return the result
+    // Count the number of entries that had conversions, approximating number of purchase events
+    const numberOfPurchaseEvents = filteredStats.filter(item => parseFloat(item.conversions || '0') > 0).length;
+
+    const avgPurchaseValue = numberOfPurchaseEvents > 0 ? totalPurchaseValue / numberOfPurchaseEvents : 0;
+
     const result = {
-      value: parseFloat(averageValue.toFixed(2)),
+      value: parseFloat(avgPurchaseValue.toFixed(2)),
       _meta: {
-        from,
-        to,
-        records: recordCount,
-        totalValue: parseFloat(totalValue.toFixed(2)),
-        source: dataSource,
-        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        from: fromDate,
+        to: toDate,
+        records: filteredStats.length,
+        source: 'meta_campaign_daily_stats'
       }
     }
-    
-    console.log(`PURCHASE CONVERSION VALUE API: Returning avg value = ${result.value}, based on ${recordCount} records (source: ${dataSource})`)
-    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Purchase Conversion Value metric endpoint:', error)
+    console.error('PURCHASE_VALUE SINGLE METRIC API: Error in endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

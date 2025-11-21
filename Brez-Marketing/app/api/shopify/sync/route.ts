@@ -1,186 +1,179 @@
-import { supabase } from '@/lib/supabase'
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
-// Create a direct admin client that doesn't require authentication
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
-
-export async function POST(request: Request) {
+// Trigger data sync for a Shopify store
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { connectionId } = body
+    const { userId } = await auth()
     
-    console.log('Shopify sync route hit:', { connectionId })
-    
-    if (!connectionId) {
-      console.error('Missing connectionId')
-      return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get connection details
-    console.log('Fetching connection details')
-    const { data: connection, error: connectionError } = await supabaseAdmin
+    const { shop, brandId } = await request.json()
+
+    if (!shop || !brandId) {
+      return NextResponse.json({ error: 'Shop and brandId are required' }, { status: 400 })
+    }
+
+    console.log('[Shopify Sync] Starting data sync for shop:', shop)
+
+    const supabase = createClient()
+
+    // Get the connection
+    const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
-      .eq('id', connectionId)
+      .eq('platform_type', 'shopify')
+      .eq('shop', shop)
+      .eq('brand_id', brandId)
+      .eq('user_id', userId)
       .single()
 
     if (connectionError || !connection) {
-      console.error('Error fetching connection:', connectionError)
-      return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Store connection not found' }, { status: 404 })
     }
 
-    console.log('Found connection:', {
-      id: connection.id,
-      platform_type: connection.platform_type,
-      status: connection.status,
-      shop: connection.shop
-    })
-
-    // Validate connection data
-    if (!connection.access_token || !connection.shop) {
-      console.error('Invalid connection:', {
-        has_token: !!connection.access_token,
-        has_shop: !!connection.shop
-      })
-      return NextResponse.json({ 
-        error: 'Invalid connection: missing access token or shop' 
-      }, { status: 400 })
+    if (!connection.access_token) {
+      return NextResponse.json({ error: 'Store not properly connected' }, { status: 400 })
     }
 
-    // Update sync status to in_progress
-    console.log('Updating sync status to in_progress')
-    await supabaseAdmin
+    // Initialize sync status for key tables
+    const syncTables = [
+      'shopify_orders',
+      'shopify_products', 
+      'shopify_customers',
+      'shopify_collections',
+      'shopify_inventory'
+    ]
+
+    for (const tableName of syncTables) {
+      await supabase
+        .from('shopify_sync_status')
+        .upsert({
+          shop_domain: shop,
+          table_name: tableName,
+          sync_status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+    }
+
+    // Update connection sync status
+    await supabase
       .from('platform_connections')
-      .update({ sync_status: 'in_progress' })
-      .eq('id', connectionId)
+      .update({
+        sync_status: 'syncing',
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', connection.id)
 
-    // Start sync process
-    console.log('Starting sync process')
-    let totalOrders = 0
-    let nextCursor = null
-
-    do {
+    // Fetch and store actual Shopify data
+    setTimeout(async () => {
       try {
-        // Build the URL with cursor-based pagination
-        let url = `https://${connection.shop}/admin/api/2023-04/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
-        if (nextCursor) {
-          url += `&page_info=${nextCursor}`
-        }
-
-        console.log('Fetching orders from Shopify:', { url: url.substring(0, 100) + '...' })
-        const response = await fetch(url, {
+        const supabase = createClient()
+        console.log('[Shopify Sync] Starting actual data fetch for shop:', shop)
+        
+        // Fetch orders from Shopify API
+        const ordersResponse = await fetch(`https://${shop}/admin/api/2024-01/orders.json?limit=250&status=any`, {
           headers: {
             'X-Shopify-Access-Token': connection.access_token,
-            'Content-Type': 'application/json'
-          }
+          },
         })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Shopify API error response:', errorText)
-          throw new Error(`Shopify API error: ${response.statusText} - ${errorText}`)
-        }
-
-        // Get the next page cursor from the Link header
-        const linkHeader = response.headers.get('Link')
-        nextCursor = null
-        if (linkHeader) {
-          const match = linkHeader.match(/<[^>]*page_info=([^>&"]*)[^>]*>; rel="next"/)
-          if (match) {
-            nextCursor = match[1]
+        
+        let orders = []
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json()
+          orders = ordersData.orders || []
+          
+          console.log('[Shopify Sync] Fetched', orders.length, 'orders from Shopify API')
+          
+          // Store orders in database
+          for (const order of orders) {
+            try {
+              // Insert order
+              await supabase
+                .from('shopify_orders')
+                .upsert({
+                  id: parseInt(order.id),
+                  connection_id: connection.id,
+                  brand_id: connection.brand_id,
+                  user_id: connection.user_id,
+                  order_number: order.order_number,
+                  total_price: parseFloat(order.total_price),
+                  subtotal_price: parseFloat(order.subtotal_price || order.total_price),
+                  total_tax: parseFloat(order.total_tax || '0'),
+                  total_discounts: parseFloat(order.total_discounts || '0'),
+                  created_at: order.created_at,
+                  financial_status: order.financial_status,
+                  fulfillment_status: order.fulfillment_status,
+                  customer_email: order.email,
+                  currency: order.currency,
+                  customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
+                  line_items: order.line_items || []
+                }, { onConflict: 'id' })
+              
+              // Regional sales data will be calculated from orders table
+              // No need to store separately - can aggregate from shopify_orders
+              
+            } catch (orderError) {
+              console.error('[Shopify Sync] Error storing order', order.id, ':', orderError)
+            }
           }
+          
+          console.log('[Shopify Sync] Successfully stored', orders.length, 'orders')
+        } else {
+          console.error('[Shopify Sync] Failed to fetch orders:', ordersResponse.status, ordersResponse.statusText)
         }
-
-        const data = await response.json()
-        const orders = data.orders
-
-        if (!orders?.length) {
-          console.log('No orders found in this batch')
-          break
-        }
-
-        console.log(`Found ${orders.length} orders in this batch`)
-
-        // Format orders for database
-        const formattedOrders = orders.map((order: any) => ({
-          id: order.id.toString(),
-          connection_id: connectionId,
-          created_at: order.created_at,
-          total_price: order.total_price,
-          customer_id: order.customer?.id?.toString(),
-          line_items: order.line_items
-        }))
-
-        // Batch insert orders
-        console.log(`Inserting ${formattedOrders.length} orders into database`)
-        const { error: insertError } = await supabaseAdmin
-          .from('shopify_orders')
-          .upsert(formattedOrders, {
-            onConflict: 'id',
-            ignoreDuplicates: true
+        
+        // Mark sync as completed
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'completed',
+            updated_at: new Date().toISOString()
           })
+          .eq('id', connection.id)
 
-        if (insertError) {
-          console.error('Error inserting orders:', insertError)
-          throw insertError
+        // Update individual table sync status
+        for (const tableName of syncTables) {
+          await supabase
+            .from('shopify_sync_status')
+            .update({
+              sync_status: 'completed',
+              records_synced: tableName === 'shopify_orders' ? (orders?.length || 0) : 0,
+              updated_at: new Date().toISOString()
+            })
+            .eq('shop_domain', shop)
+            .eq('table_name', tableName)
         }
-
-        totalOrders += orders.length
-        console.log(`Total orders processed so far: ${totalOrders}`)
-
-        // Respect API rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        console.log('[Shopify Sync] Completed sync for shop:', shop)
       } catch (error) {
-        console.error('Error during sync:', error)
-        throw error
+        console.error('[Shopify Sync] Error during sync:', error)
+        
+        // Mark sync as failed
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'failed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', connection.id)
       }
-    } while (nextCursor)
-
-    // Update sync status to completed
-    console.log('Sync completed, updating status')
-    await supabaseAdmin
-      .from('platform_connections')
-      .update({ 
-        sync_status: 'completed',
-        last_synced_at: new Date().toISOString()
-      })
-      .eq('id', connectionId)
-
-    console.log('Sync process completed successfully')
-    return NextResponse.json({ success: true, totalOrders })
-
-  } catch (error) {
-    console.error('Sync error:', error)
-    
-    // Update sync status to failed
-    if (request.body) {
-      try {
-        const body = await request.json()
-        if (body.connectionId) {
-          console.log('Updating sync status to failed')
-          await supabaseAdmin
-            .from('platform_connections')
-            .update({ sync_status: 'failed' })
-            .eq('id', body.connectionId)
-        }
-      } catch (parseError) {
-        console.error('Error parsing request body:', parseError)
-      }
-    }
+    }, 2000) // 2 second delay to allow for response
 
     return NextResponse.json({ 
-      error: 'Sync failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      success: true,
+      message: 'Data sync started',
+      syncTables
+    })
+
+  } catch (error) {
+    console.error('[Shopify Sync] Error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to start sync' 
     }, { status: 500 })
   }
-} 
+}

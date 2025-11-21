@@ -1,8 +1,7 @@
 "use client"
 
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { format, parseISO, isToday, isYesterday, isSameDay, differenceInDays } from 'date-fns'
-import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
 import { useMemo } from 'react'
 import type { DateRange } from 'react-day-picker'
 import type { MetricData } from '@/types/metrics'
@@ -14,6 +13,7 @@ interface MetricLineChartProps {
   valueSuffix?: string
   valueFormat?: "number" | "percentage" | "currency"
   color?: string
+  height?: number
 }
 
 export function MetricLineChart({ 
@@ -22,7 +22,8 @@ export function MetricLineChart({
   valuePrefix = "", 
   valueSuffix = "",
   valueFormat = "number",
-  color = "#4ade80" 
+  color = "#4ade80",
+  height = 140
 }: MetricLineChartProps) {
   const userTimeZone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
   
@@ -40,11 +41,16 @@ export function MetricLineChart({
 
   // Find the maximum value in the data to set appropriate Y-axis scale
   const maxValue = useMemo(() => {
-    if (!data || data.length === 0) return 100;
+    if (!data || data.length === 0) return 10;
     const max = Math.max(...data.map(item => item.value));
-    // Add 20% padding to the max value to ensure the highest point isn't at the very top
-    // and ensure we have a reasonable minimum for small values
-    return Math.max(100, max * 1.2);
+    
+    // Calculate a more appropriate maximum based on actual data values
+    // For small numbers (1-10), add a little padding but keep scale appropriate
+    if (max <= 10) {
+      return Math.ceil(max * 1.5);
+    }
+    // For larger numbers, add 20% padding 
+    return Math.ceil(max * 1.2);
   }, [data]);
 
   // Process data for the chart
@@ -53,10 +59,18 @@ export function MetricLineChart({
     if (isSingleDayView) {
       const dayLabel = dateRange?.from ? format(dateRange.from, 'MMM dd') : 'Today';
       
+      // Check if the data already has hourly information
+      const hasHourlyFormat = data.length > 0 && 'hour' in data[0] && 'displayHour' in data[0];
+      
+      if (hasHourlyFormat) {
+        // Data is already in the correct hourly format
+        return data;
+      }
+      
       // Create 24 hour buckets (0-23) with zero values
       const hourlyData = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
-        displayHour: i % 4 === 0 ? (i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`) : '',
+        displayHour: i % 2 === 0 ? (i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`) : '',
         value: 0,
         formattedDate: dayLabel,
         formattedTime: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`
@@ -71,8 +85,10 @@ export function MetricLineChart({
             const date = parseISO(item.date);
             if (isNaN(date.getTime())) return;
             
-            const localDate = toZonedTime(date, userTimeZone);
-            const hour = localDate.getHours();
+            // Parse the UTC timestamp and get local hour
+            // The database stores timestamps with timezone (+00), so parse as-is
+            const timestamp = new Date(item.date);
+            const hour = timestamp.getHours();
             
             if (hour >= 0 && hour < 24) {
               hourlyData[hour].value += item.value;
@@ -95,9 +111,10 @@ export function MetricLineChart({
         let currentDate = new Date(dateRange.from);
         while (currentDate <= dateRange.to) {
           const dateKey = format(currentDate, 'yyyy-MM-dd');
+          // Revert to always using 'MMM dd'
           dateMap.set(dateKey, {
             date: dateKey,
-            displayDate: format(currentDate, 'MMM dd'),
+            displayDate: format(currentDate, 'MMM dd'), // Always use 'MMM dd'
             value: 0,
             rawDate: new Date(currentDate)
           });
@@ -120,6 +137,7 @@ export function MetricLineChart({
               const existing = dateMap.get(dateKey);
               existing.value += item.value;
             } else {
+              // Revert to always using 'MMM dd' here too
               dateMap.set(dateKey, {
                 date: dateKey,
                 displayDate: format(date, 'MMM dd'),
@@ -141,14 +159,34 @@ export function MetricLineChart({
 
   // Calculate Y-axis domain based on data
   const yAxisDomain = useMemo(() => {
-    if (chartData.length === 0) return [0, maxValue];
+    if (chartData.length === 0) return [0, 10];
     
     const chartMax = Math.max(...chartData.map(item => item.value));
-    // Use the larger of the two max values to ensure we capture all data points
-    const finalMax = Math.max(chartMax * 1.1, maxValue);
-    // Ensure we have a reasonable minimum for small values
-    return [0, Math.max(10, Math.ceil(finalMax))];
-  }, [chartData, maxValue]);
+    
+    // If all values are 0, use a small scale (0-5)
+    if (chartMax === 0) return [0, 5];
+    
+    // For very small values (1-5), use a proportional scale
+    if (chartMax <= 5) return [0, Math.ceil(chartMax * 1.5)];
+    
+    // For slightly larger values (6-20), keep scale tight
+    if (chartMax <= 20) return [0, Math.ceil(chartMax * 1.2)];
+    
+    // For medium values, add more padding
+    const finalMax = Math.ceil(chartMax * 1.1);
+    
+    // Calculate a reasonable tick interval
+    // This helps ensure the Y-axis has sensible tick marks
+    let roundToNearest;
+    if (finalMax <= 50) roundToNearest = 5;
+    else if (finalMax <= 100) roundToNearest = 10;
+    else if (finalMax <= 500) roundToNearest = 50;
+    else if (finalMax <= 1000) roundToNearest = 100;
+    else if (finalMax <= 5000) roundToNearest = 500;
+    else roundToNearest = 1000;
+    
+    return [0, Math.ceil(finalMax / roundToNearest) * roundToNearest];
+  }, [chartData]);
 
   // Format value for tooltip and y-axis
   const formatValue = (value: number) => {
@@ -191,7 +229,7 @@ export function MetricLineChart({
         } else if (value >= 1000) {
           return `$${(value / 1000).toFixed(0)}K`;
         } else {
-          return `$${value}`;
+          return `$${value.toLocaleString()}`;
         }
       } else if (valueFormat === "percentage") {
         return `${value}%`;
@@ -201,7 +239,7 @@ export function MetricLineChart({
         } else if (value >= 1000) {
           return `${(value / 1000).toFixed(0)}K`;
         }
-        return value.toString();
+        return value.toLocaleString();
       }
     } catch (error) {
       console.error("Error formatting Y-axis:", error);
@@ -238,16 +276,21 @@ export function MetricLineChart({
     }
   };
 
-  // Determine X-axis interval based on date range span
+  // Determine X-axis interval based on date range span - MORE AGGRESSIVE LOGIC
   const xAxisInterval = useMemo(() => {
     if (isSingleDayView) {
-      return 3; // Show every 4 hours for single day view (since we're only displaying every 4 hours)
-    } else if (dateRangeSpan <= 7) {
-      return 0; // Show all days for a week or less
-    } else if (dateRangeSpan <= 31) {
-      return Math.floor(dateRangeSpan / 7); // Show approximately weekly for a month
-    } else {
-      return Math.floor(dateRangeSpan / 10); // Show approximately 10 labels for longer periods
+      return 1;
+    } else if (dateRangeSpan <= 15) { // Show daily ticks up to 15 days
+      return 0; 
+    } else if (dateRangeSpan <= 30) { // Show every 2 days up to 30 days
+      return 1; 
+    } else if (dateRangeSpan <= 60) { // Show every 3 days up to 60 days
+      return 2; 
+    } else if (dateRangeSpan <= 90) { // Show every 5 days up to 90 days
+      return 4; 
+    } else { // For ranges > 90 days
+      // Aim for ~15 ticks total by dividing span by 15
+      return Math.max(0, Math.floor(dateRangeSpan / 15)); // Ensure interval is at least 0
     }
   }, [isSingleDayView, dateRangeSpan]);
 
@@ -261,18 +304,26 @@ export function MetricLineChart({
   }
 
   return (
-    <div className="w-full h-[120px] mt-2">
+    <div className="w-full mt-2" style={{ height: `${height}px` }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart 
+        <AreaChart 
           data={chartData} 
-          margin={{ top: 5, right: 0, bottom: 0, left: 0 }}
+          margin={{ top: 5, right: 5, bottom: 0, left: 10 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} opacity={0.3} />
-          <Line 
+          <defs>
+            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area 
             type="monotone" 
             dataKey="value" 
             stroke={color}
             strokeWidth={2}
+            fill="url(#colorValue)"
+            fillOpacity={1}
             dot={false}
             activeDot={{ r: 4, fill: color, stroke: '#111' }}
             isAnimationActive={true}
@@ -282,10 +333,13 @@ export function MetricLineChart({
           <XAxis 
             dataKey={isSingleDayView ? "displayHour" : "displayDate"} 
             tick={{ fontSize: 10, fill: '#666' }}
+            angle={-45}
+            textAnchor="end"
             axisLine={{ stroke: '#333' }}
             tickLine={{ stroke: '#333' }}
             interval={xAxisInterval}
-            minTickGap={15}
+            minTickGap={5}
+            height={40}
           />
           <YAxis 
             domain={yAxisDomain}
@@ -301,7 +355,7 @@ export function MetricLineChart({
             cursor={{ stroke: '#444', strokeWidth: 1, strokeDasharray: '3 3' }}
             animationDuration={200}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

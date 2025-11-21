@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react"
 import { defaultMetrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { supabase } from "@/lib/supabaseClient"
 
 export function useMetrics() {
   const [metrics, setMetrics] = useState(defaultMetrics)

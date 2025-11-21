@@ -34,6 +34,19 @@ export async function POST(request: Request) {
 
     console.log(`Found ${connections.length} connections to disconnect`)
 
+    // 🎯 CRITICAL FIRST: Clean up queue jobs BEFORE deleting connections to prevent orphaned jobs
+    if (platformType === 'meta') {
+      try {
+        console.log(`[Platform Disconnect] 🧹 Cleaning up Meta queue jobs for brand ${brandId}`)
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+        await MetaQueueService.cleanupJobsByBrand(brandId)
+        console.log(`[Platform Disconnect] ✅ Queue cleanup completed`)
+      } catch (queueError) {
+        console.error(`[Platform Disconnect] ⚠️ Queue cleanup failed:`, queueError)
+        // Continue with disconnect even if queue cleanup fails
+      }
+    }
+
     // For each connection, handle related data
     for (const connection of connections) {
       console.log('Processing connection:', connection.id)
@@ -78,6 +91,127 @@ export async function POST(request: Request) {
           } catch (error) {
             console.error(`Error handling table ${table}:`, error)
           }
+        }
+      }
+
+      // For Meta, we need to handle related data first
+      if (platformType === 'meta') {
+        console.log(`Cleaning up Meta data for brand ${brandId} (using brandId directly)`)
+        
+        // Use brandId directly since we already have it from the request
+        // This ensures we delete all Meta data for this brand regardless of connection state
+          
+        // Delete all Meta-related data for this brand - ALL TABLES INCLUDING NEW DEMOGRAPHICS
+        const metaTables = [
+            // Core Meta tables
+            'meta_ad_insights',
+            'meta_demographics',
+            'meta_device_performance',
+            'meta_campaigns',
+            'meta_campaign_daily_stats',
+            'meta_sync_history',
+            
+            // Daily insights and ads
+            'meta_ad_daily_insights',
+            'meta_adset_daily_insights',
+            'meta_ads',
+            'meta_adsets',
+            'meta_adsets_daily_stats',
+            
+            // Enhanced tables
+            'meta_ads_enhanced',
+            'meta_adsets_enhanced',
+            'meta_campaigns_enhanced',
+            'meta_campaign_daily_insights',
+            'meta_campaign_insights',
+            
+            // Attribution and analytics
+            'meta_attribution_analysis',
+            'meta_attribution_data',
+            'meta_audience_demographics',
+            'meta_audience_performance',
+            'meta_bid_strategy_performance',
+            'meta_bidding_insights',
+            
+            // Creative and competitive insights
+            'meta_competitive_insights',
+            'meta_creative_insights',
+            'meta_creative_performance',
+            'meta_custom_audience_performance',
+            'meta_custom_conversions',
+            
+            // Performance breakdown tables
+            'meta_data_tracking',
+            'meta_frequency_analysis',
+            'meta_geographic_performance',
+            'meta_interest_performance',
+            'meta_placement_performance',
+            'meta_time_performance',
+            
+            // NEW DEMOGRAPHICS TABLES (added with comprehensive sync)
+            'meta_demographics_facts',
+            'meta_demographics_jobs_ledger_v2',
+            'meta_demographics_sync_status',
+            'meta_demographics_daily',
+            'meta_demographics_weekly', 
+            'meta_demographics_monthly',
+            'meta_demographics_rollups'
+          ]
+
+          for (const table of metaTables) {
+            try {
+              const { count, error: countError } = await supabase
+                .from(table)
+                .select('*', { count: 'exact', head: true })
+                .eq('brand_id', brandId)
+
+              if (countError) {
+                console.log(`Table ${table} doesn't exist or has no brand_id column`)
+                continue
+              }
+
+              if (count && count > 0) {
+                console.log(`Deleting ${count} Meta records from ${table}`)
+                const { error: deleteError } = await supabase
+                  .from(table)
+                  .delete()
+                  .eq('brand_id', brandId)
+
+                if (deleteError) {
+                  console.error(`Error deleting Meta data from ${table}:`, deleteError)
+                } else {
+                  console.log(`✅ Successfully deleted ${count} records from ${table}`)
+                }
+              }
+            } catch (error) {
+              console.error(`Error handling Meta table ${table}:`, error)
+            }
+          }
+
+        // Also clean up any ETL jobs for this brand
+        try {
+          const { count: etlCount, error: etlCountError } = await supabase
+            .from('etl_job')
+            .select('*', { count: 'exact', head: true })
+            .eq('brand_id', brandId)
+            .like('job_type', 'meta_%')
+
+          if (!etlCountError && etlCount && etlCount > 0) {
+            console.log(`Deleting ${etlCount} Meta ETL jobs`)
+            const { error: etlDeleteError } = await supabase
+              .from('etl_job')
+              .delete()
+              .eq('brand_id', brandId)
+              .like('job_type', 'meta_%')
+
+            if (etlDeleteError) {
+              console.error('Error deleting Meta ETL jobs:', etlDeleteError)
+            } else {
+              console.log(`✅ Successfully deleted ${etlCount} Meta ETL jobs`)
+            }
+          }
+        } catch (error) {
+          console.error('Error handling Meta ETL jobs:', error)
         }
       }
     }

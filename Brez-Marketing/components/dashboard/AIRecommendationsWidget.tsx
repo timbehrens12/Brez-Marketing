@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { 
   Loader2, 
-  RefreshCw, 
   Mail, 
   Share2, 
   ShoppingBag, 
@@ -110,9 +109,7 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
     fetchRecommendations(value)
   }
   
-  const handleRefresh = () => {
-    fetchRecommendations(activeTab)
-  }
+
   
   // Helper function to check if an object is an email campaign
   const isEmailCampaign = (item: any): item is EmailCampaign => {
@@ -140,244 +137,286 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
   }
   
   const renderEmailCampaign = (campaign: EmailCampaign) => (
-    <div key={campaign.title} className="mb-6 p-4 bg-gray-800 rounded-md">
-      <h4 className="text-md font-medium mb-2 flex items-center">
-        <Mail className="h-4 w-4 mr-2 text-blue-400" />
-        {campaign.title}
-      </h4>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Subject Line</p>
-          <p className="text-sm text-white bg-gray-700 p-2 rounded">{campaign.subjectLine}</p>
+    <Card key={campaign.title} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                         shadow-lg hover:shadow-2xl group overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
+                        flex items-center justify-center border border-blue-500/30">
+            <Mail className="h-5 w-5 text-blue-400" />
+          </div>
+          <h4 className="text-lg font-bold text-white tracking-tight">{campaign.title}</h4>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Target Audience</p>
-          <div className="flex items-center">
-            <Users className="h-3 w-3 mr-1 text-gray-400" />
-            <p className="text-sm text-gray-300">{campaign.targetAudience}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Subject Line</p>
+            <p className="text-sm text-white font-medium">{campaign.subjectLine}</p>
           </div>
-        </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Message</p>
-        <p className="text-sm text-gray-300">{campaign.message}</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Timing</p>
-          <div className="flex items-center">
-            <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-            <p className="text-sm text-gray-300">{campaign.timing}</p>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Target Audience</p>
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              <p className="text-sm text-white">{campaign.targetAudience}</p>
+            </div>
           </div>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Expected Outcome</p>
-          <div className="flex items-center">
-            <Target className="h-3 w-3 mr-1 text-gray-400" />
-            <p className="text-sm text-gray-300">{campaign.expectedOutcome}</p>
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Message</p>
+          <p className="text-sm text-gray-300 leading-relaxed">{campaign.message}</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Timing</p>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+              <p className="text-sm text-white">{campaign.timing}</p>
+            </div>
+          </div>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Expected Outcome</p>
+            <div className="flex items-center">
+              <Target className="h-4 w-4 mr-2 text-gray-400" />
+              <p className="text-sm text-white">{campaign.expectedOutcome}</p>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
   
   const renderSocialCampaign = (campaign: SocialCampaign) => (
-    <div key={campaign.title} className="mb-6 p-4 bg-gray-800 rounded-md">
-      <h4 className="text-md font-medium mb-2 flex items-center">
-        <Share2 className="h-4 w-4 mr-2 text-purple-400" />
-        {campaign.title}
-      </h4>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Concept</p>
-        <p className="text-sm text-gray-300">{campaign.concept}</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Platforms</p>
-          <div className="flex flex-wrap gap-1">
-            {campaign.platforms.map((platform, index) => (
-              <span key={index} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                {platform}
-              </span>
-            ))}
+    <Card key={campaign.title} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                         shadow-lg hover:shadow-2xl group overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl 
+                        flex items-center justify-center border border-purple-500/30">
+            <Share2 className="h-5 w-5 text-purple-400" />
+          </div>
+          <h4 className="text-lg font-bold text-white tracking-tight">{campaign.title}</h4>
+        </div>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Concept</p>
+          <p className="text-sm text-gray-300 leading-relaxed">{campaign.concept}</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Platforms</p>
+            <div className="flex flex-wrap gap-2">
+              {campaign.platforms.map((platform, index) => (
+                <span key={index} className="text-xs bg-[#2a2a2a] text-gray-300 px-3 py-1 rounded-full border border-[#3a3a3a]">
+                  {platform}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Timing</p>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+              <p className="text-sm text-white">{campaign.timing}</p>
+            </div>
           </div>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Timing</p>
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Content Suggestions</p>
+          <ul className="text-sm text-gray-300 space-y-1">
+            {campaign.contentSuggestions.map((suggestion, index) => (
+              <li key={index} className="flex items-start">
+                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Expected Outcome</p>
           <div className="flex items-center">
-            <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-            <p className="text-sm text-gray-300">{campaign.timing}</p>
+            <Target className="h-4 w-4 mr-2 text-gray-400" />
+            <p className="text-sm text-white">{campaign.expectedOutcome}</p>
           </div>
         </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Content Suggestions</p>
-        <ul className="text-sm text-gray-300 list-disc pl-4">
-          {campaign.contentSuggestions.map((suggestion, index) => (
-            <li key={index}>{suggestion}</li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Expected Outcome</p>
-        <div className="flex items-center">
-          <Target className="h-3 w-3 mr-1 text-gray-400" />
-          <p className="text-sm text-gray-300">{campaign.expectedOutcome}</p>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
   
   const renderProductRecommendation = (recommendation: ProductRecommendation) => (
-    <div key={recommendation.title} className="mb-6 p-4 bg-gray-800 rounded-md">
-      <h4 className="text-md font-medium mb-2 flex items-center">
-        <ShoppingBag className="h-4 w-4 mr-2 text-green-400" />
-        {recommendation.title}
-      </h4>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Products</p>
-          <div className="flex flex-wrap gap-1">
-            {recommendation.products.map((product, index) => (
-              <span key={index} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                {product}
-              </span>
-            ))}
+    <Card key={recommendation.title} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl 
+                        flex items-center justify-center border border-green-500/30">
+            <ShoppingBag className="h-5 w-5 text-green-400" />
+          </div>
+          <h4 className="text-lg font-bold text-white tracking-tight">{recommendation.title}</h4>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Products</p>
+            <div className="flex flex-wrap gap-2">
+              {recommendation.products.map((product, index) => (
+                <span key={index} className="text-xs bg-[#2a2a2a] text-gray-300 px-3 py-1 rounded-full border border-[#3a3a3a]">
+                  {product}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Approach</p>
+            <p className="text-sm text-white">{recommendation.approach}</p>
           </div>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Approach</p>
-          <p className="text-sm text-gray-300">{recommendation.approach}</p>
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Target Audience</p>
+          <div className="flex items-center">
+            <Users className="h-4 w-4 mr-2 text-gray-400" />
+            <p className="text-sm text-white">{recommendation.targetAudience}</p>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Target Audience</p>
-        <div className="flex items-center">
-          <Users className="h-3 w-3 mr-1 text-gray-400" />
-          <p className="text-sm text-gray-300">{recommendation.targetAudience}</p>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Implementation Steps</p>
+          <ul className="text-sm text-gray-300 space-y-1">
+            {recommendation.implementation.map((step, index) => (
+              <li key={index} className="flex items-start">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                {step}
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Implementation Steps</p>
-        <ul className="text-sm text-gray-300 list-disc pl-4">
-          {recommendation.implementation.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Expected Outcome</p>
-        <div className="flex items-center">
-          <Target className="h-3 w-3 mr-1 text-gray-400" />
-          <p className="text-sm text-gray-300">{recommendation.expectedOutcome}</p>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Expected Outcome</p>
+          <div className="flex items-center">
+            <Target className="h-4 w-4 mr-2 text-gray-400" />
+            <p className="text-sm text-white">{recommendation.expectedOutcome}</p>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
   
   const renderPricingRecommendation = (recommendation: PricingRecommendation) => (
-    <div key={recommendation.title} className="mb-6 p-4 bg-gray-800 rounded-md">
-      <h4 className="text-md font-medium mb-2 flex items-center">
-        <DollarSign className="h-4 w-4 mr-2 text-amber-400" />
-        {recommendation.title}
-      </h4>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Products</p>
-          <div className="flex flex-wrap gap-1">
-            {recommendation.products.map((product, index) => (
-              <span key={index} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                {product}
-              </span>
-            ))}
+    <Card key={recommendation.title} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-xl 
+                        flex items-center justify-center border border-amber-500/30">
+            <DollarSign className="h-5 w-5 text-amber-400" />
+          </div>
+          <h4 className="text-lg font-bold text-white tracking-tight">{recommendation.title}</h4>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Products</p>
+            <div className="flex flex-wrap gap-2">
+              {recommendation.products.map((product, index) => (
+                <span key={index} className="text-xs bg-[#2a2a2a] text-gray-300 px-3 py-1 rounded-full border border-[#3a3a3a]">
+                  {product}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Strategy</p>
+            <p className="text-sm text-white">{recommendation.strategy}</p>
           </div>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Strategy</p>
-          <p className="text-sm text-gray-300">{recommendation.strategy}</p>
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Implementation Steps</p>
+          <ul className="text-sm text-gray-300 space-y-1">
+            {recommendation.implementation.map((step, index) => (
+              <li key={index} className="flex items-start">
+                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                {step}
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Implementation Steps</p>
-        <ul className="text-sm text-gray-300 list-disc pl-4">
-          {recommendation.implementation.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Expected Impact</p>
-        <div className="flex items-center">
-          <Target className="h-3 w-3 mr-1 text-gray-400" />
-          <p className="text-sm text-gray-300">{recommendation.expectedImpact}</p>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Expected Impact</p>
+          <div className="flex items-center">
+            <Target className="h-4 w-4 mr-2 text-gray-400" />
+            <p className="text-sm text-white">{recommendation.expectedImpact}</p>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
   
   const renderMarketingRecommendation = (recommendation: MarketingRecommendation) => (
-    <div key={recommendation.title} className="mb-6 p-4 bg-gray-800 rounded-md">
-      <h4 className="text-md font-medium mb-2 flex items-center">
-        <Megaphone className="h-4 w-4 mr-2 text-red-400" />
-        {recommendation.title}
-      </h4>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Channel</p>
-          <p className="text-sm text-gray-300">{recommendation.channel}</p>
+    <Card key={recommendation.title} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-xl 
+                        flex items-center justify-center border border-red-500/30">
+            <Megaphone className="h-5 w-5 text-red-400" />
+          </div>
+          <h4 className="text-lg font-bold text-white tracking-tight">{recommendation.title}</h4>
         </div>
         
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">Target Audience</p>
-          <div className="flex items-center">
-            <Users className="h-3 w-3 mr-1 text-gray-400" />
-            <p className="text-sm text-gray-300">{recommendation.targetAudience}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Channel</p>
+            <p className="text-sm text-white">{recommendation.channel}</p>
+          </div>
+          
+          <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Target Audience</p>
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              <p className="text-sm text-white">{recommendation.targetAudience}</p>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Message</p>
-        <p className="text-sm text-gray-300">{recommendation.message}</p>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Implementation Steps</p>
-        <ul className="text-sm text-gray-300 list-disc pl-4">
-          {recommendation.implementation.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="mt-3">
-        <p className="text-xs font-medium text-gray-400 mb-1">Expected Outcome</p>
-        <div className="flex items-center">
-          <Target className="h-3 w-3 mr-1 text-gray-400" />
-          <p className="text-sm text-gray-300">{recommendation.expectedOutcome}</p>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Message</p>
+          <p className="text-sm text-gray-300 leading-relaxed">{recommendation.message}</p>
         </div>
-      </div>
-    </div>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors mb-4">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Implementation Steps</p>
+          <ul className="text-sm text-gray-300 space-y-1">
+            {recommendation.implementation.map((step, index) => (
+              <li key={index} className="flex items-start">
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                {step}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Expected Outcome</p>
+          <div className="flex items-center">
+            <Target className="h-4 w-4 mr-2 text-gray-400" />
+            <p className="text-sm text-white">{recommendation.expectedOutcome}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
   
   const renderRecommendation = (recommendation: any) => {
@@ -403,75 +442,85 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
   }
   
   return (
-    <Card className="col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-xl font-bold">Marketing Recommendations</CardTitle>
-          <CardDescription>
-            AI-powered marketing strategies tailored to your store
-          </CardDescription>
+    <Card className="col-span-3 bg-[#0a0a0a] border-[#1a1a1a] shadow-2xl overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <span className="text-white font-bold text-xl">AI</span>
+            </div>
+            <div>
+              <CardTitle className="text-2xl text-white font-bold tracking-tight">Marketing Recommendations</CardTitle>
+              <CardDescription className="text-gray-400 font-medium">
+                AI-powered marketing strategies tailored to your store
+              </CardDescription>
+            </div>
+          </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </>
-          )}
-        </Button>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="email" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="email" className="flex items-center">
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center">
-              <Share2 className="h-4 w-4 mr-2" />
-              Social
-            </TabsTrigger>
-            <TabsTrigger value="product" className="flex items-center">
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              Product
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Pricing
-            </TabsTrigger>
-            <TabsTrigger value="general" className="flex items-center">
-              <Megaphone className="h-4 w-4 mr-2" />
-              General
-            </TabsTrigger>
-          </TabsList>
+      <CardContent className="pt-0">
+        <div className="p-6 pt-6">
+          <Tabs defaultValue="email" value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="mb-6 bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-1">
+              <TabsTrigger value="email" className="flex items-center bg-transparent text-gray-400 hover:text-white 
+                                                   data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-white 
+                                                   data-[state=active]:border-[#2a2a2a] rounded-lg px-4 py-2 
+                                                   transition-all duration-300">
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </TabsTrigger>
+              <TabsTrigger value="social" className="flex items-center bg-transparent text-gray-400 hover:text-white 
+                                                     data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-white 
+                                                     data-[state=active]:border-[#2a2a2a] rounded-lg px-4 py-2 
+                                                     transition-all duration-300">
+                <Share2 className="h-4 w-4 mr-2" />
+                Social
+              </TabsTrigger>
+              <TabsTrigger value="product" className="flex items-center bg-transparent text-gray-400 hover:text-white 
+                                                      data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-white 
+                                                      data-[state=active]:border-[#2a2a2a] rounded-lg px-4 py-2 
+                                                      transition-all duration-300">
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Product
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="flex items-center bg-transparent text-gray-400 hover:text-white 
+                                                     data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-white 
+                                                     data-[state=active]:border-[#2a2a2a] rounded-lg px-4 py-2 
+                                                     transition-all duration-300">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Pricing
+              </TabsTrigger>
+              <TabsTrigger value="general" className="flex items-center bg-transparent text-gray-400 hover:text-white 
+                                                     data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-white 
+                                                     data-[state=active]:border-[#2a2a2a] rounded-lg px-4 py-2 
+                                                     transition-all duration-300">
+                <Megaphone className="h-4 w-4 mr-2" />
+                General
+              </TabsTrigger>
+            </TabsList>
           
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-400">Generating marketing recommendations...</p>
-                <p className="text-xs text-gray-500 mt-2">This may take a moment</p>
+            <div className="text-center py-16 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+              <div className="w-20 h-20 mx-auto mb-6 bg-[#1a1a1a] rounded-2xl flex items-center justify-center 
+                            border border-[#2a2a2a] shadow-lg">
+                <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
               </div>
+              <h3 className="text-xl font-bold text-white mb-3">Generating Marketing Recommendations</h3>
+              <p className="text-gray-500 max-w-md mx-auto">Our AI is analyzing your store data to create personalized marketing strategies</p>
+              <p className="text-sm text-gray-600 mt-2">This may take a moment</p>
             </div>
           ) : !recommendations || !recommendations.recommendations || recommendations.recommendations.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <p className="text-gray-400">No recommendations available</p>
-                <p className="text-xs text-gray-500 mt-2">Try refreshing or selecting a different category</p>
+            <div className="text-center py-16 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+              <div className="w-20 h-20 mx-auto mb-6 bg-[#1a1a1a] rounded-2xl flex items-center justify-center 
+                            border border-[#2a2a2a] shadow-lg">
+                <Megaphone className="w-10 h-10 text-gray-500" />
               </div>
+              <h3 className="text-xl font-bold text-white mb-3">No Recommendations Available</h3>
+              <p className="text-gray-500 max-w-md mx-auto">Try refreshing or selecting a different category to see AI-powered marketing strategies</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-5">
               {activeTab === 'email' && recommendations.recommendations
                 .filter(item => isEmailCampaign(item))
                 .map((item, index) => (
@@ -503,37 +552,43 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
                 ))}
               
               {activeTab === 'email' && !recommendations.recommendations.some(item => isEmailCampaign(item)) && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400">No email recommendations available</p>
+                <div className="text-center py-8 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+                  <p className="text-gray-400 text-lg font-medium">No email recommendations available</p>
+                  <p className="text-gray-600 text-sm mt-2">Try refreshing to generate new recommendations</p>
                 </div>
               )}
               
               {activeTab === 'social' && !recommendations.recommendations.some(item => isSocialCampaign(item)) && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400">No social media recommendations available</p>
+                <div className="text-center py-8 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+                  <p className="text-gray-400 text-lg font-medium">No social media recommendations available</p>
+                  <p className="text-gray-600 text-sm mt-2">Try refreshing to generate new recommendations</p>
                 </div>
               )}
               
               {activeTab === 'product' && !recommendations.recommendations.some(item => isProductRecommendation(item)) && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400">No product recommendations available</p>
+                <div className="text-center py-8 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+                  <p className="text-gray-400 text-lg font-medium">No product recommendations available</p>
+                  <p className="text-gray-600 text-sm mt-2">Try refreshing to generate new recommendations</p>
                 </div>
               )}
               
               {activeTab === 'pricing' && !recommendations.recommendations.some(item => isPricingRecommendation(item)) && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400">No pricing recommendations available</p>
+                <div className="text-center py-8 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+                  <p className="text-gray-400 text-lg font-medium">No pricing recommendations available</p>
+                  <p className="text-gray-600 text-sm mt-2">Try refreshing to generate new recommendations</p>
                 </div>
               )}
               
               {activeTab === 'general' && !recommendations.recommendations.some(item => isMarketingRecommendation(item)) && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400">No general recommendations available</p>
+                <div className="text-center py-8 mx-6 mb-6 bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a]">
+                  <p className="text-gray-400 text-lg font-medium">No general recommendations available</p>
+                  <p className="text-gray-600 text-sm mt-2">Try refreshing to generate new recommendations</p>
                 </div>
               )}
             </div>
           )}
         </Tabs>
+        </div>
       </CardContent>
     </Card>
   )

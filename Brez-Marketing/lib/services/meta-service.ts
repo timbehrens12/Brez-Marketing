@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { withMetaRateLimit } from './meta-rate-limiter'
 
 /**
  * Fetches Meta ad insights for a specific brand within a date range
@@ -10,18 +11,244 @@ import { createClient } from '@supabase/supabase-js'
  * Previously, data was being aggregated into a single date for the entire period,
  * which made it impossible to show proper date range metrics.
  */
-export async function fetchMetaAdInsights(
-  brandId: string, 
-  startDate: Date, 
-  endDate: Date,
-  dryRun: boolean = false
-) {
-  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}`)
+
+// Global flag to track new day detection events
+let isNewDayTransition = false;
+let newDayTransitionInfo: any = null;
+
+// Listen for new day detection events from the dashboard
+if (typeof window !== 'undefined') {
+  window.addEventListener('newDayDetected', (event: any) => {
+    console.log('[Meta Service] 🌅 New day detected event received:', event.detail);
+    isNewDayTransition = true;
+    newDayTransitionInfo = event.detail;
+    
+    // Clear the flag after 5 minutes to prevent it from affecting future syncs
+    setTimeout(() => {
+      isNewDayTransition = false;
+      newDayTransitionInfo = null;
+      console.log('[Meta Service] 🕒 New day transition flag cleared');
+    }, 5 * 60 * 1000);
+  });
+}
+
+// Helper function to delay execution (for rate limiting)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+// Helper function to perform API call with retries and exponential backoff
+async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initialBackoff = 5000) {
+  let retries = 0;
+  let backoff = initialBackoff;
+
+  while (retries <= maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+
+      // Check if we hit rate limiting
+      if (data.error && (data.error.code === 80004 || data.error.message?.includes('too many calls'))) {
+        if (retries >= maxRetries) {
+          console.log(`[Meta] Rate limit exceeded after ${retries} retries. Returning rate limit error.`);
+          return data;
+        }
+
+        retries++;
+        console.log(`[Meta] Rate limit hit, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
+        await delay(backoff);
+        backoff *= 2; // Exponential backoff
+        continue;
+      }
+
+      return data;
+    } catch (error) {
+      if (retries >= maxRetries) {
+        console.log(`[Meta] API call failed after ${retries} retries.`);
+        throw error;
+      }
+
+      retries++;
+      console.log(`[Meta] API call failed, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
+      await delay(backoff);
+      backoff *= 2; // Exponential backoff
+    }
+  }
+
+  throw new Error(`Failed after ${maxRetries} retries`);
+}
+
+// Helper function to ensure ad_account_id is in the metadata
+async function ensureAdAccountId(connection: any, brandId: string, supabase: any) {
+  // If connection already has ad_account_id, we're good
+  if (connection.metadata && connection.metadata.ad_account_id) {
+    return connection.metadata.ad_account_id;
+  }
   
+  console.log(`[Meta] No ad_account_id found in metadata for brand ${brandId}, attempting to fetch it`);
+  
+  try {
+    // Fetch ad accounts from Meta
+    const accountsData = await fetchWithRetry(
+      `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
+    );
+    
+    if (accountsData.error) {
+      console.error(`[Meta] Error fetching ad accounts:`, accountsData.error);
+      return null;
+    }
+    
+    if (!accountsData.data || accountsData.data.length === 0) {
+      console.log(`[Meta] No ad accounts found for brand ${brandId}`);
+      return null;
+    }
+    
+    // Use the first ad account
+    const firstAccount = accountsData.data[0];
+    const accountId = firstAccount.account_id || firstAccount.id.replace('act_', '');
+    const adAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+    
+    console.log(`[Meta] Found ad account id: ${adAccountId}, updating connection metadata`);
+    
+    // Update the connection with the ad_account_id
+    const updatedMetadata = {
+      ...(connection.metadata || {}),
+      ad_account_id: adAccountId
+    };
+    
+    // Update the platform_connections table
+    const { error: updateError } = await supabase
+      .from('platform_connections')
+      .update({ metadata: updatedMetadata })
+      .eq('id', connection.id);
+    
+    if (updateError) {
+      console.error(`[Meta] Error updating connection metadata:`, updateError);
+    } else {
+      console.log(`[Meta] Updated connection ${connection.id} with ad_account_id: ${adAccountId}`);
+      // Update the local connection object as well
+      connection.metadata = updatedMetadata;
+    }
+    
+    return adAccountId;
+  } catch (error) {
+    console.error(`[Meta] Error ensuring ad_account_id:`, error);
+    return null;
+  }
+}
+
+export async function fetchMetaAdInsights(
+  brandId: string,
+  startDate: Date,
+  endDate: Date,
+  dryRun: boolean = false,
+  skipDemographics: boolean = false
+) {
+  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}${skipDemographics ? ' (skipping demographics)' : ''}`)
+
+  // If this is a new day transition, handle it specially
+  if (isNewDayTransition && newDayTransitionInfo) {
+    console.log(`[Meta] 🌅 NEW DAY TRANSITION MODE ACTIVE for brand ${brandId}`);
+    console.log(`[Meta] Previous date: ${newDayTransitionInfo.previousDate}, Current date: ${newDayTransitionInfo.currentDate}`);
+
+    // Extend the date range to include both the previous day and current day
+    // This ensures we properly sync and separate data for both days
+    const previousDate = new Date(newDayTransitionInfo.previousDate);
+    const currentDate = new Date(newDayTransitionInfo.currentDate);
+
+    // Override the date range to fetch both days
+    startDate = new Date(Math.min(startDate.getTime(), previousDate.getTime()));
+    endDate = new Date(Math.max(endDate.getTime(), currentDate.getTime()));
+
+    console.log(`[Meta] 📅 Extended sync range to cover transition: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+  const createDateChunks = (
+    rangeStart: Date,
+    rangeEnd: Date,
+    chunkSizeDays = 30
+  ): { start: string; end: string }[] => {
+    const chunks: { start: string; end: string }[] = []
+
+    let current = new Date(rangeStart)
+    current.setHours(0, 0, 0, 0)
+
+    const end = new Date(rangeEnd)
+    end.setHours(0, 0, 0, 0)
+
+    while (current <= end) {
+      const chunkStart = new Date(current)
+      const chunkEnd = new Date(current)
+      chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
+
+      if (chunkEnd > end) {
+        chunkEnd.setTime(end.getTime())
+      }
+
+      chunks.push({
+        start: chunkStart.toISOString().split('T')[0],
+        end: chunkEnd.toISOString().split('T')[0]
+      })
+
+      current = new Date(chunkEnd)
+      current.setDate(current.getDate() + 1)
+    }
+
+    return chunks
+  }
+
+  const fetchPaginatedData = async (
+    initialUrl: string,
+    dataType: string,
+    maxPages = 12
+  ): Promise<{ data: any[]; error: any; pageCount: number }> => {
+    let allData: any[] = []
+    let nextUrl: string | null = initialUrl
+    let pageCount = 0
+
+    while (nextUrl && pageCount < maxPages) {
+      pageCount++
+      console.log(`[Meta] 🔥 Fetching ${dataType} page ${pageCount}: ${nextUrl.substring(0, 120)}...`)
+
+      const response = await fetchWithRetry(nextUrl)
+
+      if (response?.error) {
+        console.error(`[Meta] Error fetching ${dataType} page ${pageCount}:`, response.error)
+        return { data: allData, error: response.error, pageCount }
+      }
+
+      if (Array.isArray(response?.data) && response.data.length > 0) {
+        allData = allData.concat(response.data)
+        console.log(`[Meta] 🔥 ${dataType} page ${pageCount}: ${response.data.length} records (total: ${allData.length})`)
+      } else {
+        console.log(`[Meta] 🔍 ${dataType} page ${pageCount} returned 0 records`)
+      }
+
+      nextUrl = response?.paging?.next || null
+
+      if (!nextUrl) {
+        console.log(`[Meta] ✅ ${dataType} pagination complete: ${allData.length} total records (${pageCount} pages)`)
+      }
+    }
+
+    if (nextUrl) {
+      console.warn(`[Meta] ⚠️ ${dataType} pagination stopped at page limit (${maxPages}) with ${allData.length} records`)
+    }
+
+    return { data: allData, error: null, pageCount }
+  }
+
+  const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+    const chunks: T[][] = []
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size))
+    }
+    return chunks
+  }
 
   try {
     // Find the Meta connection for this brand
@@ -41,15 +268,40 @@ export async function fetchMetaAdInsights(
       }
     }
 
-    // Fetch ad accounts
-    const accountsResponse = await fetch(
+    // Ensure we have an ad account ID in the metadata
+    await ensureAdAccountId(connection, brandId, supabase);
+
+    // Fetch ad accounts with retry mechanism
+    const accountsData = await fetchWithRetry(
       `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
-    )
-    
-    const accountsData = await accountsResponse.json()
+    );
     
     if (accountsData.error) {
       console.error(`[Meta] Error fetching ad accounts:`, accountsData.error)
+      
+      // Check if this is a rate limiting error
+      if (accountsData.error.code === 80004 || accountsData.error.message?.includes('too many calls')) {
+        console.log(`[Meta] Rate limit hit, attempting to use cached data`);
+        
+        // Try to return cached data instead
+        const { data: cachedInsights } = await supabase
+          .from('meta_ad_insights')
+          .select('*')
+          .eq('brand_id', brandId)
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0]);
+          
+        if (cachedInsights && cachedInsights.length > 0) {
+          console.log(`[Meta] Using ${cachedInsights.length} cached insights due to rate limiting`);
+          return { 
+            success: true, 
+            message: 'Using cached insights due to Meta API rate limit',
+            count: cachedInsights.length,
+            rateLimited: true
+          }
+        }
+      }
+      
       return { 
         success: false, 
         error: 'Failed to fetch Meta ad accounts',
@@ -70,21 +322,36 @@ export async function fetchMetaAdInsights(
     // Format dates for the API
     const startDateStr = startDate.toISOString().split('T')[0]
     const endDateStr = endDate.toISOString().split('T')[0]
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isFetchingToday = startDateStr === todayStr && endDateStr === todayStr;
+    const dateChunks = !isFetchingToday
+      ? createDateChunks(new Date(startDateStr), new Date(endDateStr), 31)
+      : []
 
     let allInsights = []
     let campaignBudgets = new Map()
     
-    // For each ad account, fetch insights
+    // Collect all demographic and device data from all accounts
+    let allDemographicData = { age: [], gender: [], ageGender: [] };
+    let allDeviceData = { device: [], placement: [], platform: [] };
+    
+    // For each ad account, fetch insights - with rate limit handling
     for (const account of accountsData.data) {
       console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
       
       try {
-        // First fetch campaign information to get budgets
-        const campaignsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
-        )
+        // Add delay between requests to avoid rate limiting
+        await delay(1000);
         
-        const campaignsData = await campaignsResponse.json()
+        // First fetch campaign information to get budgets - with retry
+        const campaignsData = await fetchWithRetry(
+          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
+        );
+        
+        if (campaignsData.error) {
+          console.error(`[Meta] Error fetching campaigns for account ${account.id}:`, campaignsData.error);
+          continue;
+        }
         
         if (campaignsData.data && campaignsData.data.length > 0) {
           for (const campaign of campaignsData.data) {
@@ -109,27 +376,274 @@ export async function fetchMetaAdInsights(
           console.log(`[Meta] Fetched budget info for ${campaignsData.data.length} campaigns`)
         }
         
-        // Now fetch the insights data
-        const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
-        )
+        // Add another delay before the insights request
+        await delay(1000);
         
-        const insightsData = await insightsResponse.json()
-        
-        if (insightsData.error) {
-          console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
-          continue
+        const baseInsightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
+
+        const insightChunkResults: any[] = []
+
+        if (isFetchingToday || dateChunks.length === 0) {
+          let insightsUrl = `${baseInsightsUrl}&date_preset=today`
+          console.log(`[Meta] Using date_preset=today for account ${account.id}`)
+
+          const insightsResult = await fetchPaginatedData(insightsUrl, 'Insights (today)', 5)
+
+          if (insightsResult.error) {
+            console.error(`[Meta] Error fetching insights (today) for account ${account.id}:`, insightsResult.error)
+            continue
+          }
+
+          insightChunkResults.push({
+            chunkStart: todayStr,
+            chunkEnd: todayStr,
+            records: insightsResult.data,
+            pageCount: insightsResult.pageCount
+          })
+        } else {
+          console.log(`[Meta] Splitting insights fetch into ${dateChunks.length} chunks for account ${account.id}`)
+
+          for (const chunk of dateChunks) {
+            const chunkUrl = `${baseInsightsUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}&time_increment=1`
+            console.log(`[Meta] 🔄 Fetching insights chunk ${chunk.start} → ${chunk.end}`)
+
+            const chunkResult = await fetchPaginatedData(chunkUrl, `Insights ${chunk.start}→${chunk.end}`, 20)
+
+            if (chunkResult.error) {
+              console.error(`[Meta] Error fetching insights chunk ${chunk.start} → ${chunk.end} for account ${account.id}:`, chunkResult.error)
+              continue
+            }
+
+            insightChunkResults.push({
+              chunkStart: chunk.start,
+              chunkEnd: chunk.end,
+              records: chunkResult.data,
+              pageCount: chunkResult.pageCount
+            })
+
+            console.log(`[Meta] ✅ Chunk ${chunk.start} → ${chunk.end}: ${chunkResult.data.length} records (${chunkResult.pageCount} pages)`)
+
+            await delay(500)
+          }
         }
+
+        const insightsData = insightChunkResults.flatMap((chunk) => chunk.records)
+
+        console.log(`[Meta] 🔍 DEBUG: API Response for account ${account.id}:`)
+        console.log(`[Meta] 🔍 Total chunks fetched: ${insightChunkResults.length}`)
+        console.log(`[Meta] 🔍 Total records: ${insightsData.length}`)
+        if (insightsData.length > 0) {
+          const firstRecord = insightsData[0]
+          const lastRecord = insightsData[insightsData.length - 1]
+          console.log(`[Meta] 🔍 First record date: ${firstRecord?.date_start} to ${firstRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Last record date: ${lastRecord?.date_start} to ${lastRecord?.date_stop}`)
+          console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(firstRecord, null, 2))
+        }
+
+        // Fetch demographic breakdowns (age, gender) in parallel - SKIP if requested
+        let demographicData = { age: [], gender: [], ageGender: [] };
+        let deviceData = { device: [], placement: [], platform: [] };
+
+        if (!skipDemographics) {
+          try {
+          console.log(`[Meta] Fetching demographic and device breakdowns for account ${account.id}`);
+          
+          // RESTORED: Add 'reach' back to breakdown queries - limit to 12 months instead of going back years
+          // Age breakdown - WITH reach (limited to 12 months)
+          let ageUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age&level=account&time_increment=1&access_token=${connection.access_token}`;
+          
+          // Gender breakdown - WITH reach (limited to 12 months)
+          let genderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=gender&level=account&time_increment=1&access_token=${connection.access_token}`;
+          
+          // Age + Gender combined breakdown - WITH reach (limited to 12 months)
+          let ageGenderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age,gender&level=account&time_increment=1&access_token=${connection.access_token}`;
+          
+          // Device breakdown - WITH reach (limited to 12 months)
+          let deviceUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=impression_device&level=account&time_increment=1&access_token=${connection.access_token}`;
+          
+          // Publisher platform breakdown - WITH reach (limited to 12 months)
+          let placementUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
+          
+          // Platform breakdown - WITH reach (limited to 12 months)
+          let platformUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
+
+          // Add time range to all URLs
+          const timeRange = `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}`;
+          // We'll append time_range per chunk when fetching to avoid duplicate params
+
+          console.log(`[Meta] 🔥 DEBUGGING - About to fetch demographic breakdowns with URLs:`);
+          console.log(`[Meta] 🔥 Age URL: ${ageUrl}`);
+          console.log(`[Meta] 🔥 Gender URL: ${genderUrl}`);
+          console.log(`[Meta] 🔥 Device URL: ${deviceUrl}`);
+
+          // Helper function to fetch all pages of data
+          // Fetch ALL essential breakdowns: Age, Gender, Device, Platform, Age+Gender
+          console.log(`[Meta] 🔥 Starting COMPLETE demographic data fetch (Age + Gender + Device + Platform + Age+Gender)...`);
+          const demographicChunks = dateChunks.length > 0 ? dateChunks : [{ start: startDateStr, end: endDateStr }]
+
+          const aggregateChunkedFetch = async (urlBuilder: (chunk: { start: string; end: string }) => string, dataType: string) => {
+            const aggregated: any[] = []
+            let totalPages = 0
+
+            for (const chunk of demographicChunks) {
+              const chunkUrl = urlBuilder(chunk)
+              const result = await fetchPaginatedData(chunkUrl, `${dataType} ${chunk.start}→${chunk.end}`, 20)
+
+              if (result.error) {
+                console.error(`[Meta] Error fetching ${dataType} chunk ${chunk.start}→${chunk.end}:`, result.error)
+                continue
+              }
+
+              aggregated.push(...(result.data || []))
+              totalPages += result.pageCount
+              console.log(`[Meta] ✅ ${dataType} chunk ${chunk.start}→${chunk.end}: ${(result.data || []).length} records (${result.pageCount} pages)`)
+
+              await delay(3000)  // Increase to 3 seconds between demographic chunks
+            }
+
+            return { data: aggregated, pageCount: totalPages }
+          }
+
+          const ageResult = await aggregateChunkedFetch(
+            (chunk) => `${ageUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Age'
+          )
+
+          await delay(2000)  // Delay between demographic types
+
+          const genderResult = await aggregateChunkedFetch(
+            (chunk) => `${genderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Gender'
+          )
+
+          await delay(2000)  // Delay between demographic types
+
+          const ageGenderResult = await aggregateChunkedFetch(
+            (chunk) => `${ageGenderUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Age+Gender'
+          )
+
+          await delay(2000)  // Delay between demographic types
+
+          const deviceBreakdownResult = await aggregateChunkedFetch(
+            (chunk) => `${deviceUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Device'
+          )
+
+          await delay(2000)  // Delay between demographic types
+
+          const platformResult = await aggregateChunkedFetch(
+            (chunk) => `${platformUrl}&time_range={"since":"${chunk.start}","until":"${chunk.end}"}`,
+            'Platform'
+          )
+          
+          // Skip only placement (redundant with platform)
+          const placementData = { data: [], error: null };
+
+          console.log(`[Meta] 🔥 DEBUGGING - Raw API responses:`);
+          console.log(`[Meta] 🔥 Age data count: ${ageResult.data?.length || 0}`);
+          console.log(`[Meta] 🔥 Age date ranges:`, ageResult.data?.map(d => `${d.date_start} to ${d.date_stop}`));
+          console.log(`[Meta] 🔥 Device data count: ${deviceBreakdownResult.data?.length || 0}`);
+          console.log(`[Meta] 🔥 Device date ranges:`, deviceBreakdownResult.data?.map(d => `${d.date_start} to ${d.date_stop}`));
+
+          // Process demographic data
+          if (ageResult.data && !ageResult.error) {
+            demographicData.age = ageResult.data;
+            console.log(`[Meta] ✅ Age data processed: ${ageResult.data.length} records (pages: ${ageResult.pageCount})`);
+          } else {
+            console.log(`[Meta] ❌ Age data FAILED:`, ageResult.error || 'No data');
+          }
+          
+          if (genderResult.data && !genderResult.error) {
+            demographicData.gender = genderResult.data;
+            console.log(`[Meta] ✅ Gender data processed: ${genderResult.data.length} records (pages: ${genderResult.pageCount})`);
+          } else {
+            console.log(`[Meta] ❌ Gender data FAILED:`, genderResult.error || 'No data');
+          }
+          
+          if (ageGenderResult.data && !ageGenderResult.error) {
+            demographicData.ageGender = ageGenderResult.data;
+            console.log(`[Meta] ✅ Age+Gender data processed: ${ageGenderResult.data.length} records (pages: ${ageGenderResult.pageCount})`);
+          } else {
+            console.log(`[Meta] ❌ Age+Gender data FAILED:`, ageGenderResult.error || 'No data');
+          }
+          
+          // Process device data
+          if (deviceBreakdownResult.data && !deviceBreakdownResult.error) {
+            deviceData.device = deviceBreakdownResult.data;
+            console.log(`[Meta] ✅ Device data processed: ${deviceBreakdownResult.data.length} records (pages: ${deviceBreakdownResult.pageCount})`);
+          } else {
+            console.log(`[Meta] ❌ Device data FAILED:`, deviceBreakdownResult.error || 'No data');
+          }
+          
+          console.log(`[Meta] 🔥 RAW PLACEMENT API RESPONSE (using publisher_platform):`, JSON.stringify(placementData, null, 2));
+          if (placementData.data && !placementData.error) {
+            deviceData.placement = placementData.data;
+            console.log(`[Meta] ✅ Placement data processed: ${placementData.data.length} records`);
+            console.log(`[Meta] 🔥 PLACEMENT DATA SAMPLE:`, JSON.stringify(placementData.data.slice(0, 2), null, 2));
+          } else {
+            console.log(`[Meta] ❌ Placement data FAILED:`, placementData.error || 'No data');
+            if (placementData.error) {
+              console.log(`[Meta] 🔥 PLACEMENT ERROR CODE:`, placementData.error.code);
+              console.log(`[Meta] 🔥 PLACEMENT ERROR MESSAGE:`, placementData.error.message);
+              console.log(`[Meta] 🔥 PLACEMENT ERROR TYPE:`, placementData.error.type);
+            }
+          }
+          
+          if (platformResult.data && !platformResult.error) {
+            deviceData.platform = platformResult.data;
+            console.log(`[Meta] ✅ Platform data processed: ${platformResult.data.length} records (pages: ${platformResult.pageCount})`);
+          } else {
+            console.log(`[Meta] ❌ Platform data FAILED:`, platformResult.error || 'No data');
+          }
+
+          console.log(`[Meta] 🔥 FINAL COUNT: ${demographicData.age.length} age, ${demographicData.gender.length} gender, ${deviceData.device.length} device breakdowns`);
+          
+          } catch (error) {
+            console.error(`[Meta] Error fetching demographic/device breakdowns for account ${account.id}:`, error);
+          }
+        } else {
+          console.log(`[Meta] Skipping demographic and device data fetch for account ${account.id} (skipDemographics=true)`);
+        }
+
+        // Add account info to demographic data and aggregate
+        demographicData.age.forEach((item: any) => {
+          allDemographicData.age.push({ ...item, account_id: account.id, account_name: account.name });
+        });
+        demographicData.gender.forEach((item: any) => {
+          allDemographicData.gender.push({ ...item, account_id: account.id, account_name: account.name });
+        });
+        demographicData.ageGender.forEach((item: any) => {
+          allDemographicData.ageGender.push({ ...item, account_id: account.id, account_name: account.name });
+        });
         
-        if (insightsData.data && insightsData.data.length > 0) {
-          allInsights.push(...insightsData.data)
-          // Log the first item to check for daily data structure
-          if (insightsData.data[0]) {
+        // Add account info to device data and aggregate
+        deviceData.device.forEach((item: any) => {
+          allDeviceData.device.push({ ...item, account_id: account.id, account_name: account.name });
+        });
+        deviceData.placement.forEach((item: any) => {
+          allDeviceData.placement.push({ ...item, account_id: account.id, account_name: account.name });
+        });
+        deviceData.platform.forEach((item: any) => {
+          allDeviceData.platform.push({ ...item, account_id: account.id, account_name: account.name });
+        });
+        
+        if (insightsData.length > 0) {
+          // If fetching for today using date_preset=today, Meta might not include date_start/date_stop in each item.
+          // We'll assign today's date to these records.
+          if (isFetchingToday) {
+            insightsData.forEach((insight: any) => {
+              insight.date_start = todayStr;
+              insight.date_stop = todayStr;
+            });
+          }
+          allInsights.push(...insightsData)
+          if (insightsData[0]) {
             console.log(`[Meta] Sample data format (first item):`, {
-              date_start: insightsData.data[0].date_start,
-              date_stop: insightsData.data[0].date_stop,
-              ad_id: insightsData.data[0].ad_id,
-              impressions: insightsData.data[0].impressions
+              date_start: insightsData[0].date_start,
+              date_stop: insightsData[0].date_stop,
+              ad_id: insightsData[0].ad_id,
+              impressions: insightsData[0].impressions
             })
           }
         }
@@ -144,6 +658,8 @@ export async function fetchMetaAdInsights(
     const uniqueDates = new Set(allInsights.filter((insight: any) => insight.date_start).map((insight: any) => insight.date_start))
     console.log(`[Meta] Data contains ${uniqueDates.size} unique dates (expected: ~${Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1)} days)`)
     
+    console.log(`[Meta] Collected ${allDemographicData.age.length} age breakdowns, ${allDemographicData.gender.length} gender breakdowns, ${allDeviceData.device.length} device breakdowns across all accounts`)
+    
     if (allInsights.length === 0) {
       return { 
         success: true, 
@@ -154,21 +670,11 @@ export async function fetchMetaAdInsights(
 
     // Only store data if not in dry run mode
     if (!dryRun) {
-      // Process and store insights data in meta_ad_insights
-      // First clear existing data for this date range to avoid duplicates
-      const { error: deleteError } = await supabase
-        .from('meta_ad_insights')
-        .delete()
-        .eq('brand_id', brandId)
-        .gte('date', startDateStr)
-        .lte('date', endDateStr)
+        // Process and store insights data in meta_ad_insights
+        // Process data in smaller batches to avoid hitting Supabase payload limits
+        const insightGroups = new Map<string, any>()
       
-      if (deleteError) {
-        console.error(`[Meta] Error clearing existing insights:`, deleteError)
-      }
-  
-      // Prepare and store the enriched insights
-      const enrichedInsights = allInsights.map((insight: any) => {
+      allInsights.forEach((insight: any) => {
         // Ensure we have a valid date
         let recordDate = insight.date_start || startDateStr;
         
@@ -178,42 +684,392 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
-        // Get budget for this campaign if available
-        const budget = campaignBudgets.has(insight.campaign_id) ? campaignBudgets.get(insight.campaign_id) : 0;
+        const key = `${brandId}-${insight.ad_id}-${recordDate}`
         
-        return {
-          brand_id: brandId,
-          connection_id: connection.id,
-          account_id: insight.account_id,
-          account_name: insight.account_name,
-          campaign_id: insight.campaign_id,
-          campaign_name: insight.campaign_name,
-          adset_id: insight.adset_id,
-          adset_name: insight.adset_name,
-          ad_id: insight.ad_id,
-          ad_name: insight.ad_name,
-          impressions: parseInt(insight.impressions || '0'),
-          clicks: parseInt(insight.clicks || '0'),
-          spend: parseFloat(insight.spend || '0'),
-          reach: parseInt(insight.reach || '0'),
-          link_clicks: parseInt(insight.inline_link_clicks || '0'),
-          budget: budget,
-          date: recordDate,
-          actions: insight.actions || [],
-          action_values: insight.action_values || []
-        };
+        if (insightGroups.has(key)) {
+          // Merge with existing record (sum numeric values)
+          const existing = insightGroups.get(key)
+          existing.impressions += parseInt(insight.impressions || '0')
+          existing.clicks += parseInt(insight.clicks || '0')
+          existing.spend += parseFloat(insight.spend || '0')
+          existing.reach += parseInt(insight.reach || '0')
+          existing.link_clicks += parseInt(insight.inline_link_clicks || '0')
+          
+          // Keep the most recent updated_at
+          existing.updated_at = new Date().toISOString()
+        } else {
+          // Get budget for this campaign if available
+          const budget = campaignBudgets.has(insight.campaign_id) ? campaignBudgets.get(insight.campaign_id) : 0;
+          
+          // Create new record
+          insightGroups.set(key, {
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: insight.account_id,
+            account_name: insight.account_name,
+            campaign_id: insight.campaign_id,
+            campaign_name: insight.campaign_name,
+            adset_id: insight.adset_id,
+            adset_name: insight.adset_name,
+            ad_id: insight.ad_id,
+            ad_name: insight.ad_name,
+            impressions: parseInt(insight.impressions || '0'),
+            clicks: parseInt(insight.clicks || '0'),
+            spend: parseFloat(insight.spend || '0'),
+            reach: parseInt(insight.reach || '0'),
+            link_clicks: parseInt(insight.inline_link_clicks || '0'),
+            budget: budget,
+            date: recordDate,
+            actions: insight.actions || [],
+            action_values: insight.action_values || [],
+            frequency: parseFloat(insight.frequency || '0'),
+            cpm: parseFloat(insight.cpm || '0'),
+            cpc: parseFloat(insight.cpc || '0'),
+            cpp: parseFloat(insight.cpp || '0'),
+            ctr: parseFloat(insight.ctr || '0'),
+            cost_per_action_type: insight.cost_per_action_type || [],
+            cost_per_conversion: insight.cost_per_conversion || [],
+            cost_per_unique_click: parseFloat(insight.cost_per_unique_click || '0'),
+            video_p25_watched_actions: insight.video_p25_watched_actions || [],
+            video_p50_watched_actions: insight.video_p50_watched_actions || [],
+            video_p75_watched_actions: insight.video_p75_watched_actions || [],
+            video_p100_watched_actions: insight.video_p100_watched_actions || [],
+            quality_ranking: insight.quality_ranking,
+            engagement_rate_ranking: insight.engagement_rate_ranking,
+            conversion_rate_ranking: insight.conversion_rate_ranking,
+            objective: insight.objective,
+            updated_at: new Date().toISOString()
+          })
+        }
       })
       
-      const { error: insertError } = await supabase
-        .from('meta_ad_insights')
-        .upsert(enrichedInsights)
+      // Convert map to array
+      const enrichedInsights = Array.from(insightGroups.values())
+      
+      console.log(`[Meta] Deduplicated ${allInsights.length} raw insights into ${enrichedInsights.length} unique records`)
+      
+      // Use the deduplicated insights for storage
+
+      // OPTIMIZED: Use bulk upsert for better performance and to avoid timeouts
+      let insertError = null
+
+      if (enrichedInsights.length > 0) {
+        console.log(`[Meta] Preparing to upsert ${enrichedInsights.length} records in batches`)
+        console.log(`[Meta] Sample record:`, JSON.stringify(enrichedInsights[0], null, 2))
+
+        const insightBatches = chunkArray(enrichedInsights, 500)
+        console.log(`[Meta] Split insights into ${insightBatches.length} batches`)    
+
+        for (let i = 0; i < insightBatches.length; i++) {
+          const batch = insightBatches[i]
+          console.log(`[Meta] 🔄 Upserting insights batch ${i + 1}/${insightBatches.length} (${batch.length} records)`)  
+
+          try {
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Database operation timeout')), 25000)
+            })
+
+            const upsertPromise = supabase
+              .from('meta_ad_insights')
+              .upsert(batch, {
+                onConflict: 'brand_id,ad_id,date',
+                ignoreDuplicates: false
+              })
+
+            const { error: bulkError } = await Promise.race([upsertPromise, timeoutPromise]) as any
+
+            if (bulkError) {
+              console.error(`[Meta] ❌ Batch ${i + 1}/${insightBatches.length} upsert failed:`, JSON.stringify(bulkError, null, 2))
+              insertError = bulkError
+              break
+            } else {
+              console.log(`[Meta] ✅ Batch ${i + 1}/${insightBatches.length} upserted successfully`)
+            }
+          } catch (bulkError) {
+            console.error(`[Meta] ❌ Batch ${i + 1}/${insightBatches.length} upsert exception:`, bulkError instanceof Error ? bulkError.message : JSON.stringify(bulkError, null, 2))
+            insertError = bulkError instanceof Error ? bulkError : new Error(String(bulkError))
+            break
+          }
+        }
+      }
       
       if (insertError) {
         console.error(`[Meta] Error storing insights:`, insertError)
-        return { 
-          success: false, 
+
+        // Fallback: Try to store just a single record to isolate the issue
+        if (enrichedInsights.length > 0) {
+          console.log(`[Meta] Attempting fallback: storing single record...`)
+          try {
+            const singleRecord = enrichedInsights[0]
+            console.log(`[Meta] Single record sample:`, JSON.stringify(singleRecord, null, 2))
+
+            const { error: singleError } = await supabase
+              .from('meta_ad_insights')
+              .upsert([singleRecord], {
+                onConflict: 'brand_id,ad_id,date',
+                ignoreDuplicates: false
+              })
+
+            if (singleError) {
+              console.error(`[Meta] Single record insert also failed:`, singleError)
+
+              // Handle duplicate key error specifically for single records
+              if (singleError.code === '21000' || (singleError.message && singleError.message.includes('cannot affect row a second time'))) {
+                console.log(`[Meta] Single record duplicate error - this record already exists`)
+                return {
+                  success: true,
+                  message: 'Meta insights already up to date (no new data to sync)',
+                  count: 0,
+                  insights: dryRun ? allInsights : undefined
+                }
+              }
+            } else {
+              console.log(`[Meta] ✅ Single record fallback succeeded`)
+              return {
+                success: true,
+                message: 'Meta insights synced successfully (single record fallback)',
+                count: 1,
+                insights: dryRun ? allInsights : undefined
+              }
+            }
+          } catch (fallbackError) {
+            console.error(`[Meta] Fallback also failed:`, fallbackError)
+
+            // If it's a duplicate error, consider it successful
+            if (fallbackError && typeof fallbackError === 'object' && 'code' in fallbackError &&
+                (fallbackError.code === '21000' || (fallbackError.message && fallbackError.message.includes('cannot affect row a second time')))) {
+              console.log(`[Meta] Data already exists - considering successful`)
+              return {
+                success: true,
+                message: 'Meta insights already up to date',
+                count: 0,
+                insights: dryRun ? allInsights : undefined
+              }
+            }
+          }
+        }
+
+        return {
+          success: false,
           error: 'Failed to store Meta insights',
           details: insertError
+        }
+      }
+
+      // Store demographic data
+      console.log(`[Meta] 🔥 DEBUGGING - About to store demographic data:`, {
+        ageCount: allDemographicData.age.length,
+        genderCount: allDemographicData.gender.length,
+        ageGenderCount: allDemographicData.ageGender.length,
+        brandId,
+        startDateStr,
+        endDateStr
+      });
+      
+      if (allDemographicData.age.length > 0 || allDemographicData.gender.length > 0 || allDemographicData.ageGender.length > 0) {
+        console.log(`[Meta] 🔥 Storing demographic data...`);
+        
+        // Clear existing demographic data for this date range
+        console.log(`[Meta] 🔥 Clearing existing demographic data for date range ${startDateStr} to ${endDateStr}`);
+        const deleteResult = await supabase
+          .from('meta_demographics')
+          .delete()
+          .eq('brand_id', brandId)
+          .gte('date_range_start', startDateStr)
+          .lte('date_range_end', endDateStr);
+        
+        console.log(`[Meta] 🔥 Delete result:`, deleteResult);
+
+        // Prepare demographic data for storage
+        const demographicRecords = [];
+        
+        // Age breakdown records
+        allDemographicData.age.forEach((item: any) => {
+          demographicRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'age',
+            breakdown_value: item.age,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        // Gender breakdown records
+        allDemographicData.gender.forEach((item: any) => {
+          demographicRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'gender',
+            breakdown_value: item.gender,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        // Age + Gender breakdown records
+        allDemographicData.ageGender.forEach((item: any) => {
+          demographicRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'age_gender',
+            breakdown_value: `${item.age}_${item.gender}`,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        console.log(`[Meta] 🔥 About to store ${demographicRecords.length} demographic records`);
+        console.log(`[Meta] 🔥 Sample demographic record:`, demographicRecords[0]);
+        
+        if (demographicRecords.length > 0) {
+          const { error: demographicError, data: insertedData } = await supabase
+            .from('meta_demographics')
+            .upsert(demographicRecords);
+          
+          if (demographicError) {
+            console.error(`[Meta] 🔥 ❌ Error storing demographic data:`, demographicError);
+          } else {
+            console.log(`[Meta] 🔥 ✅ Stored ${demographicRecords.length} demographic records successfully`);
+            console.log(`[Meta] 🔥 ✅ Inserted data sample:`, insertedData?.[0]);
+          }
+        } else {
+          console.log(`[Meta] 🔥 ❌ No demographic records to store!`);
+        }
+      }
+
+      // Store device/placement data
+      console.log(`[Meta] 🔥 DEBUGGING - About to store device data:`, {
+        deviceCount: allDeviceData.device.length,
+        placementCount: allDeviceData.placement.length,
+        platformCount: allDeviceData.platform.length
+      });
+      
+      if (allDeviceData.device.length > 0 || allDeviceData.placement.length > 0 || allDeviceData.platform.length > 0) {
+        console.log(`[Meta] 🔥 Storing device/placement data...`);
+        
+        // Clear existing device data for this date range
+        await supabase
+          .from('meta_device_performance')
+          .delete()
+          .eq('brand_id', brandId)
+          .gte('date_range_start', startDateStr)
+          .lte('date_range_end', endDateStr);
+
+        const deviceRecords = [];
+        
+        // Device breakdown records
+        allDeviceData.device.forEach((item: any) => {
+          deviceRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'device',
+            breakdown_value: item.impression_device,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        // Placement breakdown records
+        allDeviceData.placement.forEach((item: any) => {
+          deviceRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'placement',
+            breakdown_value: item.publisher_platform,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        // Platform breakdown records
+        allDeviceData.platform.forEach((item: any) => {
+          deviceRecords.push({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: item.account_id,
+            account_name: item.account_name,
+            breakdown_type: 'platform',
+            breakdown_value: item.publisher_platform,
+            impressions: parseInt(item.impressions || '0'),
+            clicks: parseInt(item.clicks || '0'),
+            spend: parseFloat(item.spend || '0'),
+            reach: parseInt(item.reach || '0'),
+            cpm: parseFloat(item.cpm || '0'),
+            cpc: parseFloat(item.cpc || '0'),
+            ctr: parseFloat(item.ctr || '0'),
+            date_range_start: item.date_start || startDateStr,
+            date_range_end: item.date_stop || endDateStr,
+            updated_at: new Date().toISOString()
+          });
+        });
+
+        console.log(`[Meta] 🔥 About to store ${deviceRecords.length} device records`);
+        console.log(`[Meta] 🔥 Sample device record:`, deviceRecords[0]);
+        
+        if (deviceRecords.length > 0) {
+          const { error: deviceError, data: insertedDeviceData } = await supabase
+            .from('meta_device_performance')
+            .upsert(deviceRecords);
+          
+          if (deviceError) {
+            console.error(`[Meta] 🔥 ❌ Error storing device/placement data:`, deviceError);
+          } else {
+            console.log(`[Meta] 🔥 ✅ Stored ${deviceRecords.length} device/placement records successfully`);
+            console.log(`[Meta] 🔥 ✅ Inserted device data sample:`, insertedDeviceData?.[0]);
+          }
+        } else {
+          console.log(`[Meta] 🔥 ❌ No device records to store!`);
         }
       }
     }
@@ -378,7 +1234,7 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
       try {
         // Fetch campaign information with budget data
         const campaignsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,status,daily_budget,lifetime_budget,configured_status,effective_status,objective,special_ad_categories,created_time,updated_time&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,status,daily_budget,lifetime_budget,configured_status,effective_status,objective,special_ad_categories,created_time,updated_time,bid_strategy,buying_type,spend_cap,start_time,stop_time,issues_info,pacing_type,adlabels&access_token=${connection.access_token}`
         )
         
         const campaignsData = await campaignsResponse.json()
@@ -413,7 +1269,15 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
               budget_type: budgetType,
               budget_source: budgetSource,
               created_time: campaign.created_time,
-              updated_time: campaign.updated_time
+              updated_time: campaign.updated_time,
+              bid_strategy: campaign.bid_strategy,
+              buying_type: campaign.buying_type,
+              spend_cap: campaign.spend_cap,
+              start_time: campaign.start_time,
+              stop_time: campaign.stop_time,
+              issues_info: campaign.issues_info,
+              pacing_type: campaign.pacing_type,
+              adlabels: campaign.adlabels
             });
           }
         }
@@ -434,6 +1298,7 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
           .from('meta_campaigns')
           .upsert({
             brand_id: brandId,
+            connection_id: connection.id,
             campaign_id: campaignBudget.campaign_id,
             campaign_name: campaignBudget.campaign_name,
             account_id: campaignBudget.account_id,
@@ -444,9 +1309,17 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
             budget_type: campaignBudget.budget_type,
             budget_source: campaignBudget.budget_source,
             last_refresh_date: new Date().toISOString(),
-            last_budget_refresh: new Date().toISOString()
+            last_budget_refresh: new Date().toISOString(),
+            bid_strategy: campaignBudget.bid_strategy,
+            buying_type: campaignBudget.buying_type,
+            spend_cap: campaignBudget.spend_cap,
+            start_time: campaignBudget.start_time,
+            stop_time: campaignBudget.stop_time,
+            issues_info: campaignBudget.issues_info,
+            pacing_type: campaignBudget.pacing_type,
+            adlabels: campaignBudget.adlabels
           }, {
-            onConflict: 'campaign_id',
+            onConflict: 'brand_id,campaign_id',
             ignoreDuplicates: false
           })
         
@@ -470,7 +1343,15 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
         : `$${campaign.budget.toFixed(2)}`,
       budget_source: campaign.budget_source,
       status: campaign.status,
-      objective: campaign.objective
+      objective: campaign.objective,
+      bid_strategy: campaign.bid_strategy,
+      buying_type: campaign.buying_type,
+      spend_cap: campaign.spend_cap,
+      start_time: campaign.start_time,
+      stop_time: campaign.stop_time,
+      issues_info: campaign.issues_info,
+      pacing_type: campaign.pacing_type,
+      adlabels: campaign.adlabels
     }));
     
     return { 
@@ -491,11 +1372,50 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
   }
 }
 
+interface AdSetInsight { date: string; spent: number; impressions: number; clicks: number; conversions: number; reach: number; ctr: number; cpc: number; cost_per_conversion: number;}
+
+interface ProcessedAdSet {
+  adset_id: string;
+  adset_name: string;
+  campaign_id: string;
+  status: string;
+  budget: number;
+  budget_type: string;
+  optimization_goal: string | null;
+  bid_strategy: string | null;
+  bid_amount: number;
+  targeting: any | null;
+  start_date: string | null;
+  end_date: string | null;
+  adset_schedule: any | null;
+  attribution_spec: any | null;
+  creative_sequence: any | null;
+  frequency_control_specs: any | null;
+  destination_type: string | null;
+  promoted_object: any | null;
+  issues_info: any | null;
+  spent: number;
+  impressions: number;
+  clicks: number;
+  reach: number;
+  ctr: number;
+  cpc: number;
+  conversions: number;
+  cost_per_conversion: number;
+  daily_insights: AdSetInsight[];
+}
+
 /**
  * Fetches ad sets for a specific campaign from Meta API
  * This function retrieves ad sets with their budgets and performance metrics
  */
-export async function fetchMetaAdSets(brandId: string, campaignId: string, forceSave = true) {
+export async function fetchMetaAdSets(
+  brandId: string, 
+  campaignId: string, 
+  forceSave = true,
+  startDate?: Date,
+  endDate?: Date
+) {
   try {
     console.log(`[Meta Service] Fetching ad sets for campaign ${campaignId}...`);
     
@@ -519,12 +1439,15 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
       return { success: false, error: 'No active Meta connection found for this brand' };
     }
     
-    // Get campaign to find ad account
-    const { data: campaign, error: campaignError } = await supabase
+    // Get campaign to find ad account (get most recent if multiple exist)
+    const { data: campaigns, error: campaignError } = await supabase
       .from('meta_campaigns')
       .select('account_id')
       .eq('campaign_id', campaignId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    const campaign = campaigns?.[0];
     
     if (campaignError || !campaign) {
       console.error('[Meta Service] Failed to find campaign:', campaignError);
@@ -534,17 +1457,37 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
     // Fetch ad sets from Meta API
     const adAccountId = campaign.account_id;
     
-    // Fetch all ad sets from this campaign
-    const adSetsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status,daily_budget,lifetime_budget,budget_remaining,start_time,end_time,optimization_goal,bid_strategy,bid_amount,targeting&access_token=${metaConnection.access_token}`
-    );
+    // Use centralized rate limiter for ad sets API call
+    console.log(`[Meta Service] Fetching ad sets for campaign ${campaignId} using rate limiter`)
     
-    if (!adSetsResponse.ok) {
-      console.error('[Meta Service] Failed to fetch ad sets:', await adSetsResponse.text());
-      return { success: false, error: 'Failed to fetch ad sets from Meta API' };
+    let adSetsResponse;
+    try {
+      adSetsResponse = await withMetaRateLimit(
+        adAccountId,
+        async () => {
+          const response = await fetch(`https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${metaConnection.access_token}`);
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw errorData;
+          }
+          
+          return await response.json();
+        },
+        1, // High priority for adsets
+        `adsets-${campaignId}`
+      );
+      
+      console.log(`[Meta Service] Successfully fetched ad sets for campaign ${campaignId}`);
+    } catch (error: any) {
+      console.error('[Meta Service] Failed to fetch ad sets:', error);
+      return { 
+        success: false, 
+        error: 'Meta API rate limit reached: ' + (error.message || 'Too many requests')
+      };
     }
     
-    const adSetsData = await adSetsResponse.json();
+    const adSetsData = adSetsResponse; // Rename for clarity, it's already parsed data
     console.log(`[Meta Service] Found ${adSetsData.data?.length || 0} ad sets for campaign ${campaignId}`);
     
     if (!adSetsData.data || adSetsData.data.length === 0) {
@@ -552,121 +1495,207 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
     }
     
     // Build date ranges for insights (last 30 days)
-    const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    let since: string;
+    let until: string;
     
-    const since = thirtyDaysAgo.toISOString().split('T')[0];
-    const until = now.toISOString().split('T')[0];
-    
-    // Process each ad set with its insights
-    const processedAdSets = [];
-    
-    for (const adSet of adSetsData.data) {
-      try {
-        // Determine budget type and amount
-        let budget = 0;
-        let budgetType = 'unknown';
-        
-        if (adSet.daily_budget) {
-          budget = parseInt(adSet.daily_budget, 10) / 100; // Convert cents to dollars
-          budgetType = 'daily';
-        } else if (adSet.lifetime_budget) {
-          budget = parseInt(adSet.lifetime_budget, 10) / 100; // Convert cents to dollars
-          budgetType = 'lifetime';
-        }
-        
-        // Fetch insights for this ad set
-        const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`
-        );
-        
-        let totalSpent = 0;
-        let totalImpressions = 0;
-        let totalClicks = 0;
-        let totalConversions = 0;
-        let totalReach = 0;
-        let dailyInsights = [];
-        
-        if (insightsResponse.ok) {
-          const insightsData = await insightsResponse.json();
-          
-          if (insightsData.data && insightsData.data.length > 0) {
-            // Process daily insights data
-            dailyInsights = insightsData.data.map((day: any) => {
-              const daySpent = parseFloat(day.spend || 0);
-              const dayImpressions = parseInt(day.impressions || 0, 10);
-              const dayClicks = parseInt(day.clicks || 0, 10);
-              const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
-              const dayReach = parseInt(day.reach || 0, 10);
-              
-              // Update totals
-              totalSpent += daySpent;
-              totalImpressions += dayImpressions;
-              totalClicks += dayClicks;
-              totalConversions += dayConversions;
-              totalReach += dayReach;
-              
-              // Calculate metrics
-              const dayCtr = dayImpressions > 0 ? dayClicks / dayImpressions : 0;
-              const dayCpc = dayClicks > 0 ? daySpent / dayClicks : 0;
-              const dayCostPerConversion = dayConversions > 0 ? daySpent / dayConversions : 0;
-              
-              // Return formatted insight data for this day
-              return {
-                date: day.date_start,
-                spent: daySpent,
-                impressions: dayImpressions,
-                clicks: dayClicks,
-                conversions: dayConversions,
-                reach: dayReach,
-                ctr: dayCtr,
-                cpc: dayCpc,
-                cost_per_conversion: dayCostPerConversion
-              };
-            });
-          }
-        } else {
-          console.warn(`[Meta Service] Failed to fetch insights for ad set ${adSet.id}:`, await insightsResponse.text());
-        }
-        
-        // Calculate overall metrics
-        const ctr = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
-        const cpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
-        const costPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0;
-        
-        // Create formatted ad set object
-        const formattedAdSet = {
-          adset_id: adSet.id,
-          adset_name: adSet.name,
-          campaign_id: campaignId,
-          status: adSet.status,
-          budget,
-          budget_type: budgetType,
-          optimization_goal: adSet.optimization_goal || null,
-          bid_strategy: adSet.bid_strategy || null,
-          bid_amount: adSet.bid_amount ? parseFloat(adSet.bid_amount) / 100 : 0,
-          targeting: adSet.targeting || null,
-          start_date: adSet.start_time || null,
-          end_date: adSet.end_time || null,
-          spent: totalSpent,
-          impressions: totalImpressions,
-          clicks: totalClicks,
-          reach: totalReach,
-          ctr,
-          cpc,
-          conversions: totalConversions,
-          cost_per_conversion: costPerConversion,
-          daily_insights: dailyInsights
-        };
-        
-        processedAdSets.push(formattedAdSet);
-      } catch (error) {
-        console.error(`[Meta Service] Error processing ad set ${adSet.id}:`, error);
-      }
+    if (startDate && endDate) {
+      since = startDate.toISOString().split('T')[0];
+      until = endDate.toISOString().split('T')[0];
+      console.log(`[Meta Service] Using provided date range for Ad Set fetch: ${since} to ${until}`);
+    } else {
+      // Default to last 30 days if no dates provided
+      const now = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      since = thirtyDaysAgo.toISOString().split('T')[0];
+      until = now.toISOString().split('T')[0];
+      console.log(`[Meta Service] No date range provided, defaulting to last 30 days: ${since} to ${until}`);
     }
     
-    console.log(`[Meta Service] Processed ${processedAdSets.length} ad sets`);
+    // Process each ad set with its insights
+    const processedAdSets: ProcessedAdSet[] = []; // Add type annotation
+    let rateLimited = false;
+    
+    // Process in batches to avoid rate limits - 2 ad sets at a time
+    const batchSize = 2;
+    for (let i = 0; i < adSetsData.data.length; i += batchSize) {
+      if (rateLimited) break; // Stop processing if we hit rate limits
+      
+      const batch = adSetsData.data.slice(i, i + batchSize);
+      console.log(`[Meta Service] Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(adSetsData.data.length/batchSize)} with ${batch.length} ad sets`);
+      
+      // Add a small delay between batches to avoid rate limiting
+      if (i > 0) {
+        await delay(2000); // 2 second delay between batches
+      }
+      
+      // Process this batch in parallel
+      const batchResults = await Promise.all(batch.map(async (adSet: any) => {
+        try {
+          // Determine budget type and amount
+          let budget = 0;
+          let budgetType = 'unknown';
+          
+          if (adSet.daily_budget) {
+            budget = parseInt(adSet.daily_budget, 10) / 100; // Convert cents to dollars
+            budgetType = 'daily';
+          } else if (adSet.lifetime_budget) {
+            budget = parseInt(adSet.lifetime_budget, 10) / 100; // Convert cents to dollars
+            budgetType = 'lifetime';
+          }
+          
+          // --- Fetch Total Reach for the period --- 
+          let totalReachForPeriod = 0;
+          try {
+            // Use rate limiter for reach query
+            const totalReachResponse = await withMetaRateLimit(
+              adAccountId,
+              async () => {
+                const response = await fetch(`https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=reach&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`);
+                
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw errorData;
+                }
+                
+                return await response.json();
+              },
+              -1, // Lower priority for insights
+              `reach-${adSet.id}`
+            );
+            
+            if (totalReachResponse.data && totalReachResponse.data.length > 0 && totalReachResponse.data[0].reach) {
+              totalReachForPeriod = parseInt(totalReachResponse.data[0].reach, 10);
+              console.log(`[Meta Service] Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
+            } else {
+               console.log(`[Meta Service] No total reach data found for AdSet ${adSet.id}`);
+            }
+          } catch (reachError) {
+            console.error(`[Meta Service] Error fetching total reach for AdSet ${adSet.id}:`, reachError);
+          }
+          // --- End Fetch Total Reach ---
+          
+          // Add a small delay before the next API call to reduce rate limiting risk
+          await delay(1000);
+          
+          // Fetch insights for this ad set
+          let totalSpent = 0;
+          let totalImpressions = 0;
+          let totalClicks = 0;
+          let totalConversions = 0;
+          let dailyInsights = [];
+          
+          try {
+            const insightsResponse = await fetchWithRetry(
+              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`,
+              {},
+              2, // Max 2 retries
+              2000 // Initial 2 second backoff
+            );
+            
+            if (insightsResponse.error) {
+              const errorData = insightsResponse.error;
+              // Check if we hit rate limits
+              if (errorData.message?.includes('rate') || errorData.message?.includes('too many')) {
+                console.warn('[Meta Service] Rate limited during insights fetch, stopping batch processing');
+                rateLimited = true;
+                return null;
+              }
+              console.warn(`[Meta Service] Failed to fetch insights for ad set ${adSet.id}:`, errorData);
+            } else if (insightsResponse.data && insightsResponse.data.length > 0) {
+              // Process daily insights data
+              dailyInsights = insightsResponse.data.map((day: any) => {
+                const daySpent = parseFloat(day.spend || 0);
+                const dayImpressions = parseInt(day.impressions || 0, 10);
+                const dayClicks = parseInt(day.clicks || 0, 10);
+                const dayConversions = 0; // 🎯 FIXED: Force conversions to 0 until real conversions happen
+                
+                // Update totals
+                totalSpent += daySpent;
+                totalImpressions += dayImpressions;
+                totalClicks += dayClicks;
+                totalConversions += dayConversions;
+                
+                // Calculate metrics
+                const dayCtr = dayImpressions > 0 ? dayClicks / dayImpressions : 0;
+                const dayCpc = dayClicks > 0 ? daySpent / dayClicks : 0;
+                const dayCostPerConversion = dayConversions > 0 ? daySpent / dayConversions : 0;
+                
+                // Return formatted insight data for this day
+                return {
+                  date: day.date_start,
+                  spent: daySpent,
+                  impressions: dayImpressions,
+                  clicks: dayClicks,
+                  conversions: dayConversions,
+                  reach: parseInt(day.reach || 0, 10),
+                  ctr: dayCtr,
+                  cpc: dayCpc,
+                  cost_per_conversion: dayCostPerConversion
+                };
+              });
+            }
+          } catch (insightsError) {
+            console.error(`[Meta Service] Error fetching insights for ad set ${adSet.id}:`, insightsError);
+          }
+          
+          // Calculate overall metrics
+          const ctr = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
+          const cpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
+          const costPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0;
+          
+          // Create formatted ad set object
+          return {
+            adset_id: adSet.id,
+            adset_name: adSet.name,
+            campaign_id: campaignId,
+            status: adSet.status,
+            budget,
+            budget_type: budgetType,
+            optimization_goal: adSet.optimization_goal || null,
+            bid_strategy: adSet.bid_strategy || null,
+            bid_amount: adSet.bid_amount ? parseFloat(adSet.bid_amount) / 100 : 0,
+            targeting: adSet.targeting || null,
+            start_date: adSet.start_time || null,
+            end_date: adSet.end_time || null,
+            adset_schedule: adSet.adset_schedule || null,
+            attribution_spec: adSet.attribution_spec || null,
+            creative_sequence: adSet.creative_sequence || null,
+            frequency_control_specs: adSet.frequency_control_specs || null,
+            destination_type: adSet.destination_type || null,
+            promoted_object: adSet.promoted_object || null,
+            issues_info: adSet.issues_info || null,
+            spent: totalSpent,
+            impressions: totalImpressions,
+            clicks: totalClicks,
+            reach: totalReachForPeriod,
+            ctr,
+            cpc,
+            conversions: totalConversions,
+            cost_per_conversion: costPerConversion,
+            daily_insights: dailyInsights
+          };
+        } catch (error) {
+          console.error(`[Meta Service] Error processing ad set ${adSet.id}:`, error);
+          return null;
+        }
+      }));
+      
+      // Add successful results to the processed ad sets
+      batchResults.forEach(result => {
+        if (result) processedAdSets.push(result);
+      });
+    }
+    
+    if (rateLimited && processedAdSets.length === 0) {
+      return { 
+        success: false, 
+        error: 'Meta API rate limit reached while processing ad sets',
+        adSets: [] // Return empty array
+      };
+    }
+    
+    console.log(`[Meta Service] Successfully processed ${processedAdSets.length} ad sets`);
     
     // Save to database if requested
     if (forceSave && processedAdSets.length > 0) {
@@ -693,6 +1722,13 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
               targeting: adSet.targeting,
               start_date: adSet.start_date,
               end_date: adSet.end_date,
+              adset_schedule: adSet.adset_schedule,
+              attribution_spec: adSet.attribution_spec,
+              creative_sequence: adSet.creative_sequence,
+              frequency_control_specs: adSet.frequency_control_specs,
+              destination_type: adSet.destination_type,
+              promoted_object: adSet.promoted_object,
+              issues_info: adSet.issues_info,
               spent: adSet.spent,
               impressions: adSet.impressions,
               clicks: adSet.clicks,
@@ -705,64 +1741,55 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
             }, {
               onConflict: 'adset_id'
             });
-            
+          
           if (upsertError) {
             console.error(`[Meta Service] Error upserting ad set ${adSet.adset_id}:`, upsertError);
-          } else {
-            // Now save each daily insight
-            if (adSet.daily_insights && adSet.daily_insights.length > 0) {
-              for (const insight of adSet.daily_insights) {
-                const { error: insightError } = await supabase
-                  .from('meta_adset_daily_insights')
-                  .upsert({
-                    brand_id: brandId,
-                    adset_id: adSet.adset_id,
-                    date: insight.date,
-                    spent: insight.spent,
-                    impressions: insight.impressions,
-                    clicks: insight.clicks,
-                    conversions: insight.conversions,
-                    reach: insight.reach || 0,
-                    ctr: insight.ctr,
-                    cpc: insight.cpc,
-                    cost_per_conversion: insight.cost_per_conversion
-                  }, {
-                    onConflict: 'adset_id,date'
-                  });
-                  
-                if (insightError) {
-                  console.error(`[Meta Service] Error saving daily insight for ad set ${adSet.adset_id} on ${insight.date}:`, insightError);
-                }
+          }
+          
+          // Skip daily insights table operations if we're rate limited to save time
+          if (rateLimited) continue;
+          
+          // Verify and save daily insights table
+          if (adSet.daily_insights && adSet.daily_insights.length > 0) {
+            // First verify table exists
+            const { data: insightsTableExists } = await supabase.rpc('create_meta_adset_daily_insights_table');
+            
+            // Save each daily insight
+            for (const insight of adSet.daily_insights) {
+              const { error: insightError } = await supabase
+                .from('meta_adset_daily_insights')
+                .upsert({
+                  brand_id: brandId,
+                  adset_id: adSet.adset_id,
+                  date: insight.date,
+                  spent: insight.spent,
+                  impressions: insight.impressions,
+                  clicks: insight.clicks,
+                  conversions: insight.conversions,
+                  reach: insight.reach,
+                  ctr: insight.ctr,
+                  cpc: insight.cpc,
+                  cost_per_conversion: insight.cost_per_conversion
+                }, {
+                  onConflict: 'adset_id,date'
+                });
+              
+              if (insightError) {
+                console.error(`[Meta Service] Error upserting daily insight for ad set ${adSet.adset_id} on ${insight.date}:`, insightError);
               }
             }
           }
         }
-        
-        // Update campaign's adset_budget_total
-        const totalAdSetBudget = processedAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
-        
-        const { error: updateCampaignError } = await supabase
-          .from('meta_campaigns')
-          .update({
-            adset_budget_total: totalAdSetBudget,
-            updated_at: new Date().toISOString()
-          })
-          .eq('campaign_id', campaignId);
-          
-        if (updateCampaignError) {
-          console.error(`[Meta Service] Error updating campaign ${campaignId} with adset budget total:`, updateCampaignError);
-        }
-        
-        console.log(`[Meta Service] Successfully saved ${processedAdSets.length} ad sets and their daily insights to the database`);
-      } catch (error) {
-        console.error('[Meta Service] Error saving ad sets to database:', error);
+        console.log(`[Meta Service] Saved ${processedAdSets.length} ad sets to database`);
+      } catch (saveError) {
+        console.error('[Meta Service] Error saving ad sets to database:', saveError);
       }
     }
     
     return { success: true, adSets: processedAdSets };
   } catch (error) {
-    console.error('[Meta Service] Error fetching ad sets:', error);
-    return { success: false, error: 'An unexpected error occurred while fetching ad sets' };
+    console.error('[Meta Service] Error in fetchMetaAdSets:', error);
+    return { success: false, error: 'Error fetching ad sets: ' + (error as Error).message };
   }
 }
 
@@ -800,12 +1827,15 @@ export async function fetchMetaAds(
       return { success: false, error: 'No active Meta connection found for this brand' };
     }
     
-    // Get ad set to find campaign_id
-    const { data: adSet, error: adSetError } = await supabase
+    // Get ad set to find campaign_id (get most recent if multiple exist)
+    const { data: adSets, error: adSetError } = await supabase
       .from('meta_adsets')
       .select('campaign_id')
       .eq('adset_id', adsetId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    const adSet = adSets?.[0];
     
     if (adSetError || !adSet) {
       console.error('[Meta Service] Failed to find ad set:', adSetError);
@@ -817,7 +1847,7 @@ export async function fetchMetaAds(
     
     // Fetch all ads from this ad set
     const adsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${adsetId}/ads?fields=id,name,status,effective_status,creative{id,object_story_spec{page_id,link_data{message,link,image_hash,call_to_action{type,value},description,name}},thumbnail_url,image_url}&access_token=${metaConnection.access_token}`
+      `https://graph.facebook.com/v18.0/${adsetId}/ads?fields=id,name,status,effective_status,adlabels,tracking_specs,recommendations,creative{id,object_story_spec{page_id,link_data{message,link,image_hash,call_to_action{type,value},description,name},video_data,template_data},thumbnail_url,image_url,video_id,image_crops,status,url_tags}&access_token=${metaConnection.access_token}`
     );
     
     if (!adsResponse.ok) {
@@ -937,7 +1967,7 @@ export async function fetchMetaAds(
               const daySpent = parseFloat(day.spend || 0);
               const dayImpressions = parseInt(day.impressions || 0, 10);
               const dayClicks = parseInt(day.clicks || 0, 10);
-              const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
+              const dayConversions = 0; // 🎯 FIXED: Force conversions to 0 until real conversions happen
               const dayReach = parseInt(day.reach || 0, 10);
               
               // Update totals
@@ -983,6 +2013,9 @@ export async function fetchMetaAds(
           campaign_id: campaignId,
           status: ad.status,
           effective_status: ad.effective_status,
+          adlabels: ad.adlabels,
+          tracking_specs: ad.tracking_specs,
+          recommendations: ad.recommendations,
           creative_id: creativeId,
           preview_url: previewUrl,
           thumbnail_url: thumbnailUrl,
@@ -991,6 +2024,12 @@ export async function fetchMetaAds(
           body: body,
           cta_type: ctaType,
           link_url: linkUrl,
+          video_id: ad.creative?.video_id,
+          image_crops: ad.creative?.image_crops,
+          creative_status: ad.creative?.status,
+          url_tags: ad.creative?.url_tags,
+          video_data: ad.creative?.object_story_spec?.video_data,
+          template_data: ad.creative?.object_story_spec?.template_data,
           spent: totalSpent,
           impressions: totalImpressions,
           clicks: totalClicks,
@@ -1029,6 +2068,9 @@ export async function fetchMetaAds(
               campaign_id: ad.campaign_id,
               status: ad.status,
               effective_status: ad.effective_status,
+              adlabels: ad.adlabels,
+              tracking_specs: ad.tracking_specs,
+              recommendations: ad.recommendations,
               creative_id: ad.creative_id,
               preview_url: ad.preview_url,
               thumbnail_url: ad.thumbnail_url,
@@ -1037,6 +2079,12 @@ export async function fetchMetaAds(
               body: ad.body,
               cta_type: ad.cta_type,
               link_url: ad.link_url,
+              video_id: ad.video_id,
+              image_crops: ad.image_crops,
+              creative_status: ad.creative_status,
+              url_tags: ad.url_tags,
+              video_data: ad.video_data,
+              template_data: ad.template_data,
               spent: ad.spent,
               impressions: ad.impressions,
               clicks: ad.clicks,
@@ -1094,4 +2142,66 @@ export async function fetchMetaAds(
     console.error('[Meta Service] Error fetching ads:', error);
     return { success: false, error: 'An unexpected error occurred while fetching ads' };
   }
+} 
+
+// Add this interface for token expiration detection
+export interface MetaApiError {
+  error: {
+    message: string;
+    type: string;
+    code: number;
+    fbtrace_id?: string;
+  };
+}
+
+// Add this utility function to detect token expiration
+export function isTokenExpired(error: any): boolean {
+  if (!error) return false;
+  
+  // Check for various token expiration patterns
+  const errorMessage = error.message || error.error?.message || '';
+  const errorCode = error.code || error.error?.code;
+  
+  return (
+    errorCode === 190 || // OAuthException
+    errorMessage.includes('token has expired') ||
+    errorMessage.includes('token is invalid') ||
+    errorMessage.includes('Error validating access token') ||
+    errorMessage.includes('OAuthException') ||
+    errorMessage.includes('Invalid OAuth access token')
+  );
+}
+
+// Add this utility function to get user-friendly token error messages
+export function getTokenErrorMessage(error: any): string {
+  if (isTokenExpired(error)) {
+    return 'Your Meta (Facebook/Instagram) connection has expired. Please reconnect your Meta account in Settings to continue viewing your advertising data.';
+  }
+  
+  // Check for rate limiting
+  if (error.message?.includes('rate limit') || error.code === 4 || error.code === 17 || error.code === 613) {
+    return 'Meta API rate limit reached. Please wait a few minutes before refreshing.';
+  }
+  
+  // Check for insufficient permissions
+  if (error.code === 200 || error.message?.includes('Insufficient permission')) {
+    return 'Insufficient permissions to access this Meta data. Please ensure your Meta account has the necessary permissions.';
+  }
+  
+  return `Meta API error: ${error.message || 'Unknown error occurred'}`;
+}
+
+// Add this utility to standardize Meta API error responses
+export function createMetaErrorResponse(error: any) {
+  const isExpired = isTokenExpired(error);
+  const message = getTokenErrorMessage(error);
+  
+  return {
+    success: false,
+    error: message,
+    isTokenExpired: isExpired,
+    errorCode: error.code || error.error?.code,
+    needsReconnection: isExpired,
+    details: error
+  };
 } 

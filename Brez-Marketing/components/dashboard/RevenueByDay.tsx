@@ -28,7 +28,7 @@ import {
   subMonths,
   formatISO
 } from "date-fns"
-import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -146,30 +146,24 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       // Process the orders into sales data
       const processedData = orders.map((order: { created_at: string; total_price: string; id: string }) => {
         try {
-          // Get the user's timezone
-          const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          
-          // Parse the UTC date from the order
+          // Parse the date from the order (it should already be in the correct timezone)
           const orderDate = parseISO(order.created_at);
           
-          // Convert to the user's local timezone
-          const zonedDate = toZonedTime(orderDate, userTimeZone);
-          
-          // Format directly in the target timezone
-          const localTimeStr = formatInTimeZone(orderDate, userTimeZone, 'yyyy-MM-dd HH:mm:ss');
-          const localHour = formatInTimeZone(orderDate, userTimeZone, 'HH');
+          // Format in user's local timezone  
+          const localTimeStr = format(orderDate, 'yyyy-MM-dd HH:mm:ss');
+          const localHour = format(orderDate, 'HH');
           
           // Log detailed conversion information
           console.log(`Order conversion:
             - Original ISO: ${order.created_at}
-            - Parsed UTC: ${format(orderDate, 'yyyy-MM-dd HH:mm:ss')}
-            - Formatted in ${userTimeZone}: ${localTimeStr}
-            - Hour in local time: ${localHour}
+            - Parsed: ${format(orderDate, 'yyyy-MM-dd HH:mm:ss')}
+            - Local time: ${localTimeStr}
+            - Hour: ${localHour}
           `);
           
           return {
             date: order.created_at, // Keep the original ISO string
-            zonedDate: zonedDate,   // Store the timezone-adjusted date
+            zonedDate: orderDate,   // Store the parsed date
             localTimeStr: localTimeStr, // Store the formatted local time string
             localHour: localHour,   // Store the local hour for grouping
             revenue: parseFloat(order.total_price || '0'),
@@ -287,8 +281,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       enhancedData.push({
         date: format(today, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
         zonedDate: today,
-        localTimeStr: formatInTimeZone(today, userTimeZone, 'yyyy-MM-dd HH:mm:ss'),
-        localHour: formatInTimeZone(today, userTimeZone, 'HH'),
+                    localTimeStr: format(today, 'yyyy-MM-dd HH:mm:ss'),
+            localHour: format(today, 'HH'),
         revenue: 0,
         id: `generated-today-${Date.now()}`
       });
@@ -302,8 +296,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       enhancedData.push({
         date: format(yesterday, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
         zonedDate: yesterday,
-        localTimeStr: formatInTimeZone(yesterday, userTimeZone, 'yyyy-MM-dd HH:mm:ss'),
-        localHour: formatInTimeZone(yesterday, userTimeZone, 'HH'),
+                    localTimeStr: format(yesterday, 'yyyy-MM-dd HH:mm:ss'),
+            localHour: format(yesterday, 'HH'),
         revenue: 0,
         id: `generated-yesterday-${Date.now()}`
       });
@@ -334,8 +328,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         if (sale.localHour) {
           // Check if the sale is from today in the user's timezone
           const saleDate = parseISO(sale.date);
-          const todayStr = formatInTimeZone(today, userTimeZone, 'yyyy-MM-dd');
-          const saleDateStr = formatInTimeZone(saleDate, userTimeZone, 'yyyy-MM-dd');
+          const todayStr = format(today, 'yyyy-MM-dd');
+          const saleDateStr = format(saleDate, 'yyyy-MM-dd');
           
           if (todayStr === saleDateStr) {
             key = sale.localHour;
@@ -368,15 +362,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         } else {
           // Fallback if neither localHour nor zonedDate is available
           const saleDate = parseISO(sale.date);
-          const localHour = formatInTimeZone(saleDate, userTimeZone, 'HH');
-          const todayStr = formatInTimeZone(today, userTimeZone, 'yyyy-MM-dd');
-          const saleDateStr = formatInTimeZone(saleDate, userTimeZone, 'yyyy-MM-dd');
+          const localHour = format(saleDate, 'HH');
+          const todayStr = format(today, 'yyyy-MM-dd');
+          const saleDateStr = format(saleDate, 'yyyy-MM-dd');
           
           if (todayStr === saleDateStr) {
             key = localHour;
-            console.log(`Fallback grouping to hour ${key} using formatInTimeZone:
+            console.log(`Fallback grouping to hour ${key}:
               - Original date: ${sale.date}
-              - Local time: ${formatInTimeZone(saleDate, userTimeZone, 'yyyy-MM-dd HH:mm:ss')}
+              - Local time: ${format(saleDate, 'yyyy-MM-dd HH:mm:ss')}
               - Timezone: ${userTimeZone}
             `);
           } else {

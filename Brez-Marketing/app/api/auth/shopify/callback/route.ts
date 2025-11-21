@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 
 export async function GET(request: Request) {
@@ -36,6 +36,7 @@ export async function GET(request: Request) {
     const { access_token } = await tokenResponse.json()
 
     // Save the connection to Supabase
+    const supabase = getSupabaseClient()
     const { error } = await supabase
       .from('platform_connections')
       .insert([{

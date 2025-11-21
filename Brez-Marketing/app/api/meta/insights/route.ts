@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import axios from 'axios'
 
 export async function GET(request: Request) {
@@ -11,8 +11,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get Meta access token from Supabase
-    const { data: connection, error } = await supabase
+      // Get Meta access token from Supabase
+  const supabase = getSupabaseClient()
+  const { data: connection, error } = await supabase
       .from('platform_connections')
       .select('access_token')
       .eq('brand_id', brandId)

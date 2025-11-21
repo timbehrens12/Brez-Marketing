@@ -10,142 +10,82 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const from = url.searchParams.get('from')
-    const to = url.searchParams.get('to')
-    
-    // Log the request
-    console.log(`COST PER RESULT API: Fetching for brand ${brandId} from ${from} to ${to}`)
-    
-    // Validate required parameters
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    const isYesterdayPreset = preset === 'yesterday'
+
+    console.log(`COST_PER_RESULT SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+
+    if (!brandId || !fromDate || !toDate) {
+      return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
     
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Date range is required' }, { status: 400 })
-    }
-    
-    // Initialize Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Get Meta connection
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
+    if (isYesterdayPreset) {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate 
+      console.log(`COST_PER_RESULT SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
+    }
+
+    // Cost Per Result = Spend / Results (Conversions)
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_campaign_daily_stats') 
+      .select('date, spend, conversions') // Need spend and conversions (as results)
       .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
+      .gte('date', fromDate)
+      .lte('date', toDate)
     
-    if (connectionError) {
-      console.log(`Error retrieving Meta connection: ${JSON.stringify(connectionError)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta connection' }, { status: 500 })
+    if (dbError) {
+      console.error(`COST_PER_RESULT SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
-    if (!connection) {
-      console.log(`No active Meta connection found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
+    let filteredStats = dailyStats || []
+    if (isYesterdayPreset) { 
+      filteredStats = filteredStats.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
+      })
     }
     
-    // Query meta_ad_insights including the actions array, spend, and cost_per_result
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
-      .select('date, actions, spend, results, cost_per_result')
-      .eq('connection_id', connection.id)
-      .gte('date', from)
-      .lte('date', to)
-    
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
-    }
-    
-    // If no data, return zeros
-    if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
+    if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: {
-          from,
-          to,
-          records: 0
-        }
-      })
-    }
-    
-    // Get average cost per result from stored values
-    let totalCPR = 0
-    let validRecords = 0
-    
-    insights.forEach(insight => {
-      if (insight.cost_per_result != null && insight.cost_per_result > 0) {
-        totalCPR += parseFloat(insight.cost_per_result.toString())
-        validRecords++
-      }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
     })
-    
-    // Calculate average cost per result
-    let avgCPR = 0
-    if (validRecords > 0) {
-      avgCPR = totalCPR / validRecords
-    } else {
-      // Fallback calculation if no stored CPR values found
-      // This handles the case where data exists but was imported before we added the trigger
-      let totalSpend = 0
-      let totalResults = 0
-      
-      insights.forEach(insight => {
-        // Add up the spend
-        totalSpend += parseFloat(insight.spend) || 0
-        
-        // Use stored results value if available, otherwise calculate from actions
-        if (insight.results > 0) {
-          totalResults += insight.results
-        } else {
-          // Calculate results from actions array
-          if (insight.actions && Array.isArray(insight.actions)) {
-            insight.actions.forEach((action: any) => {
-              if (
-                action.action_type === 'purchase' || 
-                action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-                action.action_type === 'omni_purchase' ||
-                action.action_type === 'lead' ||
-                action.action_type === 'offsite_conversion.fb_pixel_lead' ||
-                action.action_type === 'complete_registration'
-              ) {
-                const value = parseFloat(action.value) || 0
-                totalResults += value
-              }
-            })
-          }
-        }
-      })
-      
-      if (totalResults > 0) {
-        avgCPR = totalSpend / totalResults
-      }
     }
+
+    const totalSpend = filteredStats.reduce((sum, item) => {
+      const spendVal = parseFloat(item.spend || '0')
+      return sum + (isNaN(spendVal) ? 0 : spendVal)
+    }, 0)
+
+    const totalResults = filteredStats.reduce((sum, item) => {
+      const resultsVal = parseInt(item.conversions || '0') // Assuming 'conversions' is the count of results
+      return sum + (isNaN(resultsVal) ? 0 : resultsVal)
+    }, 0)
     
-    // Return the result
+    const costPerResultValue = totalResults > 0 ? totalSpend / totalResults : 0;
+
     const result = {
-      value: parseFloat(avgCPR.toFixed(2)),
+      value: parseFloat(costPerResultValue.toFixed(2)),
       _meta: {
-        from,
-        to,
-        records: insights.length,
-        source: validRecords > 0 ? 'database' : 'calculated',
-        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        from: fromDate,
+        to: toDate,
+        records: filteredStats.length,
+        source: 'meta_campaign_daily_stats'
       }
     }
-    
-    console.log(`COST PER RESULT API: Returning CPR = ${result.value}, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
-    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Cost Per Result metric endpoint:', error)
+    console.error('COST_PER_RESULT SINGLE METRIC API: Error in endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

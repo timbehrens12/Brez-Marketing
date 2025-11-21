@@ -71,39 +71,19 @@ export function StoreConnectButton({ onConnect, isConnected, connectionId }: Sto
 
   const handleDisconnect = async () => {
     try {
-      const supabase = useSupabase()
+      // Use the proper disconnect API instead of direct database access
+      const response = await fetch('/api/disconnect-platform/force', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          brandId: connectionId, // Assuming connectionId is the brandId here
+          platformType: 'shopify' 
+        }),
+      })
       
-      // First delete orders
-      const { error: ordersError } = await supabase
-        .from('shopify_orders')
-        .delete()
-        .match({ connection_id: connectionId })
-
-      if (ordersError) {
-        console.error('Error deleting orders:', ordersError)
-        throw ordersError
-      }
-
-      // Then delete metrics
-      const { error: metricsError } = await supabase
-        .from('metrics')
-        .delete()
-        .match({ connection_id: connectionId })
-
-      if (metricsError) {
-        console.error('Error deleting metrics:', metricsError)
-        throw metricsError
-      }
-
-      // Finally delete connection
-      const { error: connectionError } = await supabase
-        .from('platform_connections')
-        .delete()
-        .match({ id: connectionId })
-
-      if (connectionError) {
-        console.error('Error deleting connection:', connectionError)
-        throw connectionError
+      if (!response.ok) {
+        const responseData = await response.json()
+        throw new Error(responseData.error || 'Failed to disconnect store')
       }
 
       toast.success('Store disconnected successfully')

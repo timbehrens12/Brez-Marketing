@@ -2,14 +2,18 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
-import { MetaTab } from "./tabs/MetaTab"
+import { MetaTab2 } from "./tabs/MetaTab2"
+
+import { AgencyActionCenter } from "../AgencyActionCenter"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useSupabase } from '@/lib/hooks/useSupabase'
+import { useAuth } from '@clerk/nextjs'
 import { defaultMetrics } from "@/lib/defaultMetrics"
-import { ShoppingBag, Facebook, DollarSign } from "lucide-react"
+import { ShoppingBag, Facebook, DollarSign, ClipboardList } from "lucide-react"
+
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricCard } from "@/components/metrics/MetricCard"
@@ -17,6 +21,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
+import { differenceInDays, subDays, startOfDay, endOfDay } from "date-fns"
 
 // Add Window interface to type the global properties
 declare global {
@@ -54,11 +59,13 @@ interface PlatformTabsProps {
   isLoading: boolean
   isRefreshingData?: boolean
   initialDataLoad?: boolean
-  brandId: string
+  brandId: string | null
   connections: PlatformConnection[]
   children?: React.ReactNode
   onTabChange?: (value: string) => void
   brands?: Array<{ id: string, name: string }>
+  isEditMode?: boolean
+  activeTab?: string
 }
 
 // Add type for Supabase order
@@ -83,12 +90,19 @@ export function PlatformTabs({
   connections, 
   children,
   onTabChange,
-  brands = []
+  brands = [],
+  isEditMode,
+  activeTab = "agency"
 }: PlatformTabsProps) {
-  const [activeTab, setActiveTab] = useState<string>("site")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
+  
+  const { userId } = useAuth()
+  
+  // Notification system removed
+  
+
   
   // Add a state to track if we've already processed the metrics to prevent continuous recalculations
   const [metricsProcessed, setMetricsProcessed] = useState(false)
@@ -97,25 +111,30 @@ export function PlatformTabs({
 
   // Create a state to track if tab content is visible, to avoid unnecessary API calls
   const [tabVisibility, setTabVisibility] = useState({
-    site: true,
     shopify: false,
     meta: false,
     tiktok: false,
-    googleads: false
+    googleads: false,
+    agency: true
   });
 
-  // Don't render anything during initial data load
-  if (initialDataLoad) {
+  // Add this before the handleValueChange function
+  // Track when we last dispatched a shopify refresh to prevent duplicates
+  const lastShopifyRefreshRef = useRef<number>(0);
+
+  // If no brand is selected, don't render the tabs
+  if (!brandId) {
+    // This can be a placeholder or null
     return null;
   }
 
   // Update selectedConnection when connections change
   useEffect(() => {
-    const shopifyConnection = connections.find(c => 
+    const shopifyConnection = connections?.find(c => 
       c.platform_type === 'shopify' && c.status === 'active'
     )
     setSelectedConnection(shopifyConnection || null)
-  }, [connections])
+  }, [connections]);
   
   // Memoize the safeMetrics object to prevent recalculation on every render
   const safeMetrics = useMemo(() => {
@@ -158,63 +177,44 @@ export function PlatformTabs({
 
   // Handle tab change with visibility tracking
   const handleValueChange = (value: string) => {
-    setActiveTab(value);
+    // Use the onTabChange prop to update parent state instead of local state
+    if (onTabChange) {
+      onTabChange(value);
+    }
     
-    // If we're leaving the Meta tab, set the global block flag to stop API calls
+    // If we're leaving the Meta tab, set the global block flag to stop API calls temporarily
     if (activeTab === "meta" && value !== "meta") {
+      console.log("[PlatformTabs] Leaving Meta tab, enabling temporary blocking during transition");
+      
       if (window._blockMetaApiCalls !== undefined) {
+        // Only temporarily block Meta API calls
         window._blockMetaApiCalls = true;
         
-        // Store but don't replace the fetch method yet - we'll do it with a delay
-        // to allow any pending debug API calls to complete first
-        const originalFetch = window.fetch;
-        
-        // Set a timeout before patching to allow debug actions to complete
+        // Automatically clear the block flag after a brief delay
+        // This ensures that when we navigate back, we can fetch immediately
         setTimeout(() => {
-          // Only patch if we're still not on the Meta tab
-          if (window.location.href.indexOf('/meta') === -1) {
-            window.fetch = function(input: RequestInfo | URL, init?: RequestInit) {
-              // Convert input to string for checking
-              const url = input.toString();
-              
-              // Check if the request is for the Meta API
-              if (url.includes('/api/metrics/meta')) {
-                // Don't block if it contains debug parameters
-                if (url.includes('force_load=true')) {
-                  console.log('Allowing debug Meta API call:', url);
-                  return originalFetch(input, init);
-                }
-                
-                console.log('Blocking Meta API call after tab change:', url);
-                // Return a resolved promise with an empty response
-                return Promise.resolve(new Response(JSON.stringify({}), {
-                  status: 200,
-                  headers: { 'Content-Type': 'application/json' }
-                }));
-              }
-              
-              // For all other requests, pass through to the original fetch
-              return originalFetch(input, init);
-            };
-            
-            // Restore original fetch after a delay
-            setTimeout(() => {
-              window.fetch = originalFetch;
+          window._blockMetaApiCalls = false;
+          console.log("[PlatformTabs] Navigation transition complete, cleared API blocking flag");
             }, 1000);
           }
-        }, 500); // Give debug actions time to complete
       }
+    
+    // If we're navigating TO the Meta tab, clear the block flag immediately
+    if (value === "meta" && window._blockMetaApiCalls) {
+      console.log("[PlatformTabs] Navigating to Meta tab, clearing API blocking flag");
+      window._blockMetaApiCalls = false;
     }
     
     // Update visibility state for all tabs
     setTabVisibility({
-      site: value === "site",
       shopify: value === "shopify",
       meta: value === "meta",
       tiktok: value === "tiktok",
-      googleads: value === "googleads"
+      googleads: value === "googleads",
+      agency: value === "agency"
     });
     
+    // Notify parent of tab change
     if (onTabChange) {
       onTabChange(value);
     }
@@ -232,59 +232,62 @@ export function PlatformTabs({
     }
     
     return (
-      <MetaTab 
-        dateRange={dateRange}
-        metrics={safeMetrics}
-        isLoading={isLoading}
-        isRefreshingData={isRefreshingData}
-        initialDataLoad={initialDataLoad}
+      <MetaTab2 
         brandId={brandId}
+        brandName={brands?.find(b => b.id === brandId)?.name || "Your Brand"}
+        dateRange={dateRange}
+        connections={connections}
       />
     );
   }
 
+  // Don't render anything during initial data load
+  if (initialDataLoad) {
+    return null;
+  }
+
   return (
-    <Tabs defaultValue="site" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="flex justify-between sm:justify-center items-center sm:space-x-4 w-full max-w-[600px] h-14 mx-auto mb-10 bg-black/30 backdrop-blur-lg border border-zinc-800/40 rounded-2xl p-2 shadow-lg">
+    <Tabs value={activeTab} className="w-full" onValueChange={handleValueChange}>
+      <div className="flex justify-center w-full">
+        <TabsList className="flex justify-center items-center space-x-4 max-w-[700px] h-28 mb-6 bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] backdrop-blur-xl border border-[#333] rounded-3xl p-6 shadow-2xl shadow-black/20">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <TabsTrigger 
-                value="site" 
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
-                  activeTab === "site" 
-                    ? "bg-gradient-to-b from-zinc-800/80 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                value="agency" 
+                className={`relative group rounded-2xl w-28 h-20 transition-all duration-300 ease-out overflow-hidden ${
+                  activeTab === "agency" 
+                    ? "bg-gray-600/30 text-white shadow-lg border border-gray-500/50" 
+                    : "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 hover:shadow-lg border border-transparent hover:border-gray-600/30"
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center relative">
                   <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
-                      activeTab === "site" 
+                    className={`relative w-10 h-10 flex items-center justify-center z-10 ${
+                      activeTab === "agency" 
                         ? "text-white" 
                         : "text-gray-400 group-hover:text-gray-200"
                     }`}
                   >
-                    <Image 
-                      src="https://i.imgur.com/PZCtbwG.png" 
-                      alt="Brez" 
-                      width={24} 
-                      height={24} 
-                      className="object-contain drop-shadow-md"
+                    <ClipboardList 
+                      size={32} 
+                      className="drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">Home</span>
+
                 </div>
-                {activeTab === "site" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/30 rounded-full"></div>
+                {activeTab === "agency" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
                 )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
-              <p>Dashboard Overview</p>
+            <TooltipContent side="bottom" className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 text-zinc-200 text-xs shadow-xl">
+              <p>Agency Management</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+
 
         <TooltipProvider>
           <Tooltip>
@@ -292,36 +295,35 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="shopify" 
                 disabled={!platforms.shopify}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-2xl w-28 h-20 transition-all duration-300 ease-out overflow-hidden ${
                   activeTab === "shopify" 
-                    ? "bg-gradient-to-b from-green-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
-                }`}
+                    ? "bg-gray-600/30 text-white shadow-lg border border-gray-500/50" 
+                    : "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 hover:shadow-lg border border-transparent hover:border-gray-600/30"
+                } ${!platforms.shopify ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center">
                   <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
+                    className={`relative w-10 h-10 flex items-center justify-center z-10 ${
                       activeTab === "shopify" 
-                        ? "text-green-400" 
+                        ? "text-white" 
                         : "text-gray-400 group-hover:text-gray-200"
                     }`}
                   >
                     <Image 
-                      src="https://i.imgur.com/cnCcupx.png" 
+                      src="/shopify-icon.png" 
                       alt="Shopify" 
-                      width={24} 
-                      height={24} 
+                      width={36} 
+                      height={36} 
                       className="object-contain drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">Store</span>
                 </div>
                 {activeTab === "shopify" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500/50 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
                 )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+            <TooltipContent side="bottom" className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 text-zinc-200 text-xs shadow-xl">
               <p>Shopify Store Metrics</p>
             </TooltipContent>
           </Tooltip>
@@ -333,40 +335,41 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="meta" 
                 disabled={!platforms.meta}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-2xl w-28 h-20 transition-all duration-300 ease-out overflow-hidden ${
                   activeTab === "meta" 
-                    ? "bg-gradient-to-b from-gray-900/80 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
-                }`}
+                    ? "bg-gray-600/30 text-white shadow-lg border border-gray-500/50" 
+                    : "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 hover:shadow-lg border border-transparent hover:border-gray-600/30"
+                } ${!platforms.meta ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center">
                   <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
+                    className={`relative w-10 h-10 flex items-center justify-center z-10 ${
                       activeTab === "meta" 
-                        ? "text-gray-300" 
+                        ? "text-white" 
                         : "text-gray-400 group-hover:text-gray-200"
                     }`}
                   >
                     <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
+                      src="https://i.imgur.com/VAR7v4w.png" 
                       alt="Meta" 
-                      width={24} 
-                      height={24} 
+                      width={40} 
+                      height={40} 
                       className="object-contain drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">Meta</span>
                 </div>
                 {activeTab === "meta" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-500/50 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
                 )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+            <TooltipContent side="bottom" className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 text-zinc-200 text-xs shadow-xl">
               <p>Meta Ads Analytics</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+
 
         <TooltipProvider>
           <Tooltip>
@@ -374,36 +377,35 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="tiktok" 
                 disabled={!platforms.tiktok}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-2xl w-28 h-20 transition-all duration-300 ease-out overflow-hidden ${
                   activeTab === "tiktok" 
-                    ? "bg-gradient-to-b from-pink-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
-                }`}
+                    ? "bg-gray-600/30 text-white shadow-lg border border-gray-500/50" 
+                    : "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 hover:shadow-lg border border-transparent hover:border-gray-600/30"
+                } ${!platforms.tiktok ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center">
                   <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
+                    className={`relative w-10 h-10 flex items-center justify-center z-10 ${
                       activeTab === "tiktok" 
-                        ? "text-pink-400" 
+                        ? "text-white" 
                         : "text-gray-400 group-hover:text-gray-200"
                     }`}
                   >
                     <Image 
                       src="https://i.imgur.com/AXHa9UT.png" 
                       alt="TikTok" 
-                      width={24} 
-                      height={24} 
+                      width={40} 
+                      height={40} 
                       className="object-contain drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">TikTok</span>
                 </div>
                 {activeTab === "tiktok" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500/50 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
                 )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+            <TooltipContent side="bottom" className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 text-zinc-200 text-xs shadow-xl">
               <p>TikTok Ads Performance</p>
             </TooltipContent>
           </Tooltip>
@@ -415,106 +417,47 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="googleads" 
                 disabled={!platforms.googleads}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-2xl w-28 h-20 transition-all duration-300 ease-out overflow-hidden ${
                   activeTab === "googleads" 
-                    ? "bg-gradient-to-b from-indigo-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
-                }`}
+                    ? "bg-gray-600/30 text-white shadow-lg border border-gray-500/50" 
+                    : "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 hover:shadow-lg border border-transparent hover:border-gray-600/30"
+                } ${!platforms.googleads ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center">
                   <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
+                    className={`relative w-10 h-10 flex items-center justify-center z-10 ${
                       activeTab === "googleads" 
-                        ? "text-indigo-400" 
+                        ? "text-white" 
                         : "text-gray-400 group-hover:text-gray-200"
                     }`}
                   >
                     <Image 
                       src="https://i.imgur.com/TavV4UJ.png" 
                       alt="Google Ads" 
-                      width={24} 
-                      height={24} 
+                      width={40} 
+                      height={40} 
                       className="object-contain drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">Google</span>
                 </div>
                 {activeTab === "googleads" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500/50 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
                 )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+            <TooltipContent side="bottom" className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-700/50 text-zinc-200 text-xs shadow-xl">
               <p>Google Ads Metrics</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </TabsList>
+      </div>
 
-      <TabsContent value="site" className="mt-8">
-        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg">
-          {/* Greeting Widget */}
-          <GreetingWidget 
-            brandId={brandId}
-            brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
-            metrics={greetingWidgetMetrics} 
-            connections={connections}
-          />
-          
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-white">Site Overview</h3>
-          </div>
-          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1 mb-4">
-            <MetricCard
-              title={
-                <div className="flex items-center gap-2">
-                  <div className="relative w-4 h-4">
-                    <Image 
-                      src="https://i.imgur.com/PZCtbwG.png" 
-                      alt="Brez logo" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain"
-                    />
-                  </div>
-                  <span>Total Sales</span>
-                  <DollarSign className="h-4 w-4" />
-                </div>
-              }
-              value={safeMetrics.totalSales || 0}
-              change={safeMetrics.salesGrowth || 0}
-              prefix="$"
-              valueFormat="currency"
-              data={safeMetrics.dailyData || []}
-              loading={isLoading}
-              refreshing={isRefreshingData}
-              platform="shopify"
-              dateRange={dateRange}
-              infoTooltip="Total revenue from all orders in the selected period"
-              brandId={brandId}
-            />
-          </div>
-          
-          {/* Revenue Calendar - Full Width */}
-          <div className="w-full mt-6">
-            <Card className="bg-[#111111] border-[#222222]">
-              <CardHeader className="py-2">
-                <CardTitle className="text-white"></CardTitle>
-              </CardHeader>
-              <CardContent className="h-[520px]">
-                <RevenueByDay 
-                  data={(safeMetrics.revenueByDay || []).map(d => ({
-                    date: d.date,
-                    revenue: d.amount || 0
-                  }))} 
-                  brandId={brandId}
-                  isRefreshing={isRefreshingData}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      <TabsContent value="agency" className="mt-8">
+        <AgencyActionCenter dateRange={dateRange} />
       </TabsContent>
+
+
 
       <TabsContent value="shopify" className="mt-8">
         {tabVisibility.shopify && selectedConnection ? (
@@ -537,6 +480,8 @@ export function PlatformTabs({
       <TabsContent value="meta" className="mt-8">
         {renderMetaTabContent()}
       </TabsContent>
+
+
 
       <TabsContent value="tiktok" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">

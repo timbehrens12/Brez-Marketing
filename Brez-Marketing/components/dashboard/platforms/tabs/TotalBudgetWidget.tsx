@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, RefreshCw } from 'lucide-react'
+// Icons removed as requested
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 // Helper function to format currency
 const formatCurrency = (value: number): string => {
@@ -19,9 +17,11 @@ const formatCurrency = (value: number): string => {
 
 interface TotalBudgetWidgetProps {
   brandId: string
+  // Add a prop to trigger refresh when active ad sets change
+  isManuallyRefreshing?: boolean
 }
 
-export function TotalBudgetWidget({ brandId }: TotalBudgetWidgetProps) {
+export function TotalBudgetWidget({ brandId, isManuallyRefreshing = false }: TotalBudgetWidgetProps) {
   const [totalBudget, setTotalBudget] = useState<number | null>(null)
   const [dailyBudget, setDailyBudget] = useState<number | null>(null)
   const [lifetimeBudget, setLifetimeBudget] = useState<number | null>(null)
@@ -32,7 +32,8 @@ export function TotalBudgetWidget({ brandId }: TotalBudgetWidgetProps) {
   const fetchTotalBudget = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}`)
+      // Only fetch active ad sets
+      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch total budget')
@@ -57,24 +58,12 @@ export function TotalBudgetWidget({ brandId }: TotalBudgetWidgetProps) {
     }
   }
   
-  // Fetch on initial load
+  // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
     if (brandId) {
       fetchTotalBudget()
-      
-      // Set up auto-refresh every 5 minutes
-      const intervalId = setInterval(() => {
-        fetchTotalBudget()
-      }, 5 * 60 * 1000)
-      
-      // Clean up on unmount
-      return () => clearInterval(intervalId)
     }
-  }, [brandId])
-  
-  const handleRefresh = () => {
-    fetchTotalBudget()
-  }
+  }, [brandId, isManuallyRefreshing])
   
   // Format time ago for last updated timestamp
   const getTimeAgo = () => {
@@ -93,30 +82,12 @@ export function TotalBudgetWidget({ brandId }: TotalBudgetWidgetProps) {
   
   return (
     <Card className="bg-gradient-to-br from-[#1a1a1a] to-[#222] overflow-hidden border border-[#333]">
-      <CardHeader className="space-y-0 pb-2 flex flex-row items-center justify-between">
+      <CardHeader className="space-y-0 pb-2">
         <CardTitle className="text-lg font-medium text-white">
           <div className="flex items-center gap-1.5">
-            <DollarSign className="h-5 w-5 text-green-500" />
             <span>Total Meta Ads Budget</span>
           </div>
         </CardTitle>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="sr-only">Refresh</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Refresh budget data (Last updated: {getTimeAgo()})</p>
-          </TooltipContent>
-        </Tooltip>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col">
@@ -143,7 +114,7 @@ export function TotalBudgetWidget({ brandId }: TotalBudgetWidgetProps) {
                   </div>
                 )}
                 <div>
-                  Across {adSetCount} active ad sets
+                  Across {adSetCount} active ad sets <span className="text-gray-500">(updated {getTimeAgo()})</span>
                 </div>
               </>
             )}

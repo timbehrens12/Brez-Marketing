@@ -24,7 +24,6 @@ export function StoreConnectButton({ brandId }: StoreConnectButtonProps) {
       // Redirect to Shopify OAuth page
       window.location.href = data.authUrl
     } catch (error) {
-      console.error('Error connecting store:', error)
     }
   }
 

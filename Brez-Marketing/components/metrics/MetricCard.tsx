@@ -11,11 +11,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { TrendingUp, TrendingDown, Info, Minus, Loader2 } from "lucide-react"
 import { MetricLineChart } from "./MetricLineChart"
 import { MetricExplanation } from '@/components/dashboard/MetricExplanation'
+import { formatPercentage } from '@/lib/formatters'
 
 interface MetricCardProps {
   title: string | React.ReactNode
   value: string | number
-  change?: number
+  change?: number | null
   data: MetricData[]
   prefix?: string
   suffix?: string
@@ -44,6 +45,8 @@ interface MetricCardProps {
   previousValueDecimals?: number
   showPreviousPeriod?: boolean
   previousPeriodLabel?: string
+  nullChangeText?: string
+  nullChangeTooltip?: string
 }
 
 // Define a proper type guard for DateRange
@@ -90,6 +93,8 @@ export function MetricCard({
   previousValueDecimals = 0,
   showPreviousPeriod = false,
   previousPeriodLabel = "Previous period",
+  nullChangeText = "N/A",
+  nullChangeTooltip = "No previous data to compare",
 }: MetricCardProps & { brandId?: string }) {
   // Use a more robust conversion with error catching
   const safeValue = useMemo(() => {
@@ -119,9 +124,12 @@ export function MetricCard({
         if (!isNaN(parsed)) {
           // Format the parsed numeric value
           if (valueFormat === 'currency') {
-            return `${prefix}${parsed.toFixed(2)}${suffix}`;
+            return `${prefix}${parsed.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}${suffix}`;
           } else if (valueFormat === 'percentage') {
-            return `${prefix}${parsed.toFixed(1)}%${suffix}`;
+            return `${prefix}${formatPercentage(parsed, decimals)}${suffix}`;
           } else {
             // For number format, respect the decimals prop
             return decimals > 0
@@ -138,9 +146,12 @@ export function MetricCard({
       if (isNaN(num)) return `${prefix}0${suffix}`;
       
       if (valueFormat === 'currency') {
-        return `${prefix}${num.toFixed(2)}${suffix}`;
+        return `${prefix}${num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}${suffix}`;
       } else if (valueFormat === 'percentage') {
-        return `${prefix}${num.toFixed(1)}%${suffix}`;
+        return `${prefix}${formatPercentage(num, decimals)}${suffix}`;
       } else {
         // For number format, respect the decimals prop
         return decimals > 0
@@ -205,24 +216,39 @@ export function MetricCard({
   };
   
   // Calculate percentage change from previous period
-  const calculatePercentChange = (): { value: number; isPositive: boolean; isZero: boolean } => {
+  const calculatePercentChange = (): { value: number | null; isPositive: boolean; isZero: boolean; isNewActivity: boolean } => {
     try {
-      // Prevent division by zero
-      if (previousValue === 0) {
-        return { value: 0, isPositive: false, isZero: true };
+      const currentValue = Number(value);
+      if (isNaN(currentValue)) {
+        // Handle cases where current value is not a number
+        return { value: null, isPositive: false, isZero: false, isNewActivity: false };
       }
       
-      const currentValue = Number(value);
+      if (previousValue === 0) {
+        if (currentValue === 0) {
+          // Change: Return isNewActivity: true when both values are 0, to show N/A
+          return { value: null, isPositive: false, isZero: false, isNewActivity: true }; // Both 0, show N/A
+        }
+        // Previous was 0, current is not. Consider this new activity or N/A.
+        return { value: null, isPositive: currentValue > 0, isZero: false, isNewActivity: true }; 
+      }
+      
+      // Standard calculation if previousValue is not 0
       const change = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
+      if (isNaN(change)) {
+        // Handle cases where change calculation results in NaN (e.g. previousValue is non-zero but somehow problematic)
+        return { value: null, isPositive: false, isZero: false, isNewActivity: false };
+      }
       
       return { 
-        value: Math.abs(change), // Absolute value for display 
+        value: Math.abs(change),
         isPositive: change > 0,
-        isZero: change === 0
+        isZero: change === 0,
+        isNewActivity: false
       };
     } catch (error) {
       console.error("Error calculating percentage change:", error);
-      return { value: 0, isPositive: false, isZero: true };
+      return { value: null, isPositive: false, isZero: false, isNewActivity: false }; // Return null on error
     }
   };
 
@@ -230,17 +256,26 @@ export function MetricCard({
   const formatPreviousValue = () => {
     try {
       if (previousValue === undefined || previousValue === null) {
-        return `${previousValuePrefix}0${previousValueSuffix}`;
+        return previousValueFormat === 'currency' 
+          ? `${previousValuePrefix}0.00${previousValueSuffix}`
+          : `${previousValuePrefix}0${previousValueSuffix}`;
       }
       
       // Handle numeric values
       const num = Number(previousValue);
-      if (isNaN(num)) return `${previousValuePrefix}0${previousValueSuffix}`;
+      if (isNaN(num)) {
+        return previousValueFormat === 'currency' 
+          ? `${previousValuePrefix}0.00${previousValueSuffix}`
+          : `${previousValuePrefix}0${previousValueSuffix}`;
+      }
       
       if (previousValueFormat === 'currency') {
-        return `${previousValuePrefix}${num.toFixed(2)}${previousValueSuffix}`;
+        return `${previousValuePrefix}${num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}${previousValueSuffix}`;
       } else if (previousValueFormat === 'percentage') {
-        return `${previousValuePrefix}${num.toFixed(1)}%${previousValueSuffix}`;
+        return `${previousValuePrefix}${formatPercentage(num, previousValueDecimals || 1)}${previousValueSuffix}`;
       } else {
         // For number format, respect the previousValueDecimals prop
         return previousValueDecimals > 0
@@ -249,7 +284,9 @@ export function MetricCard({
       }
     } catch (error) {
       console.error("Error formatting previous value:", error);
-      return `${previousValuePrefix}0${previousValueSuffix}`;
+      return previousValueFormat === 'currency' 
+        ? `${previousValuePrefix}0.00${previousValueSuffix}`
+        : `${previousValuePrefix}0${previousValueSuffix}`;
     }
   };
   
@@ -261,7 +298,7 @@ export function MetricCard({
           <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
         </CardContent>
       </Card>
     );
@@ -297,50 +334,69 @@ export function MetricCard({
               </CardTitle>
             </div>
             {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
-            {refreshing && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+            {refreshing && <Loader2 className="h-4 w-4 animate-spin text-white" />}
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-2">
-          {loading ? (
-            <div className="flex items-center h-8">
-              <div className="w-20 h-7 bg-gray-800 rounded animate-pulse"></div>
+          {loading || refreshing ? (
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center h-8">
+                <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
+              </div>
+              {!hidePercentageChange && !hideChange && (
+                <div className="flex items-center mt-2">
+                  <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
+                </div>
+              )}
+              {showChart && !hideGraph && data.length > 0 && (
+                <div className="mt-4 h-20 bg-gray-800/30 rounded animate-pulse"></div>
+              )}
             </div>
           ) : (
             <>
-              <div className="text-2xl font-bold text-white">
-                {refreshing ? (
-                  <span className="opacity-50">{formatSafeValue()}</span>
-                ) : (
-                  <>{formatSafeValue()}</>
-                )}
+              <div className="font-bold text-xl md:text-3xl text-white">
+                {formatSafeValue()}
               </div>
               
               {/* Show percentage change from previous period */}
-              {showPreviousPeriod && !loading && !refreshing && previousValue !== undefined && (
+              {showPreviousPeriod && previousValue !== undefined && (
                 <div className="mt-1">
                   {(() => {
                     const percentChange = calculatePercentChange();
                     const formattedPrevValue = formatPreviousValue();
                     
+                    // Force to show N/A if previousValue is 0, regardless of current value
+                    const displayNA = previousValue === 0 || percentChange.isNewActivity;
+                    
                     return (
                       <div className="flex items-center">
                         <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
-                          percentChange.isZero 
-                            ? "text-gray-500 bg-gray-500/10" 
-                            : percentChange.isPositive 
-                              ? "text-green-500 bg-green-500/10" 
-                              : "text-red-500 bg-red-500/10"
+                          displayNA
+                            ? "text-[#FF2A2A] bg-[#FF2A2A]/10" // Style for N/A or new activity
+                            : percentChange.isZero 
+                              ? "text-gray-500 bg-gray-500/10" 
+                              : percentChange.isPositive 
+                                ? "text-green-500 bg-green-500/10" 
+                                : "text-red-500 bg-red-500/10"
                         }`}>
                           <div className="flex items-center">
-                            {percentChange.isZero ? (
+                            {displayNA ? null : percentChange.isZero ? (
                               <Minus className="w-3 h-3 mr-1" />
                             ) : percentChange.isPositive ? (
                               <TrendingUp className="w-3 h-3 mr-1" />
                             ) : (
                               <TrendingDown className="w-3 h-3 mr-1" />
                             )}
-                            <span>{percentChange.isZero ? '0%' : `${percentChange.value.toFixed(1)}%`}</span>
+                            <span>
+                              {displayNA
+                                ? nullChangeText
+                                : percentChange.isZero 
+                                  ? '0%'
+                                  : `${(percentChange.value ?? 0).toFixed(1)}%`}
+                            </span>
                           </div>
+                          {/* Only show tooltip if not displayNA */}
+                          {!displayNA && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger className="cursor-help ml-1">
@@ -349,7 +405,7 @@ export function MetricCard({
                               <TooltipContent 
                                 side="top" 
                                 align="center"
-                                className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
                               >
                                 <div className="space-y-1">
                                   <p className="font-medium">{previousPeriodLabel}</p>
@@ -361,6 +417,24 @@ export function MetricCard({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                          )}
+                          {/* Add a separate tooltip for N/A */}
+                          {displayNA && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help ml-1">
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  align="center"
+                                  className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
+                                >
+                                  <p className="font-medium">{nullChangeTooltip}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </div>
                     );
@@ -368,51 +442,85 @@ export function MetricCard({
                 </div>
               )}
               
-              {!loading && !refreshing && !hidePercentageChange && !hideChange && typeof change === 'number' && !isNaN(change) && (
-                <div className="flex items-center mt-2">
-                  <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${change > 0 ? "text-green-500 bg-green-500" : change < 0 ? "text-red-500 bg-red-500" : "text-gray-500 bg-gray-500"} bg-opacity-10`}>
-                    <div className={`flex items-center`}>
-                      {change > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : change < 0 ? <TrendingDown className="w-3 h-3 mr-1" /> : <Minus className="w-3 h-3 mr-1" />}
-                      <span>{formatChange()}</span>
+              {/* OLD Percentage change display - Hide if showPreviousPeriod is true */}
+              {!showPreviousPeriod && !hidePercentageChange && !hideChange && (
+                <>
+                  {change === null || previousValue === 0 ? (
+                    <div className="flex items-center mt-2">
+                      <div className="flex items-center space-x-1 rounded-full px-2 py-0.5 text-gray-500 bg-gray-500 bg-opacity-10">
+                        <span>{nullChangeText}</span>
+                        {/* Single tooltip for N/A */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="cursor-help ml-1">
+                              <Info className="h-3 w-3 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              side="top" 
+                              align="center"
+                              className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
+                            >
+                              <p>{nullChangeTooltip}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-help ml-1">
-                          <Info className="h-3 w-3 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent 
-                          side="top" 
-                          align="center"
-                          className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
-                        >
-                          <div className="space-y-1">
-                            <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
-                            <p className="text-gray-300">Current: {formatSafeValue()}</p>
-                            <p className="text-gray-300">Previous: {previousValue ? (
-                              previousValueFormat === 'currency' 
-                                ? `${previousValuePrefix}${previousValue.toFixed(2)}${previousValueSuffix}` 
-                                : previousValueFormat === 'percentage'
-                                  ? `${previousValuePrefix}${previousValue.toFixed(1)}%${previousValueSuffix}`
-                                  : `${previousValuePrefix}${Math.round(previousValue).toLocaleString()}${previousValueSuffix}`
-                            ) : 'N/A'}</p>
-                            <p className="text-gray-400 text-[10px]">{previousPeriodLabel || 'Comparing equivalent time periods'}</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
+                  ) : typeof change === 'number' && !isNaN(change) ? (
+                    <div className="flex items-center mt-2">
+                      <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${change > 0 ? "text-green-500 bg-green-500" : change < 0 ? "text-red-500 bg-red-500" : "text-gray-500 bg-gray-500"} bg-opacity-10`}>
+                        <div className={`flex items-center`}>
+                          {change > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : change < 0 ? <TrendingDown className="w-3 h-3 mr-1" /> : <Minus className="w-3 h-3 mr-1" />}
+                          <span>{formatChange()}</span>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="cursor-help ml-1">
+                              <Info className="h-3 w-3 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              side="top" 
+                              align="center"
+                              className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
+                            >
+                              <div className="space-y-1">
+                                <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
+                                <p className="text-gray-300">Current: {formatSafeValue()}</p>
+                                <p className="text-gray-300">Previous: {previousValue !== undefined && previousValue !== null ? (
+                                  previousValueFormat === 'currency' 
+                                    ? `${previousValuePrefix}${previousValue.toLocaleString('en-US', {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}${previousValueSuffix}` 
+                                    : previousValueFormat === 'percentage'
+                                      ? `${previousValuePrefix}${formatPercentage(previousValue, previousValueDecimals)}${previousValueSuffix}`
+                                      : previousValueDecimals > 0
+                                        ? `${previousValuePrefix}${previousValue.toFixed(previousValueDecimals)}${previousValueSuffix}`
+                                        : `${previousValuePrefix}${Math.round(previousValue).toLocaleString()}${previousValueSuffix}`
+                                ) : '0'}</p>
+                                <p className="text-gray-400 text-[10px]">{previousPeriodLabel || 'Comparing equivalent time periods'}</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               )}
               
-              {showChart && !hideGraph && !loading && data.length > 0 && (
-                <MetricLineChart 
-                  data={data}
-                  dateRange={typeof dateRange === 'object' ? dateRange : undefined}
-                  valuePrefix={prefix}
-                  valueSuffix={suffix}
-                  valueFormat={valueFormat}
-                  color={"#4ade80"}
-                />
+              {showChart && !hideGraph && data.length > 0 && (
+                <div className="h-[120px]">
+                  <MetricLineChart
+                    data={data}
+                    dateRange={isDateRangeObject(dateRange) ? dateRange : undefined}
+                    valuePrefix={prefix}
+                    valueSuffix={suffix}
+                    valueFormat={valueFormat}
+                    height={120}
+                    color={platform === 'shopify' ? '#4ade80' : '#38bdf8'}
+                  />
+                </div>
               )}
             </>
           )}

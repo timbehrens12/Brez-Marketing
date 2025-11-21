@@ -96,6 +96,7 @@ export async function POST(request: Request) {
       console.log('Triggering initial sync')
       
       try {
+        // First, trigger a general Shopify sync
         const syncResponse = await fetch(new URL('/api/shopify/sync', request.url).toString(), {
           method: 'POST',
           headers: {
@@ -109,6 +110,25 @@ export async function POST(request: Request) {
           // Continue anyway, this is not critical
         } else {
           console.log('Initial sync triggered successfully')
+        }
+        
+        // Now explicitly trigger inventory sync with forced refresh
+        const inventoryResponse = await fetch(new URL('/api/shopify/inventory/sync', request.url).toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            connectionId,
+            forceRefresh: true 
+          })
+        })
+        
+        if (!inventoryResponse.ok) {
+          console.error('Failed to trigger inventory sync')
+          // Continue anyway, this is not critical
+        } else {
+          console.log('Inventory sync triggered successfully')
         }
       } catch (syncError) {
         console.error('Error triggering sync:', syncError)

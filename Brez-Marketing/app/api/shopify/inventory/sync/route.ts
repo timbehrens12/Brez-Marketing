@@ -1,13 +1,13 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { connectionId } = body
-    
+
     console.log('Shopify inventory sync route hit:', { connectionId })
-    
+
     if (!connectionId) {
       console.error('Missing connectionId')
       return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
@@ -15,11 +15,13 @@ export async function POST(request: Request) {
 
     // Get connection details
     console.log('Fetching connection details')
+    const supabase = createClient()
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('id', connectionId)
-      .single()
+      .eq('status', 'active')
+      .maybeSingle()
 
     if (connectionError || !connection) {
       console.error('Error fetching connection:', connectionError)
@@ -65,13 +67,19 @@ export async function POST(request: Request) {
           url += `&page_info=${nextCursor}`
         }
 
-        console.log('Fetching products from Shopify:', { url: url.substring(0, 100) + '...' })
+        // Mask token for logging
+        const maskedToken = connection.access_token ? `${connection.access_token.substring(0, 4)}...${connection.access_token.substring(connection.access_token.length - 4)}` : 'NONE';
+        console.log(`[SYNC] Attempting to fetch Shopify products. Shop: ${connection.shop}, Token (Masked): ${maskedToken}, URL: ${url.substring(0, 100)}...`);
+        
         const response = await fetch(url, {
           headers: {
             'X-Shopify-Access-Token': connection.access_token,
             'Content-Type': 'application/json'
           }
         })
+        
+        // Log response status immediately
+        console.log(`[SYNC] Shopify API response status: ${response.status}`);
 
         if (!response.ok) {
           const errorText = await response.text()
@@ -169,6 +177,8 @@ export async function POST(request: Request) {
         await new Promise(resolve => setTimeout(resolve, 500))
       } catch (error) {
         console.error('Error during inventory sync:', error)
+        // Log the specific error that occurred during the fetch/processing loop
+        console.error(`[SYNC] Error occurred during fetch loop: ${error instanceof Error ? error.message : 'Unknown error'}`); 
         throw error
       }
     } while (nextCursor)
@@ -188,24 +198,23 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Inventory sync error:', error)
-    
-    // Update sync status to failed
-    if (request.body) {
-      try {
-        const body = await request.json()
-        if (body.connectionId) {
-          console.log('Updating sync status to failed')
-          await supabase
-            .from('platform_connections')
-            .update({ sync_status: 'failed' })
-            .eq('id', body.connectionId)
-        }
-      } catch (parseError) {
-        console.error('Error parsing request body:', parseError)
+
+    // Try to update sync status to failed if we have a connectionId
+    try {
+      const body = await request.json().catch(() => ({}))
+      if (body.connectionId) {
+        console.log('Updating sync status to failed')
+        const supabase = createClient()
+        await supabase
+          .from('platform_connections')
+          .update({ sync_status: 'failed' })
+          .eq('id', body.connectionId)
       }
+    } catch (updateError) {
+      console.error('Error updating sync status:', updateError)
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Inventory sync failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })

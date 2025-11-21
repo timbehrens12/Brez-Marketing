@@ -2,7 +2,7 @@ import "@/styles/globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+// import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
 import type React from "react"
 import { Sidebar } from "@/components/Sidebar"
@@ -30,7 +30,7 @@ export default function RootLayout({
               <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">{children}</div>
             </div>
           </WidgetProvider>
-          <Toaster />
+          {/* <Toaster /> */}
         </ThemeProvider>
       </body>
     </html>

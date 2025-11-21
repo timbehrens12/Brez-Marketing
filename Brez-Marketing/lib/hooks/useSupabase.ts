@@ -1,9 +1,6 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from '@/types/supabase'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
-// Create a single instance outside of the hook
-const supabaseClient = createClientComponentClient<Database>()
-
+// Use the singleton client instead of creating a new one
 export function useSupabase() {
-  return supabaseClient
+  return getSupabaseClient()
 } 

@@ -10,137 +10,87 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const from = url.searchParams.get('from')
-    const to = url.searchParams.get('to')
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
-    
-    // Check if this is a yesterday preset
     const isYesterdayPreset = preset === 'yesterday'
     
-    // Log the request
-    console.log(`ROAS METRIC API: Fetching ROAS for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`ROAS SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
-    // Validate required parameters
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    if (!brandId || !fromDate || !toDate) {
+      return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
     
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Date range is required' }, { status: 400 })
-    }
-    
-    // Initialize Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Get Meta connection
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
-    
-    if (connectionError) {
-      console.log(`Error retrieving Meta connection: ${JSON.stringify(connectionError)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta connection' }, { status: 500 })
-    }
-    
-    if (!connection) {
-      console.log(`No active Meta connection found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
-    }
-    
-    // Special handling for yesterday preset to ensure exact date
-    let fromDate = from
-    let toDate = to
-    
     if (isYesterdayPreset) {
-      // Use exactly yesterday's date
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
       fromDate = yesterday.toISOString().split('T')[0]
-      toDate = fromDate // Force same day
-      console.log(`ROAS METRIC API: Using exact yesterday date ${fromDate}`)
+      toDate = fromDate 
+      console.log(`ROAS SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
     
-    // Query meta_ad_insights for just the data we need
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
-      .select('date, spend, action_values')
-      .eq('connection_id', connection.id)
+    // ROAS = (sum of purchase_value or equivalent conversion value) / (sum of spend)
+    // We need to select spend and the relevant conversion/purchase value columns.
+    // Assuming 'conversions' column in meta_campaign_daily_stats represents purchase conversion value for simplicity here.
+    // A more accurate ROAS would sum specific action_values like 'purchase' from a more detailed table if 'conversions' isn't direct revenue.
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_campaign_daily_stats') 
+      .select('date, spend, conversions') // Select spend and conversions (assuming conversions is revenue/value for ROAS)
+      .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
+    if (dbError) {
+      console.error(`ROAS SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
-    // Filter to ensure exact date match for yesterday
-    let filteredInsights = insights || []
-    
+    let filteredStats = dailyStats || []
     if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
+      filteredStats = filteredStats.filter(item => {
         const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
-      console.log(`ROAS METRIC API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
     }
     
-    // If no data, return zeros
-    if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate}`)
+    if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: {
-          from: fromDate,
-          to: toDate,
-          records: 0
-        }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
+
+    const totalSpend = filteredStats.reduce((sum, item) => {
+      const spendVal = parseFloat(item.spend || '0')
+      return sum + (isNaN(spendVal) ? 0 : spendVal)
+    }, 0)
     
-    // Calculate the sums for spend and value
-    let totalSpend = 0
-    let totalValue = 0
-    
-    filteredInsights.forEach(item => {
-      const spend = typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend
-      const actionValues = typeof item.action_values === 'string' ? parseFloat(item.action_values) : (item.action_values || 0)
-      
-      totalSpend += isNaN(spend) ? 0 : spend
-      totalValue += isNaN(actionValues) ? 0 : actionValues
-    })
-    
-    // Calculate ROAS (Return on Ad Spend)
-    let roasValue = 0
-    
-    if (totalSpend > 0) {
-      roasValue = totalValue / totalSpend
-    }
-    
-    // Return the result
+    const totalConversionValue = filteredStats.reduce((sum, item) => {
+      // Assuming item.conversions from meta_campaign_daily_stats is the monetary value of conversions for ROAS.
+      // If it's just a count, this calculation will be incorrect and needs adjustment based on data schema.
+      const conversionVal = parseFloat(item.conversions || '0') 
+      return sum + (isNaN(conversionVal) ? 0 : conversionVal)
+    }, 0)
+
+    const roasValue = totalSpend > 0 ? totalConversionValue / totalSpend : 0;
+
     const result = {
-      value: parseFloat(roasValue.toFixed(2)),
+      value: parseFloat(roasValue.toFixed(2)), // ROAS is typically to 2 decimal places
       _meta: {
         from: fromDate,
         to: toDate,
-        records: filteredInsights.length,
-        totalSpend,
-        totalActionValues: totalValue,
-        dates: filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0])
+        records: filteredStats.length,
+        source: 'meta_campaign_daily_stats'
       }
     }
-    
-    console.log(`ROAS METRIC API: Returning ROAS = ${result.value}`)
-    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in ROAS metric endpoint:', error)
+    console.error('ROAS SINGLE METRIC API: Error in endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

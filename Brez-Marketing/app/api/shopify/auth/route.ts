@@ -10,9 +10,32 @@ export async function GET(request: Request) {
 
   console.log('Params:', { brandId, connectionId, shop })
 
-  if (!shop || !brandId || !connectionId) {
-    console.log('Missing parameters')
-    return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+  // For Shopify automated install checks, shop is required but brandId/connectionId may not be provided
+  if (!shop) {
+    console.log('Missing shop parameter')
+    return NextResponse.json({ error: 'Shop parameter is required' }, { status: 400 })
+  }
+
+  // If brandId/connectionId are missing, this is likely an automated install check
+  if (!brandId || !connectionId) {
+    console.log('Automated install detected - brandId/connectionId not provided')
+    // For automated checks, we'll use a simple OAuth flow without connection tracking
+    const scopes = [
+      'read_products',
+      'read_orders', 
+      'read_customers',
+      'read_inventory'
+    ].join(',')
+
+    const callbackUrl = 'https://www.brezmarketingdashboard.com/api/shopify/callback'
+    const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
+    authUrl.searchParams.set('client_id', process.env.SHOPIFY_CLIENT_ID!)
+    authUrl.searchParams.set('scope', scopes)
+    authUrl.searchParams.set('redirect_uri', callbackUrl)
+    authUrl.searchParams.set('state', JSON.stringify({ automated: true, shop }))
+
+    console.log('Redirecting to automated OAuth:', authUrl.toString())
+    return NextResponse.redirect(authUrl.toString())
   }
 
   try {
@@ -38,13 +61,8 @@ export async function GET(request: Request) {
       'read_inventory'
     ].join(',')
 
-    // Get the host from the request to build the callback URL
-    const host = request.headers.get('host') || 'www.brezmarketingdashboard.com'
-    const protocol = host.includes('localhost') ? 'http' : 'https'
-    
-    // IMPORTANT: Use a direct page route instead of an API route for the callback
-    // This ensures the callback is handled as a page render, not an API call
-    const callbackUrl = `${protocol}://${host}/shopify-callback`
+    // Use the exact callback URL that's whitelisted in the Shopify app
+    const callbackUrl = 'https://www.brezmarketingdashboard.com/api/shopify/callback'
     
     console.log('Using callback URL:', callbackUrl)
     

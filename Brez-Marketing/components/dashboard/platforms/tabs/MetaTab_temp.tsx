@@ -54,6 +54,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
+import { 
+  getCurrentLocalDateString, 
+  getYesterdayLocalDateString, 
+  dateToLocalDateString,
+  isDateRangeToday,
+  isDateRangeYesterday,
+  formatDateRangeForAPI
+} from '@/lib/utils/timezone';
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -646,11 +654,8 @@ export function MetaTab({
       
       // Handle special presets with explicit date determination
       if (isYesterdayPreset) {
-        // For yesterday preset, use exact date match
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        // For yesterday preset, use exact date match with local timezone
+        const yesterdayStr = getYesterdayLocalDateString();
         
         // CRITICAL: Set exactly the same date for both from and to
         params.append('from', yesterdayStr);
@@ -663,25 +668,21 @@ export function MetaTab({
         console.warn(`YESTERDAY ONLY: Fetching data only for ${yesterdayStr}`);
       } 
       else if (isToday) {
-        // For today preset, use today's date only
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
+        // For today preset, use today's date only with local timezone
+        const todayStr = getCurrentLocalDateString();
         params.append('from', todayStr);
         params.append('to', todayStr); // Same date for both
         params.append('preset', 'today');
         console.log(`Using today preset with exact date: ${todayStr}`);
       }
       else if (fromDate) {
-        // For normal date ranges
-        const formattedFromDate = new Date(fromDate);
-        formattedFromDate.setHours(0, 0, 0, 0);
-        params.append('from', formattedFromDate.toISOString().split('T')[0]);
+        // For normal date ranges, use local date strings
+        const fromStr = dateToLocalDateString(fromDate);
+        params.append('from', fromStr);
         
         if (toDate) {
-          const formattedToDate = new Date(toDate);
-          formattedToDate.setHours(23, 59, 59, 999);
-          params.append('to', formattedToDate.toISOString().split('T')[0]);
+          const toStr = dateToLocalDateString(toDate);
+          params.append('to', toStr);
         }
       }
       
@@ -1632,27 +1633,29 @@ Try creating at least one active campaign in Meta Ads Manager.
     return ((secondTotal - firstTotal) / firstTotal) * 100;
   }, []);
 
-  // Initial data load on component mount
+  // REMOVED: Duplicate useEffect - keeping the more sophisticated one below
+  // This was causing double data loading on initial mount
+  /*
   useEffect(() => {
     if (!brandId) return;
     
     // Flag to track if component is unmounted during fetch
     let isComponentMounted = true;
     
-    const loadInitialData = async () => {
+    const loadMetaData = async () => {
       if (!dateRange || !dateRange.from) {
-        console.log("No date range for initial Meta data load, skipping");
+        console.log("No date range for Meta data load, skipping");
         setLoading(false);
         return;
       }
       
-      // Prevent double fetching during initial load
+      // Prevent duplicate fetches - CRITICAL for preventing data doubling
       if (isFetching.current) {
-        console.log("Already fetching Meta data, skipping duplicate fetch");
+        console.log("Already fetching Meta data, skipping duplicate fetch to prevent doubling");
         return;
       }
       
-      console.log("Initial Meta data load starting");
+      console.log("Meta data load starting (consolidated useEffect)");
       isFetching.current = true;
       
       try {
@@ -1787,18 +1790,17 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
     
-    // Load data on mount
-    loadInitialData();
-    
-    // Update dateRangeRef for future change detection
-    dateRangeRef.current = dateRange;
+    // Load data on mount or when dependencies change
+    loadMetaData();
     
     // Cleanup function
     return () => {
       isComponentMounted = false;
       window._blockMetaApiCalls = true; // Block API calls during unmount
+      isFetching.current = false; // Reset fetch flag on cleanup
     };
   }, [brandId, dateRange]);
+  */
   
   // === REPLACE THE ENTIRE DATE RANGE EFFECT WITH THIS FIXED VERSION ===
   
@@ -2121,110 +2123,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     }
   }, [isRefreshingData, brandId, dateRange]);
-
-  // Also update the useEffect that handles date range changes
-  useEffect(() => {
-    // Only fetch data if we have a brand ID and the component is visible
-    if (brandId && dateRange && !window._blockMetaApiCalls) {
-      console.log("Date range changed, fetching Meta data");
-      
-      // Only start loading if the tab is visible
-      setIsDateChangeLoading(true);
-      
-      // Set a debounce timer to prevent multiple fetches
-      const timer = setTimeout(() => {
-        // Check if this is a yesterday preset before fetching
-        const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-                                  (dateRange?.from && dateRange?.to && 
-                                  isSameDay(dateRange.from, dateRange.to) && 
-                                  isYesterday(dateRange.from));
-                                   
-        if (isYesterdayPreset) {
-          console.log("DATE CHANGE: Yesterday preset detected, using direct data loading");
-          
-          // Use a more direct approach for yesterday data
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          
-          const directParams = new URLSearchParams({
-            brandId: brandId,
-            from: yesterdayStr,
-            to: yesterdayStr,
-            preset: 'yesterday',
-            strict_date_range: 'true',
-            bypass_cache: 'true',
-            refresh: 'true'
-          });
-          
-          console.log(`DATE CHANGE: Loading yesterday data with params: ${directParams.toString()}`);
-          
-          // Direct fetch for yesterday
-          (async () => {
-            try {
-              const response = await fetch(`/api/metrics/meta?${directParams.toString()}`, {
-                cache: 'no-store',
-                headers: {
-                  'Cache-Control': 'no-cache'
-                }
-              });
-              
-              if (!response.ok) {
-                throw new Error(`Failed to fetch yesterday's data: ${response.status}`);
-              }
-              
-              const data = await response.json();
-              
-              // Validate the data is for yesterday only
-              if (data._dateRange && data._dateRange.from === yesterdayStr && data._dateRange.to === yesterdayStr) {
-                console.log("DATE CHANGE: Successfully loaded yesterday's data");
-                
-                // Update with the fetched data
-                setMetricsData({
-                  adSpend: data.adSpend ?? 0,
-                  adSpendGrowth: data.adSpendGrowth ?? 0,
-                  impressions: data.impressions ?? 0,
-                  impressionGrowth: data.impressionGrowth ?? 0,
-                  clicks: data.clicks ?? 0,
-                  clickGrowth: data.clickGrowth ?? 0,
-                  conversions: data.conversions ?? 0,
-                  conversionGrowth: data.conversionGrowth ?? 0,
-                  ctr: data.ctr ?? 0,
-                  ctrGrowth: data.ctrGrowth ?? 0,
-                  cpc: data.cpc ?? 0,
-                  cpcLink: data.cpcLink ?? 0,
-                  costPerResult: data.costPerResult ?? 0,
-                  cprGrowth: data.cprGrowth ?? 0,
-                  roas: data.roas ?? 0,
-                  roasGrowth: data.roasGrowth ?? 0,
-                  frequency: data.frequency ?? 0,
-                  budget: data.budget ?? 0,
-                  reach: data.reach ?? 0,
-                  dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
-                });
-              } else {
-                console.warn("DATE CHANGE: Received data doesn't match yesterday - falling back to regular fetch");
-                fetchMetaData();
-              }
-            } catch (error) {
-              console.error("DATE CHANGE: Error fetching yesterday's data:", error);
-              // Fall back to regular fetch
-              fetchMetaData();
-            } finally {
-              setIsDateChangeLoading(false);
-            }
-          })();
-        } else {
-          // Regular fetch for other date ranges
-          fetchMetaData();
-        }
-      }, 300);
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [dateRange, brandId]);
 
   // Prevent unnecessary refetches by tracking if dates have changed
   const dateRangeChanged = (oldRange: any, newRange: any) => {
@@ -3402,20 +3300,8 @@ Try creating at least one active campaign in Meta Ads Manager.
   }
 
   // Update the useEffect to call the new fetch functions
-  useEffect(() => {
-    if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("Date range changed, fetching all metrics directly")
-      fetchAllMetricsDirectly()
-    }
-  }, [dateRange, brandId])
-
-  // Add a separate effect for initial load
-  useEffect(() => {
-    if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("Initial load, fetching all metrics directly")
-      fetchAllMetricsDirectly()
-    }
-  }, [])
+  // Note: fetchAllMetricsDirectly calls removed to prevent duplicate data fetching
+  // The consolidated useEffect with [brandId, dateRange] dependencies handles all data loading
 
   // Update the manual refresh function
   const refreshMetricsDirectly = async () => {

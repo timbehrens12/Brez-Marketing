@@ -114,6 +114,19 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const brandId = searchParams.get('brandId');
+    const fromDate = searchParams.get('from');
+    const toDate = searchParams.get('to');
+    const timezone = searchParams.get('timezone') || 'America/Chicago'; // Default fallback
+    
+    console.log('[Geographic API] Request params:', {
+      brandId,
+      fromDate,
+      toDate,
+      timezone,
+      hasFromDate: !!fromDate,
+      hasToDate: !!toDate,
+      fullUrl: request.url
+    });
     
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
@@ -149,39 +162,84 @@ export async function GET(request: NextRequest) {
     const connectionIds = connections.map((c: any) => c.id);
     console.log(`Found ${connectionIds.length} Shopify connections for brand ${brandId}`);
 
-    // Try to get data from the new columns first
-    let customers: CustomerData[] = [];
+    // Get data from shopify_sales_by_region which has the actual geographic data
+    let salesByRegion: any[] = [];
     
     try {
-      // First try with the new columns
-      const response = await supabase
-        .from('shopify_customers')
-        .select('id, city, state_province, country, total_spent, orders_count')
-        .in('connection_id', connectionIds)
+      console.log('Fetching geographic data from shopify_sales_by_region for brandId:', brandId);
+      
+      let query = supabase
+        .from('shopify_sales_by_region')
+        .select('city, province, country, total_price, order_count')
+        .eq('brand_id', brandId)
         .not('country', 'is', null);
       
-      if (!response.error) {
-        customers = response.data || [];
-        console.log(`Found ${customers.length} customers with location columns`);
+      // Add date filtering if provided
+      if (fromDate && toDate) {
+        console.log(`Filtering geographic data by date range: ${fromDate} to ${toDate} (timezone: ${timezone})`);
+        
+        // Convert dates to handle user's timezone properly
+        // Calculate timezone offset from the timezone string
+        const getTimezoneOffset = (tz: string): number => {
+          try {
+            const now = new Date();
+            const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+            const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+            return Math.round((utc.getTime() - local.getTime()) / (1000 * 60 * 60)); // hours
+          } catch {
+            return -6; // Default to Central Time if timezone parsing fails
+          }
+        };
+        
+        const offsetHours = getTimezoneOffset(timezone);
+        const startDateTime = `${fromDate}T${String(Math.abs(offsetHours)).padStart(2, '0')}:00:00Z`;
+        
+        // For end date, we need to account for the timezone offset
+        const endDate = new Date(toDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const nextDay = endDate.toISOString().split('T')[0];
+        const endDateTime = `${nextDay}T${String(Math.abs(offsetHours) - 1).padStart(2, '0')}:59:59Z`;
+        
+        console.log(`Timezone-adjusted filtering (${timezone}, ${offsetHours}h offset): ${startDateTime} to ${endDateTime}`);
+        
+        query = query
+          .gte('created_at', startDateTime)
+          .lte('created_at', endDateTime);
       } else {
-        // If that fails, try with default_address
-        console.log('New columns not found, falling back to default_address extraction');
-        const fallbackResponse = await supabase
-          .from('shopify_customers')
-          .select('id, default_address, total_spent, orders_count')
-          .in('connection_id', connectionIds)
-          .not('default_address', 'is', null);
-        
-        if (fallbackResponse.error) {
-          console.error('Error fetching geographic data:', fallbackResponse.error);
-          return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
-        }
-        
-        customers = fallbackResponse.data || [];
-        console.log(`Found ${customers.length} customers with default_address`);
+        console.log('No date filtering applied - showing all-time geographic data');
       }
+      
+      const response = await query;
+      
+      if (response.error) {
+        console.error('Error fetching geographic data from sales by region:', response.error);
+        return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
+      }
+      
+      salesByRegion = response.data || [];
+      console.log(`[Geographic API] Found ${salesByRegion.length} sales records with location data`);
+      
+      // Log sample records to see what dates we're getting
+      if (salesByRegion.length > 0) {
+        console.log('[Geographic API] Sample sales records:', salesByRegion.slice(0, 3).map(sale => ({
+          city: sale.city,
+          total_price: sale.total_price,
+          order_count: sale.order_count,
+          created_at: sale.created_at
+        })));
+      }
+      
+      // Also try to get customer data for additional analysis
+      const customerResponse = await supabase
+        .from('shopify_customers')
+        .select('id, city, state_province, country, total_spent, orders_count')
+        .in('connection_id', connectionIds);
+      
+      const customers = customerResponse.data || [];
+      console.log(`Found ${customers.length} total customers for fallback data`);
+      
     } catch (error) {
-      console.error('Error fetching customer data:', error);
+      console.error('Error fetching geographic data:', error);
       return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
     }
     
@@ -199,36 +257,32 @@ export async function GET(request: NextRequest) {
     let totalRevenue = 0;
     let totalCustomers = 0;
     
-    // Process customer data
-    customers.forEach((customer: CustomerData) => {
-      let country, state, city;
+    // Process sales data from shopify_sales_by_region (this has the actual geographic data)
+    console.log(`[Geographic API] Processing ${salesByRegion.length} sales records for aggregation`);
+    
+    salesByRegion.forEach((sale: any, index: number) => {
+      const country = sale.country || 'Unknown';
+      const state = sale.province || '';
+      const city = sale.city || '';
+      const revenue = parseFloat(sale.total_price) || 0;
+      const orderCount = parseInt(sale.order_count) || 1;
       
-      // Check if we're using the new columns or need to extract from default_address
-      if (customer.country !== undefined) {
-        // Using new columns
-        country = customer.country || 'Unknown';
-        state = customer.state_province || '';
-        city = customer.city || '';
-      } else {
-        // Extract from default_address
-        const defaultAddress = customer.default_address || {};
-        country = defaultAddress.country || 'Unknown';
-        state = defaultAddress.province || '';
-        city = defaultAddress.city || '';
-      }
-      
-      const revenue = parseFloat(customer.total_spent) || 0;
+      console.log(`[Geographic API] Processing sale ${index + 1}:`, {
+        city, state, country, revenue, orderCount, created_at: sale.created_at
+      });
       
       // Skip if we don't have any geographic information
       if (country === 'Unknown' && !state && !city) {
+        console.log(`[Geographic API] Skipping sale ${index + 1} - no geographic data`);
         return;
       }
       
       totalRevenue += revenue;
-      totalCustomers++;
+      totalCustomers += orderCount; // Use order count as customer proxy
       
       // Create a key for the region
       let locationKey = `${city}-${state}-${country}`;
+      console.log(`[Geographic API] Location key for sale ${index + 1}: "${locationKey}"`);
       
       // Get coordinates
       let lat = 0, lng = 0;
@@ -247,14 +301,23 @@ export async function GET(request: NextRequest) {
       // Update or create the location entry
       if (locationMap.has(locationKey)) {
         const location = locationMap.get(locationKey)!;
-        location.customerCount += 1;
+        console.log(`[Geographic API] Aggregating with existing location:`, {
+          oldCustomerCount: location.customerCount,
+          newCustomerCount: location.customerCount + orderCount,
+          oldRevenue: location.totalRevenue,
+          newRevenue: location.totalRevenue + revenue
+        });
+        location.customerCount += orderCount;
         location.totalRevenue += revenue;
       } else {
+        console.log(`[Geographic API] Creating new location entry:`, {
+          locationKey, customerCount: orderCount, totalRevenue: revenue
+        });
         locationMap.set(locationKey, {
           city: city || '',
           state: state || '',
           country: country || 'Unknown',
-          customerCount: 1,
+          customerCount: orderCount,
           totalRevenue: revenue,
           lat,
           lng
@@ -300,7 +363,18 @@ export async function GET(request: NextRequest) {
     }
     
     // Add logging to help debug
-    console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers`);
+    console.log(`[Geographic API] Final result for brand ${brandId}:`, {
+      totalLocations: locations.length,
+      totalRevenue,
+      totalCustomers,
+      dateFiltering: !!(fromDate && toDate),
+      locations: locations.map(loc => ({
+        city: loc.city,
+        state: loc.state,
+        customerCount: loc.customerCount,
+        totalRevenue: loc.totalRevenue
+      }))
+    });
     
     return NextResponse.json({ 
       locations,

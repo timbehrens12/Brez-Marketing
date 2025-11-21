@@ -5,18 +5,43 @@ import { auth } from '@clerk/nextjs';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
+    // 🔒 SECURITY: Enhanced authentication and rate limiting
     const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body
-    const { brandId, area } = await request.json();
+    // 🔒 SECURITY: Rate limiting for AI operations
+    const { rateLimiter } = await import('@/lib/rate-limiter')
+    const rateLimitResult = await rateLimiter.limit(
+      `ai-recommendations:${userId}`,
+      { interval: 300, limit: 5 } // 5 AI recommendations per 5 minutes
+    )
     
-    if (!brandId) {
-      return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 });
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded for AI recommendations',
+          retryAfter: rateLimitResult.retryAfter
+        }, 
+        { status: 429 }
+      )
     }
+
+    // 🔒 SECURITY: Input validation and sanitization
+    const body = await request.json();
+    const { brandId, area } = body;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!brandId || !uuidRegex.test(brandId)) {
+      return NextResponse.json({ error: 'Invalid brand ID format' }, { status: 400 });
+    }
+    
+    // Sanitize area input
+    const sanitizedArea = typeof area === 'string' ? 
+      area.trim().slice(0, 100).replace(/[<>\"'&]/g, '') : 
+      'general';
 
     // Verify user has access to this brand
     const { data: brand, error: brandError } = await supabase
@@ -45,27 +70,126 @@ export async function POST(request: NextRequest) {
     // Fetch data needed for recommendations
     let data: any = {};
     
-    // Get recent orders - limit to 30 most recent
+    // Get enhanced orders data with comprehensive fields
     const { data: recentOrders, error: ordersError } = await supabase
       .from('shopify_orders')
-      .select('id, total_price, created_at, line_items')
+      .select('*')
       .eq('connection_id', connection.id)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(50);
       
     if (!ordersError) {
       data.recentOrders = recentOrders;
     }
     
-    // Get customer data - limit to 30 customers
+    // Get enhanced customer data
     const { data: customers, error: customersError } = await supabase
       .from('shopify_customers')
-      .select('id, is_returning_customer, total_spent, orders_count, customer_segment')
+      .select('*')
       .eq('connection_id', connection.id)
-      .limit(30);
+      .order('total_spent', { ascending: false })
+      .limit(50);
       
     if (!customersError) {
       data.customers = customers;
+    }
+    
+    // Get product performance data
+    const { data: products, error: productsError } = await supabase
+      .from('shopify_products_enhanced')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    if (!productsError) {
+      data.products = products;
+    }
+    
+    // Get discount performance data
+    const { data: discounts, error: discountsError } = await supabase
+      .from('shopify_discounts_enhanced')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .order('usage_count', { ascending: false })
+      .limit(20);
+      
+    if (!discountsError) {
+      data.discounts = discounts;
+    }
+    
+    // Get regional sales data
+    const { data: regionalSales, error: regionalSalesError } = await supabase
+      .from('shopify_sales_by_region')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .order('total_sales', { ascending: false })
+      .limit(20);
+      
+    if (!regionalSalesError) {
+      data.regionalSales = regionalSales;
+    }
+    
+    // Get cart abandonment insights
+    const { data: draftOrders, error: draftOrdersError } = await supabase
+      .from('shopify_draft_orders_enhanced')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .order('total_price', { ascending: false })
+      .limit(30);
+      
+    if (!draftOrdersError) {
+      data.draftOrders = draftOrders;
+    }
+
+    // Get inventory items for margin calculation
+    const { data: inventoryItems, error: inventoryItemsError } = await supabase
+      .from('shopify_inventory_items')
+      .select('*')
+      .eq('brand_id', brandId);
+
+    // Calculate margin analysis
+    if (!inventoryItemsError && inventoryItems?.length > 0 && recentOrders?.length > 0) {
+      const inventoryCostMap = new Map();
+      inventoryItems.forEach((item: any) => {
+        inventoryCostMap.set(item.inventory_item_id, parseFloat(item.cost) || 0);
+      });
+
+      let totalCost = 0;
+      let totalRevenue = 0;
+      let ordersWithMarginData = 0;
+
+      recentOrders.forEach((order: any) => {
+        if (order.line_items && Array.isArray(order.line_items)) {
+          let orderHasCostData = false;
+          const orderRevenue = parseFloat(order.total_price) || 0;
+          totalRevenue += orderRevenue;
+
+          order.line_items.forEach((lineItem: any) => {
+            const inventoryItemId = lineItem.variant?.inventory_item_id;
+            const unitCost = inventoryCostMap.get(inventoryItemId?.toString()) || 0;
+            const quantity = parseInt(lineItem.quantity) || 0;
+            
+            if (unitCost > 0) {
+              totalCost += unitCost * quantity;
+              orderHasCostData = true;
+            }
+          });
+          
+          if (orderHasCostData) {
+            ordersWithMarginData++;
+          }
+        }
+      });
+
+      const averageMargin = totalRevenue > 0 && totalCost > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
+      data.marginAnalysis = {
+        totalCost,
+        totalProfit: totalRevenue - totalCost,
+        averageMargin,
+        ordersWithMarginData,
+        marginDataCoverage: recentOrders.length > 0 ? (ordersWithMarginData / recentOrders.length) * 100 : 0
+      };
     }
     
     // Get inventory data - limit to 30 items

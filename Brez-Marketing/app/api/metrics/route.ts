@@ -8,8 +8,9 @@ export async function GET(request: Request) {
   const to = searchParams.get('to')
   const brandId = searchParams.get('brandId')
   const platform = searchParams.get('platform')
+  const timezone = searchParams.get('timezone') || 'America/Chicago' // Default to Chicago
 
-  console.log('Received metrics request:', { from, to, brandId, platform })
+  // Received metrics request
 
   if (!from || !to || !brandId) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
@@ -18,7 +19,6 @@ export async function GET(request: Request) {
   try {
     // Parse and validate date parameters
     let fromDate, toDate, adjustedToDate;
-    let isYesterday = false;
     
     try {
       fromDate = parseISO(from);
@@ -31,28 +31,10 @@ export async function GET(request: Request) {
       // Adjust the end date to include the full day (up to 23:59:59)
       adjustedToDate = endOfDay(toDate);
       
-      console.log('Date range parsed successfully:');
-      console.log(`From: ${format(fromDate, 'yyyy-MM-dd HH:mm:ss')}`);
-      console.log(`To (original): ${format(toDate, 'yyyy-MM-dd HH:mm:ss')}`);
-      console.log(`To (adjusted): ${format(adjustedToDate, 'yyyy-MM-dd HH:mm:ss')}`);
+      // Date range parsed successfully
       
-      // Check if we're looking at yesterday (March 9th, 2025)
-      isYesterday = fromDate.getFullYear() === 2025 &&
-                    fromDate.getMonth() === 2 && // 0-indexed, so 2 = March
-                    fromDate.getDate() === 9;
-      
-      if (isYesterday) {
-        console.log('DETECTED: Looking at March 9th, 2025');
-        
-        // Force single day view for March 9th
-        fromDate = new Date(2025, 2, 9, 0, 0, 0, 0); // March 9th, 2025 00:00:00
-        toDate = new Date(2025, 2, 9, 23, 59, 59, 999); // March 9th, 2025 23:59:59.999
-        adjustedToDate = toDate;
-        
-        console.log(`FIXED date range for March 9th: ${format(fromDate, 'yyyy-MM-dd')} to ${format(adjustedToDate, 'yyyy-MM-dd')}`);
-      }
     } catch (error) {
-      console.error('Error parsing date parameters:', error);
+      // Error parsing date parameters
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
     
@@ -66,7 +48,7 @@ export async function GET(request: Request) {
       .single()
 
     if (!connection) {
-      console.log('No active connection found')
+      // No active connection found
       return NextResponse.json({
         totalSales: 0,
         ordersPlaced: 0,
@@ -84,28 +66,41 @@ export async function GET(request: Request) {
       })
     }
 
-    console.log('Found connection:', connection)
+    // Found connection
 
     // Format dates for database query
-    let formattedFromDate = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-    let formattedToDate = format(adjustedToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    // Use PostgreSQL's timezone-aware queries to handle user's timezone properly
+    const fromDateStr = format(fromDate, 'yyyy-MM-dd');
+    const toDateStr = format(adjustedToDate, 'yyyy-MM-dd');
     
-    // Special handling for March 9th, 2025
-    if (isYesterday) {
-      // Ensure we're querying specifically for March 9th, 2025
-      const march9Start = new Date(2025, 2, 9, 0, 0, 0, 0);
-      const march9End = new Date(2025, 2, 9, 23, 59, 59, 999);
-      
-      formattedFromDate = format(march9Start, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-      formattedToDate = format(march9End, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-      
-      console.log('OVERRIDE: Using specific date range for March 9th:');
-      console.log(`From: ${formattedFromDate}`);
-      console.log(`To: ${formattedToDate}`);
-    } else {
-      console.log('Querying orders with date range:');
-      console.log(`From: ${formattedFromDate}`);
-      console.log(`To: ${formattedToDate}`);
+    // Query orders where the created_at converted to user's timezone falls within the date range
+    let formattedFromDate = fromDateStr;
+    let formattedToDate = toDateStr;
+    
+    // Timezone debugging
+    console.log(`📅 Original request dates: from=${from}, to=${to}`);
+    console.log(`🌍 User timezone: ${timezone}`);
+    console.log(`🏠 Server timezone offset: ${new Date().getTimezoneOffset()} minutes`);
+    console.log(`📍 Parsed fromDate (UTC): ${fromDate.toISOString()}`);
+    console.log(`📍 Parsed toDate (UTC): ${adjustedToDate.toISOString()}`);
+    console.log(`🔍 Will query orders where DATE(created_at AT TIME ZONE '${timezone}') = '${fromDateStr}' to '${toDateStr}'`);
+    
+    // Add more detailed date debugging for longer date ranges
+    const rangeDays = differenceInDays(adjustedToDate, fromDate) + 1;
+    if (rangeDays > 28) {
+      console.log(`LONG DATE RANGE DETECTED: ${rangeDays} days`);
+      console.log(`From date: ${format(fromDate, 'yyyy-MM-dd')} (${fromDate.toISOString()})`);
+      console.log(`To date: ${format(adjustedToDate, 'yyyy-MM-dd')} (${adjustedToDate.toISOString()})`);
+    }
+
+    // Special debugging for March 1-April 2 date range that has a known discrepancy
+    const fromMonthDay = format(fromDate, 'MM-dd');
+    const toMonthDay = format(adjustedToDate, 'MM-dd');
+    
+    if (fromMonthDay === '03-01' && toMonthDay === '04-02') {
+      console.log(`🔍 SPECIAL DEBUGGING: Detected March 1-April 2 date range with known discrepancy`);
+      console.log(`Exact from: ${format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")}`);
+      console.log(`Exact to: ${format(adjustedToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")}`);
     }
 
     // Calculate the previous period date range (same length as current period)
@@ -113,97 +108,184 @@ export async function GET(request: Request) {
     const selectedPeriodDays = differenceInDays(adjustedToDate, fromDate) + 1;
     console.log(`Selected period is ${selectedPeriodDays} days long`);
     
-    // Check if we're looking at today (March 10th, 2025)
-    const isToday = isSameDay(fromDate, new Date()) && isSameDay(adjustedToDate, new Date());
+    // Check if we're looking at today for comparison period calculation (still relevant)
+    const isTodayRequest = isSameDay(fromDate, new Date()) && isSameDay(adjustedToDate, new Date());
     
     let prevFromDate, prevToDate;
     
-    if (isYesterday) {
-      console.log('Looking at March 9th, 2025 - Comparing to March 8th');
+    // Simplified previous period calculation: always the period of same length before the current.
+    prevToDate = startOfDay(fromDate); // Day before start of current period
+    prevToDate.setDate(prevToDate.getDate() - 1); // End of previous period is the day before the start of current period
+    prevToDate.setHours(23, 59, 59, 999); // Set to end of day
+    
+    prevFromDate = new Date(prevToDate);
+    prevFromDate.setDate(prevFromDate.getDate() - selectedPeriodDays + 1); // Start of previous period
+    prevFromDate.setHours(0, 0, 0, 0); // Set to start of day
       
-      // Set comparison to March 8th (the day before)
-      prevFromDate = new Date(2025, 2, 8, 0, 0, 0, 0); // March 8th, 2025 00:00:00
-      prevToDate = new Date(2025, 2, 8, 23, 59, 59, 999); // March 8th, 2025 23:59:59.999
-      
-      console.log(`FIXED comparison for March 9th: Using March 8th (${format(prevFromDate, 'yyyy-MM-dd')} to ${format(prevToDate, 'yyyy-MM-dd')})`);
-    } else {
-      // Calculate the previous period as the exact same number of days immediately before the selected period
-      prevToDate = startOfDay(fromDate);
-      prevToDate.setDate(prevToDate.getDate() - 1); // End of previous period is the day before the start of current period
-      prevToDate.setHours(23, 59, 59, 999); // Set to end of day
-      
-      prevFromDate = new Date(prevToDate);
-      prevFromDate.setDate(prevFromDate.getDate() - selectedPeriodDays + 1); // Start of previous period
-      prevFromDate.setHours(0, 0, 0, 0); // Set to start of day
-      
-      // Log if we're comparing today to yesterday
-      if (isToday) {
-        console.log('Comparing today to yesterday');
-      }
+    if (isTodayRequest) { // Log if comparing today to yesterday based on the actual request
+      console.log('Calculating previous period for a "today" request (will be yesterday)');
     }
     
-    const formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-    const formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    const formattedPrevFromDate = format(prevFromDate, 'yyyy-MM-dd');
+    const formattedPrevToDate = format(prevToDate, 'yyyy-MM-dd');
     
     console.log('Previous period date range:');
     console.log(`From: ${formattedPrevFromDate} (${format(prevFromDate, 'yyyy-MM-dd')})`);
     console.log(`To: ${formattedPrevToDate} (${format(prevToDate, 'yyyy-MM-dd')})`);
     console.log(`Previous period is also ${selectedPeriodDays} days long`);
 
-    // Fetch orders from Supabase for current period
-    const { data: orders, error: ordersError } = await supabase
+    // Fetch orders from Supabase for current period using timezone-aware queries
+    console.log(`Executing Supabase query with timezone-aware date filtering:`)
+    console.log(`Connection ID: ${connection.id}`)
+    console.log(`Date range: ${formattedFromDate} to ${formattedToDate} in timezone ${timezone}`)
+
+    // Use timezone-aware query to filter by dates in user's timezone
+    let { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('created_at', formattedFromDate)
-      .lte('created_at', formattedToDate)
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError);
       throw ordersError;
     }
+
+    // Filter orders by timezone-aware dates on the server side
+    orders = orders?.filter(order => {
+      if (!order.created_at) return false;
+      
+      // Convert UTC timestamp to user's timezone and extract date
+      const orderDate = new Date(order.created_at);
+      const userTimezoneDate = orderDate.toLocaleDateString('en-CA', { 
+        timeZone: timezone 
+      }); // YYYY-MM-DD format
+      
+      return userTimezoneDate >= formattedFromDate && userTimezoneDate <= formattedToDate;
+    }) || [];
+
+    console.log(`🔍 Query returned ${orders?.length || 0} orders for the selected period`);
     
-    // Special handling for March 9th, 2025 - ensure we're showing March 9th data, not March 10th
-    let filteredOrders = orders || [];
-    if (isYesterday) {
-      console.log('Special handling for March 9th data - filtering out any orders not from March 9th');
-      filteredOrders = (orders || []).filter((order: any) => {
+    // Add detailed order debugging for troubleshooting
+    if (orders && orders.length > 0) {
+      // Get the date range of received orders
+      const orderDates = orders.map((order: any) => new Date(order.created_at));
+      const minOrderDate = new Date(Math.min(...orderDates.map((d: Date) => d.getTime())));
+      const maxOrderDate = new Date(Math.max(...orderDates.map((d: Date) => d.getTime())));
+      
+      console.log(`📊 Order date range in results: ${format(minOrderDate, 'yyyy-MM-dd HH:mm:ss')} to ${format(maxOrderDate, 'yyyy-MM-dd HH:mm:ss')}`);
+      console.log(`📊 Min order UTC: ${minOrderDate.toISOString()}`);
+      console.log(`📊 Max order UTC: ${maxOrderDate.toISOString()}`);
+      
+      // Show first few orders with their exact timestamps
+      console.log(`📝 First 3 orders with timestamps:`);
+      orders.slice(0, 3).forEach((order: any, i: number) => {
         const orderDate = new Date(order.created_at);
-        return orderDate.getFullYear() === 2025 && 
-               orderDate.getMonth() === 2 && 
-               orderDate.getDate() === 9;
+        console.log(`   ${i + 1}. Order #${order.order_number}: $${order.total_price} at ${order.created_at} (UTC: ${orderDate.toISOString()}, Local: ${orderDate.toString()})`);
       });
-      console.log(`Filtered orders: ${filteredOrders.length} (from original ${orders?.length || 0})`);
+      
+      // Calculate total of orders for debugging the financial discrepancy
+      const totalOrderValue = orders.reduce((sum: number, order: any) => {
+        const price = parseFloat(order.total_price || '0');
+        return sum + (isNaN(price) ? 0 : price);
+      }, 0);
+      
+      console.log(`💰 Total order value from database query: $${totalOrderValue.toFixed(2)}`);
+      
+      // Group orders by local date to see distribution
+      const ordersByLocalDate: Record<string, { count: number, total: number, timestamps: string[] }> = {};
+      orders.forEach((order: any) => {
+        const utcDate = new Date(order.created_at);
+        const userTimezoneDate = utcDate.toLocaleDateString('en-CA', { 
+          timeZone: timezone 
+        }); // YYYY-MM-DD format in user's timezone
+        
+        if (!ordersByLocalDate[userTimezoneDate]) {
+          ordersByLocalDate[userTimezoneDate] = { count: 0, total: 0, timestamps: [] };
+        }
+        
+        ordersByLocalDate[userTimezoneDate].count += 1;
+        ordersByLocalDate[userTimezoneDate].total += parseFloat(order.total_price || '0');
+        ordersByLocalDate[userTimezoneDate].timestamps.push(order.created_at);
+      });
+      
+      console.log(`📅 Orders grouped by USER TIMEZONE (${timezone}) date:`);
+      Object.entries(ordersByLocalDate).forEach(([date, data]) => {
+        console.log(`   ${date}: ${data.count} orders, $${data.total.toFixed(2)}`);
+        console.log(`   Timestamps: ${data.timestamps.slice(0, 3).join(', ')}`);
+        // Show what each timestamp looks like in user's timezone
+        data.timestamps.slice(0, 3).forEach(timestamp => {
+          const utcDate = new Date(timestamp);
+          const userDate = new Date(utcDate.toLocaleString('en-US', { timeZone: timezone }));
+          console.log(`     UTC: ${timestamp} → ${timezone}: ${userDate.toString()}`);
+        });
+      });
     }
 
-    // Fetch orders from Supabase for previous period
-    const { data: prevOrders, error: prevOrdersError } = await supabase
+    // The initial 'orders' variable should now contain the correct data based on the request's date range.
+    // No further filtering or re-querying based on isYesterday or isLast30Days should be needed here.
+    let filteredOrders = orders || [];
+    
+    // Fetch orders from Supabase for previous period using timezone-aware filtering
+    let { data: allPrevOrders, error: prevOrdersError } = await supabase
       .from('shopify_orders')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('created_at', formattedPrevFromDate)
-      .lte('created_at', formattedPrevToDate)
 
     if (prevOrdersError) {
       console.error('Error fetching previous period orders:', prevOrdersError);
       // Continue with current period data even if previous period fetch fails
     }
 
+    // Filter previous period orders by timezone-aware dates
+    const prevOrders = allPrevOrders?.filter(order => {
+      if (!order.created_at) return false;
+      
+      const orderDate = new Date(order.created_at);
+      const userTimezoneDate = orderDate.toLocaleDateString('en-CA', { 
+        timeZone: timezone 
+      });
+      
+      return userTimezoneDate >= formattedPrevFromDate && userTimezoneDate <= formattedPrevToDate;
+    }) || [];
+
     console.log(`Found ${orders?.length || 0} orders for current period`);
     console.log(`Found ${prevOrders?.length || 0} orders for previous period`);
     
-    // If we're looking at March 9th, log the filtered orders count
-    if (isYesterday) {
-      console.log(`After filtering, using ${filteredOrders.length} orders for March 9th`);
-    }
-
     // Calculate metrics from orders
-    const currentTotalSales = filteredOrders.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
+    const currentTotalSales = filteredOrders.reduce((sum: number, order: any) => {
+      // Add safety check for null/undefined
+      const price = parseFloat(order.total_price || '0');
+      if (isNaN(price)) {
+        console.log(`Warning: Invalid price for order ${order.id}: ${order.total_price}`);
+        return sum;
+      }
+      return sum + price;
+    }, 0) || 0;
+
+    console.log(`Calculated totalSales: ${currentTotalSales}`);
+
     const currentOrdersPlaced = filteredOrders.length || 0;
+    console.log(`Calculated ordersPlaced: ${currentOrdersPlaced}`);
+
     const currentAverageOrderValue = currentOrdersPlaced ? currentTotalSales / currentOrdersPlaced : 0;
-    const currentUnitsSold = filteredOrders.reduce((sum: number, order: any) => 
-      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
-    ) || 0;
+    console.log(`Calculated averageOrderValue: ${currentAverageOrderValue}`);
+
+    const currentUnitsSold = filteredOrders.reduce((sum: number, order: any) => {
+      if (!order.line_items || !Array.isArray(order.line_items)) {
+        console.log(`Warning: Missing or invalid line_items for order ${order.id}`);
+        return sum;
+      }
+      return sum + order.line_items.reduce((itemSum: number, item: any) => {
+        const quantity = parseInt(item.quantity || '0', 10);
+        if (isNaN(quantity)) {
+          console.log(`Warning: Invalid quantity for item in order ${order.id}: ${item.quantity}`);
+          return itemSum;
+        }
+        return itemSum + quantity;
+      }, 0);
+    }, 0) || 0;
+
+    console.log(`Calculated unitsSold: ${currentUnitsSold}`);
 
     // Calculate previous period metrics
     const prevTotalSales = prevOrders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
@@ -243,8 +325,13 @@ export async function GET(request: Request) {
       aovGrowth,
       unitsGrowth,
       revenueByDay: Object.entries((filteredOrders || []).reduce((acc: Record<string, number>, order: any) => { 
-        const date = new Date(order.created_at).toISOString().split('T')[0]
-        acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
+        // Convert to user's timezone for chart grouping
+        const orderDate = new Date(order.created_at);
+        const userTimezoneDate = orderDate.toLocaleDateString('en-CA', { 
+          timeZone: timezone 
+        }); // YYYY-MM-DD format
+        console.log(`📊 Chart grouping - Order ${order.order_number}: UTC ${order.created_at} → ${timezone} date ${userTimezoneDate} ($${order.total_price})`);
+        acc[userTimezoneDate] = (acc[userTimezoneDate] || 0) + parseFloat(order.total_price)
         return acc
       }, {})).map(([date, revenue]) => ({
         date,
@@ -277,10 +364,11 @@ export async function GET(request: Request) {
             return null;
           }
           
-          // Format date consistently - use ISO format with just the date part for daily views
-          // and full ISO for hourly views
+          // SIMPLE FIX: Just use the original UTC timestamp for charts
+          // The frontend will handle timezone display, we just need consistent data
+          console.log(`📈 Sales data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at} ($${order.total_price})`);
           return {
-            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
+            date: order.created_at, // Use original UTC timestamp
             value: parseFloat(order.total_price || '0')
           };
         } catch (error) {
@@ -305,9 +393,10 @@ export async function GET(request: Request) {
             return null;
           }
           
-          // Format date consistently
+          // SIMPLE FIX: Just use the original UTC timestamp for charts
+          console.log(`📊 Orders data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at}`);
           return {
-            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
+            date: order.created_at, // Use original UTC timestamp
             value: 1 // Each order counts as 1
           };
         } catch (error) {
@@ -332,9 +421,10 @@ export async function GET(request: Request) {
             return null;
           }
           
-          // Format date consistently
+          // SIMPLE FIX: Just use the original UTC timestamp for charts
+          console.log(`💵 AOV data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at} ($${order.total_price})`);
           return {
-            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
+            date: order.created_at, // Use original UTC timestamp
             value: parseFloat(order.total_price || '0')
           };
         } catch (error) {
@@ -359,9 +449,10 @@ export async function GET(request: Request) {
             return null;
           }
           
-          // Format date consistently
+          // SIMPLE FIX: Just use the original UTC timestamp for charts
+          console.log(`📦 Units data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at} (${order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)} units)`);
           return {
-            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
+            date: order.created_at, // Use original UTC timestamp
             value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
           };
         } catch (error) {
@@ -382,6 +473,13 @@ export async function GET(request: Request) {
       unitsGrowth: metrics.unitsGrowth,
       revenueByDayCount: metrics.revenueByDay.length
     });
+
+    console.log('📊 FINAL CHART DATA SUMMARY:');
+    console.log(`📈 Revenue by day (${metrics.revenueByDay?.length || 0} days):`, metrics.revenueByDay?.map((d: any) => `${d.date}: $${d.revenue}`).join(', '));
+    console.log(`📊 Sales data points: ${metrics.salesData?.length || 0}`);
+    console.log(`📊 Orders data points: ${metrics.ordersData?.length || 0}`);
+    console.log(`💵 AOV data points: ${metrics.aovData?.length || 0}`);
+    // Units data points logged;
 
     // Add previous period date range to the response for UI display
     metrics.previousPeriod = {

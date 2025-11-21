@@ -124,6 +124,29 @@ export function RevenueCalendarNew({ brandId, isRefreshing = false }: RevenueCal
       fetchSalesData();
     }
   }, [isRefreshing, brandId]);
+
+  // Listen for refresh events
+  useEffect(() => {
+    let cancelled = false;
+    
+    const handleRefresh = async () => {
+      if (cancelled) return;
+      console.log('[RevenueCalendarNew] Received refresh event, reloading data');
+      await fetchSalesData();
+    };
+    
+    // Listen for various refresh events
+    window.addEventListener('force-shopify-refresh', handleRefresh);
+    window.addEventListener('global-refresh-all', handleRefresh);
+    window.addEventListener('refresh-all-widgets', handleRefresh);
+    
+    return () => {
+      cancelled = true;
+      window.removeEventListener('force-shopify-refresh', handleRefresh);
+      window.removeEventListener('global-refresh-all', handleRefresh);
+      window.removeEventListener('refresh-all-widgets', handleRefresh);
+    };
+  }, [brandId]);
   
   // Handle time frame change
   const handleTimeFrameChange = (value: TimeFrame) => {

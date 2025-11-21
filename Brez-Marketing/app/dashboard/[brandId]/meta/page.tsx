@@ -19,7 +19,7 @@ export default function MetaDashboardPage({ params }: MetaDashboardPageProps) {
   const { userId } = auth()
   
   if (!userId) {
-    redirect('/sign-in')
+    redirect('/login')
   }
   
   return (

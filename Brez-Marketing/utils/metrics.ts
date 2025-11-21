@@ -16,19 +16,13 @@ import {
   endOfWeek,
   addDays,
 } from "date-fns"
-import { toZonedTime } from "date-fns-tz"
-
-// Create a custom utcToZonedTime function
-const utcToZonedTime = (date: Date | number, timeZone: string): Date => {
-  return toZonedTime(date, timeZone)
-}
-
+// Use standard date functions - no timezone conversion needed
 const SHOPIFY_TIMEZONE = "America/New_York"
 
 function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
-  // Convert the dates to Shopify's timezone
-  let zonedStart = utcToZonedTime(start, SHOPIFY_TIMEZONE)
-  let zonedEnd = utcToZonedTime(end, SHOPIFY_TIMEZONE)
+  // Use standard date functions
+  let zonedStart = new Date(start)
+  let zonedEnd = new Date(end)
 
   // Ensure start is not after end
   if (zonedStart > zonedEnd) {
@@ -37,7 +31,7 @@ function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
     zonedEnd = temp
   }
 
-  // If start and end are the same, preserve the full day's hours in Shopify's timezone
+  // If start and end are the same, preserve the full day's hours
   if (isSameDay(zonedStart, zonedEnd)) {
     const startOfZonedDay = new Date(zonedStart)
     startOfZonedDay.setHours(0, 0, 0, 0)
@@ -45,14 +39,12 @@ function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
     const endOfZonedDay = new Date(zonedEnd)
     endOfZonedDay.setHours(23, 59, 59, 999)
 
-    // Convert back to UTC for storage
     return {
-      start: new Date(startOfZonedDay),
-      end: new Date(endOfZonedDay),
+      start: startOfZonedDay,
+      end: endOfZonedDay,
     }
   }
 
-  // Convert back to UTC for storage
   return {
     start: new Date(startOfDay(zonedStart)),
     end: new Date(endOfDay(zonedEnd)),
@@ -61,8 +53,8 @@ function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
 
 // Update the generateSalesData function to handle dates correctly
 function generateSalesData(orders: Order[], refunds: Order[], range: DateRangeWithStartEnd) {
-  const zonedStart = utcToZonedTime(range.start, SHOPIFY_TIMEZONE)
-  const zonedEnd = utcToZonedTime(range.end, SHOPIFY_TIMEZONE)
+  const zonedStart = new Date(range.start)
+  const zonedEnd = new Date(range.end)
   const isSingleDay = isSameDay(zonedStart, zonedEnd)
 
   // Generate intervals only for the selected date range
@@ -89,7 +81,7 @@ function generateSalesData(orders: Order[], refunds: Order[], range: DateRangeWi
 
   // Process orders
   orders.forEach((order) => {
-    const orderDate = utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE)
+    const orderDate = parseISO(order.created_at)
 
     if (isValid(orderDate) && isWithinInterval(orderDate, { start: zonedStart, end: zonedEnd })) {
       const key = isSingleDay ? format(orderDate, "yyyy-MM-dd'T'HH:mm:ss") : format(orderDate, "yyyy-MM-dd")
@@ -111,7 +103,7 @@ function generateSalesData(orders: Order[], refunds: Order[], range: DateRangeWi
 
   // Process refunds
   refunds.forEach((refund) => {
-    const refundDate = utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE)
+    const refundDate = parseISO(refund.created_at)
 
     if (isValid(refundDate) && isWithinInterval(refundDate, { start: zonedStart, end: zonedEnd })) {
       const key = isSingleDay ? format(refundDate, "yyyy-MM-dd'T'HH:mm:ss") : format(refundDate, "yyyy-MM-dd")
@@ -135,9 +127,8 @@ function generateSalesData(orders: Order[], refunds: Order[], range: DateRangeWi
 }
 
 function generateHourlyData(orders: Order[], refunds: Order[], range: DateRangeWithStartEnd): MetricData[] {
-  const timezone = "America/New_York" // Shopify's timezone
-  const zonedStart = utcToZonedTime(range.start, timezone)
-  const zonedEnd = utcToZonedTime(range.end, timezone)
+  const zonedStart = new Date(range.start)
+  const zonedEnd = new Date(range.end)
 
   // Create 24 hourly intervals
   const intervals = Array.from({ length: 24 }, (_, i) => {
@@ -161,7 +152,7 @@ function generateHourlyData(orders: Order[], refunds: Order[], range: DateRangeW
 
   // Process orders
   orders.forEach((order) => {
-    const orderDate = utcToZonedTime(parseISO(order.created_at), timezone)
+    const orderDate = parseISO(order.created_at)
     if (isWithinInterval(orderDate, { start: zonedStart, end: zonedEnd })) {
       const hour = format(orderDate, "HH:mm")
 
@@ -179,7 +170,7 @@ function generateHourlyData(orders: Order[], refunds: Order[], range: DateRangeW
 
   // Process refunds
   refunds.forEach((refund) => {
-    const refundDate = utcToZonedTime(parseISO(refund.created_at), timezone)
+    const refundDate = parseISO(refund.created_at)
     if (isWithinInterval(refundDate, { start: zonedStart, end: zonedEnd })) {
       const hour = format(refundDate, "HH:mm")
       if (hourlyData[hour]) {
@@ -266,13 +257,13 @@ const calculateRevenueByDay = (orders: Order[], refunds: Order[]): number[] => {
   const revenueByDay = Array(7).fill(0)
 
   orders.forEach((order) => {
-    const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
+    const orderDate = addDays(parseISO(order.created_at), 1)
     const dayIndex = orderDate.getDay()
     revenueByDay[dayIndex] += Number(order.total_price || 0)
   })
 
   refunds.forEach((refund) => {
-    const refundDate = addDays(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE), 1)
+    const refundDate = addDays(parseISO(refund.created_at), 1)
     const dayIndex = refundDate.getDay()
     revenueByDay[dayIndex] -= Number(refund.total_price || 0)
   })
@@ -287,7 +278,7 @@ const calculateOverallConversionRate = (orders: Order[]): number => {
 const calculateCurrentWeekRevenue = (orders: Order[], refunds: Order[]): number[] => {
   const today = new Date()
   // Convert today to Shopify's timezone
-  const zonedToday = utcToZonedTime(today, SHOPIFY_TIMEZONE)
+  const zonedToday = today
 
   // Start the week on Sunday in Shopify's timezone
   const startOfCurrentWeek = startOfWeek(zonedToday, { weekStartsOn: 0 })
@@ -296,8 +287,8 @@ const calculateCurrentWeekRevenue = (orders: Order[], refunds: Order[]): number[
   const weekRevenue = Array(7).fill(0)
 
   orders.forEach((order) => {
-    // Convert order date to Shopify's timezone
-    const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
+    // Parse order date
+    const orderDate = addDays(parseISO(order.created_at), 1)
 
     if (isWithinInterval(orderDate, { start: startOfCurrentWeek, end: endOfCurrentWeek })) {
       const dayIndex = orderDate.getDay()
@@ -306,7 +297,7 @@ const calculateCurrentWeekRevenue = (orders: Order[], refunds: Order[]): number[
   })
 
   refunds.forEach((refund) => {
-    const refundDate = addDays(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE), 1)
+    const refundDate = addDays(parseISO(refund.created_at), 1)
     if (isWithinInterval(refundDate, { start: startOfCurrentWeek, end: endOfCurrentWeek })) {
       const dayIndex = refundDate.getDay()
       weekRevenue[dayIndex] -= Number(refund.total_price || 0)
@@ -324,7 +315,8 @@ const calculateInventoryLevels = (products: ShopifyProduct[], date: Date): numbe
       (product.variants?.reduce((variantTotal, variant) => {
         // Check if the variant has inventory management
         if (variant.inventory_management === "shopify") {
-          return variantTotal + (variant.inventory_quantity || 0)
+          // Only count positive inventory quantities (exclude 0 and negative stock)
+          return variantTotal + Math.max(0, variant.inventory_quantity || 0)
         }
         return variantTotal
       }, 0) || 0)
@@ -413,13 +405,13 @@ const generateInventoryData = (
   return intervals.map((interval) => {
     const ordersSinceLastInterval = orders.filter(
       (order) =>
-        new Date(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE)) <= interval &&
-        new Date(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE)) > intervals[0],
+        new Date(parseISO(order.created_at)) <= interval &&
+        new Date(parseISO(order.created_at)) > intervals[0],
     )
     const refundsSinceLastInterval = refunds.filter(
       (refund) =>
-        new Date(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE)) <= interval &&
-        new Date(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE)) > intervals[0],
+        new Date(parseISO(refund.created_at)) <= interval &&
+        new Date(parseISO(refund.created_at)) > intervals[0],
     )
 
     // Decrease inventory for orders
@@ -443,9 +435,9 @@ const generateInventoryData = (
   })
 }
 
-function formatInTimeZone(date: Date, timeZone: string, formatStr: string): string {
-  const zonedDate = utcToZonedTime(date, timeZone)
-  return format(zonedDate, formatStr)
+function formatInUserTimeZone(date: Date, formatStr: string): string {
+  // Simple implementation that formats a date in user's timezone
+  return format(date, formatStr)
 }
 
 type DateRangeWithStartEnd = {

@@ -146,7 +146,7 @@ Important: Only analyze available data. If no ad platform data exists, focus on 
     <div className="text-sm leading-relaxed space-y-4">
       {isLoadingDailyAnalysis ? (
         <div className="flex flex-col items-center justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400 mb-2" />
           <p>Generating AI analysis...</p>
         </div>
       ) : dailyAiAnalysis ? (
@@ -194,7 +194,7 @@ Important: Only analyze available data. If no ad platform data exists, focus on 
     <div className="text-sm leading-relaxed space-y-4">
       {isLoadingMonthlyAnalysis ? (
         <div className="flex flex-col items-center justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400 mb-2" />
           <p>Generating AI analysis...</p>
         </div>
       ) : monthlyAiAnalysis ? (

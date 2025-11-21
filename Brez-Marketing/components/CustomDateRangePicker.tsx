@@ -285,8 +285,13 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="space-y-4 p-4 bg-[#111111] text-white">
+        <PopoverContent 
+          className="w-auto p-0 data-[state=closed]:animate-none data-[state=open]:animate-none" 
+          align="start"
+          forceMount
+          sideOffset={5}
+        >
+          <div className="space-y-4 p-4 bg-[#111111] text-white rounded-md border border-[#222222]">
             <div className="flex justify-between items-center">
               <div className="text-sm font-medium">
                 {tempDateRange?.from

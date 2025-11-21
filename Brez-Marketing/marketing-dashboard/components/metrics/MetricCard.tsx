@@ -71,8 +71,8 @@ export function MetricCard({
           .toLocaleString("en-US", {
             style: "currency",
             currency: "USD",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           })
           .replace(/^\$/, "") // Remove the leading dollar sign
       default:
@@ -214,9 +214,9 @@ export function MetricCard({
                     case "percentage":
                       return `${val}%`
                     case "currency":
-                      return `$${val}`
+                      return `$${val.toLocaleString('en-US')}`
                     default:
-                      return val.toString()
+                      return val.toLocaleString()
                   }
                 }}
                 stroke="#888888"

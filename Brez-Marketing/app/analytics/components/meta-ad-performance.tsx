@@ -42,6 +42,19 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
         const response = await fetch(`/api/analytics/meta?brandId=${brandId}`)
         const result = await response.json()
         
+        console.log(`[MetaAdPerformance] DEBUG: API Response:`, JSON.stringify({
+          hasData: !!result.data,
+          dataLength: result.data?.length || 0,
+          sampleData: result.data?.[0] ? {
+            impressions: result.data[0].impressions,
+            clicks: result.data[0].clicks,
+            conversions: result.data[0].conversions,
+            spend: result.data[0].spend,
+            date: result.data[0].date
+          } : null,
+          error: result.error
+        }, null, 2))
+        
         if (result.error) {
           throw new Error(result.error)
         }
@@ -64,12 +77,23 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
             sum + (item.conversions || 0), 0)
           totalCost = campaigns.reduce((sum: number, item: any) => 
             sum + (item.spend || 0), 0)
+          
+          console.log(`[MetaAdPerformance] DEBUG: Aggregated metrics:`, JSON.stringify({
+            totalImpressions,
+            totalClicks,
+            totalConversions,
+            totalCost,
+            calculatedCTR: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0,
+            calculatedCVR: totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0
+          }, null, 2))
         } else {
           // Fallback sample data if no real data available
           totalImpressions = 15200
           totalClicks = 820
           totalConversions = 41
           totalCost = 450
+          
+          console.log(`[MetaAdPerformance] DEBUG: Using fallback sample data`)
         }
         
         // Calculate metrics

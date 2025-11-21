@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* Pulse animations removed per user request */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -56,5 +60,161 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Custom red text selection */
+  ::selection {
+    background-color: #FF2A2A;
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background-color: #FF2A2A;
+    color: #ffffff;
+  }
 }
 
+/* Brand Report Improvements */
+.report-container {
+  max-width: 100%;
+  overflow-x: hidden;
+  background: #0b0b0b !important;
+}
+
+.report-header-wrapper {
+  position: relative;
+  overflow: visible;
+  background: #1a1a1a !important;
+}
+
+.report-logo-container {
+  z-index: 20 !important;
+}
+
+.report-info-section {
+  max-width: 65% !important;
+}
+
+.report-footer {
+  flex-wrap: wrap;
+  min-height: 60px;
+  background: #1a1a1a !important;
+}
+
+.footer-brand {
+  white-space: nowrap;
+}
+
+.footer-legal {
+  max-width: 40%;
+}
+
+/* PDF Export specific styles */
+@media print {
+  .report-container {
+    background: #0b0b0b !important;
+  }
+  
+  .report-header-wrapper {
+    padding: 2rem !important;
+    background: #1a1a1a !important;
+  }
+  
+  .report-footer {
+    padding: 1rem !important;
+    min-height: 50px !important;
+    background: #1a1a1a !important;
+  }
+  
+  .report-logo-container {
+    top: 1rem !important;
+    right: 1.5rem !important;
+  }
+}
+
+/* Loading states */
+.report-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.report-loading .report-content {
+  filter: blur(2px);
+}
+
+/* Ensure no blue colors in reports */
+.report-wrapper * {
+  color: inherit !important;
+}
+
+.report-wrapper .report-content {
+  color: #ffffff !important;
+  background: #0b0b0b !important;
+}
+
+.report-wrapper .report-content h1,
+.report-wrapper .report-content h2,
+.report-wrapper .report-content h3 {
+  color: #ffffff !important;
+}
+
+.report-wrapper .report-content p {
+  color: #d1d5db !important;
+}
+
+.report-wrapper .report-content strong {
+  color: #ffffff !important;
+}
+
+.report-wrapper .report-content ul,
+.report-wrapper .report-content ol {
+  color: #d1d5db !important;
+}
+
+.report-wrapper .report-content li {
+  color: #d1d5db !important;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+  border: 2px solid #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #1a1a1a;
+}
+
+/* Modern Loading Screen Animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 8s ease infinite;
+}

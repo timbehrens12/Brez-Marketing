@@ -97,6 +97,8 @@ export interface Metrics {
   conversionGrowth: number
   costPerResult: number
   cprGrowth: number
+  cpc?: number
+  reach?: number
   salesData?: Array<{ date: string; value: number }>
   ordersData?: Array<{ date: string; value: number }>
   aovData?: Array<{ date: string; value: number }>
@@ -194,6 +196,8 @@ export const defaultMetrics: Metrics = {
   conversions: 0,
   conversionGrowth: 0,
   costPerResult: 0,
-  cprGrowth: 0
+  cprGrowth: 0,
+  cpc: 0,
+  reach: 0
 }
 

@@ -1,13 +1,17 @@
 {
   "functions": {
-    "app/api/ai/**/*.ts": {
-      "maxDuration": 60
+    "app/api/ai/generate-creative/route.ts": {
+      "maxDuration": 300
     }
   },
   "crons": [
     {
-      "path": "/api/cron/meta-sync",
-      "schedule": "0 0 * * *"
+      "path": "/api/cron/process-queue",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/meta-sync-validator",
+      "schedule": "*/30 * * * *"
     }
   ]
-} 
+}

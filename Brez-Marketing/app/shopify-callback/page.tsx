@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
-export default function ShopifyCallbackPage() {
+function ShopifyCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing')
@@ -120,6 +120,15 @@ export default function ShopifyCallbackPage() {
           try {
             localStorage.setItem('shopifyConnectionComplete', 'true')
             localStorage.setItem('shopifyConnectionTimestamp', Date.now().toString())
+            
+            // Trigger immediate inventory refresh
+            // This will ensure inventory data is loaded right after reconnection
+            setTimeout(() => {
+              console.log('Triggering inventory refresh after Shopify connection')
+              window.dispatchEvent(new CustomEvent('refreshInventory', { 
+                detail: { brandId } 
+              }))
+            }, 1000)
           } catch (e) {
             console.error('Failed to store data in localStorage:', e)
           }
@@ -157,28 +166,119 @@ export default function ShopifyCallbackPage() {
   }, [searchParams, router])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4">
-      <div className={`text-2xl font-bold mb-4 ${status === 'error' ? 'text-red-500' : status === 'success' ? 'text-green-500' : 'text-blue-500'}`}>
-        {message}
-      </div>
-      
-      {status === 'processing' && (
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-      )}
-      
-      <div className="text-gray-400 mb-8">
-        {status === 'processing' 
-          ? 'Please wait while we complete your Shopify connection...' 
-          : status === 'success'
-            ? 'Redirecting you to the dashboard...'
-            : 'Redirecting you back to settings...'}
-      </div>
-      
-      <div className="w-full max-w-2xl bg-gray-900 rounded-lg p-4 mt-8">
-        <div className="text-sm font-mono text-gray-400 whitespace-pre-wrap">
-          {debugInfo}
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Main Card */}
+        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-8 text-center">
+          
+          {/* Logo/Icon Section */}
+          <div className="mb-8">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-600/20 to-green-700/30 border border-green-600/20 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-10 h-10 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.8 4.4c-.7-.4-1.2-.4-1.4-.4s-.3-.2-.4-.5c-.4-.7-1.1-1.2-1.9-1.2s-1.5.5-1.9 1.2c-.1.3-.2.5-.4.5s-.7 0-1.4.4c-.6.4-1.4 1.1-1.4 2.1 0 .3.1.6.2.9l1.8 11.2c.1.7.7 1.3 1.4 1.3h6.8c.7 0 1.3-.6 1.4-1.3l1.8-11.2c.1-.3.2-.6.2-.9 0-1-.8-1.7-1.4-2.1zM12 3.5c.3 0 .5.2.5.5s-.2.5-.5.5-.5-.2-.5-.5.2-.5.5-.5zm0 3c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/>
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Connecting Shopify</h1>
+            <p className="text-gray-400 text-sm">Setting up your store integration</p>
+          </div>
+
+          {/* Status Section */}
+          <div className="mb-8">
+            {status === 'processing' && (
+              <div className="space-y-6">
+                {/* Animated Dots */}
+                <div className="flex justify-center space-x-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-white/10 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full animate-pulse" style={{width: '75%'}}></div>
+                </div>
+              </div>
+            )}
+            
+            {status === 'success' && (
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            {status === 'error' && (
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-red-500/20 border border-red-500/30 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Message */}
+          <div className="mb-6">
+            <p className={`text-lg font-medium mb-2 ${
+              status === 'error' ? 'text-red-400' : 
+              status === 'success' ? 'text-green-400' : 
+              'text-white'
+            }`}>
+              {message}
+            </p>
+            <p className="text-gray-400 text-sm">
+              {status === 'processing' 
+                ? 'Please wait while we complete your Shopify connection...' 
+                : status === 'success'
+                  ? 'Redirecting you to the dashboard...'
+                  : 'Redirecting you back to settings...'}
+            </p>
+          </div>
+
+          {/* Powered by */}
+          <div className="flex items-center justify-center space-x-2 text-gray-500 text-xs">
+            <span>Powered by</span>
+            <span className="font-semibold text-green-400">Brez Marketing</span>
+          </div>
         </div>
+
+        {/* Debug Info (only show in development or if error) */}
+        {(debugInfo && (status === 'error' || process.env.NODE_ENV === 'development')) && (
+          <div className="mt-6 bg-gray-900/50 backdrop-blur border border-gray-700 rounded-xl p-4">
+            <details className="cursor-pointer">
+              <summary className="text-gray-400 text-sm font-medium mb-2">Debug Information</summary>
+              <div className="text-xs font-mono text-gray-500 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                {debugInfo}
+              </div>
+            </details>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function ShopifyCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-green-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-white mb-2">Loading...</h1>
+          </div>
+        </div>
+      </div>
+    }>
+      <ShopifyCallbackContent />
+    </Suspense>
   )
 } 
