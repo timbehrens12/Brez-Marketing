@@ -76,17 +76,17 @@ interface SidebarProps {
 export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
   const [activeTab, setActiveTab] = useState("wheels");
   const [selectedProducts, setSelectedProducts] = useState<{
-    wheel?: { name: string; price: number };
-    tire?: { name: string; price: number };
-    suspension?: { name: string; price: number };
-    spacer?: { name: string; price: number };
-    accessory?: { name: string; price: number };
+    wheel?: { name: string; price: number; imageUrl?: string };
+    tire?: { name: string; price: number; imageUrl?: string };
+    suspension?: { name: string; price: number; imageUrl?: string };
+    spacer?: { name: string; price: number; imageUrl?: string };
+    accessory?: { name: string; price: number; imageUrl?: string };
   }>({});
 
   const { setIsGenerating, addGenerationStep, clearGenerationSteps } = useStore();
   const totalPrice = Object.values(selectedProducts).reduce((sum, product) => sum + (product?.price || 0), 0);
 
-  const handleProductSelect = (category: keyof typeof selectedProducts) => (product: { name: string; price: number }) => {
+  const handleProductSelect = (category: keyof typeof selectedProducts) => (product: { name: string; price: number; imageUrl?: string }) => {
     setSelectedProducts(prev => ({ ...prev, [category]: product }));
   };
 
@@ -225,7 +225,16 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <WheelIcon />
+              {selectedProducts.wheel?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedProducts.wheel.imageUrl}
+                  alt={selectedProducts.wheel.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <WheelIcon />
+              )}
               {selectedProducts.wheel && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -253,7 +262,16 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <TireIcon />
+              {selectedProducts.tire?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedProducts.tire.imageUrl}
+                  alt={selectedProducts.tire.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <TireIcon />
+              )}
               {selectedProducts.tire && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -281,7 +299,16 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <SuspensionIcon />
+              {selectedProducts.suspension?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedProducts.suspension.imageUrl}
+                  alt={selectedProducts.suspension.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <SuspensionIcon />
+              )}
               {selectedProducts.suspension && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -309,7 +336,16 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <SpacerIcon />
+              {selectedProducts.spacer?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedProducts.spacer.imageUrl}
+                  alt={selectedProducts.spacer.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <SpacerIcon />
+              )}
               {selectedProducts.spacer && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
@@ -337,7 +373,16 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                 }
               }}
             >
-              <AccessoryIcon />
+              {selectedProducts.accessory?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedProducts.accessory.imageUrl}
+                  alt={selectedProducts.accessory.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <AccessoryIcon />
+              )}
               {selectedProducts.accessory && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
