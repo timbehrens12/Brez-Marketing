@@ -5,17 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// Realistic Fitment Industries spacer data
+// Comprehensive wheel spacer catalog with detailed specifications
 const FITMENT_SPACERS = [
   {
     id: 'sp1',
     brand: 'SPC Performance',
-    model: 'Wheel Spacer Kit',
+    model: 'Tuner Series Spacers',
     thickness: '25mm',
-    boltPattern: '5x114.3 to 5x114.3',
-    material: '6061 Aluminum',
+    boltPattern: '5x114.3',
+    material: '6061-T6 Aluminum',
+    finish: 'Black Anodized',
+    studLength: '35mm',
+    warranty: 'Lifetime',
     price: 149,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer1.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/spc-performance-25mm-wheel-spacers'
   },
   {
@@ -23,10 +26,13 @@ const FITMENT_SPACERS = [
     brand: 'Superpro',
     model: 'Hubcentric Spacers',
     thickness: '20mm',
-    boltPattern: '5x114.3 to 5x114.3',
-    material: '7075 Aluminum',
+    boltPattern: '5x114.3',
+    material: '7075-T6 Aluminum',
+    finish: 'Silver Anodized',
+    studLength: '45mm',
+    warranty: 'Lifetime',
     price: 199,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer2.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/superpro-20mm-hubcentric-spacers'
   },
   {
@@ -35,9 +41,12 @@ const FITMENT_SPACERS = [
     model: 'Wheel Adapters',
     thickness: '30mm',
     boltPattern: '5x114.3 to 5x120',
-    material: '6061 Aluminum',
+    material: '6061-T6 Aluminum',
+    finish: 'Raw Aluminum',
+    studLength: '50mm',
+    warranty: '1 Year',
     price: 299,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer3.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/tci-engineering-30mm-wheel-adapters'
   },
   {
@@ -45,10 +54,13 @@ const FITMENT_SPACERS = [
     brand: 'AccuForm',
     model: 'Staggered Spacers',
     thickness: '15/25mm',
-    boltPattern: '5x114.3 to 5x114.3',
-    material: '6061 Aluminum',
+    boltPattern: '5x114.3',
+    material: '6061-T6 Aluminum',
+    finish: 'Black Anodized',
+    studLength: '40mm',
+    warranty: 'Lifetime',
     price: 179,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer4.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/accuform-staggered-15-25mm-spacers'
   },
   {
@@ -59,7 +71,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: 'Aluminum',
     price: 249,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer5.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/brembo-12mm-brake-spacers'
   },
   {
@@ -70,7 +82,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: '6061 Aluminum',
     price: 189,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer6.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/stoptech-10mm-track-spacers'
   },
   {
@@ -81,7 +93,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: 'Aluminum',
     price: 159,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer7.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/wilwood-8mm-hat-spacers'
   },
   {
@@ -92,7 +104,7 @@ const FITMENT_SPACERS = [
     boltPattern: '5x114.3 to 5x114.3',
     material: '7075 Aluminum',
     price: 229,
-    imageUrl: 'https://i.imgur.com/placeholder-spacer8.jpg',
+    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
     productUrl: 'https://fitmentindustries.com/products/glock-35mm-offset-spacers'
   }
 ];
@@ -138,6 +150,8 @@ export const SpacerSelector = ({ onProductSelect }: SpacerSelectorProps = {}) =>
               <div>Thickness: {spacer.thickness}</div>
               <div>Bolt: {spacer.boltPattern}</div>
               <div>Material: {spacer.material}</div>
+              <div>Finish: {spacer.finish}</div>
+              <div>Stud Length: {spacer.studLength}</div>
             </div>
             <div className="flex gap-2">
               <Button

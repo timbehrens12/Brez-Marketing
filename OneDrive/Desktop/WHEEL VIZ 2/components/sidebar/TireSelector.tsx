@@ -5,16 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// Realistic Fitment Industries tire data
+// Comprehensive tire catalog with realistic specifications
 const FITMENT_TIRES = [
   {
     id: 't1',
     brand: 'Michelin',
     model: 'Pilot Sport 4S',
     size: '275/35ZR20',
-    type: 'Performance',
+    type: 'Performance Summer',
+    loadIndex: '99',
+    speedRating: 'Y',
+    utqg: '300AA A',
+    warranty: '40,000 miles',
     price: 349,
-    imageUrl: 'https://i.imgur.com/placeholder-tire1.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/michelin-pilot-sport-4s-275-35zr20'
   },
   {
@@ -23,28 +27,40 @@ const FITMENT_TIRES = [
     model: 'Potenza RE-71R',
     size: '285/30ZR22',
     type: 'Ultra High Performance',
+    loadIndex: '101',
+    speedRating: 'Y',
+    utqg: '200AA A',
+    warranty: '35,000 miles',
     price: 429,
-    imageUrl: 'https://i.imgur.com/placeholder-tire2.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/bridgestone-potenza-re-71r-285-30zr22'
   },
   {
     id: 't3',
     brand: 'Goodyear',
-    model: 'Wrangler Territory',
+    model: 'Wrangler Territory MT',
     size: 'LT285/75R16',
-    type: 'All Terrain',
+    type: 'Mud Terrain',
+    loadIndex: '126',
+    speedRating: 'Q',
+    utqg: '0',
+    warranty: '50,000 miles',
     price: 289,
-    imageUrl: 'https://i.imgur.com/placeholder-tire3.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/goodyear-wrangler-territory-lt285-75r16'
   },
   {
     id: 't4',
     brand: 'BFGoodrich',
     model: 'Mud-Terrain KM3',
-    size: '33x12.50R20',
+    size: '33x12.50R20LT',
     type: 'Mud Terrain',
+    loadIndex: '114',
+    speedRating: 'Q',
+    utqg: '0',
+    warranty: '60,000 miles',
     price: 389,
-    imageUrl: 'https://i.imgur.com/placeholder-tire4.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/bfgoodrich-mud-terrain-km3-33x12-50r20'
   },
   {
@@ -53,8 +69,12 @@ const FITMENT_TIRES = [
     model: 'P Zero',
     size: '265/30ZR19',
     type: 'Ultra High Performance',
+    loadIndex: '93',
+    speedRating: 'Y',
+    utqg: '220AA A',
+    warranty: '30,000 miles',
     price: 399,
-    imageUrl: 'https://i.imgur.com/placeholder-tire5.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/pirelli-p-zero-265-30zr19'
   },
   {
@@ -63,8 +83,12 @@ const FITMENT_TIRES = [
     model: 'ExtremeContact Sport',
     size: '255/40ZR19',
     type: 'Performance',
+    loadIndex: '96',
+    speedRating: 'Y',
+    utqg: '340AA A',
+    warranty: '50,000 miles',
     price: 319,
-    imageUrl: 'https://i.imgur.com/placeholder-tire6.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/continental-extremecontact-sport-255-40zr19'
   },
   {
@@ -73,8 +97,12 @@ const FITMENT_TIRES = [
     model: 'Proxes R1R',
     size: '275/35ZR18',
     type: 'Street/Racetrack',
+    loadIndex: '95',
+    speedRating: 'Y',
+    utqg: '200AA A',
+    warranty: '20,000 miles',
     price: 279,
-    imageUrl: 'https://i.imgur.com/placeholder-tire7.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/toyo-proxes-r1r-275-35zr18'
   },
   {
@@ -83,8 +111,12 @@ const FITMENT_TIRES = [
     model: 'NT555RII',
     size: '285/35ZR20',
     type: 'Drag Radial',
+    loadIndex: '104',
+    speedRating: 'Y',
+    utqg: '240AA A',
+    warranty: '25,000 miles',
     price: 459,
-    imageUrl: 'https://i.imgur.com/placeholder-tire8.jpg',
+    imageUrl: 'https://i.imgur.com/hmuQugt.png',
     productUrl: 'https://fitmentindustries.com/products/nitto-nt555rii-285-35zr20'
   }
 ];
@@ -129,6 +161,8 @@ export const TireSelector = ({ onProductSelect }: TireSelectorProps = {}) => {
             <div className="text-xs text-neutral-400 space-y-1">
               <div>Size: {tire.size}</div>
               <div>Type: {tire.type}</div>
+              <div>Load/Speed: {tire.loadIndex}{tire.speedRating}</div>
+              <div>Warranty: {tire.warranty}</div>
             </div>
             <div className="flex gap-2">
               <Button

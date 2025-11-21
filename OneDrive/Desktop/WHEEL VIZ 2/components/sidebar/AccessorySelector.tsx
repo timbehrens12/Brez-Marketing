@@ -5,18 +5,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// Realistic Fitment Industries accessory data
+// Comprehensive wheel accessory catalog with detailed specifications
 const FITMENT_ACCESSORIES = [
   {
     id: 'a1',
     brand: 'McGard',
-    model: 'Chrome Cone Seat Wheel Locks',
+    model: 'SplineDrive Wheel Locks',
     type: 'Wheel Locks',
     quantity: '4 Locks + Key',
-    material: 'Chrome',
+    material: 'Chrome Plated Steel',
+    threadSize: 'M12x1.5',
+    torqueSpec: '80-100 ft-lbs',
+    warranty: 'Lifetime',
     price: 89,
-    imageUrl: 'https://i.imgur.com/placeholder-acc1.jpg',
-    productUrl: 'https://fitmentindustries.com/products/mcgard-chrome-cone-seat-wheel-locks'
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    productUrl: 'https://fitmentindustries.com/products/mcgard-splinedrive-wheel-locks'
   },
   {
     id: 'a2',
@@ -24,30 +27,36 @@ const FITMENT_ACCESSORIES = [
     model: 'Wheel Center Caps',
     type: 'Center Caps',
     quantity: '4 Caps',
-    finish: 'Chrome',
+    finish: 'Chrome Plated',
+    fitment: '73.1mm',
+    warranty: '1 Year',
     price: 49,
-    imageUrl: 'https://i.imgur.com/placeholder-acc2.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/dorman-chrome-wheel-center-caps'
   },
   {
     id: 'a3',
     brand: 'Gorilla Automotive',
-    model: '14x1.5 Lug Nuts',
+    model: 'Tuner Lug Nuts',
     type: 'Lug Nuts',
     quantity: '20 Nuts',
     thread: '14x1.5',
+    material: 'Chrome Vanadium Steel',
+    seatType: 'Conical',
+    torqueSpec: '80-100 ft-lbs',
     price: 69,
-    imageUrl: 'https://i.imgur.com/placeholder-acc3.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/gorilla-automotive-14x1-5-lug-nuts'
   },
   {
     id: 'a4',
     brand: 'ACDelco',
-    model: 'Wheel Bearing Hub Assembly',
-    type: 'Hub Assembly',
+    model: 'Professional Hub Assembly',
+    type: 'Wheel Bearing',
     application: 'Front Driver Side',
+    loadRating: '2000 lbs',
+    warranty: '2 Years',
     price: 129,
-    imageUrl: 'https://i.imgur.com/placeholder-acc4.jpg',
     productUrl: 'https://fitmentindustries.com/products/acdelco-wheel-bearing-hub-assembly'
   },
   {
@@ -58,7 +67,7 @@ const FITMENT_ACCESSORIES = [
     quantity: '4 Sensors',
     application: 'OE Replacement',
     price: 179,
-    imageUrl: 'https://i.imgur.com/placeholder-acc5.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/mopar-tpms-sensors'
   },
   {
@@ -69,7 +78,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front/Rear',
     quantity: '2 Sensors',
     price: 89,
-    imageUrl: 'https://i.imgur.com/placeholder-acc6.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/bosch-wheel-speed-sensors'
   },
   {
@@ -80,7 +89,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front',
     quantity: '2 Rotors',
     price: 149,
-    imageUrl: 'https://i.imgur.com/placeholder-acc7.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/duralast-brake-rotor-set'
   },
   {
@@ -91,7 +100,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front/Rear',
     quantity: '1 Axle Set',
     price: 79,
-    imageUrl: 'https://i.imgur.com/placeholder-acc8.jpg',
+    imageUrl: 'https://i.imgur.com/eubDa9t.png',
     productUrl: 'https://fitmentindustries.com/products/akebono-ceramic-brake-pads'
   }
 ];
