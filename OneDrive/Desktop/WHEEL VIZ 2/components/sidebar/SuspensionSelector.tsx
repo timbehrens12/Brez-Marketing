@@ -18,7 +18,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Full',
     warranty: '1 Year',
     price: 1899,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/tein-flex-z-coilovers'
   },
   {
@@ -32,7 +32,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Compression/Rebound',
     warranty: '2 Years',
     price: 1599,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/ksport-gt-pro-coilovers'
   },
   {
@@ -46,7 +46,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Ride Height',
     warranty: '1 Year',
     price: 1399,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/bc-racing-br-series-coilovers'
   },
   {
@@ -59,7 +59,7 @@ const FITMENT_SUSPENSION = [
     includesShocks: 'Yes',
     warranty: 'Lifetime',
     price: 2299,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/icon-vehicle-dynamics-4-5-lift-kit'
   },
   {
@@ -70,7 +70,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Yes',
     maxLoad: '5000 lbs',
     price: 899,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/air-lift-loadlifter-5000-air-springs'
   },
   {
@@ -81,7 +81,7 @@ const FITMENT_SUSPENSION = [
     frontLowering: '1.5-2.0"',
     rearLowering: '1.2-1.8"',
     price: 499,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/eibach-pro-kit-springs'
   },
   {
@@ -92,7 +92,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Yes',
     damping: 'Mono-tube',
     price: 1299,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/bilstein-b8-performance-plus'
   },
   {
@@ -103,7 +103,7 @@ const FITMENT_SUSPENSION = [
     adjustable: 'Yes',
     compression: '3-position',
     price: 1799,
-    imageUrl: 'https://i.imgur.com/UTQgYgH.png',
+    imageUrl: 'https://i.imgur.com/placeholder-suspension.jpg',
     productUrl: 'https://fitmentindustries.com/products/fox-racing-factory-series-shocks'
   }
 ];

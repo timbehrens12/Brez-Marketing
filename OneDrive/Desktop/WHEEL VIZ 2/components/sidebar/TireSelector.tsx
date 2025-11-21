@@ -18,7 +18,7 @@ const FITMENT_TIRES = [
     utqg: '300AA A',
     warranty: '40,000 miles',
     price: 349,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/michelin-pilot-sport-4s-275-35zr20'
   },
   {
@@ -32,7 +32,7 @@ const FITMENT_TIRES = [
     utqg: '200AA A',
     warranty: '35,000 miles',
     price: 429,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/bridgestone-potenza-re-71r-285-30zr22'
   },
   {
@@ -46,7 +46,7 @@ const FITMENT_TIRES = [
     utqg: '0',
     warranty: '50,000 miles',
     price: 289,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/goodyear-wrangler-territory-lt285-75r16'
   },
   {
@@ -60,7 +60,7 @@ const FITMENT_TIRES = [
     utqg: '0',
     warranty: '60,000 miles',
     price: 389,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/bfgoodrich-mud-terrain-km3-33x12-50r20'
   },
   {
@@ -74,7 +74,7 @@ const FITMENT_TIRES = [
     utqg: '220AA A',
     warranty: '30,000 miles',
     price: 399,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/pirelli-p-zero-265-30zr19'
   },
   {
@@ -88,7 +88,7 @@ const FITMENT_TIRES = [
     utqg: '340AA A',
     warranty: '50,000 miles',
     price: 319,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/continental-extremecontact-sport-255-40zr19'
   },
   {
@@ -102,7 +102,7 @@ const FITMENT_TIRES = [
     utqg: '200AA A',
     warranty: '20,000 miles',
     price: 279,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/toyo-proxes-r1r-275-35zr18'
   },
   {
@@ -116,7 +116,7 @@ const FITMENT_TIRES = [
     utqg: '240AA A',
     warranty: '25,000 miles',
     price: 459,
-    imageUrl: 'https://i.imgur.com/hmuQugt.png',
+    imageUrl: 'https://i.imgur.com/placeholder-tire.jpg',
     productUrl: 'https://fitmentindustries.com/products/nitto-nt555rii-285-35zr20'
   }
 ];

@@ -18,7 +18,7 @@ const FITMENT_SPACERS = [
     studLength: '35mm',
     warranty: 'Lifetime',
     price: 149,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/spc-performance-25mm-wheel-spacers'
   },
   {
@@ -32,7 +32,7 @@ const FITMENT_SPACERS = [
     studLength: '45mm',
     warranty: 'Lifetime',
     price: 199,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/superpro-20mm-hubcentric-spacers'
   },
   {
@@ -46,7 +46,7 @@ const FITMENT_SPACERS = [
     studLength: '50mm',
     warranty: '1 Year',
     price: 299,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/tci-engineering-30mm-wheel-adapters'
   },
   {
@@ -60,7 +60,7 @@ const FITMENT_SPACERS = [
     studLength: '40mm',
     warranty: 'Lifetime',
     price: 179,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/accuform-staggered-15-25mm-spacers'
   },
   {
@@ -71,7 +71,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: 'Aluminum',
     price: 249,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/brembo-12mm-brake-spacers'
   },
   {
@@ -82,7 +82,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: '6061 Aluminum',
     price: 189,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/stoptech-10mm-track-spacers'
   },
   {
@@ -93,7 +93,7 @@ const FITMENT_SPACERS = [
     application: 'Front/Rear',
     material: 'Aluminum',
     price: 159,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/wilwood-8mm-hat-spacers'
   },
   {
@@ -104,7 +104,7 @@ const FITMENT_SPACERS = [
     boltPattern: '5x114.3 to 5x114.3',
     material: '7075 Aluminum',
     price: 229,
-    imageUrl: 'https://i.imgur.com/82Jr3Dh.png',
+    imageUrl: 'https://i.imgur.com/placeholder-spacer.jpg',
     productUrl: 'https://fitmentindustries.com/products/glock-35mm-offset-spacers'
   }
 ];

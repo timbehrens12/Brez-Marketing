@@ -18,7 +18,7 @@ const FITMENT_ACCESSORIES = [
     torqueSpec: '80-100 ft-lbs',
     warranty: 'Lifetime',
     price: 89,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/mcgard-splinedrive-wheel-locks'
   },
   {
@@ -31,7 +31,7 @@ const FITMENT_ACCESSORIES = [
     fitment: '73.1mm',
     warranty: '1 Year',
     price: 49,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/dorman-chrome-wheel-center-caps'
   },
   {
@@ -45,7 +45,7 @@ const FITMENT_ACCESSORIES = [
     seatType: 'Conical',
     torqueSpec: '80-100 ft-lbs',
     price: 69,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/gorilla-automotive-14x1-5-lug-nuts'
   },
   {
@@ -67,7 +67,7 @@ const FITMENT_ACCESSORIES = [
     quantity: '4 Sensors',
     application: 'OE Replacement',
     price: 179,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/mopar-tpms-sensors'
   },
   {
@@ -78,7 +78,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front/Rear',
     quantity: '2 Sensors',
     price: 89,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/bosch-wheel-speed-sensors'
   },
   {
@@ -89,7 +89,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front',
     quantity: '2 Rotors',
     price: 149,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/duralast-brake-rotor-set'
   },
   {
@@ -100,7 +100,7 @@ const FITMENT_ACCESSORIES = [
     application: 'Front/Rear',
     quantity: '1 Axle Set',
     price: 79,
-    imageUrl: 'https://i.imgur.com/eubDa9t.png',
+    imageUrl: 'https://i.imgur.com/placeholder-accessory.jpg',
     productUrl: 'https://fitmentindustries.com/products/akebono-ceramic-brake-pads'
   }
 ];
