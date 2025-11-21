@@ -398,14 +398,36 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Generate Button - Spans Full Width */}
-        <Button
-          onClick={handleGenerate}
-          disabled={!Object.keys(selectedProducts).length}
-          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white h-10"
-        >
-          Generate Build
-        </Button>
+        {/* Generate Button - Fancy Styling */}
+        <div className="btn-wrapper w-full">
+          <button
+            onClick={handleGenerate}
+            disabled={!Object.keys(selectedProducts).length}
+            className="btn w-full"
+          >
+            <svg className="btn-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L19.35 9.35L13.09 10.44L12 16.7L10.91 10.44L4.65 9.35L10.91 8.26L12 2Z"/>
+            </svg>
+            <div className="txt-wrapper">
+              <div className="txt-1">
+                <span className="btn-letter">G</span>
+                <span className="btn-letter">e</span>
+                <span className="btn-letter">n</span>
+                <span className="btn-letter">e</span>
+                <span className="btn-letter">r</span>
+                <span className="btn-letter">a</span>
+                <span className="btn-letter">t</span>
+                <span className="btn-letter">e</span>
+                <span className="btn-letter">&nbsp;</span>
+                <span className="btn-letter">B</span>
+                <span className="btn-letter">u</span>
+                <span className="btn-letter">i</span>
+                <span className="btn-letter">l</span>
+                <span className="btn-letter">d</span>
+              </div>
+            </div>
+          </button>
+        </div>
       </div>
 
       <Tabs
