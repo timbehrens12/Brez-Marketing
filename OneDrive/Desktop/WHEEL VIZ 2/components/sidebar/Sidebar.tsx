@@ -7,6 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ReferenceGrid } from './ReferenceGrid';
 import { WheelSelector } from './WheelSelector';
+import { TireSelector } from './TireSelector';
+import { SuspensionSelector } from './SuspensionSelector';
+import { SpacerSelector } from './SpacerSelector';
+import { AccessorySelector } from './AccessorySelector';
 import { StanceControls } from './StanceControls';
 import { useStore } from '@/store/useStore';
 import {
@@ -210,7 +214,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           {/* Selected Products - Compact Square Cards */}
           <div className="flex flex-col items-center relative">
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
+              className={`w-14 h-14 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedProducts.wheel
                   ? 'bg-gray-100 border-blue-500'
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
@@ -223,22 +227,22 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             >
               <WheelIcon />
               {selectedProducts.wheel && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
                 </div>
               )}
             </div>
             {selectedProducts.wheel && (
               <div className="text-center mt-1">
-                <div className="text-[10px] font-medium truncate w-12 leading-tight">{selectedProducts.wheel.name.split(' ')[0]}</div>
-                <div className="text-[10px] text-emerald-600">${selectedProducts.wheel.price}</div>
+                <div className="text-xs font-medium truncate w-14 leading-tight">{selectedProducts.wheel.name.split(' ')[0]}</div>
+                <div className="text-xs text-emerald-600">${selectedProducts.wheel.price}</div>
               </div>
             )}
           </div>
 
           <div className="flex flex-col items-center relative">
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
+              className={`w-14 h-14 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedProducts.tire
                   ? 'bg-gray-100 border-slate-500'
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
@@ -251,22 +255,22 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             >
               <TireIcon />
               {selectedProducts.tire && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
                 </div>
               )}
             </div>
             {selectedProducts.tire && (
               <div className="text-center mt-1">
-                <div className="text-[10px] font-medium truncate w-12 leading-tight">{selectedProducts.tire.name.split(' ')[0]}</div>
-                <div className="text-[10px] text-emerald-600">${selectedProducts.tire.price}</div>
+                <div className="text-xs font-medium truncate w-14 leading-tight">{selectedProducts.tire.name.split(' ')[0]}</div>
+                <div className="text-xs text-emerald-600">${selectedProducts.tire.price}</div>
               </div>
             )}
           </div>
 
           <div className="flex flex-col items-center relative">
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
+              className={`w-14 h-14 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedProducts.suspension
                   ? 'bg-gray-100 border-orange-500'
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
@@ -279,22 +283,22 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             >
               <SuspensionIcon />
               {selectedProducts.suspension && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
                 </div>
               )}
             </div>
             {selectedProducts.suspension && (
               <div className="text-center mt-1">
-                <div className="text-[10px] font-medium truncate w-12 leading-tight">{selectedProducts.suspension.name.split(' ')[0]}</div>
-                <div className="text-[10px] text-emerald-600">${selectedProducts.suspension.price}</div>
+                <div className="text-xs font-medium truncate w-14 leading-tight">{selectedProducts.suspension.name.split(' ')[0]}</div>
+                <div className="text-xs text-emerald-600">${selectedProducts.suspension.price}</div>
               </div>
             )}
           </div>
 
           <div className="flex flex-col items-center relative">
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
+              className={`w-14 h-14 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedProducts.spacer
                   ? 'bg-gray-100 border-gray-500'
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
@@ -307,22 +311,22 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             >
               <SpacerIcon />
               {selectedProducts.spacer && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
                 </div>
               )}
             </div>
             {selectedProducts.spacer && (
               <div className="text-center mt-1">
-                <div className="text-[10px] font-medium truncate w-12 leading-tight">{selectedProducts.spacer.name.split(' ')[0]}</div>
-                <div className="text-[10px] text-emerald-600">${selectedProducts.spacer.price}</div>
+                <div className="text-xs font-medium truncate w-14 leading-tight">{selectedProducts.spacer.name.split(' ')[0]}</div>
+                <div className="text-xs text-emerald-600">${selectedProducts.spacer.price}</div>
               </div>
             )}
           </div>
 
           <div className="flex flex-col items-center relative">
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
+              className={`w-14 h-14 rounded-lg flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedProducts.accessory
                   ? 'bg-gray-100 border-yellow-500'
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
@@ -335,15 +339,15 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
             >
               <AccessoryIcon />
               {selectedProducts.accessory && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">×</span>
                 </div>
               )}
             </div>
             {selectedProducts.accessory && (
               <div className="text-center mt-1">
-                <div className="text-[10px] font-medium truncate w-12 leading-tight">{selectedProducts.accessory.name.split(' ')[0]}</div>
-                <div className="text-[10px] text-emerald-600">${selectedProducts.accessory.price}</div>
+                <div className="text-xs font-medium truncate w-14 leading-tight">{selectedProducts.accessory.name.split(' ')[0]}</div>
+                <div className="text-xs text-emerald-600">${selectedProducts.accessory.price}</div>
               </div>
             )}
           </div>
@@ -353,7 +357,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
         <Button
           onClick={handleGenerate}
           disabled={!Object.keys(selectedProducts).length}
-          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white h-12"
+          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white h-10"
         >
           Generate Build
         </Button>
@@ -395,38 +399,52 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                   <CardDescription>Performance and off-road tires</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Michelin Pilot Sport 4S', price: 349 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Michelin Pilot Sport 4S</div>
-                        <div className="text-xs text-muted-foreground">275/35ZR20</div>
-                        <div className="text-xs text-emerald-600">$349</div>
-                      </div>
+                  <TireSelector onProductSelect={handleProductSelect('tire')} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Bridgestone Potenza RE-71R', price: 429 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Bridgestone Potenza RE-71R</div>
-                        <div className="text-xs text-muted-foreground">285/30ZR22</div>
-                        <div className="text-xs text-emerald-600">$429</div>
-                      </div>
+            <TabsContent value="suspension" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suspension Gallery</CardTitle>
+                  <CardDescription>Lift kits, coilovers, and air systems</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SuspensionSelector onProductSelect={handleProductSelect('suspension')} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Goodyear Wrangler Territory', price: 289 })}>
-                        <div className="aspect-square bg-gradient-to-br from-amber-700 to-amber-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-amber-300" />
-                        </div>
-                        <div className="text-sm font-medium">Goodyear Wrangler Territory</div>
-                        <div className="text-xs text-muted-foreground">LT285/75R16</div>
-                        <div className="text-xs text-emerald-600">$289</div>
-                      </div>
+            <TabsContent value="spacers" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Wheel Spacers & Adapters</CardTitle>
+                  <CardDescription>Adjust track width and offset</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SpacerSelector onProductSelect={handleProductSelect('spacer')} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'BFGoodrich Mud-Terrain', price: 389 })}>
-                        <div className="aspect-square bg-gradient-to-br from-green-700 to-green-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-green-300" />
-                        </div>
+            <TabsContent value="accessories" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Wheel Accessories</CardTitle>
+                  <CardDescription>Lugs, caps, and mounting hardware</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AccessorySelector onProductSelect={handleProductSelect('accessory')} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </ScrollArea>
+      </Tabs>
+    </div>
+  );
+}
                         <div className="text-sm font-medium">BFGoodrich Mud-Terrain</div>
                         <div className="text-xs text-muted-foreground">33x12.50R20</div>
                         <div className="text-xs text-emerald-600">$389</div>

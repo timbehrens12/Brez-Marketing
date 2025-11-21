@@ -8,28 +8,136 @@ import { Button } from '@/components/ui/button';
 import { generateImageAction } from '@/actions/generate';
 import { cn } from '@/lib/utils';
 
-const MOCK_WHEELS: Product[] = [
-  { id: 'w1', type: 'wheel', brand: 'Vorsteiner', model: 'V-FF 103', finish: 'Carbon Graphite', diameter: 20, width: 10, offset: 25, imageUrl: 'https://placehold.co/300x300/222/fff?text=V-FF+103' },
-  { id: 'w2', type: 'wheel', brand: 'HRE', model: 'P101', finish: 'Brushed Dark Clear', diameter: 21, width: 10.5, offset: 30, imageUrl: 'https://placehold.co/300x300/333/fff?text=P101' },
-  { id: 'w3', type: 'wheel', brand: 'BBS', model: 'LM', finish: 'Gold / Diamond Cut', diameter: 19, width: 9.5, offset: 20, imageUrl: 'https://placehold.co/300x300/444/fff?text=BBS+LM' },
-  { id: 'w4', type: 'wheel', brand: 'Rotiform', model: 'AeroDisc', finish: 'White', diameter: 19, width: 8.5, offset: 45, imageUrl: 'https://placehold.co/300x300/555/fff?text=AeroDisc' },
-  { id: 'w5', type: 'wheel', brand: 'Volk', model: 'TE37', finish: 'Bronze', diameter: 18, width: 9.5, offset: 22, imageUrl: 'https://placehold.co/300x300/666/fff?text=TE37' },
-  { id: 'w6', type: 'wheel', brand: 'Work', model: 'Meister S1', finish: 'Polish', diameter: 19, width: 10, offset: 15, imageUrl: 'https://placehold.co/300x300/777/fff?text=Meister+S1' },
+// Realistic Fitment Industries wheel data
+const FITMENT_WHEELS = [
+  {
+    id: 'w1',
+    type: 'wheel',
+    brand: 'Volk Racing',
+    model: 'CE28N',
+    finish: 'Hyper Black',
+    diameter: 18,
+    width: 9.5,
+    offset: 35,
+    boltPattern: '5x114.3',
+    price: 1295,
+    imageUrl: 'https://i.imgur.com/placeholder1.jpg',
+    productUrl: 'https://fitmentindustries.com/products/volk-racing-ce28n-18x9-5-35-hyper-black'
+  },
+  {
+    id: 'w2',
+    type: 'wheel',
+    brand: 'BBS',
+    model: 'FI-R',
+    finish: 'Diamond Black',
+    diameter: 19,
+    width: 9.5,
+    offset: 22,
+    boltPattern: '5x114.3',
+    price: 1595,
+    imageUrl: 'https://i.imgur.com/placeholder2.jpg',
+    productUrl: 'https://fitmentindustries.com/products/bbs-fi-r-19x9-5-22-diamond-black'
+  },
+  {
+    id: 'w3',
+    type: 'wheel',
+    brand: 'Work Equip',
+    model: '03',
+    finish: 'Bronze',
+    diameter: 18,
+    width: 10.5,
+    offset: 25,
+    boltPattern: '5x114.3',
+    price: 1895,
+    imageUrl: 'https://i.imgur.com/placeholder3.jpg',
+    productUrl: 'https://fitmentindustries.com/products/work-equip-03-18x10-5-25-bronze'
+  },
+  {
+    id: 'w4',
+    type: 'wheel',
+    brand: 'HRE',
+    model: 'P1',
+    finish: 'Flow Form Silver',
+    diameter: 20,
+    width: 10,
+    offset: 30,
+    boltPattern: '5x114.3',
+    price: 2195,
+    imageUrl: 'https://i.imgur.com/placeholder4.jpg',
+    productUrl: 'https://fitmentindustries.com/products/hre-p1-20x10-5-30-flow-form-silver'
+  },
+  {
+    id: 'w5',
+    type: 'wheel',
+    brand: 'Rotiform',
+    model: 'BLQ',
+    finish: 'Matte Bronze',
+    diameter: 19,
+    width: 9.5,
+    offset: 20,
+    boltPattern: '5x114.3',
+    price: 1795,
+    imageUrl: 'https://i.imgur.com/placeholder5.jpg',
+    productUrl: 'https://fitmentindustries.com/products/rotiform-blq-19x9-5-20-matte-bronze'
+  },
+  {
+    id: 'w6',
+    type: 'wheel',
+    brand: 'Avant Garde',
+    model: 'M590',
+    finish: 'Diamond Cut Black',
+    diameter: 19,
+    width: 9.5,
+    offset: 25,
+    boltPattern: '5x114.3',
+    price: 1995,
+    imageUrl: 'https://i.imgur.com/placeholder6.jpg',
+    productUrl: 'https://fitmentindustries.com/products/avant-garde-m590-19x9-5-25-diamond-cut-black'
+  },
+  {
+    id: 'w7',
+    type: 'wheel',
+    brand: 'Enkei',
+    model: 'TS-10',
+    finish: 'Matte Gunmetal',
+    diameter: 18,
+    width: 9.5,
+    offset: 22,
+    boltPattern: '5x114.3',
+    price: 1395,
+    imageUrl: 'https://i.imgur.com/placeholder7.jpg',
+    productUrl: 'https://fitmentindustries.com/products/enkei-ts-10-18x9-5-22-matte-gunmetal'
+  },
+  {
+    id: 'w8',
+    type: 'wheel',
+    brand: 'Forgestar',
+    model: 'F14',
+    finish: 'Gloss Black',
+    diameter: 18,
+    width: 9,
+    offset: 35,
+    boltPattern: '5x114.3',
+    price: 1695,
+    imageUrl: 'https://i.imgur.com/placeholder8.jpg',
+    productUrl: 'https://fitmentindustries.com/products/forgestar-f14-18x9-5-35-gloss-black'
+  }
 ];
 
 interface WheelSelectorProps {
-  onProductSelect?: (product: { name: string; price: number }) => void;
+  onProductSelect?: (product: { name: string; price: number; imageUrl?: string }) => void;
 }
 
 export const WheelSelector = ({ onProductSelect }: WheelSelectorProps = {}) => {
   const { selectedProduct, setSelectedProduct, setIsGenerating, addGenerationStep, clearGenerationSteps, currentImage, setCurrentImage } = useStore();
 
-  const handleSelect = async (wheel: Product) => {
+  const handleSelect = async (wheel: any) => {
     // If onProductSelect is provided, add to build instead of generating
     if (onProductSelect) {
       onProductSelect({
         name: `${wheel.brand} ${wheel.model}`,
-        price: 500 + Math.floor(Math.random() * 1000) // Mock pricing
+        price: wheel.price,
+        imageUrl: wheel.imageUrl
       });
       return;
     }
@@ -76,23 +184,53 @@ export const WheelSelector = ({ onProductSelect }: WheelSelectorProps = {}) => {
     }
   };
 
+  const handleViewDetails = (wheel: any) => {
+    window.open(wheel.productUrl, '_blank');
+  };
+
   return (
     <div className="grid grid-cols-2 gap-3">
-      {MOCK_WHEELS.map((wheel) => (
-        <Card 
-          key={wheel.id} 
+      {FITMENT_WHEELS.map((wheel) => (
+        <Card
+          key={wheel.id}
           className={cn(
-            "cursor-pointer hover:border-neutral-500 transition-colors overflow-hidden group",
-            selectedProduct?.id === wheel.id ? "border-emerald-500 bg-emerald-500/5" : "border-neutral-800 bg-neutral-900"
+            "overflow-hidden group border-neutral-800 bg-neutral-900 hover:border-neutral-500 transition-colors",
+            selectedProduct?.id === wheel.id ? "border-emerald-500 bg-emerald-500/5" : ""
           )}
-          onClick={() => handleSelect(wheel)}
         >
           <div className="aspect-square relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={wheel.imageUrl} alt={wheel.model} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3 pt-8">
               <p className="text-xs font-bold text-white">{wheel.brand}</p>
-              <p className="text-[10px] text-neutral-300 truncate">{wheel.model} ({wheel.diameter}")</p>
+              <p className="text-[10px] text-neutral-300 truncate">{wheel.model}</p>
+              <p className="text-[10px] text-emerald-400 font-semibold">${wheel.price}</p>
+            </div>
+          </div>
+          <div className="p-3 space-y-2">
+            <div className="text-xs text-neutral-400 space-y-1">
+              <div>Size: {wheel.diameter}" x {wheel.width}"</div>
+              <div>Offset: {wheel.offset}mm</div>
+              <div>Bolt: {wheel.boltPattern}</div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-xs h-8"
+                onClick={() => handleSelect(wheel)}
+              >
+                Select
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="flex-1 text-xs h-8"
+                onClick={() => handleViewDetails(wheel)}
+              >
+                Details
+              </Button>
             </div>
           </div>
         </Card>
