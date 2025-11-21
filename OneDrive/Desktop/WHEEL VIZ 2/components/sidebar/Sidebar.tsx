@@ -403,7 +403,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           <button
             onClick={handleGenerate}
             disabled={!Object.keys(selectedProducts).length}
-            className="btn w-full"
+            className="btn"
           >
             <div className="txt-wrapper">
               <div className="txt-1">
