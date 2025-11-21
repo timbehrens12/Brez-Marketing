@@ -445,50 +445,6 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
     </div>
   );
 }
-                        <div className="text-sm font-medium">BFGoodrich Mud-Terrain</div>
-                        <div className="text-xs text-muted-foreground">33x12.50R20</div>
-                        <div className="text-xs text-emerald-600">$389</div>
-                      </div>
-
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Pirelli P Zero', price: 399 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Pirelli P Zero</div>
-                        <div className="text-xs text-muted-foreground">265/35ZR18</div>
-                        <div className="text-xs text-emerald-600">$399</div>
-                      </div>
-
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Continental ExtremeContact', price: 359 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Continental ExtremeContact</div>
-                        <div className="text-xs text-muted-foreground">275/40ZR19</div>
-                        <div className="text-xs text-emerald-600">$359</div>
-                      </div>
-
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Yokohama ADVAN A052', price: 449 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Yokohama ADVAN A052</div>
-                        <div className="text-xs text-muted-foreground">285/35ZR19</div>
-                        <div className="text-xs text-emerald-600">$449</div>
-                      </div>
-
-                      <div className="group cursor-pointer" onClick={() => handleProductSelect('tire')({ name: 'Toyo Proxes R1R', price: 329 })}>
-                        <div className="aspect-square bg-gradient-to-br from-neutral-700 to-neutral-800 rounded-lg mb-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Cog className="w-12 h-12 text-slate-300" />
-                        </div>
-                        <div className="text-sm font-medium">Toyo Proxes R1R</div>
-                        <div className="text-xs text-muted-foreground">265/30ZR19</div>
-                        <div className="text-xs text-emerald-600">$329</div>
-                      </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             <TabsContent value="suspension" className="m-0">
               <Card>
