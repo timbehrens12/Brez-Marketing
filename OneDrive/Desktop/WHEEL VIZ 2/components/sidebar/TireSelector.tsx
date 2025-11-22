@@ -39,7 +39,7 @@ const FITMENT_TIRES = [
     price: 285,
     rating: 4.9,
     reviews: 2847,
-    imageUrl: 'https://placehold.co/400x400/1a1a1a/8B5CF6?text=Michelin+PS4S+18',
+    imageUrl: '/pilot-sport-4s.png',
     productUrl: 'https://www.fitmentindustries.com/buy-tires/michelin-pilot-sport-4s'
   },
   // 2. Paired with Kansei KNP (18x9.5)
@@ -73,7 +73,7 @@ const FITMENT_TIRES = [
     price: 345,
     rating: 4.9,
     reviews: 2847,
-    imageUrl: 'https://placehold.co/400x400/1a1a1a/8B5CF6?text=Michelin+PS4S+19',
+    imageUrl: '/pilot-sport-4s.png',
     productUrl: 'https://www.fitmentindustries.com/buy-tires/michelin-pilot-sport-4s'
   },
   // 4. Paired with Ferrada FR4 (20x10.5)
@@ -90,7 +90,7 @@ const FITMENT_TIRES = [
     price: 445,
     rating: 4.9,
     reviews: 2847,
-    imageUrl: 'https://placehold.co/400x400/1a1a1a/8B5CF6?text=Michelin+PS4S+20',
+    imageUrl: '/pilot-sport-4s.png',
     productUrl: 'https://www.fitmentindustries.com/buy-tires/michelin-pilot-sport-4s'
   }
 ];

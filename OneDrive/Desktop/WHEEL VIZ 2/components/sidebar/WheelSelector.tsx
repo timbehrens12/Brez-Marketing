@@ -80,7 +80,7 @@ const FITMENT_WHEELS = [
     price: 540,
     rating: 4.8,
     reviews: 156,
-    imageUrl: 'https://placehold.co/400x400/222/fff?text=Ferrada+FR4+20',
+    imageUrl: '/ferrada-fr4.png',
     productUrl: 'https://www.fitmentindustries.com/buy-wheel-offset/FR420105511428MS/ferrada-fr4-20x105-28'
   }
 ];
