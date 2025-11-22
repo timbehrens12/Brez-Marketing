@@ -102,8 +102,8 @@ export const Canvas = () => {
       
       {/* REQUIRED Setup Form Modal (blocks everything until completed) */}
       {currentImage && !isSetupComplete && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-md my-auto">
+        <div className="absolute inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 pt-24 overflow-y-auto">
+          <div className="w-full max-w-md">
             <div className="mb-4 text-center">
               <h2 className="text-2xl font-bold text-primary mb-2">Setup Required</h2>
               <p className="text-sm text-muted-foreground">
