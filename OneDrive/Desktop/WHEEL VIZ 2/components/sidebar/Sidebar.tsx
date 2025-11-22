@@ -338,7 +338,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
           </div>
           
           <ScrollArea className="flex-1 h-full">
-            <div className="p-4">
+            <div className="p-4 pb-32">
               {/* Render Active Selector with prop injection */}
               {ActiveComponent && (
                 // @ts-ignore - dynamic component props
