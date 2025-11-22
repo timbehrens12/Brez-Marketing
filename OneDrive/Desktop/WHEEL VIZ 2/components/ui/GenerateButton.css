@@ -1,0 +1,157 @@
+
+.btn-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.btn {
+  --border-radius: 24px;
+  --padding: 4px;
+  --transition: 0.4s;
+  --button-color: #CCFF00; /* Neon Green */
+  --highlight-color-hue: 75deg; /* Matching Lime/Green hue */
+
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5em 0.5em 0.5em 1.1em;
+  font-family: "Poppins", "Inter", "Segoe UI", sans-serif;
+  font-size: 1em;
+  font-weight: 600; /* Made bolder */
+
+  background-color: var(--button-color);
+  color: #000000; /* Black text for contrast against neon green */
+
+  box-shadow:
+    /* inset */
+    inset 0px 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0px 2px 2px rgba(255, 255, 255, 0.2),
+    /* drop */ 
+    0px 2px 4px rgba(0, 0, 0, 0.2),
+    0px 4px 8px rgba(0, 0, 0, 0.2);
+
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  overflow: hidden; /* Ensure shimmer stays inside */
+
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition),
+    background-color var(--transition);
+}
+
+/* Loading State */
+.btn.loading {
+  background: linear-gradient(
+    90deg, 
+    #CCFF00 0%, 
+    #eaff80 25%, 
+    #CCFF00 50%, 
+    #eaff80 75%, 
+    #CCFF00 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: calc(0px - var(--padding));
+  left: calc(0px - var(--padding));
+  width: calc(100% + var(--padding) * 2);
+  height: calc(100% + var(--padding) * 2);
+  border-radius: calc(var(--border-radius) + var(--padding));
+  pointer-events: none;
+  background-image: linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.1)); /* Subtle shadow */
+
+  z-index: -1;
+
+  transition:
+    box-shadow var(--transition),
+    filter var(--transition);
+}
+
+.btn::after {
+  display: none; /* Remove complex highlight for flatter look */
+}
+
+.btn-letter {
+  position: relative;
+  display: inline-block;
+  color: #000000; /* Black text */
+  transition:
+    color var(--transition),
+    text-shadow var(--transition),
+    opacity var(--transition);
+}
+
+.btn-svg {
+  flex-grow: 0;
+  height: 24px;
+  margin-right: 0.5rem;
+  fill: #000000; /* Black icon */
+  filter: none;
+  transition:
+    fill var(--transition),
+    transform var(--transition);
+}
+
+/* Text Wrapper */
+.txt-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.txt-1,
+.txt-2 {
+  position: absolute;
+  word-spacing: 0;
+  white-space: nowrap;
+  display: flex;
+}
+
+.txt-1 {
+  animation: appear-anim 1s ease-in-out forwards;
+}
+
+.txt-2 {
+  opacity: 0;
+}
+
+@keyframes appear-anim {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Hover state */
+.btn:hover:not(.loading) {
+  background-color: #b3e600; /* Slightly darker neon green on hover */
+  box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(.loading) {
+  transform: translateY(1px);
+  background-color: #a6d600;
+}

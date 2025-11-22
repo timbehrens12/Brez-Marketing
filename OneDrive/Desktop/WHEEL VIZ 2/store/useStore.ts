@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import type { CurrentSetup } from '@/lib/deltaCalculator';
 
 interface WheelProduct {
   id: string;
@@ -42,20 +43,35 @@ interface AppState {
   
   // Selection & Parameters
   selectedProduct: Product | null;
+  selectedTire: Product | null; // NEW: Track selected tire specifically
   stanceParameters: StanceParameters;
+  currentSetup: CurrentSetup; 
+  isSetupComplete: boolean;
+  activeCategory: string | null; // NEW: Control sidebar category from store
   
   // Generation State
   isGenerating: boolean;
   generationSteps: string[]; // Log of "thoughts"
-  
+  showCompare: boolean;
+
+  // Cart State
+  cartCount: number;
+  addToCart: () => void;
+  removeFromCart: () => void;
+
   // Actions
+  setShowCompare: (showCompare: boolean) => void;
   setOriginalImage: (url: string) => void;
   setCurrentImage: (url: string) => void;
   undo: () => void;
   redo: () => void;
   
   setSelectedProduct: (product: Product | null) => void;
+  setSelectedTire: (tire: Product | null) => void; // NEW
+  setActiveCategory: (category: string | null) => void; // NEW
   setStanceParameter: (key: keyof StanceParameters, value: number) => void;
+  setCurrentSetup: (setup: CurrentSetup) => void; // NEW
+  setIsSetupComplete: (complete: boolean) => void; // NEW
   
   setIsGenerating: (isGenerating: boolean) => void;
   addGenerationStep: (step: string) => void;
@@ -71,16 +87,30 @@ export const useStore = create<AppState>((set, get) => ({
   historyIndex: -1,
   
   selectedProduct: null,
+  selectedTire: null,
   stanceParameters: {
     rideHeight: 0,
     frontCamber: 0,
     rearCamber: 0,
     poke: 1, // Flush default
   },
+  currentSetup: {
+    rimDiameter: 18,
+    rimWidth: 9,
+    offset: 35,
+    suspensionType: 'stock',
+  },
+  isSetupComplete: false,
+  activeCategory: null,
   
   isGenerating: false,
   generationSteps: [],
-  
+  showCompare: false,
+
+  cartCount: 0,
+  addToCart: () => set((state) => ({ cartCount: state.cartCount + 1 })),
+  removeFromCart: () => set((state) => ({ cartCount: Math.max(0, state.cartCount - 1) })),
+
   setOriginalImage: (url) => set({ 
     originalImage: url, 
     currentImage: url, 
@@ -121,17 +151,25 @@ export const useStore = create<AppState>((set, get) => ({
   }),
   
   setSelectedProduct: (product) => set({ selectedProduct: product }),
+  setSelectedTire: (tire: Product | null) => set({ selectedTire: tire }),
+  setActiveCategory: (category: string | null) => set({ activeCategory: category }),
   
   setStanceParameter: (key, value) => set((state) => ({
     stanceParameters: { ...state.stanceParameters, [key]: value }
   })),
   
-  setIsGenerating: (isGenerating) => set({ isGenerating }),
+  setCurrentSetup: (setup) => set({ currentSetup: setup }),
   
+  setIsSetupComplete: (complete) => set({ isSetupComplete: complete }),
+  
+  setIsGenerating: (isGenerating) => set({ isGenerating }),
+
   addGenerationStep: (step) => set((state) => ({
     generationSteps: [...state.generationSteps, step]
   })),
-  
+
   clearGenerationSteps: () => set({ generationSteps: [] }),
+
+  setShowCompare: (showCompare: boolean) => set({ showCompare }),
 }));
 

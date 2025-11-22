@@ -9,40 +9,79 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      // Products table - stores all automotive products
       products: {
         Row: {
           id: string
           created_at: string
           name: string
           brand: string
-          category: 'wheel' | 'suspension' | 'tire'
-          specs: Json
+          type: 'wheel' | 'tire' | 'suspension' | 'spacer' | 'accessory'
+          meta_specs: Json // JSONB field for flexible spec storage
           image_url: string | null
+          price: number | null
+          rating: number | null
+          reviews: number | null
+          product_url: string | null
         }
         Insert: {
           id?: string
           created_at?: string
           name: string
           brand: string
-          category: 'wheel' | 'suspension' | 'tire'
-          specs: Json
+          type: 'wheel' | 'tire' | 'suspension' | 'spacer' | 'accessory'
+          meta_specs: Json
           image_url?: string | null
+          price?: number | null
+          rating?: number | null
+          reviews?: number | null
+          product_url?: string | null
         }
         Update: {
           id?: string
           created_at?: string
           name?: string
           brand?: string
-          category?: 'wheel' | 'suspension' | 'tire'
-          specs?: Json
+          type?: 'wheel' | 'tire' | 'suspension' | 'spacer' | 'accessory'
+          meta_specs?: Json
           image_url?: string | null
+          price?: number | null
+          rating?: number | null
+          reviews?: number | null
+          product_url?: string | null
         }
       }
+      // Users table - stores user accounts and credits
+      users: {
+        Row: {
+          id: string
+          created_at: string
+          email: string | null
+          credits: number
+          subscription_tier: 'free' | 'pro' | 'enterprise' | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          email?: string | null
+          credits?: number
+          subscription_tier?: 'free' | 'pro' | 'enterprise' | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          email?: string | null
+          credits?: number
+          subscription_tier?: 'free' | 'pro' | 'enterprise' | null
+        }
+      }
+      // Projects table - stores user visualization projects
       projects: {
         Row: {
           id: string
           created_at: string
-          user_session_id: string
+          user_id: string
+          vehicle_string: string
           current_image_url: string | null
           original_image_url: string | null
           history: Json
@@ -50,7 +89,8 @@ export interface Database {
         Insert: {
           id?: string
           created_at?: string
-          user_session_id: string
+          user_id: string
+          vehicle_string: string
           current_image_url?: string | null
           original_image_url?: string | null
           history?: Json
@@ -58,36 +98,56 @@ export interface Database {
         Update: {
           id?: string
           created_at?: string
-          user_session_id?: string
+          user_id?: string
+          vehicle_string?: string
           current_image_url?: string | null
           original_image_url?: string | null
           history?: Json
         }
       }
+      // Generations table - stores individual generation records
       generations: {
         Row: {
           id: string
           created_at: string
-          project_id: string
-          prompt_payload: Json
-          result_image_url: string | null
-          status: 'pending' | 'completed' | 'failed'
+          user_id: string
+          product_id: string
+          project_id: string | null
+          base_image_url: string
+          generated_image_url: string | null
+          vehicle_string: string
+          mechanic_instructions: Json
+          generation_metadata: Json
+          status: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message: string | null
         }
         Insert: {
           id?: string
           created_at?: string
-          project_id: string
-          prompt_payload: Json
-          result_image_url?: string | null
-          status?: 'pending' | 'completed' | 'failed'
+          user_id: string
+          product_id: string
+          project_id?: string | null
+          base_image_url: string
+          generated_image_url?: string | null
+          vehicle_string: string
+          mechanic_instructions: Json
+          generation_metadata: Json
+          status?: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message?: string | null
         }
         Update: {
           id?: string
           created_at?: string
-          project_id?: string
-          prompt_payload?: Json
-          result_image_url?: string | null
-          status?: 'pending' | 'completed' | 'failed'
+          user_id?: string
+          product_id?: string
+          project_id?: string | null
+          base_image_url?: string
+          generated_image_url?: string | null
+          vehicle_string?: string
+          mechanic_instructions?: Json
+          generation_metadata?: Json
+          status?: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message?: string | null
         }
       }
     }
@@ -95,11 +155,19 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      // Custom function to deduct credits atomically
+      deduct_credits: {
+        Args: {
+          user_id: string
+          amount: number
+        }
+        Returns: void
+      }
     }
     Enums: {
-      [_ in never]: never
+      product_type: 'wheel' | 'tire' | 'suspension' | 'spacer' | 'accessory'
+      generation_status: 'pending' | 'processing' | 'completed' | 'failed'
+      subscription_tier: 'free' | 'pro' | 'enterprise'
     }
   }
 }
-
