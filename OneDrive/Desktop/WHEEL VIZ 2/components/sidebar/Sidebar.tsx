@@ -87,11 +87,11 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
   }, [activeCategory, collapsed]);
 
   const [selectedProducts, setSelectedProducts] = useState<{
-    wheel?: { name: string; price: number; imageUrl?: string };
-    tire?: { name: string; price: number; imageUrl?: string };
-    suspension?: { name: string; price: number; imageUrl?: string };
-    spacer?: { name: string; price: number; imageUrl?: string };
-    accessory?: { name: string; price: number; imageUrl?: string };
+    wheel?: { name: string; price: number; imageUrl?: string; specs?: any };
+    tire?: { name: string; price: number; imageUrl?: string; specs?: any };
+    suspension?: { name: string; price: number; imageUrl?: string; specs?: any };
+    spacer?: { name: string; price: number; imageUrl?: string; specs?: any };
+    accessory?: { name: string; price: number; imageUrl?: string; specs?: any };
   }>({});
 
   const { setIsGenerating, addGenerationStep, clearGenerationSteps, showCompare, setShowCompare, cartCount, isSetupComplete, activeCategory: storeActiveCategory, setActiveCategory: setStoreActiveCategory, setSelectedTire: setSelectedTire, currentImage, selectedProduct, currentSetup, setCurrentImage } = useStore();
@@ -111,7 +111,7 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
 
   const totalPrice = Object.values(selectedProducts).reduce((sum, product) => sum + (product?.price || 0), 0);
 
-  const handleProductSelect = (category: keyof typeof selectedProducts) => (product: { name: string; price: number; imageUrl?: string }) => {
+  const handleProductSelect = (category: keyof typeof selectedProducts) => (product: { name: string; price: number; imageUrl?: string; [key: string]: any }) => {
     // Map plural category names to singular keys if needed
     const keyMap: Record<string, keyof typeof selectedProducts> = {
       wheels: 'wheel',
@@ -120,22 +120,35 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
       spacers: 'spacer',
       accessories: 'accessory'
     };
-    
+
     const targetKey = keyMap[category as string] || category;
-    setSelectedProducts(prev => ({ ...prev, [targetKey]: product }));
-    
+
+    // Extract specs from the product object (all properties except name, price, imageUrl)
+    const { name, price, imageUrl, ...specs } = product;
+
+    setSelectedProducts(prev => ({
+      ...prev,
+      [targetKey]: {
+        name,
+        price,
+        imageUrl,
+        specs: Object.keys(specs).length > 0 ? specs : undefined
+      }
+    }));
+
     // Sync with global store for generation
     if (targetKey === 'wheel') {
       // Cast to any to satisfy the Product type since we're in a simplified view here
       useStore.getState().setSelectedProduct({
         id: 'temp-id',
         type: 'wheel',
-        brand: product.name.split(' ')[0],
-        model: product.name.split(' ').slice(1).join(' '),
-        finish: 'Unknown',
-        diameter: (product as any).diameter || 18, // Ensure diameter is passed
-        width: (product as any).width || 9.5,
-        offset: (product as any).offset || 35,
+        brand: product.brand || product.name.split(' ')[0],
+        model: product.model || product.name.split(' ').slice(1).join(' '),
+        finish: product.finish || 'Unknown',
+        diameter: product.diameter || 18, // Ensure diameter is passed
+        width: product.width || 9.5,
+        offset: product.offset || 35,
+        boltPattern: product.boltPattern,
         imageUrl: product.imageUrl || '',
         ...product // Spread any other props
       } as any);
@@ -443,6 +456,28 @@ export const Sidebar = ({ collapsed, onToggle }: SidebarProps) => {
                           <p className="text-xs text-white/40 uppercase font-bold tracking-wider mb-0.5">{catKey}</p>
                           <p className="text-sm text-white font-medium truncate">{product.name}</p>
                           <p className="text-sm text-white/60 font-mono mt-1">${product.price.toLocaleString()}</p>
+                          {/* Detailed Specs */}
+                          {product.specs && (
+                            <div className="mt-2 space-y-1">
+                              {catKey === 'wheel' && product.specs.diameter && (
+                                <p className="text-[10px] text-white/50 font-mono">
+                                  {product.specs.diameter}" × {product.specs.width}" +{product.specs.offset}mm
+                                  {product.specs.boltPattern && ` • ${product.specs.boltPattern}`}
+                                </p>
+                              )}
+                              {catKey === 'tire' && product.specs.size && (
+                                <p className="text-[10px] text-white/50 font-mono">
+                                  {product.specs.size} • {product.specs.type}
+                                </p>
+                              )}
+                              {catKey === 'tire' && product.specs.loadIndex && product.specs.speedRating && (
+                                <p className="text-[10px] text-white/50 font-mono">
+                                  Load/Speed: {product.specs.loadIndex}{product.specs.speedRating}
+                                  {product.specs.warranty && ` • ${product.specs.warranty}`}
+                                </p>
+                              )}
+                            </div>
+                          )}
                           <div className="flex gap-2 mt-3">
                             <button className="flex-1 px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 hover:text-white transition-all font-medium">
                               Details

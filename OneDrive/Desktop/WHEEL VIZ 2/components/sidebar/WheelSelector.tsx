@@ -101,7 +101,16 @@ export const WheelSelector = ({ onProductSelect }: WheelSelectorProps = {}) => {
       onProductSelect({
         name: `${wheel.brand} ${wheel.model}`,
         price: wheel.price,
-        imageUrl: wheel.imageUrl
+        imageUrl: wheel.imageUrl,
+        brand: wheel.brand,
+        model: wheel.model,
+        finish: wheel.finish,
+        diameter: wheel.diameter,
+        width: wheel.width,
+        offset: wheel.offset,
+        boltPattern: wheel.boltPattern,
+        rating: wheel.rating,
+        reviews: wheel.reviews
       });
       return;
     }

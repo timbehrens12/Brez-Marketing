@@ -114,7 +114,17 @@ export const TireSelector = ({ onProductSelect }: TireSelectorProps = {}) => {
       onProductSelect({
         name: `${tire.brand} ${tire.model}`,
         price: tire.price,
-        imageUrl: tire.imageUrl
+        imageUrl: tire.imageUrl,
+        brand: tire.brand,
+        model: tire.model,
+        size: tire.size,
+        type: tire.type,
+        loadIndex: tire.loadIndex,
+        speedRating: tire.speedRating,
+        utqg: tire.utqg,
+        warranty: tire.warranty,
+        rating: tire.rating,
+        reviews: tire.reviews
       });
     }
   };
