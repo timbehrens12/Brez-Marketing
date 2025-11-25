@@ -1,9 +1,14 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { ArrowRight, Check, Phone, Mail, Building2, Target, BarChart3, Globe, Shield, Zap, Award, Users, TrendingUp, Sparkles, Star, Quote, ChevronRight, Rocket, Code, Layers, Activity, Monitor, Database, Workflow, Clock, CheckCircle2 } from "lucide-react"
+import { 
+  ArrowRight, Check, Phone, Mail, Target, BarChart3, Globe, Shield, Zap, 
+  Award, Users, TrendingUp, Sparkles, Star, Quote, ChevronRight, Rocket, 
+  MessageSquare, Smartphone, Calendar, Bell, Search, MousePointer, LayoutDashboard,
+  Clock, CreditCard, CheckCircle2
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import Link from "next/link"
 
 const COLORS = {
@@ -16,14 +21,14 @@ const COLORS = {
   text: "#e5e5e5",
   textLight: "#a0a0a0",
   textDark: "#6a6a6a",
-  accent: "#ffffff",
-  accentDim: "#808080"
+  accent: "#3b82f6", // Changed to a blue accent for trust/business
+  accentGlow: "#60a5fa",
+  success: "#10b981"
 }
 
 function HeroSection() {
   const [scrollY, setScrollY] = useState(0)
-  const heroRef = useRef<HTMLDivElement>(null)
-
+  
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll)
@@ -35,367 +40,255 @@ function HeroSection() {
   }
 
   return (
-    <section 
-      ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center px-6 lg:px-8 py-20 overflow-hidden"
-      style={{ 
-        background: `linear-gradient(180deg, ${COLORS.darker} 0%, ${COLORS.dark} 50%, ${COLORS.gray} 100%)`
-      }}
-    >
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px'
-          }}
-        />
-      </div>
-
-      {/* Gradient orbs - very subtle */}
+    <section className="relative min-h-screen flex items-center justify-center px-6 lg:px-8 py-20 overflow-hidden">
       <div 
-        className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl opacity-5"
+        className="absolute inset-0 z-0"
         style={{ 
-          background: `radial-gradient(circle, ${COLORS.accent} 0%, transparent 70%)`,
-          transform: `translate(${scrollY * 0.1}px, ${scrollY * 0.15}px)`
-        }}
-      />
-      <div 
-        className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl opacity-5"
-        style={{ 
-          background: `radial-gradient(circle, ${COLORS.accentDim} 0%, transparent 70%)`,
-          transform: `translate(${-scrollY * 0.1}px, ${-scrollY * 0.15}px)`
+          background: `radial-gradient(circle at 50% 50%, ${COLORS.gray} 0%, ${COLORS.darker} 100%)`
         }}
       />
       
-      {/* Navigation */}
-      <header className="absolute top-0 left-0 right-0 z-20">
-        <nav className="max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold" style={{ color: COLORS.text }}>
-            TLUCA
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/#services" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Services</Link>
-            <Link href="/#process" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Process</Link>
-            <Link href="/about" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>About</Link>
-            <Link href="/#contact" className="text-sm hover:text-white transition-colors" style={{ color: COLORS.textLight }}>Contact</Link>
-          </div>
-          <Button
-            size="sm"
-            className="hidden md:inline-flex px-5 py-2.5 font-semibold rounded-lg"
-            style={{ backgroundColor: COLORS.accent, color: COLORS.dark }}
-            onClick={scrollToContact}
-          >
-            Get Started
-          </Button>
-        </nav>
-      </header>
+      {/* Animated Background Grid */}
+      <div className="absolute inset-0 z-0 opacity-[0.05]"
+           style={{
+             backgroundImage: `linear-gradient(${COLORS.text} 1px, transparent 1px), linear-gradient(90deg, ${COLORS.text} 1px, transparent 1px)`,
+             backgroundSize: '40px 40px',
+             transform: `perspective(500px) rotateX(60deg) translateY(${scrollY * 0.5}px) translateZ(-200px)`
+           }}
+      />
 
-      <div className="max-w-7xl mx-auto text-center relative z-10">
-        {/* Badge */}
-        <div 
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border mb-8 backdrop-blur-sm"
-          style={{ 
-            backgroundColor: `${COLORS.gray}80`, 
-            borderColor: COLORS.grayBorder 
-          }}
-        >
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS.accent }}></div>
-          <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-            Website as a Service Platform
+      {/* Glow Effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]" />
+
+      <div className="relative z-10 max-w-5xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 mb-8 backdrop-blur-sm animate-fade-in-up">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
           </span>
+          <span className="text-sm font-medium text-gray-300">Accepting New Clients for {new Date().getFullYear()}</span>
         </div>
 
-        {/* Main Headline */}
-        <h1 
-          className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]"
-          style={{ color: COLORS.text }}
-        >
-          Websites That<br />
-          <span style={{ color: COLORS.accent }}>Convert & Scale</span>
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1] text-white">
+          Dominate Your <br/>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Local Market</span>
         </h1>
-        
-        {/* Subheadline */}
-        <p 
-          className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed mb-12"
-          style={{ color: COLORS.textLight }}
-        >
-          Complete website solutions built for service businesses. 
-          From design to deployment, I handle everything so you can focus on your clients.
+
+        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed">
+          We stop the guesswork. Data-driven ad campaigns that flood your business with high-quality leads, booked appointments, and loyal customers.
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-20">
-          <Button
-            onClick={scrollToContact}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <Button 
             size="lg"
-            className="group px-10 py-7 text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105"
-            style={{ backgroundColor: COLORS.accent, color: COLORS.dark }}
+            onClick={scrollToContact}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-full shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
           >
-            Get Started
-            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            Get Your Free Strategy Plan
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
-          <Link href="/onboarding">
-            <Button
+          <Link href="/#services">
+            <Button 
+              variant="outline" 
               size="lg"
-              variant="outline"
-              className="group px-10 py-7 text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105"
-              style={{ 
-                borderColor: COLORS.grayBorder, 
-                color: COLORS.text,
-                backgroundColor: `${COLORS.gray}40`
-              }}
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-white px-8 py-6 text-lg rounded-full backdrop-blur-sm"
             >
-              Start Onboarding
-              <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              Explore Services
             </Button>
           </Link>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          {[
-            { value: "3 Weeks", label: "Average Build Time" },
-            { value: "8.2%", label: "Avg Conversion Rate" },
-            { value: "340%", label: "Revenue Growth" },
-            { value: "24/7", label: "Support Included" }
-          ].map((stat, i) => (
-            <div 
-              key={i} 
-              className="p-6 rounded-xl border backdrop-blur-sm"
-              style={{ 
-                backgroundColor: `${COLORS.gray}60`, 
-                borderColor: COLORS.grayBorder 
-              }}
-            >
-              <div className="text-3xl font-bold mb-2" style={{ color: COLORS.accent }}>
-                {stat.value}
-              </div>
-              <div className="text-sm" style={{ color: COLORS.textDark }}>
-                {stat.label}
-              </div>
-            </div>
-          ))}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md max-w-3xl mx-auto">
+          <p className="text-gray-300 font-medium italic">
+            "Most local businesses waste budget on clicks that never convert. We focus on one metric: <span className="text-white font-bold">Revenue.</span> If you're ready to scale with a partner who handles everything, you're in the right place."
+          </p>
         </div>
       </div>
     </section>
+  )
+}
+
+function ServiceCard({ title, description, icon: Icon, features, colorClass }: any) {
+  return (
+    <div className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-transparent hover:from-blue-500/50 transition-all duration-500">
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="relative h-full bg-gray-900/90 backdrop-blur-xl rounded-xl p-8 border border-white/5 overflow-hidden">
+        <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${colorClass}`}>
+          <Icon size={120} />
+        </div>
+        
+        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-6 ${colorClass} bg-opacity-20`}>
+          <Icon className={`w-6 h-6 ${colorClass.replace('bg-', 'text-')}`} />
+        </div>
+
+        <h3 className="text-2xl font-bold text-white mb-4">{title}</h3>
+        <p className="text-gray-400 mb-8 leading-relaxed">{description}</p>
+
+        <ul className="space-y-3">
+          {features.map((feature: string, i: number) => (
+            <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
+              <CheckCircle2 className={`w-5 h-5 shrink-0 ${colorClass.replace('bg-', 'text-')}`} />
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   )
 }
 
 function ServicesSection() {
   const services = [
     {
-      icon: Monitor,
-      title: "Custom Website Design",
-      description: "Modern, responsive websites built with your brand in mind. Mobile-first design that converts visitors into customers.",
-      features: ["Responsive Design", "SEO Optimized", "Fast Loading", "Conversion Focused"]
+      title: "Google Ads Management",
+      description: "Capture customers exactly when they're searching for your services. We optimize for high intent to ensure your budget goes toward real leads.",
+      icon: Search,
+      colorClass: "text-blue-400",
+      features: [
+        "Keyword Research & Competitor Analysis",
+        "High-Converting Ad Copy",
+        "Negative Keyword Management",
+        "Bid Optimization & Budget Control"
+      ]
     },
     {
-      icon: Database,
-      title: "CRM Integration",
-      description: "Seamless connection with your existing tools. Automate lead capture, follow-ups, and customer management.",
-      features: ["Lead Capture", "Auto Follow-ups", "Pipeline Management", "Data Sync"]
+      title: "Google Local Service Ads (LSA)",
+      description: "Appear at the very top of Google with the 'Google Guaranteed' badge. Build instant trust and pay only for qualified leads, not clicks.",
+      icon: Shield,
+      colorClass: "text-green-400",
+      features: [
+        "Google Guaranteed Badge Setup",
+        "Pay-Per-Lead Model",
+        "Top of Search Results Placement",
+        "Dispute Management for Invalid Leads"
+      ]
     },
     {
-      icon: Workflow,
-      title: "Marketing Automation",
-      description: "Set up automated email sequences, SMS campaigns, and lead nurturing workflows that work around the clock.",
-      features: ["Email Sequences", "SMS Campaigns", "Lead Scoring", "Behavioral Triggers"]
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Reporting",
-      description: "Real-time dashboards showing your website performance, lead sources, and conversion metrics.",
-      features: ["Live Dashboards", "Conversion Tracking", "Lead Analytics", "Custom Reports"]
+      title: "Meta Ads (Facebook & Instagram)",
+      description: "Stop the scroll with visually stunning ads. We target your ideal customers based on demographics, interests, and behaviors before they even search.",
+      icon: Users,
+      colorClass: "text-purple-400",
+      features: [
+        "Custom Audience Targeting",
+        "Retargeting Campaigns",
+        "Lead Form Integration",
+        "Creative Design & A/B Testing"
+      ]
     }
   ]
 
   return (
-    <section id="services" className="py-32 px-6 lg:px-8" style={{ backgroundColor: COLORS.gray }}>
-      <div className="max-w-7xl mx-auto">
+    <section id="services" className="py-32 px-6 bg-black relative overflow-hidden">
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-20">
-          <div 
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border mb-6"
-            style={{ 
-              backgroundColor: COLORS.dark, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <Layers className="w-4 h-4" style={{ color: COLORS.textLight }} />
-            <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              What I Build
-            </span>
-          </div>
-          <h2 
-            className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
-            style={{ color: COLORS.text }}
-          >
-            Complete Website Solutions
-          </h2>
-          <p 
-            className="text-xl max-w-2xl mx-auto"
-            style={{ color: COLORS.textLight }}
-          >
-            Everything you need to attract, convert, and manage clients—all in one platform.
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Complete Ad Solutions</h2>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            We handle the complexity of modern advertising so you can focus on running your business.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {services.map((service, i) => {
-            const Icon = service.icon
-            return (
-              <Card
-                key={i}
-                className="group border hover:border-opacity-100 transition-all duration-300 overflow-hidden"
-                style={{ 
-                  backgroundColor: COLORS.dark, 
-                  borderColor: COLORS.grayBorder 
-                }}
-              >
-                <CardContent className="p-10">
-                  <div className="flex items-start gap-6 mb-6">
-                    <div 
-                      className="p-4 rounded-xl group-hover:scale-110 transition-transform duration-300"
-                      style={{ backgroundColor: COLORS.gray }}
-                    >
-                      <Icon className="w-8 h-8" style={{ color: COLORS.text }} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 
-                        className="text-2xl font-bold mb-3"
-                        style={{ color: COLORS.text }}
-                      >
-                        {service.title}
-                      </h3>
-                      <p 
-                        className="leading-relaxed mb-6"
-                        style={{ color: COLORS.textLight }}
-                      >
-                        {service.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    {service.features.map((feature, idx) => (
-                      <div 
-                        key={idx} 
-                        className="flex items-center gap-2"
-                        style={{ color: COLORS.textDark }}
-                      >
-                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.textLight }} />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="grid md:grid-cols-3 gap-8">
+          {services.map((s, i) => (
+            <ServiceCard key={i} {...s} />
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-function ProcessSection() {
-  const steps = [
-    {
-      number: "01",
-      title: "Discovery & Planning",
-      description: "I learn about your business, target audience, and goals to map out the perfect solution."
-    },
-    {
-      number: "02",
-      title: "Design & Development",
-      description: "I build your website, set up integrations, and configure all automations to your specifications."
-    },
-    {
-      number: "03",
-      title: "Testing & Refinement",
-      description: "I test every feature, optimize performance, and refine until everything works flawlessly."
-    },
-    {
-      number: "04",
-      title: "Launch & Support",
-      description: "Go live with confidence. I provide training, documentation, and ongoing support as you grow."
-    }
+function CRMSection() {
+  const features = [
+    { icon: Phone, title: "Call Tracking & Recording", desc: "Know exactly which ads drive calls. Review recordings to improve sales." },
+    { icon: MessageSquare, title: "Missed Call Text-Back", desc: "Never lose a lead. Our system automatically texts back when you miss a call." },
+    { icon: LayoutDashboard, title: "Unified Inbox", desc: "Manage SMS, Email, Facebook, and Instagram messages in one simple stream." },
+    { icon: Sparkles, title: "AI Chat Assistants", desc: "24/7 AI response to qualify leads and book appointments automatically." },
+    { icon: TrendingUp, title: "Visual Pipeline", desc: "Drag-and-drop pipeline to track leads from 'New' to 'Sold' in real-time." },
+    { icon: Calendar, title: "Automated Booking", desc: "Syncs with your calendar to let qualified leads book appointments instantly." }
   ]
 
   return (
-    <section id="process" className="py-32 px-6 lg:px-8 relative" style={{ backgroundColor: COLORS.dark }}>
+    <section className="py-32 px-6 bg-gradient-to-b from-gray-900 to-black border-t border-white/10">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <div 
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border mb-6"
-            style={{ 
-              backgroundColor: COLORS.gray, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <Clock className="w-4 h-4" style={{ color: COLORS.textLight }} />
-            <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              My Process
-            </span>
-          </div>
-          <h2 
-            className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
-            style={{ color: COLORS.text }}
-          >
-            Simple, Streamlined Process
-          </h2>
-          <p 
-            className="text-xl max-w-2xl mx-auto"
-            style={{ color: COLORS.textLight }}
-          >
-            From initial consultation to launch, I handle everything. Typically 3-4 weeks from start to finish.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className="relative group"
-            >
-              {/* Connecting line */}
-              {i < steps.length - 1 && (
-                <div 
-                  className="hidden lg:block absolute top-12 left-full w-full h-px -translate-x-1/2 z-0"
-                  style={{ backgroundColor: COLORS.grayBorder }}
-                />
-              )}
-              
-              <Card
-                className="border h-full transition-all duration-300 hover:scale-105"
-                style={{ 
-                  backgroundColor: COLORS.gray, 
-                  borderColor: COLORS.grayBorder 
-                }}
-              >
-                <CardContent className="p-8">
-                  <div 
-                    className="text-5xl font-bold mb-6 opacity-20"
-                    style={{ color: COLORS.text }}
-                  >
-                    {step.number}
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-6">
+              <Zap className="w-4 h-4" />
+              Powered by GoHighLevel
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Never Miss a Lead Again.
+            </h2>
+            <p className="text-xl text-gray-400 mb-10 leading-relaxed">
+              Generating leads is only half the battle. Our all-in-one CRM ensures you capture, nurture, and close every opportunity that comes your way.
+            </p>
+            
+            <div className="grid sm:grid-cols-2 gap-8">
+              {features.map((f, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                    <f.icon className="w-5 h-5 text-indigo-400" />
                   </div>
-                  
-                  <h3 
-                    className="text-xl font-bold mb-3"
-                    style={{ color: COLORS.text }}
-                  >
-                    {step.title}
-                  </h3>
-                  <p 
-                    className="leading-relaxed"
-                    style={{ color: COLORS.textLight }}
-                  >
-                    {step.description}
-                  </p>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h4 className="text-white font-semibold mb-1">{f.title}</h4>
+                    <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
+            <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl">
+              {/* Abstract UI Representation */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center font-bold">JD</div>
+                    <div>
+                      <div className="text-white font-bold">John Doe</div>
+                      <div className="text-xs text-gray-500">Looking for quote</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500">Just now</div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-gray-800/50 p-3 rounded-lg rounded-tl-none max-w-[80%]">
+                    <p className="text-sm text-gray-300">Hi, I'm interested in your services. Can you give me a price?</p>
+                  </div>
+                  <div className="bg-indigo-600/20 p-3 rounded-lg rounded-tr-none max-w-[80%] ml-auto border border-indigo-500/20">
+                    <p className="text-sm text-indigo-200">Thanks for reaching out, John! We have a special offer this week. Would you like to schedule a quick call?</p>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <div className="h-8 w-24 bg-indigo-600 rounded animate-pulse opacity-50"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function WhyUsSection() {
+  return (
+    <section className="py-24 px-6 bg-black">
+      <div className="max-w-7xl mx-auto text-center">
+        <h2 className="text-3xl md:text-5xl font-bold text-white mb-16">Why Businesses Choose Us</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { title: "Transparent Reporting", desc: "No vanity metrics. You see exactly where every dollar goes and what it returns." },
+            { title: "No Long Contracts", desc: "We earn your business every month. No handcuffing you to long-term commitments." },
+            { title: "Full Data Ownership", desc: "You own your ad accounts and data. We don't hold your assets hostage." },
+            { title: "ROI Focused", desc: "We don't just get clicks; we optimize for booked appointments and sales." }
+          ].map((item, i) => (
+            <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+              <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+              <p className="text-gray-400">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -404,94 +297,115 @@ function ProcessSection() {
   )
 }
 
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      quote: "TLUCA Systems built our entire website and CRM integration in 3 weeks. The automated lead system generates 50+ qualified leads per week. Best investment we've made.",
-      author: "Sarah Mitchell",
-      role: "CEO, Digital Marketing Agency",
-      rating: 5
-    },
-    {
-      quote: "We went from manually tracking everything to having a complete dashboard that shows us exactly what's working. Saved us 20+ hours per week.",
-      author: "Marcus Johnson",
-      role: "Founder, SaaS Startup",
-      rating: 5
-    },
-    {
-      quote: "The website converts at 8.2%—triple our old rate. Combined with their lead nurturing system, we've grown revenue by 340% in 6 months.",
-      author: "Jennifer Chen",
-      role: "Owner, E-commerce Brand",
-      rating: 5
-    }
-  ]
-
+function OnboardingSection() {
   return (
-    <section className="py-32 px-6 lg:px-8" style={{ backgroundColor: COLORS.gray }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <div 
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border mb-6"
-            style={{ 
-              backgroundColor: COLORS.dark, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <Star className="w-4 h-4 fill-current" style={{ color: COLORS.textLight }} />
-            <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              Client Results
-            </span>
-          </div>
-          <h2 
-            className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
-            style={{ color: COLORS.text }}
-          >
-            Trusted by Growing Businesses
-          </h2>
+    <section className="py-32 px-6 bg-gradient-to-t from-gray-900 to-black">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-white mb-6">Simple 3-Step Launch</h2>
+          <p className="text-gray-400">We can have your campaigns live in as little as 3-5 days.</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, i) => (
-            <Card
-              key={i}
-              className="border"
-              style={{ 
-                backgroundColor: COLORS.dark, 
-                borderColor: COLORS.grayBorder 
-              }}
-            >
-              <CardContent className="p-8">
+        <div className="space-y-8">
+          {[
+            { step: "01", title: "Strategy & Access", desc: "You complete a simple onboarding form and grant us access to your accounts. We map out your campaign strategy." },
+            { step: "02", title: "Build & Setup", desc: "Our team builds your landing pages, sets up tracking, designs creatives, and configures your CRM dashboard." },
+            { step: "03", title: "Launch & Optimize", desc: "We go live. Leads start flowing into your dashboard, and we continually tweak for better performance." }
+          ].map((step, i) => (
+            <div key={i} className="flex gap-6 p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+              <div className="text-3xl font-bold text-indigo-500 opacity-50">{step.step}</div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                <p className="text-gray-400">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PricingSection() {
+  return (
+    <section className="py-32 px-6 bg-black" id="pricing">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Simple, Transparent Investment</h2>
+          <p className="text-xl text-gray-400">Everything you need to scale, broken down clearly.</p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          <Card className="bg-gray-900 border-gray-800 text-gray-300">
+            <CardHeader>
+              <CardTitle className="text-white">Ad Spend</CardTitle>
+              <CardDescription>Paid directly to Google/Meta</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white mb-4">$X - $X <span className="text-sm font-normal text-gray-500">/mo</span></div>
+              <p className="text-sm text-gray-400">You decide your budget. We recommend a minimum to see meaningful results.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-indigo-500/30 relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-indigo-500"></div>
+            <CardHeader>
+              <CardTitle className="text-white">Management Fee</CardTitle>
+              <CardDescription>Our expert service</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white mb-4">$X <span className="text-sm font-normal text-gray-500">/mo</span></div>
+              <ul className="space-y-2 text-sm text-gray-300 mb-6">
+                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Campaign Optimization</li>
+                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Creative Refresh</li>
+                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Monthly Reporting</li>
+                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> CRM Access Included</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800 text-gray-300">
+            <CardHeader>
+              <CardTitle className="text-white">Setup Fee</CardTitle>
+              <CardDescription>One-time investment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white mb-4">$X <span className="text-sm font-normal text-gray-500">one-time</span></div>
+              <p className="text-sm text-gray-400 mb-4">Covers comprehensive account setup, pixel installation, tracking configuration, and initial campaign build.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SocialProofSection() {
+  return (
+    <section className="py-24 px-6 bg-gray-900/50">
+      <div className="max-w-7xl mx-auto text-center">
+        <h2 className="text-2xl font-bold text-white mb-12 opacity-50 uppercase tracking-widest">Trusted By Local Businesses</h2>
+        
+        <div className="flex flex-wrap justify-center gap-12 mb-16 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+          {/* Placeholder Logos */}
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 w-32 bg-white/20 rounded animate-pulse" />
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="bg-transparent border-white/5">
+              <CardContent className="p-8 text-left">
                 <div className="flex gap-1 mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, idx) => (
-                    <Star 
-                      key={idx} 
-                      className="w-4 h-4 fill-current" 
-                      style={{ color: COLORS.textLight }} 
-                    />
-                  ))}
+                  {[1, 2, 3, 4, 5].map(star => <Star key={star} className="w-4 h-4 text-yellow-500 fill-yellow-500" />)}
                 </div>
-
-                <Quote className="w-8 h-8 mb-4 opacity-30" style={{ color: COLORS.textLight }} />
-                
-                <p 
-                  className="text-lg leading-relaxed mb-6"
-                  style={{ color: COLORS.text }}
-                >
-                  "{testimonial.quote}"
-                </p>
-
+                <p className="text-gray-300 mb-6 italic">"We saw a 200% increase in leads within the first month. The missed call text-back feature alone has saved us dozens of customers."</p>
                 <div className="flex items-center gap-4">
-                  <div 
-                    className="w-12 h-12 rounded-full"
-                    style={{ backgroundColor: COLORS.gray }}
-                  />
+                  <div className="w-10 h-10 rounded-full bg-gray-700" />
                   <div>
-                    <p className="font-bold" style={{ color: COLORS.text }}>
-                      {testimonial.author}
-                    </p>
-                    <p className="text-sm" style={{ color: COLORS.textDark }}>
-                      {testimonial.role}
-                    </p>
+                    <div className="text-white font-bold text-sm">Client Name</div>
+                    <div className="text-xs text-gray-500">Business Owner</div>
                   </div>
                 </div>
               </CardContent>
@@ -503,193 +417,20 @@ function TestimonialsSection() {
   )
 }
 
-function PricingSection() {
-  return (
-    <section className="py-32 px-6 lg:px-8" style={{ backgroundColor: COLORS.dark }}>
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-20">
-          <div 
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border mb-6"
-            style={{ 
-              backgroundColor: COLORS.gray, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <Building2 className="w-4 h-4" style={{ color: COLORS.textLight }} />
-            <span className="text-sm font-medium" style={{ color: COLORS.textLight }}>
-              Investment
-            </span>
-          </div>
-          <h2 
-            className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
-            style={{ color: COLORS.text }}
-          >
-            Custom Solutions, Transparent Pricing
-          </h2>
-          <p 
-            className="text-xl max-w-2xl mx-auto"
-            style={{ color: COLORS.textLight }}
-          >
-            Every business is unique. I build custom solutions based on your specific needs and budget.
-          </p>
-        </div>
-
-        <Card 
-          className="border overflow-hidden"
-          style={{ 
-            backgroundColor: COLORS.gray, 
-            borderColor: COLORS.grayBorder 
-          }}
-        >
-          <CardContent className="p-12">
-            <div className="text-center mb-10">
-              <div 
-                className="text-6xl font-bold mb-4"
-                style={{ color: COLORS.text }}
-              >
-                Custom Pricing
-              </div>
-              <p 
-                className="text-xl"
-                style={{ color: COLORS.textLight }}
-              >
-                Based on scope and requirements
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 mb-10">
-              {[
-                "Custom Website Design",
-                "CRM Integration & Setup",
-                "Lead Generation Systems",
-                "Marketing Automation",
-                "Analytics & Dashboards",
-                "API Integrations",
-                "Ongoing Support",
-                "Team Training"
-              ].map((feature, i) => (
-                <div 
-                  key={i} 
-                  className="flex items-center gap-3"
-                  style={{ color: COLORS.textLight }}
-                >
-                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: COLORS.text }} />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              size="lg"
-              className="w-full px-8 py-7 text-lg font-semibold rounded-lg hover:scale-[1.02] transition-all duration-300"
-              style={{ backgroundColor: COLORS.accent, color: COLORS.dark }}
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Get Your Custom Quote
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </section>
-  )
-}
-
 function ContactSection() {
   return (
-    <section 
-      id="contact" 
-      className="py-32 px-6 lg:px-8"
-      style={{ backgroundColor: COLORS.gray }}
-    >
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 
-            className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
-            style={{ color: COLORS.text }}
-          >
-            Ready to Get Started?
-          </h2>
-          <p 
-            className="text-xl"
-            style={{ color: COLORS.textLight }}
-          >
-            Let's discuss your project and build something great for your business.
-          </p>
+    <section id="contact" className="py-32 px-6 bg-black">
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="inline-block p-4 rounded-full bg-indigo-500/10 mb-6">
+          <Phone className="w-8 h-8 text-indigo-400" />
         </div>
-
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
-          <Card 
-            className="border group hover:scale-[1.02] transition-transform duration-300"
-            style={{ 
-              backgroundColor: COLORS.dark, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <CardContent className="p-8">
-              <div className="flex items-center gap-4 mb-4">
-                <div 
-                  className="p-3 rounded-lg"
-                  style={{ backgroundColor: COLORS.gray }}
-                >
-                  <Phone className="w-6 h-6" style={{ color: COLORS.text }} />
-                </div>
-                <h3 className="text-xl font-bold" style={{ color: COLORS.text }}>
-                  Call Us
-                </h3>
-              </div>
-              <a
-                href="tel:832-561-4407"
-                className="text-2xl font-bold hover:underline block"
-                style={{ color: COLORS.text }}
-              >
-                832-561-4407
-              </a>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="border group hover:scale-[1.02] transition-transform duration-300"
-            style={{ 
-              backgroundColor: COLORS.dark, 
-              borderColor: COLORS.grayBorder 
-            }}
-          >
-            <CardContent className="p-8">
-              <div className="flex items-center gap-4 mb-4">
-                <div 
-                  className="p-3 rounded-lg"
-                  style={{ backgroundColor: COLORS.gray }}
-                >
-                  <Mail className="w-6 h-6" style={{ color: COLORS.text }} />
-                </div>
-                <h3 className="text-xl font-bold" style={{ color: COLORS.text }}>
-                  Email Us
-                </h3>
-              </div>
-              <a
-                href="mailto:help@tlucasystems.com"
-                className="text-xl font-bold hover:underline break-all block"
-                style={{ color: COLORS.text }}
-              >
-                help@tlucasystems.com
-              </a>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="text-center">
-          <Link href="/onboarding">
-            <Button
-              size="lg"
-              className="px-12 py-7 text-lg font-semibold rounded-lg hover:scale-105 transition-all duration-300"
-              style={{ backgroundColor: COLORS.accent, color: COLORS.dark }}
-            >
-              Start Your Onboarding
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
+        <h2 className="text-5xl md:text-6xl font-bold text-white mb-8">Ready to Scale?</h2>
+        <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+          Let's discuss your goals and see if we're a good fit. No pressure, just a strategy session.
+        </p>
+        <Button className="bg-white text-black hover:bg-gray-200 px-10 py-8 text-xl rounded-full font-bold shadow-2xl shadow-white/10 transition-all hover:scale-105">
+          Book Your Strategy Call
+        </Button>
       </div>
     </section>
   )
@@ -697,85 +438,16 @@ function ContactSection() {
 
 function Footer() {
   return (
-    <footer 
-      className="py-16 px-6 lg:px-8 border-t"
-      style={{ 
-        backgroundColor: COLORS.dark, 
-        borderColor: COLORS.grayBorder 
-      }}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
-          <div className="md:col-span-2">
-            <h3 
-              className="text-2xl font-bold mb-4"
-              style={{ color: COLORS.text }}
-            >
-              TLUCA SYSTEMS
-            </h3>
-            <p className="text-lg mb-4" style={{ color: COLORS.textLight }}>
-              Websites That Convert & Scale
-            </p>
-            <p style={{ color: COLORS.textDark }}>
-              Complete website solutions built for service businesses.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-4" style={{ color: COLORS.text }}>
-              Quick Links
-            </h4>
-            <ul className="space-y-3" style={{ color: COLORS.textDark }}>
-              <li>
-                <Link href="/about" className="hover:underline">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:underline">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="hover:underline">
-                  Terms & Conditions
-                </Link>
-              </li>
-              <li>
-                <Link href="/onboarding" className="hover:underline">
-                  Start Onboarding
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-4" style={{ color: COLORS.text }}>
-              Contact
-            </h4>
-            <ul className="space-y-3" style={{ color: COLORS.textDark }}>
-              <li>
-                <a href="tel:832-561-4407" className="hover:underline">
-                  832-561-4407
-                </a>
-              </li>
-              <li>
-                <a href="mailto:tlucasystems@gmail.com" className="hover:underline break-all">
-                  help@tlucasystems.com
-                </a>
-              </li>
-            </ul>
-          </div>
+    <footer className="py-12 px-6 bg-gray-950 border-t border-white/5">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-white font-bold text-2xl">TLUCA</div>
+        <div className="flex gap-6 text-sm text-gray-500">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+          <Link href="/about" className="hover:text-white transition-colors">About</Link>
         </div>
-
-        <div 
-          className="pt-8 border-t text-center"
-          style={{ 
-            borderColor: COLORS.grayBorder, 
-            color: COLORS.textDark 
-          }}
-        >
-          <p>© {new Date().getFullYear()} TLUCA Systems. All rights reserved.</p>
+        <div className="text-sm text-gray-600">
+          © {new Date().getFullYear()} TLUCA Systems. All rights reserved.
         </div>
       </div>
     </footer>
@@ -784,21 +456,24 @@ function Footer() {
 
 export default function TLUCALandingPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: COLORS.dark, color: COLORS.text }}>
+    <div className="min-h-screen bg-black text-white selection:bg-indigo-500/30">
       <HeroSection />
+      <SocialProofSection />
       <ServicesSection />
-      <ProcessSection />
-      <TestimonialsSection />
+      <CRMSection />
+      <WhyUsSection />
+      <OnboardingSection />
       <PricingSection />
       <ContactSection />
       <Footer />
-
+      
       <style jsx global>{`
-        html {
-          scroll-behavior: smooth;
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        * {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
         }
       `}</style>
     </div>
