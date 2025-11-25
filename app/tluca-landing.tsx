@@ -2,478 +2,550 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { 
-  ArrowRight, Check, Phone, Mail, Target, BarChart3, Globe, Shield, Zap, 
-  Award, Users, TrendingUp, Sparkles, Star, Quote, ChevronRight, Rocket, 
-  MessageSquare, Smartphone, Calendar, Bell, Search, MousePointer, LayoutDashboard,
-  Clock, CreditCard, CheckCircle2
+  ArrowRight, Phone, MessageSquare, Zap, Target, Users, 
+  TrendingUp, Shield, MousePointer, Play, X, Check, 
+  BarChart3, Globe, Smartphone, Bot, DollarSign, Activity, Search
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import Link from "next/link"
 
-const COLORS = {
-  dark: "#0a0a0a",
-  darker: "#050505",
-  gray: "#1a1a1a",
-  grayLight: "#2a2a2a",
-  grayMedium: "#3a3a3a",
-  grayBorder: "#2a2a2a",
-  text: "#e5e5e5",
-  textLight: "#a0a0a0",
-  textDark: "#6a6a6a",
-  accent: "#3b82f6", // Changed to a blue accent for trust/business
-  accentGlow: "#60a5fa",
-  success: "#10b981"
-}
-
-function HeroSection() {
-  const [scrollY, setScrollY] = useState(0)
-  
+// --- Utilities ---
+const useMousePosition = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    const updateMousePosition = (ev: MouseEvent) => {
+      setMousePosition({ x: ev.clientX, y: ev.clientY })
+    }
+    window.addEventListener('mousemove', updateMousePosition)
+    return () => window.removeEventListener('mousemove', updateMousePosition)
   }, [])
-
-  const scrollToContact = () => {
-    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 lg:px-8 py-20 overflow-hidden">
-      <div 
-        className="absolute inset-0 z-0"
-        style={{ 
-          background: `radial-gradient(circle at 50% 50%, ${COLORS.gray} 0%, ${COLORS.darker} 100%)`
-        }}
-      />
-      
-      {/* Animated Background Grid */}
-      <div className="absolute inset-0 z-0 opacity-[0.05]"
-           style={{
-             backgroundImage: `linear-gradient(${COLORS.text} 1px, transparent 1px), linear-gradient(90deg, ${COLORS.text} 1px, transparent 1px)`,
-             backgroundSize: '40px 40px',
-             transform: `perspective(500px) rotateX(60deg) translateY(${scrollY * 0.5}px) translateZ(-200px)`
-           }}
-      />
-
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]" />
-
-      <div className="relative z-10 max-w-5xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 mb-8 backdrop-blur-sm animate-fade-in-up">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-          <span className="text-sm font-medium text-gray-300">Accepting New Clients for {new Date().getFullYear()}</span>
-        </div>
-
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1] text-white">
-          Dominate Your <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Local Market</span>
-        </h1>
-
-        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed">
-          We stop the guesswork. Data-driven ad campaigns that flood your business with high-quality leads, booked appointments, and loyal customers.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-          <Button 
-            size="lg"
-            onClick={scrollToContact}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-full shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
-          >
-            Get Your Free Strategy Plan
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          <Link href="/#services">
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-white px-8 py-6 text-lg rounded-full backdrop-blur-sm"
-            >
-              Explore Services
-            </Button>
-          </Link>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md max-w-3xl mx-auto">
-          <p className="text-gray-300 font-medium italic">
-            "Most local businesses waste budget on clicks that never convert. We focus on one metric: <span className="text-white font-bold">Revenue.</span> If you're ready to scale with a partner who handles everything, you're in the right place."
-          </p>
-        </div>
-      </div>
-    </section>
-  )
+  return mousePosition
 }
 
-function ServiceCard({ title, description, icon: Icon, features, colorClass }: any) {
+// --- Components ---
+
+function LiveTicker() {
+  const events = [
+    "New Lead: Roofing Quote ($12k)", 
+    "Call Booked: Dental Cleaning", 
+    "New Lead: HVAC Repair", 
+    "Review: ⭐⭐⭐⭐⭐", 
+    "New Lead: Legal Consult",
+    "Call Booked: Spa Day"
+  ]
+  
   return (
-    <div className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-transparent hover:from-blue-500/50 transition-all duration-500">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative h-full bg-gray-900/90 backdrop-blur-xl rounded-xl p-8 border border-white/5 overflow-hidden">
-        <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${colorClass}`}>
-          <Icon size={120} />
-        </div>
-        
-        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-6 ${colorClass} bg-opacity-20`}>
-          <Icon className={`w-6 h-6 ${colorClass.replace('bg-', 'text-')}`} />
-        </div>
-
-        <h3 className="text-2xl font-bold text-white mb-4">{title}</h3>
-        <p className="text-gray-400 mb-8 leading-relaxed">{description}</p>
-
-        <ul className="space-y-3">
-          {features.map((feature: string, i: number) => (
-            <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
-              <CheckCircle2 className={`w-5 h-5 shrink-0 ${colorClass.replace('bg-', 'text-')}`} />
-              {feature}
-            </li>
-          ))}
-        </ul>
+    <div className="w-full bg-indigo-600 overflow-hidden py-2 flex relative z-20">
+      <div className="animate-marquee whitespace-nowrap flex gap-8 items-center">
+        {[...events, ...events, ...events].map((evt, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-widest">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            {evt}
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-function ServicesSection() {
-  const services = [
-    {
-      title: "Google Ads Management",
-      description: "Capture customers exactly when they're searching for your services. We optimize for high intent to ensure your budget goes toward real leads.",
-      icon: Search,
-      colorClass: "text-blue-400",
-      features: [
-        "Keyword Research & Competitor Analysis",
-        "High-Converting Ad Copy",
-        "Negative Keyword Management",
-        "Bid Optimization & Budget Control"
-      ]
-    },
-    {
-      title: "Google Local Service Ads (LSA)",
-      description: "Appear at the very top of Google with the 'Google Guaranteed' badge. Build instant trust and pay only for qualified leads, not clicks.",
-      icon: Shield,
-      colorClass: "text-green-400",
-      features: [
-        "Google Guaranteed Badge Setup",
-        "Pay-Per-Lead Model",
-        "Top of Search Results Placement",
-        "Dispute Management for Invalid Leads"
-      ]
-    },
-    {
-      title: "Meta Ads (Facebook & Instagram)",
-      description: "Stop the scroll with visually stunning ads. We target your ideal customers based on demographics, interests, and behaviors before they even search.",
-      icon: Users,
-      colorClass: "text-purple-400",
-      features: [
-        "Custom Audience Targeting",
-        "Retargeting Campaigns",
-        "Lead Form Integration",
-        "Creative Design & A/B Testing"
-      ]
-    }
-  ]
-
+function MouseFollower() {
+  const { x, y } = useMousePosition()
   return (
-    <section id="services" className="py-32 px-6 bg-black relative overflow-hidden">
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Complete Ad Solutions</h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            We handle the complexity of modern advertising so you can focus on running your business.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {services.map((s, i) => (
-            <ServiceCard key={i} {...s} />
-          ))}
-        </div>
-      </div>
-    </section>
+    <div 
+      className="fixed pointer-events-none z-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] transition-transform duration-75 ease-out"
+      style={{ 
+        left: -300, 
+        top: -300,
+        transform: `translate(${x}px, ${y}px)` 
+      }}
+    />
   )
 }
 
-function CRMSection() {
-  const features = [
-    { icon: Phone, title: "Call Tracking & Recording", desc: "Know exactly which ads drive calls. Review recordings to improve sales." },
-    { icon: MessageSquare, title: "Missed Call Text-Back", desc: "Never lose a lead. Our system automatically texts back when you miss a call." },
-    { icon: LayoutDashboard, title: "Unified Inbox", desc: "Manage SMS, Email, Facebook, and Instagram messages in one simple stream." },
-    { icon: Sparkles, title: "AI Chat Assistants", desc: "24/7 AI response to qualify leads and book appointments automatically." },
-    { icon: TrendingUp, title: "Visual Pipeline", desc: "Drag-and-drop pipeline to track leads from 'New' to 'Sold' in real-time." },
-    { icon: Calendar, title: "Automated Booking", desc: "Syncs with your calendar to let qualified leads book appointments instantly." }
-  ]
+function CRMSimulator() {
+  const [status, setStatus] = useState<'idle' | 'calling' | 'missed' | 'responded'>('idle')
+  const [messages, setMessages] = useState<string[]>([])
+
+  const startDemo = () => {
+    if (status !== 'idle') return
+    setStatus('calling')
+    setMessages([])
+    
+    // Simulate sequence
+    setTimeout(() => setStatus('missed'), 2500)
+    setTimeout(() => {
+      setStatus('responded')
+      setMessages(["Sorry I missed you! How can we help?", "I need a quote for a project."])
+    }, 3500)
+    setTimeout(() => {
+      setMessages(prev => [...prev, "Great! Click here to book a quick call: [Link]"])
+    }, 5000)
+    setTimeout(() => setStatus('idle'), 8000)
+  }
 
   return (
-    <section className="py-32 px-6 bg-gradient-to-b from-gray-900 to-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-6">
-              <Zap className="w-4 h-4" />
-              Powered by GoHighLevel
+    <div className="relative w-full max-w-[320px] mx-auto bg-gray-900 rounded-[3rem] border-8 border-gray-800 shadow-2xl overflow-hidden h-[600px]">
+      {/* Notch */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-xl z-20"></div>
+      
+      {/* Screen Content */}
+      <div className="h-full w-full bg-black relative flex flex-col">
+        {/* Status Bar */}
+        <div className="flex justify-between px-6 pt-3 text-xs text-white/50">
+          <span>9:41</span>
+          <div className="flex gap-1">
+            <div className="w-3 h-3 bg-white/50 rounded-full" />
+            <div className="w-3 h-3 bg-white/50 rounded-full" />
+          </div>
+        </div>
+
+        {status === 'idle' && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 bg-gray-800 rounded-2xl mb-4 flex items-center justify-center">
+              <Phone className="w-8 h-8 text-gray-500" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Never Miss a Lead Again.
-            </h2>
-            <p className="text-xl text-gray-400 mb-10 leading-relaxed">
-              Generating leads is only half the battle. Our all-in-one CRM ensures you capture, nurture, and close every opportunity that comes your way.
-            </p>
-            
-            <div className="grid sm:grid-cols-2 gap-8">
-              {features.map((f, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-                    <f.icon className="w-5 h-5 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h4 className="text-white font-semibold mb-1">{f.title}</h4>
-                    <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
-                  </div>
+            <p className="text-gray-500 mb-6">See what happens when you miss a customer call.</p>
+            <Button onClick={startDemo} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full w-full py-6">
+              Simulate Missed Call
+            </Button>
+          </div>
+        )}
+
+        {status === 'calling' && (
+          <div className="flex-1 flex flex-col items-center pt-20 bg-gray-900/50 backdrop-blur-sm">
+            <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
+              <span className="text-3xl font-bold text-white">JD</span>
+            </div>
+            <h3 className="text-2xl text-white font-medium mb-1">John Doe</h3>
+            <p className="text-gray-400">Incoming Call...</p>
+            <div className="mt-auto mb-20 w-full px-8 flex justify-between">
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
+                <Phone className="rotate-[135deg] text-white" />
+              </div>
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+                <Phone className="text-white" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(status === 'missed' || status === 'responded') && (
+          <div className="flex-1 flex flex-col bg-black relative">
+             <div className="p-4 border-b border-white/10 flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-xs text-white">JD</div>
+                <div className="text-white text-sm font-medium">John Doe</div>
+             </div>
+             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                <div className="flex justify-center">
+                  <span className="text-[10px] text-gray-600 uppercase tracking-wide">Today 9:41 AM</span>
                 </div>
-              ))}
+                
+                {/* The Missed Call Notification in Chat */}
+                <div className="flex items-center gap-2 text-xs text-red-500 justify-center my-4 bg-red-500/10 py-2 rounded-lg">
+                   <Phone className="w-3 h-3" /> Missed Call from John Doe
+                </div>
+
+                {status === 'responded' && (
+                   <>
+                      <div className="flex justify-end">
+                         <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl rounded-tr-sm text-sm max-w-[80%] animate-in slide-in-from-right fade-in duration-300">
+                            {messages[0]}
+                         </div>
+                      </div>
+                      {messages[1] && (
+                         <div className="flex justify-start">
+                            <div className="bg-gray-800 text-gray-200 px-4 py-2 rounded-2xl rounded-tl-sm text-sm max-w-[80%] animate-in slide-in-from-left fade-in duration-300">
+                               {messages[1]}
+                            </div>
+                         </div>
+                      )}
+                      {messages[2] && (
+                        <div className="flex justify-end">
+                         <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl rounded-tr-sm text-sm max-w-[80%] animate-in slide-in-from-right fade-in duration-300">
+                            Great! Click here to book: <span className="underline text-blue-200">cal.com/book</span>
+                         </div>
+                      </div>
+                      )}
+                   </>
+                )}
+                
+                {status === 'missed' && (
+                   <div className="flex gap-1 justify-end">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}/>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}/>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}/>
+                   </div>
+                )}
+             </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ROICalculator() {
+  const [adSpend, setAdSpend] = useState(1500)
+  const [avgSale, setAvgSale] = useState(500)
+  const [closeRate, setCloseRate] = useState(20)
+
+  // Simple logic: 
+  // $1500 spend -> ~30 leads (avg $50/lead) -> 20% close -> 6 sales * $500 = $3000
+  const leads = Math.floor(adSpend / 50)
+  const sales = Math.floor(leads * (closeRate / 100))
+  const revenue = sales * avgSale
+  const roi = Math.floor(((revenue - adSpend) / adSpend) * 100)
+
+  return (
+    <div className="w-full bg-black/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+      <div className="grid md:grid-cols-2 gap-12">
+        <div className="space-y-8">
+          <div>
+            <div className="flex justify-between text-white mb-4">
+              <label>Monthly Ad Spend</label>
+              <span className="font-mono text-indigo-400">${adSpend}</span>
             </div>
+            <input 
+              type="range" min="500" max="10000" step="100" 
+              value={adSpend} onChange={(e) => setAdSpend(Number(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+          </div>
+          <div>
+            <div className="flex justify-between text-white mb-4">
+              <label>Average Customer Value</label>
+              <span className="font-mono text-indigo-400">${avgSale}</span>
+            </div>
+            <input 
+              type="range" min="100" max="5000" step="50" 
+              value={avgSale} onChange={(e) => setAvgSale(Number(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+          </div>
+          <div>
+            <div className="flex justify-between text-white mb-4">
+              <label>Close Rate</label>
+              <span className="font-mono text-indigo-400">{closeRate}%</span>
+            </div>
+            <input 
+              type="range" min="5" max="100" step="5" 
+              value={closeRate} onChange={(e) => setCloseRate(Number(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-2xl p-8 flex flex-col justify-center items-center border border-white/10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-white/[0.05] z-0" />
+          <div className="relative z-10 text-center">
+            <p className="text-gray-400 mb-2">Projected Monthly Revenue</p>
+            <div className="text-5xl md:text-6xl font-bold text-white mb-4 tabular-nums">
+              ${revenue.toLocaleString()}
+            </div>
+            <div className="inline-flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-1 rounded-full text-sm font-bold">
+              <TrendingUp className="w-4 h-4" />
+              {roi > 0 ? `+${roi}%` : `${roi}%`} ROI
+            </div>
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-gray-500 mt-6 text-center italic">
+        *Estimates based on industry averages. Actual results vary by market and competition.
+      </p>
+    </div>
+  )
+}
+
+function ServiceBento() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-4 h-auto md:h-[600px]">
+      {/* Google Ads - Large */}
+      <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 group relative rounded-3xl bg-gray-900 border border-white/10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
+          <div>
+            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+              <Search className="text-white" />
+            </div>
+            <h3 className="text-3xl font-bold text-white mb-2">Google Ads Management</h3>
+            <p className="text-gray-400 max-w-md">
+              Capture high-intent customers the moment they search. We manage keywords, bids, and negatives daily.
+            </p>
           </div>
           
-          <div className="relative">
-            <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
-            <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl">
-              {/* Abstract UI Representation */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center font-bold">JD</div>
-                    <div>
-                      <div className="text-white font-bold">John Doe</div>
-                      <div className="text-xs text-gray-500">Looking for quote</div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">Just now</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-gray-800/50 p-3 rounded-lg rounded-tl-none max-w-[80%]">
-                    <p className="text-sm text-gray-300">Hi, I'm interested in your services. Can you give me a price?</p>
-                  </div>
-                  <div className="bg-indigo-600/20 p-3 rounded-lg rounded-tr-none max-w-[80%] ml-auto border border-indigo-500/20">
-                    <p className="text-sm text-indigo-200">Thanks for reaching out, John! We have a special offer this week. Would you like to schedule a quick call?</p>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <div className="h-8 w-24 bg-indigo-600 rounded animate-pulse opacity-50"></div>
-                  </div>
-                </div>
-              </div>
+          <div className="mt-8 space-y-2">
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+               <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-500"><Check size={14} /></div>
+               Search Intent Optimization
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+               <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-500"><Check size={14} /></div>
+               Competitor Analysis
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+               <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-500"><Check size={14} /></div>
+               Maximize ROI
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  )
-}
-
-function WhyUsSection() {
-  return (
-    <section className="py-24 px-6 bg-black">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-3xl md:text-5xl font-bold text-white mb-16">Why Businesses Choose Us</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { title: "Transparent Reporting", desc: "No vanity metrics. You see exactly where every dollar goes and what it returns." },
-            { title: "No Long Contracts", desc: "We earn your business every month. No handcuffing you to long-term commitments." },
-            { title: "Full Data Ownership", desc: "You own your ad accounts and data. We don't hold your assets hostage." },
-            { title: "ROI Focused", desc: "We don't just get clicks; we optimize for booked appointments and sales." }
-          ].map((item, i) => (
-            <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-              <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-              <p className="text-gray-400">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function OnboardingSection() {
-  return (
-    <section className="py-32 px-6 bg-gradient-to-t from-gray-900 to-black">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white mb-6">Simple 3-Step Launch</h2>
-          <p className="text-gray-400">We can have your campaigns live in as little as 3-5 days.</p>
-        </div>
-
-        <div className="space-y-8">
-          {[
-            { step: "01", title: "Strategy & Access", desc: "You complete a simple onboarding form and grant us access to your accounts. We map out your campaign strategy." },
-            { step: "02", title: "Build & Setup", desc: "Our team builds your landing pages, sets up tracking, designs creatives, and configures your CRM dashboard." },
-            { step: "03", title: "Launch & Optimize", desc: "We go live. Leads start flowing into your dashboard, and we continually tweak for better performance." }
-          ].map((step, i) => (
-            <div key={i} className="flex gap-6 p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
-              <div className="text-3xl font-bold text-indigo-500 opacity-50">{step.step}</div>
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
-                <p className="text-gray-400">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function PricingSection() {
-  return (
-    <section className="py-32 px-6 bg-black" id="pricing">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Simple, Transparent Investment</h2>
-          <p className="text-xl text-gray-400">Everything you need to scale, broken down clearly.</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="bg-gray-900 border-gray-800 text-gray-300">
-            <CardHeader>
-              <CardTitle className="text-white">Ad Spend</CardTitle>
-              <CardDescription>Paid directly to Google/Meta</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white mb-4">$X - $X <span className="text-sm font-normal text-gray-500">/mo</span></div>
-              <p className="text-sm text-gray-400">You decide your budget. We recommend a minimum to see meaningful results.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900 border-indigo-500/30 relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-1 bg-indigo-500"></div>
-            <CardHeader>
-              <CardTitle className="text-white">Management Fee</CardTitle>
-              <CardDescription>Our expert service</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white mb-4">$X <span className="text-sm font-normal text-gray-500">/mo</span></div>
-              <ul className="space-y-2 text-sm text-gray-300 mb-6">
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Campaign Optimization</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Creative Refresh</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> Monthly Reporting</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-indigo-400"/> CRM Access Included</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900 border-gray-800 text-gray-300">
-            <CardHeader>
-              <CardTitle className="text-white">Setup Fee</CardTitle>
-              <CardDescription>One-time investment</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white mb-4">$X <span className="text-sm font-normal text-gray-500">one-time</span></div>
-              <p className="text-sm text-gray-400 mb-4">Covers comprehensive account setup, pixel installation, tracking configuration, and initial campaign build.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function SocialProofSection() {
-  return (
-    <section className="py-24 px-6 bg-gray-900/50">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-2xl font-bold text-white mb-12 opacity-50 uppercase tracking-widest">Trusted By Local Businesses</h2>
         
-        <div className="flex flex-wrap justify-center gap-12 mb-16 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
-          {/* Placeholder Logos */}
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 w-32 bg-white/20 rounded animate-pulse" />
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="bg-transparent border-white/5">
-              <CardContent className="p-8 text-left">
-                <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map(star => <Star key={star} className="w-4 h-4 text-yellow-500 fill-yellow-500" />)}
-                </div>
-                <p className="text-gray-300 mb-6 italic">"We saw a 200% increase in leads within the first month. The missed call text-back feature alone has saved us dozens of customers."</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-700" />
-                  <div>
-                    <div className="text-white font-bold text-sm">Client Name</div>
-                    <div className="text-xs text-gray-500">Business Owner</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Decorative Graph */}
+        <div className="absolute bottom-0 right-0 w-3/4 h-1/2 opacity-50 translate-y-12 translate-x-12">
+          <div className="flex items-end gap-2 h-full">
+            {[40, 60, 45, 70, 65, 85, 80, 95].map((h, i) => (
+              <div key={i} 
+                className="flex-1 bg-blue-500/30 rounded-t-sm transition-all duration-500 group-hover:bg-blue-500"
+                style={{ height: `${h}%` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </section>
-  )
-}
 
-function ContactSection() {
-  return (
-    <section id="contact" className="py-32 px-6 bg-black">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="inline-block p-4 rounded-full bg-indigo-500/10 mb-6">
-          <Phone className="w-8 h-8 text-indigo-400" />
-        </div>
-        <h2 className="text-5xl md:text-6xl font-bold text-white mb-8">Ready to Scale?</h2>
-        <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-          Let's discuss your goals and see if we're a good fit. No pressure, just a strategy session.
-        </p>
-        <Button className="bg-white text-black hover:bg-gray-200 px-10 py-8 text-xl rounded-full font-bold shadow-2xl shadow-white/10 transition-all hover:scale-105">
-          Book Your Strategy Call
-        </Button>
+      {/* LSA - Small */}
+      <div className="col-span-1 row-span-1 group relative rounded-3xl bg-gray-900 border border-white/10 overflow-hidden p-8">
+         <div className="absolute top-0 right-0 p-32 bg-green-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+         <Shield className="w-10 h-10 text-green-400 mb-4" />
+         <h3 className="text-xl font-bold text-white mb-2">Google Guaranteed</h3>
+         <p className="text-sm text-gray-400">
+           Earn the green badge of trust. Pay per lead, not per click. Top of search.
+         </p>
       </div>
-    </section>
-  )
-}
 
-function Footer() {
-  return (
-    <footer className="py-12 px-6 bg-gray-950 border-t border-white/5">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="text-white font-bold text-2xl">TLUCA</div>
-        <div className="flex gap-6 text-sm text-gray-500">
-          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-          <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-          <Link href="/about" className="hover:text-white transition-colors">About</Link>
-        </div>
-        <div className="text-sm text-gray-600">
-          © {new Date().getFullYear()} TLUCA Systems. All rights reserved.
-        </div>
+      {/* Meta Ads - Small */}
+      <div className="col-span-1 row-span-1 group relative rounded-3xl bg-gray-900 border border-white/10 overflow-hidden p-8">
+         <div className="absolute bottom-0 left-0 p-32 bg-purple-500/10 rounded-full blur-3xl -ml-16 -mb-16" />
+         <Users className="w-10 h-10 text-purple-400 mb-4" />
+         <h3 className="text-xl font-bold text-white mb-2">Meta Targeting</h3>
+         <p className="text-sm text-gray-400">
+           Retargeting & demographic precision. Stop the scroll with visual creative.
+         </p>
       </div>
-    </footer>
+    </div>
   )
 }
 
 export default function TLUCALandingPage() {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-indigo-500/30">
-      <HeroSection />
-      <SocialProofSection />
-      <ServicesSection />
-      <CRMSection />
-      <WhyUsSection />
-      <OnboardingSection />
-      <PricingSection />
-      <ContactSection />
-      <Footer />
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-indigo-500/30 overflow-x-hidden">
+      <MouseFollower />
+      <LiveTicker />
       
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="text-2xl font-bold tracking-tighter flex items-center gap-2">
+             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <Zap className="text-white w-5 h-5 fill-current" />
+             </div>
+             TLUCA
+          </div>
+          <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+             <a href="#services" className="hover:text-white transition-colors">Services</a>
+             <a href="#system" className="hover:text-white transition-colors">The System</a>
+             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+          </div>
+          <Button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-white text-black hover:bg-gray-200 rounded-full px-6 font-bold">
+             Book Strategy
+          </Button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+        <div className="max-w-6xl mx-auto text-center z-10">
+          
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs font-mono text-gray-300">ACCEPTING 3 NEW CLIENTS IN {new Date().toLocaleString('default', { month: 'long' }).toUpperCase()}</span>
+          </div>
+
+          <h1 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.9]">
+            DOMINATE YOUR <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-indigo-400 to-purple-600">
+               LOCAL MARKET
+            </span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+            We don't sell clicks. We build <span className="text-white font-bold">automated revenue engines</span> for local businesses that want to scale.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <Button 
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              className="h-16 px-10 text-lg rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all duration-300 shadow-[0_0_50px_-12px_rgba(79,70,229,0.5)]"
+            >
+              Get Your Strategy Plan
+              <ArrowRight className="ml-2" />
+            </Button>
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <div className="flex -space-x-2">
+                 {[1,2,3,4].map(i => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-gray-800 border-2 border-black" />
+                 ))}
+              </div>
+              <p>Trusted by 50+ Owners</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="py-32 px-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+            <div>
+               <h2 className="text-4xl md:text-6xl font-bold mb-4">The Arsenal</h2>
+               <p className="text-gray-400 max-w-md">Everything you need to capture attention and convert it into revenue.</p>
+            </div>
+            <div className="hidden md:block h-px flex-1 bg-gray-800 mx-12 mb-4" />
+          </div>
+          
+          <ServiceBento />
+        </div>
+      </section>
+
+      {/* The CRM System - Interactive */}
+      <section id="system" className="py-32 px-6 bg-[#080808] border-y border-white/5 overflow-hidden relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent" />
+        
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center relative z-10">
+          <div className="order-2 lg:order-1">
+             <CRMSimulator />
+          </div>
+          
+          <div className="order-1 lg:order-2">
+             <div className="inline-block p-3 bg-indigo-500/10 rounded-xl mb-6">
+                <Bot className="w-8 h-8 text-indigo-400" />
+             </div>
+             <h2 className="text-4xl md:text-6xl font-bold mb-8 leading-tight">
+                The "Missed Call" <br />
+                <span className="text-indigo-500">Revenue Saver</span>
+             </h2>
+             <p className="text-xl text-gray-400 mb-12 leading-relaxed">
+                62% of calls to local businesses go unanswered. Our AI system instantly texts them back, engages them, and books the appointment for you.
+             </p>
+             
+             <div className="space-y-8">
+                {[
+                   { title: "Instant Text-Back", desc: "Never lose a lead to voicemail again." },
+                   { title: "Unified Inbox", desc: "Manage texts, DMs, and emails in one stream." },
+                   { title: "AI Booking Agent", desc: "Qualifies leads and books calendar slots 24/7." }
+                ].map((item, i) => (
+                   <div key={i} className="flex gap-6">
+                      <div className="w-px h-full bg-gray-800 relative">
+                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-indigo-500 rounded-full" />
+                      </div>
+                      <div>
+                         <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
+                         <p className="text-gray-400">{item.desc}</p>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ROI Calculator */}
+      <section className="py-32 px-6 relative">
+        <div className="max-w-5xl mx-auto">
+           <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-6xl font-bold mb-6">Do The Math</h2>
+              <p className="text-gray-400">See what a proper ad campaign could do for your bottom line.</p>
+           </div>
+           <ROICalculator />
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="py-32 px-6 bg-[#080808]">
+        <div className="max-w-7xl mx-auto">
+           <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                 <h2 className="text-4xl md:text-6xl font-bold mb-8">Simple Pricing.<br/>Serious Results.</h2>
+                 <p className="text-xl text-gray-400 mb-12">
+                    No hidden fees. No long-term contracts. Just a flat management fee and your ad spend.
+                 </p>
+                 <div className="flex flex-wrap gap-4">
+                    <div className="px-6 py-3 rounded-full border border-white/10 bg-white/5 text-sm">Cancel Anytime</div>
+                    <div className="px-6 py-3 rounded-full border border-white/10 bg-white/5 text-sm">Full Data Ownership</div>
+                    <div className="px-6 py-3 rounded-full border border-white/10 bg-white/5 text-sm">Transparent Reports</div>
+                 </div>
+              </div>
+              
+              <div className="grid gap-6">
+                 <Card className="bg-gray-900 border-white/10 p-8 hover:border-indigo-500/50 transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                       <div>
+                          <h3 className="text-2xl font-bold text-white">Management Fee</h3>
+                          <p className="text-gray-400">Campaign optimization & CRM</p>
+                       </div>
+                       <div className="text-3xl font-bold text-indigo-400">$X/mo</div>
+                    </div>
+                    <ul className="space-y-3 text-gray-300 text-sm">
+                       <li className="flex gap-2"><Check className="text-indigo-500 w-4 h-4" /> Unlimited Campaign Tweaks</li>
+                       <li className="flex gap-2"><Check className="text-indigo-500 w-4 h-4" /> Bi-Weekly Creative Refresh</li>
+                       <li className="flex gap-2"><Check className="text-indigo-500 w-4 h-4" /> Full CRM Access Included</li>
+                    </ul>
+                 </Card>
+                 
+                 <Card className="bg-gray-900 border-white/10 p-8 hover:border-green-500/50 transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                       <div>
+                          <h3 className="text-2xl font-bold text-white">Setup Fee</h3>
+                          <p className="text-gray-400">One-time build out</p>
+                       </div>
+                       <div className="text-3xl font-bold text-white">$X</div>
+                    </div>
+                     <p className="text-sm text-gray-400">Includes pixel setup, tracking configuration, landing page design, and CRM integration.</p>
+                 </Card>
+              </div>
+           </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section id="contact" className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-indigo-600/10" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+           <h2 className="text-5xl md:text-8xl font-bold mb-12 tracking-tighter">
+              READY TO <br/> SCALE?
+           </h2>
+           <Button className="h-20 px-12 text-2xl rounded-full bg-white text-black hover:bg-gray-200 font-bold shadow-2xl hover:scale-105 transition-transform">
+              Book Your Strategy Call
+           </Button>
+           <p className="mt-8 text-gray-500">No pressure. Just strategy.</p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t border-white/10 bg-black text-center md:text-left">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+           <div className="text-gray-500 text-sm">
+              © {new Date().getFullYear()} TLUCA Systems. All rights reserved.
+           </div>
+           <div className="flex gap-8 text-sm text-gray-500">
+              <Link href="/privacy" className="hover:text-white">Privacy</Link>
+              <Link href="/terms" className="hover:text-white">Terms</Link>
+           </div>
+        </div>
+      </footer>
+
       <style jsx global>{`
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.8s ease-out forwards;
+        .animate-marquee {
+          animation: marquee 20s linear infinite;
+        }
+        html {
+          scroll-behavior: smooth;
         }
       `}</style>
     </div>
