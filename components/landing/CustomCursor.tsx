@@ -29,12 +29,12 @@ const CustomCursor: React.FC = () => {
       {/* Inner Dot */}
       <motion.div
         className="fixed top-0 left-0 w-2 h-2 bg-brand rounded-full pointer-events-none z-[100] mix-blend-screen will-change-transform"
-        style={{ x: cursorX, y: cursorY }}
+        style={{ x: cursorX, y: cursorY, backgroundColor: '#FF1F1F' }}
       />
       {/* Outer Ring */}
       <motion.div
         className="fixed top-0 left-0 w-12 h-12 border border-brand/50 rounded-full pointer-events-none z-[100] mix-blend-screen will-change-transform"
-        style={{ x: cursorOuterX, y: cursorOuterY }}
+        style={{ x: cursorOuterX, y: cursorOuterY, borderColor: '#FF1F1F' }}
         animate={{
           scale: isHovered ? 1.5 : 1,
           opacity: isHovered ? 0.8 : 0.3,
@@ -47,4 +47,3 @@ const CustomCursor: React.FC = () => {
 };
 
 export default CustomCursor;
-

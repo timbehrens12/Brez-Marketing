@@ -73,9 +73,9 @@ const config: Config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
         fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-            display: ['Syncopate', 'sans-serif'],
+            sans: ['var(--font-sans)', 'sans-serif'],
+            mono: ['var(--font-mono)', 'monospace'],
+            display: ['var(--font-display)', 'sans-serif'],
         },
   		keyframes: {
   			'accordion-down': {
