@@ -29,7 +29,13 @@ const TLUCALandingPage: React.FC = () => {
       
       {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full z-50 px-6 py-6 flex justify-between items-center mix-blend-normal pointer-events-none">
-        <div className="font-display font-bold text-xl tracking-tighter pointer-events-auto text-white">TLUCA<span className="text-brand">.SYSTEMS</span></div>
+        <div className="pointer-events-auto">
+          <img 
+            src="https://i.imgur.com/xOgn8Xe.png" 
+            alt="TLUCA Systems" 
+            className="h-8 w-auto object-contain"
+          />
+        </div>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
              {/* Updated Nav Links */}
              {['WEBSITES', 'ADS', 'SYSTEMS', 'PRICING'].map((item) => (
