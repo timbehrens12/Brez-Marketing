@@ -38,6 +38,7 @@ const TLUCALandingPage: React.FC = () => {
         </div>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
              {/* Updated Nav Links */}
+             <Link href="/" className="hover:text-brand transition-colors">HOME</Link>
              {['WEBSITES', 'ADS', 'SYSTEMS', 'PRICING'].map((item) => (
                  <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
              ))}

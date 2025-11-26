@@ -413,7 +413,7 @@ const Hero: React.FC = () => {
 
             {/* ACTION CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                <a href="#websites" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
+                <a href="/onboarding" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
                     <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity text-brand">
                         <Layout size={24} />
                     </div>
@@ -421,12 +421,12 @@ const Hero: React.FC = () => {
                     <div className="font-display text-xl text-white mb-1">BUILD WEBSITE</div>
                     <div className="text-xs text-silver/60 mb-4">AI-Integrated Architecture & Automation</div>
                     <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:gap-4 transition-all">
-                        INITIALIZE <ArrowRight size={14} />
+                        GET STARTED <ArrowRight size={14} />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-r from-brand/0 via-brand/5 to-brand/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 </a>
 
-                <a href="#ads" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
+                <a href="/onboarding" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
                     <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity text-brand">
                         <Zap size={24} />
                     </div>
@@ -434,7 +434,7 @@ const Hero: React.FC = () => {
                     <div className="font-display text-xl text-white mb-1">RUN ADS</div>
                     <div className="text-xs text-silver/60 mb-4">Google, LSA, & Meta Traffic Injection</div>
                     <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:gap-4 transition-all">
-                        INITIALIZE <ArrowRight size={14} />
+                        GET STARTED <ArrowRight size={14} />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-r from-brand/0 via-brand/5 to-brand/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 delay-75"></div>
                 </a>
