@@ -30,10 +30,10 @@ const TLUCALandingPage: React.FC = () => {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full z-50 px-6 py-6 flex justify-between items-center mix-blend-normal pointer-events-none">
         <div className="pointer-events-auto">
-          <img 
-            src="https://i.imgur.com/xOgn8Xe.png" 
-            alt="TLUCA Systems" 
-            className="h-8 w-auto object-contain"
+          <img
+            src="https://i.imgur.com/xOgn8Xe.png"
+            alt="TLUCA Systems"
+            className="h-16 w-auto object-contain"
           />
         </div>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
@@ -77,21 +77,18 @@ const TLUCALandingPage: React.FC = () => {
 
         <footer className="py-12 px-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-end bg-black">
             <div className="mb-8 md:mb-0">
-                <div className="font-display text-2xl mb-2 text-white">TLUCA</div>
-                <div className="font-mono text-xs text-gray-500">© 2024 SYSTEM ARCHITECTURE</div>
+                <img src="https://i.imgur.com/xOgn8Xe.png" alt="TLUCA Systems" className="h-12 w-auto object-contain mb-2"/>
+                <div className="font-mono text-xs text-gray-500">© 2025 TLUCA SYSTEMS</div>
             </div>
-            <div className="grid grid-cols-2 gap-8 font-mono text-xs text-gray-400">
-                <div className="flex flex-col space-y-2">
-                    <span className="text-white mb-2">SOCIAL</span>
-                    <a href="#" className="hover:text-brand transition-colors">TWITTER</a>
-                    <a href="#" className="hover:text-brand transition-colors">LINKEDIN</a>
-                    <a href="#" className="hover:text-brand transition-colors">INSTAGRAM</a>
-                </div>
-                <div className="flex flex-col space-y-2">
-                    <span className="text-white mb-2">LEGAL</span>
-                    <Link href="/privacy" className="hover:text-brand transition-colors">PRIVACY</Link>
-                    <Link href="/terms" className="hover:text-brand transition-colors">TERMS</Link>
-                </div>
+            <div className="flex flex-col space-y-2 font-mono text-xs text-gray-400">
+                <span className="text-white mb-2">PAGES</span>
+                <Link href="#websites" className="hover:text-brand transition-colors">WEBSITES</Link>
+                <Link href="#ads" className="hover:text-brand transition-colors">ADS</Link>
+                <Link href="#systems" className="hover:text-brand transition-colors">SYSTEMS</Link>
+                <Link href="#pricing" className="hover:text-brand transition-colors">PRICING</Link>
+                <Link href="/privacy" className="hover:text-brand transition-colors">PRIVACY</Link>
+                <Link href="/terms" className="hover:text-brand transition-colors">TERMS</Link>
+                <Link href="/about" className="hover:text-brand transition-colors">ABOUT</Link>
             </div>
         </footer>
       </main>
