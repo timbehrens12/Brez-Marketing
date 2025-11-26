@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Target, TrendingUp, Users, Zap, Cpu, Globe, Layout, ShieldCheck, ArrowLeft } from 'lucide-react';
