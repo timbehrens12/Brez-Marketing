@@ -5,12 +5,21 @@ const config: Config = {
     content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/landing/**/*.{js,ts,jsx,tsx,mdx}", // Explicitly added
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}", // Added src just in case
     "*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
   	extend: {
   		colors: {
+            // Custom Landing Page Colors - Defined first to ensure availability
+            brand: '#FF1F1F',       
+            'brand-dark': '#8a0a0a', 
+            charcoal: '#0A0A0C',    
+            silver: '#C0C0C0',
+            white: '#FFFFFF',
+            
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -60,12 +69,7 @@ const config: Config = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			},
-            brand: '#FF1F1F',       // TLUCA Red
-            'brand-dark': '#8a0a0a', // Darker Red for gradients
-            charcoal: '#0A0A0C',    // Background
-            silver: '#C0C0C0',
-            white: '#FFFFFF',
+  			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -73,9 +77,9 @@ const config: Config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
         fontFamily: {
-            sans: ['var(--font-sans)', 'sans-serif'],
-            mono: ['var(--font-mono)', 'monospace'],
-            display: ['var(--font-display)', 'sans-serif'],
+            sans: ['var(--font-sans)', 'Inter', 'sans-serif'],
+            mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+            display: ['var(--font-display)', 'Syncopate', 'sans-serif'],
         },
   		keyframes: {
   			'accordion-down': {
@@ -113,6 +117,22 @@ const config: Config = {
   		}
   	}
   },
+  // Safelist critical classes to ensure they are generated
+  safelist: [
+    'text-brand',
+    'bg-brand',
+    'border-brand',
+    'bg-charcoal',
+    'text-silver',
+    'font-display',
+    'font-mono',
+    'bg-brand/10',
+    'bg-brand/20',
+    'border-brand/30',
+    'border-brand/50',
+    'hover:border-brand/50',
+    'group-hover:text-brand',
+  ],
   plugins: [require("tailwindcss-animate")],
 };
 export default config;
