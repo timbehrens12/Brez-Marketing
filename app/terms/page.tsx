@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 export default function TermsAndConditionsPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#0A0A0C] text-white">
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Logo */}
@@ -61,9 +61,9 @@ export default function TermsAndConditionsPage() {
             
             <div className="mb-4">
               <h3 className="text-xl font-semibold text-white mb-3">Program Name: TLUCA Systems Transactional Messaging</h3>
-              <p className="mb-4">
+            <p className="mb-4">
                 TLUCA Systems sends transactional SMS messages related to your account, orders, and services you have requested. These messages may include appointment reminders, order confirmations, project status updates, account notifications, and service-related communications.
-              </p>
+            </p>
             </div>
 
             <div className="mb-4">

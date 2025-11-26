@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#0A0A0C] text-white">
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Logo */}
@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
               <li><strong className="text-white">Service Providers:</strong> For hosting, payments, analytics, and customer communication (e.g., GoHighLevel, Mailgun, Stripe, AWS). Information sharing to subcontractors in support services, such as customer service is permitted.</li>
               <li><strong className="text-white">Legal Authorities:</strong> If required by law or to protect our rights and users' safety.</li>
-            </ul>
+              </ul>
             <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
               <p className="text-white font-semibold mb-2">Important: Text Messaging Data Exclusion</p>
               <p>

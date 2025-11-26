@@ -13,7 +13,7 @@ const TIM_IMAGE_URL = "/tim-behrens.jpg"
 
 const AboutPage = () => {
   return (
-    <div className="bg-black text-white">
+    <div className="bg-[#0A0A0C] text-white">
       {/* Hero Section */}
       <section className="relative h-[60vh] flex items-center justify-center text-center px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black z-10" />
