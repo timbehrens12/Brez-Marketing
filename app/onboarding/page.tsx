@@ -34,6 +34,11 @@ type OnboardingData = {
   graphicFiles: File[]
   graphic_urls: string[]
 
+  // Domain
+  domain_option: 'already-own' | 'purchase-new' | 'transfer-existing' | ''
+  desired_domain: string
+  current_domain: string
+
   // Final
   consent_accepted: boolean
 
@@ -69,6 +74,11 @@ const INITIAL_DATA: OnboardingData = {
   image_urls: [],
   graphicFiles: [],
   graphic_urls: [],
+
+  // Domain
+  domain_option: '',
+  desired_domain: '',
+  current_domain: '',
 
   // Final
   consent_accepted: false,
@@ -253,6 +263,9 @@ export default function OnboardingPage() {
       if (!formData.business_address.trim()) newErrors.business_address = 'Business address is required'
       if (!formData.time_zone.trim()) newErrors.time_zone = 'Time zone is required'
       if (!formData.services_offered.trim()) newErrors.services_offered = 'Services offered is required'
+      if (!formData.domain_option) newErrors.domain_option = 'Domain option is required'
+      if (formData.domain_option && !formData.desired_domain.trim()) newErrors.desired_domain = 'Desired domain is required'
+      if (formData.domain_option === 'already-own' && !formData.current_domain.trim()) newErrors.current_domain = 'Current domain is required'
       if (!formData.consent_accepted) newErrors.consent_accepted = 'You must accept the terms'
     }
 
@@ -331,6 +344,11 @@ export default function OnboardingPage() {
         logo_url: logoUrl || '',
         image_urls: imageUrls,
         graphic_urls: graphicUrls,
+
+        // Domain
+        domain_option: formData.domain_option,
+        desired_domain: formData.desired_domain,
+        current_domain: formData.current_domain,
 
         // Final
         consent_accepted: formData.consent_accepted,
@@ -911,6 +929,104 @@ export default function OnboardingPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-4">Domain Setup</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-white mb-3 block">How would you like to handle your domain? *</Label>
+                      <div className="grid grid-cols-1 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => updateField('domain_option', 'already-own')}
+                          className={`px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                            formData.domain_option === 'already-own'
+                              ? 'border-white bg-white/10'
+                              : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="text-white font-medium">I already own a domain - host it with you</div>
+                          <div className="text-gray-400 text-sm mt-1">I'll provide my existing domain and you handle hosting</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => updateField('domain_option', 'purchase-new')}
+                          className={`px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                            formData.domain_option === 'purchase-new'
+                              ? 'border-white bg-white/10'
+                              : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="text-white font-medium">Purchase a new domain - you set it up and I own it</div>
+                          <div className="text-gray-400 text-sm mt-1">You find and purchase the domain, I get full ownership</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => updateField('domain_option', 'transfer-existing')}
+                          className={`px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                            formData.domain_option === 'transfer-existing'
+                              ? 'border-white bg-white/10'
+                              : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="text-white font-medium">Transfer existing domain ownership to you</div>
+                          <div className="text-gray-400 text-sm mt-1">I'll follow instructions to transfer ownership to you</div>
+                        </button>
+                      </div>
+                      {errors.domain_option && <p className="text-red-400 text-sm mt-2">{errors.domain_option}</p>}
+                    </div>
+
+                    {formData.domain_option && (
+                      <>
+                        <div>
+                          <Label htmlFor="desired_domain" className="text-white">Desired Domain Name *</Label>
+                          <Input
+                            id="desired_domain"
+                            value={formData.desired_domain}
+                            onChange={(e) => updateField('desired_domain', e.target.value)}
+                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                            placeholder="e.g., mybusiness.com"
+                          />
+                          {errors.desired_domain && <p className="text-red-400 text-sm mt-1">{errors.desired_domain}</p>}
+                        </div>
+
+                        {formData.domain_option === 'already-own' && (
+                          <div>
+                            <Label htmlFor="current_domain" className="text-white">Current Domain (the one you own) *</Label>
+                            <Input
+                              id="current_domain"
+                              value={formData.current_domain}
+                              onChange={(e) => updateField('current_domain', e.target.value)}
+                              className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                              placeholder="e.g., mybusiness.com"
+                            />
+                            {errors.current_domain && <p className="text-red-400 text-sm mt-1">{errors.current_domain}</p>}
+                          </div>
+                        )}
+
+                        {formData.domain_option === 'transfer-existing' && (
+                          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                            <h4 className="text-blue-400 font-medium mb-2">Domain Transfer Instructions</h4>
+                            <div className="text-gray-300 text-sm space-y-2">
+                              <p><strong>Step 1:</strong> Log into your domain registrar (GoDaddy, Namecheap, etc.)</p>
+                              <p><strong>Step 2:</strong> Find your domain settings and look for "Name Servers" or "DNS"</p>
+                              <p><strong>Step 3:</strong> Change the name servers to:</p>
+                              <div className="bg-black/50 p-2 rounded font-mono text-xs mt-1">
+                                ns1.vercel-dns.com<br />
+                                ns2.vercel-dns.com
+                              </div>
+                              <p><strong>Step 4:</strong> Submit this form - we'll handle the rest!</p>
+                              <p className="text-yellow-400 text-xs mt-2">⚠️ This process can take 24-48 hours to complete</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
