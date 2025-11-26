@@ -27,6 +27,7 @@ type OnboardingData = {
   services_offered: string
   years_in_service: string
   business_type: string
+  service_areas: string[]
 
   // Resources
   logoFile: File | null
@@ -70,6 +71,7 @@ const INITIAL_DATA: OnboardingData = {
   services_offered: '',
   years_in_service: '',
   business_type: '',
+  service_areas: [],
 
   // Resources
   logoFile: null,
@@ -117,6 +119,7 @@ export default function OnboardingPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
+  const [serviceAreaInput, setServiceAreaInput] = useState('')
 
   // TESTING MODE - Set to true to only show first step
   const TESTING_MODE = false
@@ -231,6 +234,19 @@ export default function OnboardingPage() {
     } else {
       setFormData(prev => ({ ...prev, [field]: null }))
     }
+  }
+
+  // Service area chip management
+  const addServiceArea = () => {
+    const area = serviceAreaInput.trim()
+    if (area && !formData.service_areas.includes(area)) {
+      updateField('service_areas', [...formData.service_areas, area])
+      setServiceAreaInput('')
+    }
+  }
+
+  const removeServiceArea = (area: string) => {
+    updateField('service_areas', formData.service_areas.filter(a => a !== area))
   }
 
   const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
@@ -357,6 +373,7 @@ export default function OnboardingPage() {
         services_offered: formData.services_offered,
         years_in_service: formData.years_in_service,
         business_type: formData.business_type,
+        service_areas: formData.service_areas,
 
         // Resources
         logo_url: logoUrl || '',
@@ -781,6 +798,51 @@ export default function OnboardingPage() {
                       <option key={type} value={type} className="bg-black text-white">{type}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <Label className="text-white mb-3 block">Service Areas (optional)</Label>
+                  <p className="text-gray-400 text-sm mb-3">Add cities or areas where you provide services</p>
+                  <div className="flex gap-2 mb-3">
+                    <Input
+                      value={serviceAreaInput}
+                      onChange={(e) => setServiceAreaInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addServiceArea()
+                        }
+                      }}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                      placeholder="e.g., Houston, TX"
+                    />
+                    <Button
+                      type="button"
+                      onClick={addServiceArea}
+                      className="bg-white hover:bg-gray-200 text-black px-4"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {formData.service_areas.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.service_areas.map((area, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full"
+                        >
+                          <span className="text-white text-sm">{area}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeServiceArea(area)}
+                            className="text-white/70 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-6 border-t border-white/10">
