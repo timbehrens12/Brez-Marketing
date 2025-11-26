@@ -60,13 +60,23 @@ const config: Config = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+            brand: '#FF1F1F',       // TLUCA Red
+            'brand-dark': '#8a0a0a', // Darker Red for gradients
+            charcoal: '#0A0A0C',    // Background
+            silver: '#C0C0C0',
+            white: '#FFFFFF',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+        fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Syncopate', 'sans-serif'],
+        },
   		keyframes: {
   			'accordion-down': {
   				from: {
@@ -83,11 +93,23 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+            glitch: {
+                '2%, 64%': { transform: 'translate(2px,0) skew(0deg)' },
+                '4%, 60%': { transform: 'translate(-2px,0) skew(0deg)' },
+                '62%': { transform: 'translate(0,0) skew(5deg)' },
+            },
+            shine: {
+                '0%': { backgroundPosition: '200% center' },
+                '100%': { backgroundPosition: '-200% center' },
+            }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glitch': 'glitch 1s linear infinite',
+            'shine': 'shine 3s linear infinite',
   		}
   	}
   },

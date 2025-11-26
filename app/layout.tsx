@@ -1,9 +1,7 @@
 import "@/styles/globals.css"
 import type { Metadata } from "next"
-import { JetBrains_Mono } from "next/font/google"
+import { JetBrains_Mono, Inter, Syncopate } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-// import { Toaster } from "@/components/ui/toaster"
-// import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import type React from "react"
 import { ClerkProvider } from '@clerk/nextjs'
@@ -18,7 +16,21 @@ declare global {
   }
 }
 
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] })
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: "--font-mono",
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+})
+
+const syncopate = Syncopate({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-display",
+})
 
 export const metadata: Metadata = {
   title: "TLUCA Systems - Systems That Scale",
@@ -59,8 +71,6 @@ export const metadata: Metadata = {
   }
 }
 
-
-
 export default function RootLayout({
   children,
 }: {
@@ -69,13 +79,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Removed Clerk-specific styling */}
-        {/* Suppress annoying console errors and warnings */}
+        {/* Script tag for error suppression remains same as before */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.addEventListener('error', function(e) {
-                // Suppress content-script.js errors from browser extensions
                 if (e.message && (
                   e.message.includes('content-script.js') ||
                   e.message.includes('AdUnit') ||
@@ -86,31 +94,21 @@ export default function RootLayout({
                 }
               })
 
-              // Suppress favicon 404 errors and disconnect-platform 409 errors during initial load
               const originalFetch = window.fetch
               window.fetch = function(input, init) {
                 const url = typeof input === 'string' ? input : input.url
                 if (url && url.includes('favicon.ico')) {
                   return Promise.resolve(new Response(null, { status: 200 }))
                 }
-                
-                // Call original fetch and suppress console logging for expected 409s
                 const fetchPromise = originalFetch.apply(this, arguments)
-                
-                // If this is a disconnect-platform request, handle 409s silently
                 if (url && url.includes('/api/disconnect-platform') && !url.includes('/force')) {
                   return fetchPromise.catch(error => {
-                    // Re-throw the error but suppress console output
                     throw error
                   })
                 }
-                
                 return fetchPromise
               }
 
-
-
-              // Add global error handler for uncaught errors including React hydration
               window.addEventListener('error', function(event) {
                 if (event.message && (
                   event.message.includes('Minified React error #418') ||
@@ -122,7 +120,6 @@ export default function RootLayout({
                 }
               })
               
-              // Add global error handler for uncaught promise rejections (extension errors)
               window.addEventListener('unhandledrejection', function(event) {
                 if (event.reason && typeof event.reason.message === 'string' && (
                   event.reason.message.includes('listener indicated an asynchronous response') ||
@@ -133,14 +130,10 @@ export default function RootLayout({
                   event.reason.message.includes('AdUnit') ||
                   event.reason.message.includes('Document already loaded')
                 )) {
-                  event.preventDefault() // Suppress these extension errors
-                  // Suppress extension errors completely (no logging even in dev)
+                  event.preventDefault() 
                 }
               })
 
-              // Removed Clerk-related console suppressions
-              
-              // Suppress console errors from browser extensions
               const originalConsoleError = console.error
               console.error = function(...args) {
                 const message = args.join(' ')
@@ -148,16 +141,14 @@ export default function RootLayout({
                     message.includes('message channel closed') ||
                     message.includes('content-script.js') ||
                     message.includes('AdUnit')) {
-                  return // Suppress these errors
+                  return 
                 }
                 return originalConsoleError.apply(console, args)
               }
 
-              // Helper function to detect problematic extensions (for debugging)
               window.detectExtensions = function() {
                 const extensions = []
                 if (typeof chrome !== 'undefined' && chrome.runtime) {
-                  // Check for common ad-related extensions
                   const knownAdExtensions = [
                     'AdBlock', 'AdGuard', 'uBlock', 'Ghostery', 'Privacy Badger',
                     'AdUnit', 'AdBlock Plus', 'Fair AdBlocker'
@@ -169,7 +160,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", jetbrainsMono.className)}>
+      <body className={cn(
+        "min-h-screen bg-[#0B0B0B] antialiased text-white", 
+        inter.variable, 
+        jetbrainsMono.variable,
+        syncopate.variable,
+        "font-sans" // Default font
+      )}>
         <ClerkProvider
           appearance={{
             baseTheme: undefined,
@@ -228,4 +225,3 @@ export default function RootLayout({
     </html>
   )
 }
-
