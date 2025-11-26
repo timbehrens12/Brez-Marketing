@@ -25,6 +25,8 @@ type OnboardingData = {
   business_address: string
   time_zone: string
   services_offered: string
+  years_in_service: string
+  business_type: string
 
   // Resources
   logoFile: File | null
@@ -66,6 +68,8 @@ const INITIAL_DATA: OnboardingData = {
   business_address: '',
   time_zone: '',
   services_offered: '',
+  years_in_service: '',
+  business_type: '',
 
   // Resources
   logoFile: null,
@@ -89,6 +93,17 @@ const INITIAL_DATA: OnboardingData = {
   submitted_at: '',
   honeypot: '',
 }
+
+const BUSINESS_TYPES = [
+  'Concrete', 'Roofing', 'Landscaping', 'HVAC', 'Plumbing', 'Electrical Services',
+  'Painting', 'Flooring', 'Windows & Doors', 'Fencing', 'Construction',
+  'General Dentistry', 'Orthodontics', 'Healthcare', 'Chiropractic',
+  'Beauty Salons', 'Tattoo Shops', 'Personal Training', 'Fitness Centers',
+  'Auto Services', 'Auto Repair', 'Towing Services',
+  'Professional Services', 'Marketing Agency', 'Real Estate', 'Insurance',
+  'Food Services', 'Wedding Services', 'Event Planning', 'Moving Services',
+  'Other'
+]
 
 const SECTIONS = [
   { id: 'business', title: 'Business Information', icon: Building2 },
@@ -263,6 +278,7 @@ export default function OnboardingPage() {
       if (!formData.business_address.trim()) newErrors.business_address = 'Business address is required'
       if (!formData.time_zone.trim()) newErrors.time_zone = 'Time zone is required'
       if (!formData.services_offered.trim()) newErrors.services_offered = 'Services offered is required'
+      // Years in service and business type are optional but valuable
       if (!formData.domain_option) newErrors.domain_option = 'Domain option is required'
       if (formData.domain_option && !formData.desired_domain.trim()) newErrors.desired_domain = 'Desired domain is required'
       if (formData.domain_option === 'already-own' && !formData.current_domain.trim()) newErrors.current_domain = 'Current domain is required'
@@ -339,6 +355,8 @@ export default function OnboardingPage() {
         business_address: formData.business_address,
         time_zone: formData.time_zone,
         services_offered: formData.services_offered,
+        years_in_service: formData.years_in_service,
+        business_type: formData.business_type,
 
         // Resources
         logo_url: logoUrl || '',
@@ -736,6 +754,33 @@ export default function OnboardingPage() {
                     placeholder="e.g., Driveway installation, Concrete repair, Patios, Foundations..."
                   />
                   {errors.services_offered && <p className="text-red-400 text-sm mt-1">{errors.services_offered}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="years_in_service" className="text-white">Years in Service (optional)</Label>
+                  <Input
+                    id="years_in_service"
+                    value={formData.years_in_service}
+                    onChange={(e) => updateField('years_in_service', e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                    placeholder="e.g., Since 2017 or 10+ years"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="business_type" className="text-white">Business Type (optional)</Label>
+                  <select
+                    id="business_type"
+                    value={formData.business_type}
+                    onChange={(e) => updateField('business_type', e.target.value)}
+                    className="w-full bg-black border border-white/20 text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                    style={{ colorScheme: 'dark' }}
+                  >
+                    <option value="">Select business type (optional)...</option>
+                    {BUSINESS_TYPES.map(type => (
+                      <option key={type} value={type} className="bg-black text-white">{type}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="pt-6 border-t border-white/10">
