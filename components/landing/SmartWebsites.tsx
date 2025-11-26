@@ -29,6 +29,10 @@ const SmartWebsites: React.FC = () => {
                 { icon: <Smartphone />, label: "Mobile Optimized", desc: "Flawless experience on every device." },
                 { icon: <Search />, label: "SEO Structure", desc: "Rank higher with clean, semantic code." },
                 { icon: <Shield />, label: "Zero Maintenance", desc: "We handle hosting, security, and updates." },
+                { icon: <Database />, label: "Built-In CRM", desc: "Capture and manage every lead automatically." },
+                { icon: <Zap />, label: "Auto-Pilot Follow-Up", desc: "Never lose a lead with automated nurture sequences." },
+                { icon: <Lock />, label: "Universal Integration", desc: "Connects with Stripe, PayPal, Meta, and more." },
+                { icon: <Gauge />, label: "Reputation Engine", desc: "Get more 5-star reviews on autopilot." }
               ].map((item, i) => (
                 <div key={i} className="flex gap-4 items-start group">
                     <div className="p-3 bg-white/5 rounded group-hover:bg-brand/10 transition-colors text-brand shrink-0">
