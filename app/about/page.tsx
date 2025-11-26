@@ -32,7 +32,7 @@ const AboutPage = () => {
               SYSTEMS THAT <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-red-600">SCALE</span>
             </h1>
             <p className="font-mono text-lg text-silver mb-12 max-w-2xl mx-auto">
-              We don't just build websites or run ads—we engineer complete digital systems that attract, convert, and manage leads automatically.
+              I don't just build websites or run ads—I engineer complete digital systems that attract, convert, and manage leads automatically.
             </p>
           </div>
         </section>
@@ -42,7 +42,7 @@ const AboutPage = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-8">OUR PHILOSOPHY</h2>
             <p className="font-mono text-lg text-silver mb-12 max-w-3xl mx-auto">
-              Most agencies focus on individual pieces—websites, ads, CRM. We build complete systems that work together seamlessly. Every component is designed to feed the next, creating a flywheel of growth that never stops.
+              Most agencies focus on individual pieces—websites, ads, CRM. I build complete systems that work together seamlessly. Every component is designed to feed the next, creating a flywheel of growth that never stops.
             </p>
           </div>
         </section>
@@ -58,7 +58,7 @@ const AboutPage = () => {
                 </div>
                 <h3 className="font-display text-2xl font-bold mb-4">Complete Systems Approach</h3>
                 <p className="text-gray-400 font-mono">
-                  We don't sell individual services—we build integrated systems. Your website feeds leads to your CRM, which triggers your ads, creating a growth flywheel.
+                  I don't sell individual services—I build integrated systems. Your website feeds leads to your CRM, which triggers your ads, creating a growth flywheel.
                 </p>
               </div>
 
@@ -68,7 +68,7 @@ const AboutPage = () => {
                 </div>
                 <h3 className="font-display text-2xl font-bold mb-4 text-green-400">ROI-Focused Results</h3>
                 <p className="text-gray-400 font-mono">
-                  Every decision is measured against ROI. We track every lead, every conversion, every dollar. If it doesn't contribute to your bottom line, we change it.
+                  Every decision is measured against ROI. I track every lead, every conversion, every dollar. If it doesn't contribute to your bottom line, I change it.
                 </p>
               </div>
 
@@ -78,7 +78,7 @@ const AboutPage = () => {
                 </div>
                 <h3 className="font-display text-2xl font-bold mb-4 text-blue-400">Direct Communication</h3>
                 <p className="text-gray-400 font-mono">
-                  No account managers, no middlemen. You work directly with the strategists and developers building your systems.
+                  No account managers, no middlemen. You work directly with me, the strategist and developer building your systems.
                 </p>
               </div>
 
@@ -88,7 +88,7 @@ const AboutPage = () => {
                 </div>
                 <h3 className="font-display text-2xl font-bold mb-4 text-purple-400">Full Data Access</h3>
                 <p className="text-gray-400 font-mono">
-                  Your data belongs to you. We never lock you into proprietary systems. Export everything anytime.
+                  Your data belongs to you. I never lock you into proprietary systems. Export everything anytime.
                 </p>
               </div>
             </div>
@@ -135,7 +135,7 @@ const AboutPage = () => {
               onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                START BUILDING <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                LET'S WORK TOGETHER <ChevronRight className="group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-brand transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
             </button>

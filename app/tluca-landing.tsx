@@ -63,16 +63,27 @@ const TLUCALandingPage: React.FC = () => {
                 Secure your territory. We only accept 4 new clients per quarter to ensure maximum performance.
             </p>
             
-            <button 
-                data-hover="true"
-                className="group relative px-10 py-5 bg-white text-black font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-transform duration-300"
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-                <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    BOOK STRATEGY CALL <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-brand transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
-            </button>
+            <div className="flex flex-col sm:flex-row gap-6 items-center">
+                <button
+                    data-hover="true"
+                    className="group relative px-10 py-5 bg-white text-black font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-transform duration-300"
+                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                    <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+                        BOOK STRATEGY CALL <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                    </span>
+                    <div className="absolute inset-0 bg-brand transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
+                </button>
+
+                <Link href="/onboarding">
+                    <button className="group relative px-10 py-5 border-2 border-white text-white font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-transform duration-300">
+                        <span className="relative z-10 flex items-center gap-2 group-hover:text-black transition-colors duration-300">
+                            START ONBOARDING <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                        </span>
+                        <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
+                    </button>
+                </Link>
+            </div>
         </section>
 
         <footer className="py-12 px-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-end bg-black">
