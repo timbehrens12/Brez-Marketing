@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { CheckCircle2, Building2 } from 'lucide-react'
+import { CheckCircle2, Building2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 type OnboardingData = {
@@ -26,6 +26,14 @@ type OnboardingData = {
   time_zone: string
   services_offered: string
 
+  // Resources
+  logoFile: File | null
+  logo_url: string | null
+  imageFiles: File[]
+  image_urls: string[]
+  graphicFiles: File[]
+  graphic_urls: string[]
+
   // Final
   consent_accepted: boolean
 
@@ -34,6 +42,11 @@ type OnboardingData = {
   source: string
   submitted_at: string
   honeypot: string // Anti-spam
+}
+
+// Add image preview state type
+type ImagePreviews = {
+  [key: string]: string // filename -> data URL
 }
 
 const INITIAL_DATA: OnboardingData = {
@@ -48,6 +61,14 @@ const INITIAL_DATA: OnboardingData = {
   business_address: '',
   time_zone: '',
   services_offered: '',
+
+  // Resources
+  logoFile: null,
+  logo_url: null,
+  imageFiles: [],
+  image_urls: [],
+  graphicFiles: [],
+  graphic_urls: [],
 
   // Final
   consent_accepted: false,
@@ -70,6 +91,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
 
   // TESTING MODE - Set to true to only show first step
   const TESTING_MODE = false
@@ -114,6 +136,107 @@ export default function OnboardingPage() {
     if (digits.length <= 3) return digits
     if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
+  }
+
+  const handleFileUpload = (field: keyof OnboardingData, files: FileList | null, multiple = false) => {
+    if (!files || files.length === 0) return
+
+    const fileArray = Array.from(files)
+    const validFiles = fileArray.filter(f => {
+      const isValidSize = f.size <= 10 * 1024 * 1024 // 10MB
+      const isValidType = f.type.startsWith('image/')
+      if (!isValidSize) toast.error(`${f.name} is too large (max 10MB)`)
+      if (!isValidType) toast.error(`${f.name} must be an image`)
+      return isValidSize && isValidType
+    })
+
+    // Limit to specific numbers for each field
+    if (field === 'logoFile') {
+      if (validFiles.length > 1) {
+        toast.error('Only one logo file allowed')
+        validFiles.splice(1)
+      }
+    } else if (field === 'imageFiles') {
+      const currentCount = formData.imageFiles.length
+      if (currentCount + validFiles.length > 5) {
+        toast.error('Maximum 5 image files allowed')
+        validFiles.splice(5 - currentCount)
+      }
+    } else if (field === 'graphicFiles') {
+      const currentCount = formData.graphicFiles.length
+      if (currentCount + validFiles.length > 5) {
+        toast.error('Maximum 5 graphic files allowed')
+        validFiles.splice(5 - currentCount)
+      }
+    }
+
+    // Generate previews for images
+    const newPreviews = { ...imagePreviews }
+    validFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          newPreviews[file.name] = e.target?.result as string
+          setImagePreviews({ ...newPreviews })
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+
+    if (multiple) {
+      setFormData(prev => ({ ...prev, [field]: [...(prev[field] as File[]), ...validFiles] }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: validFiles[0] || null }))
+    }
+  }
+
+  const removeFile = (field: keyof OnboardingData, index?: number) => {
+    if (typeof index === 'number') {
+      setFormData(prev => ({
+        ...prev,
+        [field]: (prev[field] as File[]).filter((_, i) => i !== index)
+      }))
+      // Remove preview
+      const fileArray = prev[field] as File[]
+      if (fileArray[index]) {
+        const newPreviews = { ...imagePreviews }
+        delete newPreviews[fileArray[index].name]
+        setImagePreviews(newPreviews)
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: null }))
+    }
+  }
+
+  const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/onboarding/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Upload failed:', response.status, errorText)
+        throw new Error('Upload failed')
+      }
+
+      const data = await response.json()
+      console.log('✅ Upload successful:', data)
+
+      if (!data.secure_url) {
+        console.error('❌ No secure_url in response:', data)
+        return null
+      }
+
+      return data.secure_url
+    } catch (error) {
+      console.error('Cloudinary upload error:', error)
+      return null
+    }
   }
 
   const validateStep = (step: number): boolean => {
@@ -161,9 +284,32 @@ export default function OnboardingPage() {
 
     setIsSubmitting(true)
     try {
+      toast.loading('Uploading files...')
+
+      // Upload files to Cloudinary
+      let logoUrl: string | null = null
+      let imageUrls: string[] = []
+      let graphicUrls: string[] = []
+
+      if (formData.logoFile) {
+        logoUrl = await uploadFileToCloudinary(formData.logoFile)
+        if (logoUrl) updateField('logo_url', logoUrl)
+      }
+
+      for (const file of formData.imageFiles) {
+        const url = await uploadFileToCloudinary(file)
+        if (url) imageUrls.push(url)
+      }
+
+      for (const file of formData.graphicFiles) {
+        const url = await uploadFileToCloudinary(file)
+        if (url) graphicUrls.push(url)
+      }
+
+      toast.dismiss()
       toast.loading('Submitting your onboarding...')
 
-      // Prepare payload with simplified data
+      // Prepare payload with data
       const payload = {
         form_id: 'waas_onboarding_v1',
         source: 'stripe_onboarding_site',
@@ -180,6 +326,11 @@ export default function OnboardingPage() {
         business_address: formData.business_address,
         time_zone: formData.time_zone,
         services_offered: formData.services_offered,
+
+        // Resources
+        logo_url: logoUrl || '',
+        image_urls: imageUrls,
+        graphic_urls: graphicUrls,
 
         // Final
         consent_accepted: formData.consent_accepted,
@@ -220,7 +371,7 @@ export default function OnboardingPage() {
               <CardTitle className="text-4xl font-bold text-white mb-4">Thanks — we've got everything we need.</CardTitle>
               <CardDescription className="text-gray-400 text-xl leading-relaxed space-y-4">
                 <p>
-                  Someone from our team will review your details and start your build immediately. You'll receive SMS updates as we progress through each stage of your project.
+                  Someone from our team will review your details and uploaded resources, then start your build immediately. You'll receive SMS updates as we progress through each stage of your project.
                 </p>
                 <p className="text-gray-500 text-lg">
                   If you forgot to include any details or have questions, {formData.business_phone ? `text your representative at ${formData.business_phone} or ` : ''}email us at {formData.business_email}.
@@ -567,6 +718,200 @@ export default function OnboardingPage() {
                     placeholder="e.g., Driveway installation, Concrete repair, Patios, Foundations..."
                   />
                   {errors.services_offered && <p className="text-red-400 text-sm mt-1">{errors.services_offered}</p>}
+                </div>
+
+                <div className="pt-6 border-t border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-4">Resources (Optional)</h3>
+
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-white mb-2 block">Logo</Label>
+                      <div
+                        className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.add('border-white', 'bg-white/10')
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            handleFileUpload('logoFile', e.dataTransfer.files)
+                          }
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload('logoFile', e.target.files)}
+                          className="hidden"
+                          id="logo-upload"
+                        />
+                        <label htmlFor="logo-upload" className="cursor-pointer block">
+                          {formData.logoFile ? (
+                            <div className="space-y-3">
+                              {imagePreviews[formData.logoFile.name] ? (
+                                <div className="relative">
+                                  <img
+                                    src={imagePreviews[formData.logoFile.name]}
+                                    alt="Logo preview"
+                                    className="max-h-32 mx-auto rounded object-contain bg-white/10 p-4"
+                                  />
+                                  <p className="text-gray-400 text-sm mt-2 text-center">{formData.logoFile.name}</p>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center gap-2 animate-pulse">
+                                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                  <span className="text-white">Loading preview...</span>
+                                </div>
+                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => { e.preventDefault(); removeFile('logoFile') }}
+                                className="text-white/70 hover:text-white"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Remove Logo
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Upload className="w-8 h-8 mx-auto text-gray-400" />
+                              <p className="text-gray-400">Click or drag & drop logo here</p>
+                              <p className="text-gray-500 text-xs">PNG or SVG preferred, max 10MB</p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-white mb-2 block">Images (max 5)</Label>
+                      <div
+                        className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.add('border-white', 'bg-white/10')
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            handleFileUpload('imageFiles', e.dataTransfer.files, true)
+                          }
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handleFileUpload('imageFiles', e.target.files, true)}
+                          className="hidden"
+                          id="images-upload"
+                        />
+                        <label htmlFor="images-upload" className="cursor-pointer block">
+                          <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                          <p className="text-gray-400">Click or drag & drop images here</p>
+                          <p className="text-gray-500 text-xs">{formData.imageFiles.length} / 5 file(s) selected</p>
+                        </label>
+                      </div>
+                      {formData.imageFiles.length > 0 && (
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          {formData.imageFiles.map((file, idx) => (
+                            <div key={idx} className="relative group">
+                              {imagePreviews[file.name] ? (
+                                <img
+                                  src={imagePreviews[file.name]}
+                                  alt={file.name}
+                                  className="aspect-square rounded object-cover bg-white/5"
+                                />
+                              ) : (
+                                <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
+                                  Loading...
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeFile('imageFiles', idx)}
+                                className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-white mb-2 block">Graphics (max 5)</Label>
+                      <div
+                        className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.add('border-white', 'bg-white/10')
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('border-white', 'bg-white/10')
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            handleFileUpload('graphicFiles', e.dataTransfer.files, true)
+                          }
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handleFileUpload('graphicFiles', e.target.files, true)}
+                          className="hidden"
+                          id="graphics-upload"
+                        />
+                        <label htmlFor="graphics-upload" className="cursor-pointer block">
+                          <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                          <p className="text-gray-400">Click or drag & drop graphics here</p>
+                          <p className="text-gray-500 text-xs">{formData.graphicFiles.length} / 5 file(s) selected</p>
+                        </label>
+                      </div>
+                      {formData.graphicFiles.length > 0 && (
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          {formData.graphicFiles.map((file, idx) => (
+                            <div key={idx} className="relative group">
+                              {imagePreviews[file.name] ? (
+                                <img
+                                  src={imagePreviews[file.name]}
+                                  alt={file.name}
+                                  className="aspect-square rounded object-cover bg-white/5"
+                                />
+                              ) : (
+                                <div className="aspect-square rounded bg-white/5 flex items-center justify-center text-xs text-gray-400 animate-pulse">
+                                  Loading...
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeFile('graphicFiles', idx)}
+                                className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-white/10">
