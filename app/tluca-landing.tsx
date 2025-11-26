@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useTransform, useScroll, useTransform as useFramerTransform } from 'framer-motion'
 import {
   ArrowRight, ArrowDown, Layout, Zap, Cpu, ChevronRight,
   Target, Users, BarChart3, Check, MessageSquare, Phone,
-  TrendingUp, Shield, Globe, Activity, Search, DollarSign
+  TrendingUp, Shield, Globe, Activity, Search, DollarSign,
+  MapPin, Facebook, Flame, Smartphone, Lock, Gauge, Database
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -60,8 +61,8 @@ function CustomCursor() {
 function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { scrollY } = useScroll()
-  const y = useTransform(scrollY, [0, 1000], [0, 400])
-  const opacity = useTransform(scrollY, [0, 500], [1, 0])
+  const y = useFramerTransform(scrollY, [0, 1000], [0, 400])
+  const opacity = useFramerTransform(scrollY, [0, 500], [1, 0])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -478,7 +479,7 @@ function HeroSection() {
                     </div>
                     <div className="font-mono text-[10px] text-brand mb-2 tracking-widest">OPTION A</div>
                     <div className="font-display text-xl text-white mb-1">BUILD WEBSITE</div>
-                    <div className="text-xs text-silver mb-4">AI-Integrated Architecture & Automation</div>
+                    <div className="text-xs text-silver/60 mb-4">AI-Integrated Architecture & Automation</div>
                     <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:gap-4 transition-all">
                         INITIALIZE <ArrowRight size={14} />
                     </div>
@@ -491,7 +492,7 @@ function HeroSection() {
                     </div>
                     <div className="font-mono text-[10px] text-brand mb-2 tracking-widest">OPTION B</div>
                     <div className="font-display text-xl text-white mb-1">RUN ADS</div>
-                    <div className="text-xs text-silver mb-4">Google, LSA, & Meta Traffic Injection</div>
+                    <div className="text-xs text-silver/60 mb-4">Google, LSA, & Meta Traffic Injection</div>
                     <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:gap-4 transition-all">
                         INITIALIZE <ArrowRight size={14} />
                     </div>
@@ -523,239 +524,369 @@ function HeroSection() {
   )
 }
 
-// Smart Websites Section
+// Smart Websites Section with Interactive Network
 function SmartWebsitesSection() {
-  const features = [
-    {
-      icon: Layout,
-      title: "AI-Integrated Architecture",
-      description: "Websites that learn from your visitors and optimize conversion paths in real-time.",
-      stats: "40% Higher Conversions"
-    },
-    {
-      icon: Zap,
-      title: "Automated Lead Capture",
-      description: "Every visitor interaction triggers intelligent lead qualification and nurturing sequences.",
-      stats: "24/7 Lead Processing"
-    },
-    {
-      icon: Target,
-      title: "Performance-Optimized Design",
-      description: "Lightning-fast loading with SEO-optimized architecture that ranks higher.",
-      stats: "3x Faster Load Times"
-    }
-  ]
-
   return (
-    <section className="py-32 px-6 bg-gradient-to-b from-charcoal to-black border-t border-white/5">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand/30 bg-brand/10 mb-6">
-            <Layout className="w-4 h-4 text-brand" />
-            <span className="text-sm font-mono text-brand uppercase tracking-widest">Smart Websites</span>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Websites That <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-red-600">Work For You</span>
-          </h2>
-          <p className="text-xl text-silver max-w-2xl mx-auto">
-            Traditional websites just sit there. Our smart websites actively drive revenue through intelligent automation and conversion optimization.
-          </p>
+    <section id="websites" className="py-32 bg-charcoal relative overflow-hidden border-b border-white/5 scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center">
+
+        {/* Left: Content (2/3 Width) */}
+        <div className="lg:col-span-8">
+           <div className="mb-8 flex items-center space-x-2 text-brand">
+                <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
+                <span className="font-mono text-xs tracking-widest">SYSTEM PILLAR 1: INFRASTRUCTURE</span>
+           </div>
+
+           <h2 className="font-display text-4xl md:text-5xl text-white mb-6 leading-tight">
+             INTELLIGENT <br/>
+             <span className="text-brand">ARCHITECTURE</span>
+           </h2>
+
+           <p className="font-mono text-silver mb-8 leading-relaxed border-l-2 border-brand/30 pl-6 max-w-3xl">
+             The foundation of your growth. We build dynamic, living <strong>Smart Websites</strong> equipped with AI automation to capture and convert every visitor. Unlike static templates, our systems are built to scale.
+           </p>
+
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
+              {[
+                { icon: <Layout />, label: "Niche-Specific Design", desc: "High-converting templates built for your industry." },
+                { icon: <Smartphone />, label: "Mobile Optimized", desc: "Flawless experience on every device." },
+                { icon: <Search />, label: "SEO Structure", desc: "Rank higher with clean, semantic code." },
+                { icon: <Shield />, label: "Zero Maintenance", desc: "We handle hosting, security, and updates." },
+              ].map((item, i) => (
+                <div key={i} className="flex gap-4 items-start group">
+                    <div className="p-3 bg-white/5 rounded group-hover:bg-brand/10 transition-colors text-brand shrink-0">
+                        {item.icon}
+                    </div>
+                    <div>
+                        <h4 className="font-display text-sm text-white mb-1">{item.label}</h4>
+                        <p className="text-xs text-silver/60 leading-relaxed">{item.desc}</p>
+                    </div>
+                </div>
+              ))}
+           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, i) => (
+        {/* Right: Interactive Network Animation (1/3 Width) */}
+        <div className="lg:col-span-4 h-[500px] flex items-center justify-center relative">
+            <InteractiveNetwork />
+        </div>
+
+      </div>
+    </section>
+  );
+};
+
+const InteractiveNetwork: React.FC = () => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseX = useSpring(x, { stiffness: 400, damping: 30 });
+    const mouseY = useSpring(y, { stiffness: 400, damping: 30 });
+
+    const rotateX = useTransform(mouseY, [-0.5, 0.5], ["15deg", "-15deg"]);
+    const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseXVal = e.clientX - rect.left;
+        const mouseYVal = e.clientY - rect.top;
+        x.set(mouseXVal / width - 0.5);
+        y.set(mouseYVal / height - 0.5);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <div className="w-full h-full flex items-center justify-center perspective-1000" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
             <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.2 }}
-              className="group relative p-8 bg-white/5 border border-white/10 rounded-2xl hover:border-brand/50 transition-all duration-300"
+                style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+                className="relative w-72 h-72 md:w-80 md:h-80 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-sm shadow-2xl flex items-center justify-center"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-brand/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-brand/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <feature.icon className="w-6 h-6 text-brand" />
+                {/* Central Core */}
+                <div className="relative z-10 w-24 h-24 bg-charcoal border border-brand/50 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,31,31,0.2)] animate-pulse-slow">
+                    <div className="absolute inset-0 rounded-full border border-brand opacity-30 animate-ping"></div>
+                    <Globe size={40} className="text-brand" />
+                    <div className="absolute -bottom-6 font-mono text-[10px] text-brand tracking-widest">AI CORE</div>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
-                <p className="text-silver mb-6 leading-relaxed">{feature.description}</p>
-                <div className="text-brand font-mono text-sm font-bold">{feature.stats}</div>
-              </div>
+
+                {/* Satellite Nodes */}
+                <NetworkNode angle={0} distance={120} delay={0} icon={<Smartphone size={16} />} label="MOBILE" />
+                <NetworkNode angle={90} distance={120} delay={1} icon={<Search size={16} />} label="SEO" />
+                <NetworkNode angle={180} distance={120} delay={2} icon={<Lock size={16} />} label="SECURE" />
+                <NetworkNode angle={270} distance={120} delay={3} icon={<Gauge size={16} />} label="SPEED" />
+
+                {/* Background Grid Pattern inside card */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] rounded-xl z-0 pointer-events-none"></div>
             </motion.div>
+        </div>
+    );
+};
+
+const NetworkNode: React.FC<{ angle: number; distance: number; delay: number; icon: React.ReactNode; label: string }> = ({ angle, distance, delay, icon, label }) => {
+    const [hovered, setHovered] = useState(false);
+
+    // Calculate position
+    const rad = (angle * Math.PI) / 180;
+    const x = Math.cos(rad) * distance;
+    const y = Math.sin(rad) * distance;
+
+    return (
+        <>
+            {/* Connection Line */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
+                <motion.line
+                    x1="50%" y1="50%"
+                    x2={`calc(50% + ${x}px)`} y2={`calc(50% + ${y}px)`}
+                    stroke={hovered ? COLORS.brand : "rgba(255, 255, 255, 0.1)"}
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                    animate={{ strokeDashoffset: [0, -20] }}
+                    transition={{ repeat: Infinity, duration: hovered ? 0.5 : 2, ease: "linear" }}
+                />
+            </svg>
+
+            {/* Node */}
+            <motion.div
+                className={`absolute w-12 h-12 rounded-full border bg-charcoal flex items-center justify-center cursor-pointer transition-all duration-300 z-20
+                    ${hovered ? 'border-brand text-brand scale-110 shadow-[0_0_15px_rgba(255,31,31,0.4)]' : 'border-white/20 text-silver hover:border-brand/50'}
+                `}
+                style={{
+                    x: x,
+                    y: y,
+                    transform: 'translate(-50%, -50%)' // Center the node itself
+                }}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: delay * 0.1 }}
+            >
+                {icon}
+                <div className={`absolute -bottom-5 text-[9px] font-mono tracking-wider transition-colors duration-300 ${hovered ? 'text-brand' : 'text-silver/50'}`}>
+                    {label}
+                </div>
+            </motion.div>
+        </>
+    );
+};
+
+// Services Section with Tilt Cards
+function ServicesSection() {
+  const services = [
+    {
+      id: 'google',
+      icon: <Search className="w-8 h-8 text-brand" />,
+      title: 'Google Ads',
+      subtitle: 'HIGH INTENT CAPTURE',
+      desc: 'We position your business exactly when customers are searching for your services.',
+      features: [
+        'Search & Display Networks',
+        'Keyword Negation Strategies',
+        'Monthly Optimization',
+        'High-Intent Lead Capture'
+      ]
+    },
+    {
+      id: 'lsa',
+      icon: <MapPin className="w-8 h-8 text-brand" />,
+      title: 'Local Service Ads',
+      subtitle: 'GOOGLE GUARANTEED',
+      desc: 'Dominate the absolute top of search results. Pay only for qualified leads, not clicks.',
+      features: [
+        'Top-of-Page Placement',
+        'Google Guaranteed Badge',
+        'Pay-Per-Lead Model',
+        'Voice Search Ready'
+      ]
+    },
+    {
+      id: 'meta',
+      icon: <Facebook className="w-8 h-8 text-brand" />,
+      title: 'Meta Ads',
+      subtitle: 'DEMAND GENERATION',
+      desc: 'Pattern-interrupt creative that stops the scroll and fills your funnel.',
+      features: [
+        'Lead Forms & Messaging',
+        'Retargeting Visitors',
+        'Lookalike Modeling',
+        'Creative Strategy'
+      ]
+    }
+  ];
+
+  return (
+    <section id="ads" className="relative py-32 w-full bg-charcoal border-t border-white/5 overflow-hidden scroll-mt-20">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(255,31,31,0.03),transparent_60%)]"></div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="mb-20 flex flex-col md:flex-row justify-between items-end border-b border-white/10 pb-10">
+          <div>
+            <div className="flex items-center gap-2 text-brand mb-2">
+                <Flame size={18} className="animate-pulse" />
+                <span className="font-mono text-xs tracking-widest">SYSTEM PILLAR 2: TRAFFIC</span>
+            </div>
+            <h2 className="font-display text-4xl text-white mb-2">PERFORMANCE <span className="text-brand">MARKETING</span></h2>
+            <p className="font-mono text-silver text-sm max-w-xl">
+              Infrastructure is useless without volume. We execute high-precision ad campaigns to pour leads into your new Smart Website.
+            </p>
+          </div>
+          <div className="hidden md:block font-mono text-xs text-brand text-right">
+            PROTOCOL: ACTIVE<br/>
+            STATUS: SCALING
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 perspective-1000">
+          {services.map((service, i) => (
+            <TiltCard key={service.id} index={i}>
+                <div className="relative z-10 flex-grow">
+                    <div className="mb-6 p-4 bg-white/5 rounded-full w-fit group-hover:bg-brand/10 transition-colors duration-300">
+                    {service.icon}
+                    </div>
+                    <div className="font-mono text-xs text-brand mb-2 tracking-widest">{service.subtitle}</div>
+                    <h3 className="font-display text-2xl text-white mb-4 group-hover:text-brand transition-colors duration-300">{service.title}</h3>
+                    <p className="font-sans text-sm text-silver mb-8 leading-relaxed">
+                    {service.desc}
+                    </p>
+                </div>
+
+                <div className="relative z-10 space-y-3 mt-auto border-t border-white/5 pt-6">
+                    {service.features.map((feature: string, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-2 text-xs font-mono text-silver/80">
+                        <div className="w-1.5 h-1.5 bg-brand rounded-full" />
+                        <span>{feature}</span>
+                    </div>
+                    ))}
+                </div>
+            </TiltCard>
           ))}
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-// Services Section (Google Ads, LSA, Meta)
-function ServicesSection() {
-  const services = [
-    {
-      id: 'ads',
-      title: "Performance Ads",
-      description: "Targeted campaigns across Google, LSA, and Meta that deliver qualified leads, not just clicks.",
-      features: [
-        "Google Search Ads - High-intent traffic",
-        "Local Service Ads - Pay-per-lead model",
-        "Meta Ads - Retargeting & lookalike audiences",
-        "Advanced audience targeting",
-        "Real-time bid optimization",
-        "Conversion tracking & attribution"
-      ],
-      cta: "Start Ad Campaign"
-    }
-  ]
+const TiltCard: React.FC<{ children: React.ReactNode; index: number }> = ({ children, index }) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
 
-  return (
-    <section id="services" className="py-32 px-6 bg-charcoal">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand/30 bg-brand/10 mb-6">
-            <Target className="w-4 h-4 text-brand" />
-            <span className="text-sm font-mono text-brand uppercase tracking-widest">Services</span>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Complete <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-red-600">Marketing Systems</span>
-          </h2>
-          <p className="text-xl text-silver max-w-2xl mx-auto">
-            We don't just run ads. We build entire marketing ecosystems that capture, nurture, and convert leads into customers.
-          </p>
-        </div>
+    const mouseX = useSpring(x, { stiffness: 500, damping: 30 });
+    const mouseY = useSpring(y, { stiffness: 500, damping: 30 });
 
-        {services.map((service, i) => (
-          <motion.div
-            key={i}
+    const rotateX = useTransform(mouseY, [-0.5, 0.5], ["15deg", "-15deg"]);
+    const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseXVal = e.clientX - rect.left;
+        const mouseYVal = e.clientY - rect.top;
+        const xPct = mouseXVal / width - 0.5;
+        const yPct = mouseYVal / height - 0.5;
+        x.set(xPct);
+        y.set(yPct);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            style={{
+                rotateX,
+                rotateY,
+                transformStyle: "preserve-3d"
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-white/10 rounded-3xl p-12 md:p-16"
-          >
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">{service.title}</h3>
-                <p className="text-lg text-silver mb-8 leading-relaxed">{service.description}</p>
-
-                <div className="space-y-4 mb-8">
-                  {service.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-brand flex-shrink-0" />
-                      <span className="text-silver">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-brand hover:bg-brand-dark text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105"
-                >
-                  {service.cta}
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square bg-gradient-to-br from-brand/20 to-brand-dark/20 rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="w-24 h-24 text-brand mx-auto mb-4" />
-                    <div className="text-2xl font-bold text-white mb-2">Revenue Engine</div>
-                    <div className="text-silver">Traffic → Leads → Sales</div>
-                  </div>
-                </div>
-              </div>
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
+            className="group relative h-full min-h-[420px] bg-white/[0.02] border border-white/10 p-8 flex flex-col transition-colors duration-300 hover:border-brand/50 will-change-transform cursor-crosshair"
+        >
+            <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
+            <div className="transform-gpu" style={{ transform: "translateZ(20px)" }}>
+                {children}
             </div>
-          </motion.div>
-        ))}
-      </div>
-    </section>
-  )
-}
+        </motion.div>
+    );
+};
 
-// Automation Section (CRM & AI)
+// Automation Section (CRM)
 function AutomationSection() {
-  const features = [
-    {
-      icon: MessageSquare,
-      title: "Smart CRM Integration",
-      description: "GoHighLevel-powered CRM that automatically captures and nurtures every lead."
-    },
-    {
-      icon: Phone,
-      title: "Missed Call Text-Back",
-      description: "62% of business calls go unanswered. We automatically text them back and book appointments."
-    },
-    {
-      icon: Activity,
-      title: "AI Lead Qualification",
-      description: "Intelligent chatbots qualify leads 24/7 and route hot prospects directly to you."
-    },
-    {
-      icon: TrendingUp,
-      title: "Unified Inbox",
-      description: "Manage SMS, email, Facebook, Instagram, and Google messages in one streamlined interface."
-    }
-  ]
-
   return (
-    <section className="py-32 px-6 bg-gradient-to-b from-black to-charcoal border-t border-white/5">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand/30 bg-brand/10 mb-6">
-              <Activity className="w-4 h-4 text-brand" />
-              <span className="text-sm font-mono text-brand uppercase tracking-widest">Automation</span>
-            </div>
-            <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
-              Never Lose a <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-red-600">Lead Again</span>
-            </h2>
-            <p className="text-xl text-silver mb-12 leading-relaxed">
-              Traditional marketing stops at the ad. We ensure every lead gets captured, qualified, and converted into a paying customer.
-            </p>
+    <section className="py-32 px-6 bg-gradient-to-b from-charcoal to-black border-t border-white/5 overflow-hidden relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent" />
 
-            <div className="space-y-8">
-              {features.map((feature, i) => (
-                <div key={i} className="flex gap-6">
-                  <div className="w-12 h-12 bg-brand/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <feature.icon className="w-6 h-6 text-brand" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-bold text-white mb-2">{feature.title}</h4>
-                    <p className="text-silver leading-relaxed">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center relative z-10">
+        <div>
+          <div className="inline-block p-3 bg-brand/10 rounded-xl mb-6">
+            <Activity className="w-8 h-8 text-brand" />
           </div>
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
+            Never Lose a <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-red-600">Lead Again</span>
+          </h2>
+          <p className="text-xl text-silver mb-12 leading-relaxed">
+            Generating leads is half the battle. Our all-in-one CRM ensures you capture, nurture, and convert every opportunity that comes your way.
+          </p>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-brand/20 blur-[100px] rounded-full" />
-            <div className="relative bg-charcoal border border-white/10 rounded-3xl p-8 shadow-2xl">
-              {/* Mock CRM Dashboard */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center font-bold text-sm">JD</div>
-                    <div>
-                      <div className="text-white font-bold text-sm">John Doe</div>
-                      <div className="text-xs text-silver">Hot Lead - Ready to Buy</div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-silver">2 min ago</div>
+          <div className="space-y-8">
+            {[
+              { title: "Instant Text-Back", desc: "Never lose a lead to voicemail again." },
+              { title: "Unified Inbox", desc: "Manage texts, DMs, and emails in one stream." },
+              { title: "AI Booking Agent", desc: "Qualifies leads and books calendar slots 24/7." }
+            ].map((item, i) => (
+              <div key={i} className="flex gap-6">
+                <div className="w-px h-full bg-gray-800 relative">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-brand rounded-full" />
                 </div>
+                <div>
+                  <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
+                  <p className="text-silver">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-                <div className="space-y-4">
-                  <div className="bg-charcoal/50 p-4 rounded-2xl rounded-tl-sm max-w-[80%] border border-brand/20">
-                    <p className="text-sm text-white">Hi! I saw your ad and I'm interested in getting a quote.</p>
+        <div className="relative">
+          <div className="absolute inset-0 bg-brand/20 blur-[100px] rounded-full" />
+          <div className="relative bg-charcoal border border-white/10 rounded-3xl p-8 shadow-2xl">
+            {/* Mock CRM Dashboard */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center font-bold text-sm">JD</div>
+                  <div>
+                    <div className="text-white font-bold text-sm">John Doe</div>
+                    <div className="text-xs text-silver">Hot Lead - Ready to Buy</div>
                   </div>
-                  <div className="bg-brand/20 p-4 rounded-2xl rounded-tr-sm max-w-[80%] ml-auto border border-brand/20">
-                    <p className="text-sm text-brand">Great! I'd love to help. When would be a good time for a quick call?</p>
-                  </div>
-                  <div className="bg-charcoal/50 p-4 rounded-2xl rounded-tl-sm max-w-[80%]">
-                    <p className="text-sm text-white">How about tomorrow at 2pm?</p>
-                  </div>
-                  <div className="bg-brand/20 p-4 rounded-2xl rounded-tr-sm max-w-[80%] ml-auto border border-brand/20">
-                    <p className="text-sm text-brand">Perfect! I've added you to my calendar. Here's the Zoom link: [meeting-link]</p>
-                  </div>
+                </div>
+                <div className="text-xs text-silver">2 min ago</div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-charcoal/50 p-4 rounded-2xl rounded-tl-sm max-w-[80%] border border-brand/20">
+                  <p className="text-sm text-white">Hi! I saw your ad and I'm interested in getting a quote.</p>
+                </div>
+                <div className="bg-brand/20 p-4 rounded-2xl rounded-tr-sm max-w-[80%] ml-auto border border-brand/20">
+                  <p className="text-sm text-brand">Great! I'd love to help. When would be a good time for a quick call?</p>
+                </div>
+                <div className="bg-charcoal/50 p-4 rounded-2xl rounded-tl-sm max-w-[80%]">
+                  <p className="text-sm text-white">How about tomorrow at 2pm?</p>
+                </div>
+                <div className="bg-brand/20 p-4 rounded-2xl rounded-tr-sm max-w-[80%] ml-auto border border-brand/20">
+                  <p className="text-sm text-brand">Perfect! I've added you to my calendar. Here's the Zoom link: [meeting-link]</p>
                 </div>
               </div>
             </div>
@@ -797,7 +928,7 @@ function ResultsSection() {
 
         <div className="bg-gradient-to-r from-brand/10 to-red-600/10 border border-brand/20 rounded-3xl p-12">
           <blockquote className="text-2xl text-white font-display italic mb-6">
-            "We went from manually chasing leads to having our CRM automatically qualify and book appointments 24/7. Our revenue doubled in the first quarter."
+            "We went from zero to $50k/month in 3 months. The automated lead system works like magic."
           </blockquote>
           <div className="flex items-center justify-center gap-4">
             <div className="w-12 h-12 bg-brand/20 rounded-full flex items-center justify-center">
@@ -912,10 +1043,10 @@ function PricingSection() {
             <div className="text-center">
               <div className="text-3xl font-bold text-brand mb-4">$X /mo</div>
               <ul className="text-left space-y-3 text-silver text-sm">
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-brand" /> Campaign optimization</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-brand" /> Creative refresh</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-brand" /> CRM access included</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-brand" /> Monthly reporting</li>
+                <li className="flex gap-2"><Check className="text-brand w-4 h-4" /> Campaign optimization</li>
+                <li className="flex gap-2"><Check className="text-brand w-4 h-4" /> Creative refresh</li>
+                <li className="flex gap-2"><Check className="text-brand w-4 h-4" /> CRM access included</li>
+                <li className="flex gap-2"><Check className="text-brand w-4 h-4" /> Monthly reporting</li>
               </ul>
             </div>
           </div>
@@ -1073,11 +1204,9 @@ export default function TLUCALandingPage() {
 
       {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full z-50 px-6 py-6 flex justify-between items-center mix-blend-normal pointer-events-none">
-        <div className="font-display font-bold text-xl tracking-tighter pointer-events-auto text-white">
-          TLUCA<span className="text-brand">.SYSTEMS</span>
-        </div>
+        <div className="font-display font-bold text-xl tracking-tighter pointer-events-auto text-white">TLUCA<span className="text-brand">.SYSTEMS</span></div>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
-          <a href="#services" className="hover:text-brand transition-colors">WEBSITES</a>
+          <a href="#websites" className="hover:text-brand transition-colors">WEBSITES</a>
           <a href="#ads" className="hover:text-brand transition-colors">ADS</a>
           <a href="#system" className="hover:text-brand transition-colors">SYSTEMS</a>
           <a href="#pricing" className="hover:text-brand transition-colors">PRICING</a>
@@ -1153,6 +1282,28 @@ export default function TLUCALandingPage() {
           --charcoal: ${COLORS.charcoal};
           --silver: ${COLORS.silver};
           --white: ${COLORS.white};
+        }
+
+        /* 3D perspective */
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+
+        .transform-style-3d {
+          transform-style: preserve-3d;
+        }
+
+        .rotate-x-60 {
+          transform: rotateX(60deg);
+        }
+
+        .rotate-z-45 {
+          transform: rotateZ(45deg);
+        }
+
+        /* Pulse slow animation */
+        .animate-pulse-slow {
+          animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
     </div>
