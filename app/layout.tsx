@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 import type React from "react"
 import { ClerkProvider } from '@clerk/nextjs'
 import { ConditionalAuthProviders } from '@/components/ConditionalAuthProviders'
-import { SidebarProvider } from "@/context/SidebarContext"
 
 // Extend Window interface for console override tracking
 declare global {
@@ -214,11 +213,9 @@ export default function RootLayout({
           }}
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <SidebarProvider>
               <ConditionalAuthProviders>
                 {children}
               </ConditionalAuthProviders>
-            </SidebarProvider>
           </ThemeProvider>
         </ClerkProvider>
       </body>
