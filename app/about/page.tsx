@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Target, TrendingUp, Users, Zap, Cpu, Globe, Layout, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Target, TrendingUp, Users, Zap, Cpu, Globe, Layout, ShieldCheck, ArrowLeft, MessageSquare, Star, Link2, Filter, Search, Database } from 'lucide-react';
 
 const AboutPage: React.FC = () => {
   return (
@@ -74,6 +74,83 @@ const AboutPage: React.FC = () => {
               <br/>
               Your website feeds leads to your CRM, which triggers your ads, creating a flywheel of growth that never stops."
             </p>
+          </div>
+        </section>
+
+        {/* Smart System Features */}
+        <section className="px-6 py-20 bg-black/20">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+                <h2 className="font-display text-3xl md:text-5xl font-bold mb-4 text-white">
+                    SMART WEBSITE <span className="text-brand">ECOSYSTEM</span>
+                </h2>
+                <p className="font-mono text-silver text-sm max-w-2xl mx-auto">
+                    It's not just a website. It's a 24/7 sales employee.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    {
+                        icon: <Database className="w-5 h-5" />,
+                        title: "Built-In CRM",
+                        desc: "Ditch the spreadsheets. Capture, track, and manage every lead in a centralized pipeline."
+                    },
+                    {
+                        icon: <Search className="w-5 h-5" />,
+                        title: "SEO Dominance",
+                        desc: "Technical SEO architecture baked in to help you rank higher on Google organically."
+                    },
+                    {
+                        icon: <MessageSquare className="w-5 h-5" />,
+                        title: "Unified Inbox",
+                        desc: "All communication—SMS, Email, FB & IG DMs—consolidated into a single stream."
+                    },
+                    {
+                        icon: <Zap className="w-5 h-5" />,
+                        title: "Auto-Pilot Follow-Up",
+                        desc: "Missed call text-backs and automated nurture sequences so you never lose a lead."
+                    },
+                    {
+                        icon: <Star className="w-5 h-5" />,
+                        title: "Reputation Engine",
+                        desc: "Automated review requests to build 5-star trust on Google on autopilot."
+                    },
+                    {
+                        icon: <Link2 className="w-5 h-5" />,
+                        title: "Universal Integration",
+                        desc: "Seamlessly connects with the tools you already use: Stripe, PayPal, Google, Meta, and more."
+                    },
+                    {
+                        icon: <Filter className="w-5 h-5" />,
+                        title: "Funnel Architecture",
+                        desc: "High-converting landing pages and funnels designed to turn traffic into appointments."
+                    },
+                    {
+                         icon: <Layout className="w-5 h-5" />,
+                         title: "Brand Consistency",
+                         desc: "Designs that match your existing brand, font, and style for a cohesive digital presence."
+                    }
+                ].map((feature, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="bg-white/5 border border-white/10 p-6 rounded-lg hover:border-brand/50 transition-colors group backdrop-blur-sm"
+                    >
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-brand/10 rounded text-brand group-hover:text-white group-hover:bg-brand transition-colors">
+                                {feature.icon}
+                            </div>
+                            <h3 className="font-display text-sm font-bold text-white">{feature.title}</h3>
+                        </div>
+                        <p className="font-mono text-[11px] text-silver/70 leading-relaxed">
+                            {feature.desc}
+                        </p>
+                    </motion.div>
+                ))}
+            </div>
           </div>
         </section>
 
