@@ -1,59 +1,63 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { motion, useMotionValue, useSpring, useTransform, useScroll, useTransform as useFramerTransform } from 'framer-motion'
-import {
-  ArrowRight, ArrowDown, Layout, Zap, Cpu, ChevronRight,
-  Target, Users, BarChart3, Check, MessageSquare, Phone,
-  TrendingUp, Shield, Globe, Activity, Search, DollarSign,
-  MapPin, Facebook, Flame, Smartphone, Lock, Gauge, Database
-} from 'lucide-react'
+import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion'
+import { ArrowRight, ArrowDown, Layout, Zap, Cpu, ChevronRight, Target, Users, BarChart3, Check, MessageSquare, Phone, TrendingUp, Shield, Globe, Activity, Search, DollarSign, MapPin, Facebook, Flame, Smartphone, Database, Lock, Gauge, Star, Quote } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 // Color scheme from Google AI Studio design
 const COLORS = {
-  brand: '#FF1F1F',       // TLUCA Red
-  'brand-dark': '#8a0a0a', // Darker Red for gradients
-  charcoal: '#0A0A0C',    // Background
+  brand: '#FF1F1F',
+  'brand-dark': '#8a0a0a',
+  charcoal: '#0A0A0C',
   silver: '#C0C0C0',
   white: '#FFFFFF',
 }
 
-// Custom cursor component
+// Custom cursor component from Google AI Studio
 function CustomCursor() {
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [isVisible, setIsVisible] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  // Stiffer springs for less "laggy" feel
+  const cursorX = useSpring(0, { stiffness: 1000, damping: 50 })
+  const cursorY = useSpring(0, { stiffness: 1000, damping: 50 })
+  const cursorOuterX = useSpring(0, { stiffness: 300, damping: 30 })
+  const cursorOuterY = useSpring(0, { stiffness: 300, damping: 30 })
 
   useEffect(() => {
-    const updatePosition = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY })
-      setIsVisible(true)
+    const moveCursor = (e: MouseEvent) => {
+      cursorX.set(e.clientX - 4) // Center offset
+      cursorY.set(e.clientY - 4)
+      cursorOuterX.set(e.clientX - 24)
+      cursorOuterY.set(e.clientY - 24)
+
+      const target = e.target as HTMLElement
+      setIsHovered(!!target.closest('button, a, [data-hover="true"]'))
     }
 
-    const hideCursor = () => setIsVisible(false)
-
-    document.addEventListener('mousemove', updatePosition)
-    document.addEventListener('mouseleave', hideCursor)
-
-    return () => {
-      document.removeEventListener('mousemove', updatePosition)
-      document.removeEventListener('mouseleave', hideCursor)
-    }
-  }, [])
+    window.addEventListener('mousemove', moveCursor)
+    return () => window.removeEventListener('mousemove', moveCursor)
+  }, [cursorX, cursorY, cursorOuterX, cursorOuterY])
 
   return (
-    <div
-      className="fixed pointer-events-none z-50 mix-blend-difference"
-      style={{
-        left: position.x - 12,
-        top: position.y - 12,
-        opacity: isVisible ? 1 : 0,
-        transition: 'opacity 0.2s ease'
-      }}
-    >
-      <div className="w-6 h-6 border-2 border-white rounded-full" />
-    </div>
+    <>
+      {/* Inner Dot */}
+      <motion.div
+        className="fixed top-0 left-0 w-2 h-2 bg-brand rounded-full pointer-events-none z-[100] mix-blend-screen will-change-transform"
+        style={{ x: cursorX, y: cursorY }}
+      />
+      {/* Outer Ring */}
+      <motion.div
+        className="fixed top-0 left-0 w-12 h-12 border border-brand/50 rounded-full pointer-events-none z-[100] mix-blend-screen will-change-transform"
+        style={{ x: cursorOuterX, y: cursorOuterY }}
+        animate={{
+          scale: isHovered ? 1.5 : 1,
+          opacity: isHovered ? 0.8 : 0.3,
+          borderWidth: isHovered ? '2px' : '1px',
+        }}
+        transition={{ duration: 0.2 }}
+      />
+    </>
   )
 }
 
@@ -61,8 +65,8 @@ function CustomCursor() {
 function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { scrollY } = useScroll()
-  const y = useFramerTransform(scrollY, [0, 1000], [0, 400])
-  const opacity = useFramerTransform(scrollY, [0, 500], [1, 0])
+  const y = useTransform(scrollY, [0, 1000], [0, 400])
+  const opacity = useTransform(scrollY, [0, 500], [1, 0])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -473,7 +477,7 @@ function HeroSection() {
 
             {/* ACTION CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                <a href="#services" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
+                <a href="#websites" className="group relative p-6 bg-white/5 border border-white/10 hover:border-brand/50 rounded-lg text-left transition-all duration-300 hover:bg-white/10 overflow-hidden">
                     <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity text-brand">
                         <Layout size={24} />
                     </div>
@@ -823,6 +827,29 @@ const TiltCard: React.FC<{ children: React.ReactNode; index: number }> = ({ chil
 
 // Automation Section (CRM)
 function AutomationSection() {
+  const features = [
+    {
+      icon: MessageSquare,
+      title: "Smart CRM Integration",
+      description: "GoHighLevel-powered CRM that automatically captures and nurtures every lead."
+    },
+    {
+      icon: Phone,
+      title: "Missed Call Text-Back",
+      description: "62% of calls to local businesses go unanswered. We automatically text them back and book appointments."
+    },
+    {
+      icon: Activity,
+      title: "AI Lead Qualification",
+      description: "Intelligent chatbots qualify leads 24/7 and route hot prospects directly to you."
+    },
+    {
+      icon: TrendingUp,
+      title: "Unified Inbox",
+      description: "Manage SMS, email, Facebook, Instagram, and Google messages in one streamlined interface."
+    }
+  ]
+
   return (
     <section className="py-32 px-6 bg-gradient-to-b from-charcoal to-black border-t border-white/5 overflow-hidden relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent" />
@@ -841,18 +868,14 @@ function AutomationSection() {
           </p>
 
           <div className="space-y-8">
-            {[
-              { title: "Instant Text-Back", desc: "Never lose a lead to voicemail again." },
-              { title: "Unified Inbox", desc: "Manage texts, DMs, and emails in one stream." },
-              { title: "AI Booking Agent", desc: "Qualifies leads and books calendar slots 24/7." }
-            ].map((item, i) => (
+            {features.map((item, i) => (
               <div key={i} className="flex gap-6">
-                <div className="w-px h-full bg-gray-800 relative">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-brand rounded-full" />
+                <div className="w-12 h-12 bg-brand/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-6 h-6 text-brand" />
                 </div>
                 <div>
                   <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
-                  <p className="text-silver">{item.desc}</p>
+                  <p className="text-silver">{item.description}</p>
                 </div>
               </div>
             ))}
