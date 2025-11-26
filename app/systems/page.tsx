@@ -20,6 +20,7 @@ const SystemsPage = () => {
           {['WEBSITES', 'ADS', 'SYSTEMS', 'PRICING'].map((item) => (
             <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
           ))}
+          <Link href="/onboarding" className="hover:text-brand transition-colors">ONBOARDING</Link>
         </div>
       </nav>
 
@@ -211,7 +212,8 @@ const SystemsPage = () => {
           <Link href="/websites" className="hover:text-brand transition-colors">WEBSITES</Link>
           <Link href="/ads" className="hover:text-brand transition-colors">ADS</Link>
           <Link href="/systems" className="hover:text-brand transition-colors">SYSTEMS</Link>
-          <Link href="#pricing" className="hover:text-brand transition-colors">PRICING</Link>
+          <Link href="/pricing" className="hover:text-brand transition-colors">PRICING</Link>
+          <Link href="/onboarding" className="hover:text-brand transition-colors">ONBOARDING</Link>
           <Link href="/privacy" className="hover:text-brand transition-colors">PRIVACY</Link>
           <Link href="/terms" className="hover:text-brand transition-colors">TERMS</Link>
           <Link href="/about" className="hover:text-brand transition-colors">ABOUT</Link>

@@ -59,16 +59,6 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			},
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
   			}
   		},
   		borderRadius: {
@@ -80,7 +70,7 @@ const config: Config = {
             sans: ['var(--font-sans)', 'Inter', 'sans-serif'],
             mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
             display: ['var(--font-display)', 'Syncopate', 'sans-serif'],
-        },
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: {
@@ -106,7 +96,7 @@ const config: Config = {
             shine: {
                 '0%': { backgroundPosition: '200% center' },
                 '100%': { backgroundPosition: '-200% center' },
-            }
+  			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
