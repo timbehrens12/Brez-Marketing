@@ -13,7 +13,7 @@ const WebsitesPage = () => {
           <img
             src="https://i.imgur.com/xOgn8Xe.png"
             alt="TLUCA Systems"
-            className="h-16 w-auto object-contain"
+            className="h-10 md:h-16 w-auto object-contain"
           />
         </Link>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
