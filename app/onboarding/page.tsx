@@ -28,7 +28,7 @@ type OnboardingData = {
   years_in_service: string
   business_type: string
   service_areas: string[]
-  crm_recipients: string[]
+  crm_recipients: { label: string; phone: string }[]
   
   // Resources
   logoFile: File | null
@@ -118,7 +118,8 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [serviceAreaInput, setServiceAreaInput] = useState('')
-  const [crmRecipientInput, setCrmRecipientInput] = useState('')
+  const [phoneLabel, setPhoneLabel] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
   
   // TESTING MODE - Set to true to only show first step
@@ -249,22 +250,32 @@ export default function OnboardingPage() {
     updateField('service_areas', formData.service_areas.filter(a => a !== area))
   }
 
-  const addCrmRecipient = () => {
-    const email = crmRecipientInput.trim()
-    if (email && !formData.crm_recipients.includes(email)) {
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (emailRegex.test(email)) {
-        updateField('crm_recipients', [...formData.crm_recipients, email])
-        setCrmRecipientInput('')
+  const addPhoneRecipient = () => {
+    const label = phoneLabel.trim()
+    const phone = phoneNumber.trim()
+    if (label && phone) {
+      // Check if this label already exists
+      const exists = formData.crm_recipients.some(recipient => recipient.label.toLowerCase() === label.toLowerCase())
+      if (!exists) {
+        // Basic phone validation (allows various formats)
+        const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/
+        if (phoneRegex.test(phone.replace(/\s/g, ''))) {
+          updateField('crm_recipients', [...formData.crm_recipients, { label, phone }])
+          setPhoneLabel('')
+          setPhoneNumber('')
+        } else {
+          toast.error('Please enter a valid phone number')
+        }
       } else {
-        toast.error('Please enter a valid email address')
+        toast.error('This role already has a phone number')
       }
+    } else {
+      toast.error('Please enter both role and phone number')
     }
   }
 
-  const removeCrmRecipient = (email: string) => {
-    updateField('crm_recipients', formData.crm_recipients.filter(e => e !== email))
+  const removePhoneRecipient = (label: string) => {
+    updateField('crm_recipients', formData.crm_recipients.filter(recipient => recipient.label !== label))
   }
 
   const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
@@ -720,35 +731,47 @@ export default function OnboardingPage() {
                         </div>
 
                         <div>
-                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">CRM Access Recipients</Label>
-                            <p className="text-gray-400 text-sm mb-3">Additional emails for lead notifications (receptionists, admins, co-owners, etc.)</p>
-                            <div className="flex gap-2 mb-3">
+                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">CRM Access Phone Recipients</Label>
+                            <p className="text-gray-400 text-sm mb-3">Phone numbers for lead notifications (receptionists, admins, co-owners, etc.)</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                                 <Input
-                                    value={crmRecipientInput}
-                                    onChange={(e) => setCrmRecipientInput(e.target.value)}
+                                    value={phoneLabel}
+                                    onChange={(e) => setPhoneLabel(e.target.value)}
                                     onKeyPress={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault()
-                                            addCrmRecipient()
+                                            addPhoneRecipient()
                                         }
                                     }}
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                    placeholder="email@business.com"
-                                    type="email"
+                                    placeholder="Role (e.g., Receptionist)"
+                                />
+                                <Input
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            addPhoneRecipient()
+                                        }
+                                    }}
+                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                    placeholder="(555) 123-4567"
+                                    type="tel"
                                 />
                                 <Button
                                     type="button"
-                                    onClick={addCrmRecipient}
+                                    onClick={addPhoneRecipient}
                                     className="bg-white text-black hover:bg-silver"
                                 >
                                     ADD
                                 </Button>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {formData.crm_recipients.map((email, idx) => (
+                                {formData.crm_recipients.map((recipient, idx) => (
                                     <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
-                                        <span className="text-white text-sm font-mono">{email}</span>
-                                        <button type="button" onClick={() => removeCrmRecipient(email)} className="text-brand hover:text-white transition-colors">
+                                        <span className="text-white text-sm font-mono">{recipient.label}: {recipient.phone}</span>
+                                        <button type="button" onClick={() => removePhoneRecipient(recipient.label)} className="text-brand hover:text-white transition-colors">
                                             <X size={14} />
                                         </button>
                                     </div>
