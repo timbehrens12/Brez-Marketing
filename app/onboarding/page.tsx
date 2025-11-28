@@ -120,6 +120,7 @@ export default function OnboardingPage() {
   const [serviceAreaInput, setServiceAreaInput] = useState('')
   const [phoneLabel, setPhoneLabel] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [justMeNotifications, setJustMeNotifications] = useState(false)
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
   
   // TESTING MODE - Set to true to only show first step
@@ -733,50 +734,78 @@ export default function OnboardingPage() {
                         <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">CRM Access Phone Recipients</Label>
                             <p className="text-gray-400 text-sm mb-3">Phone numbers for lead notifications (receptionists, admins, co-owners, etc.)</p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                                <Input
-                                    value={phoneLabel}
-                                    onChange={(e) => setPhoneLabel(e.target.value)}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            addPhoneRecipient()
+
+                            <div className="flex items-center gap-3 mb-4">
+                                <input
+                                    type="checkbox"
+                                    id="just-me-notifications"
+                                    checked={justMeNotifications}
+                                    onChange={(e) => {
+                                        setJustMeNotifications(e.target.checked)
+                                        if (e.target.checked) {
+                                            // Clear all recipients when "just me" is selected
+                                            updateField('crm_recipients', [])
+                                            setPhoneLabel('')
+                                            setPhoneNumber('')
                                         }
                                     }}
-                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                    placeholder="Role (e.g., Receptionist)"
+                                    className="w-4 h-4 text-brand bg-gray-100 border-gray-300 rounded focus:ring-brand focus:ring-2"
                                 />
-                                <Input
-                                    value={phoneNumber}
-                                    onChange={(e) => setPhoneNumber(e.target.value)}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            addPhoneRecipient()
-                                        }
-                                    }}
-                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                    placeholder="(555) 123-4567"
-                                    type="tel"
-                                />
-                                <Button
-                                    type="button"
-                                    onClick={addPhoneRecipient}
-                                    className="bg-white text-black hover:bg-silver"
-                                >
-                                    ADD
-                                </Button>
+                                <label htmlFor="just-me-notifications" className="text-white text-sm font-medium cursor-pointer">
+                                    Just me - only the business owner receives notifications
+                                </label>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {formData.crm_recipients.map((recipient, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
-                                        <span className="text-white text-sm font-mono">{recipient.label}: {recipient.phone}</span>
-                                        <button type="button" onClick={() => removePhoneRecipient(recipient.label)} className="text-brand hover:text-white transition-colors">
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
+                            {!justMeNotifications && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                                    <Input
+                                        value={phoneLabel}
+                                        onChange={(e) => setPhoneLabel(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addPhoneRecipient()
+                                            }
+                                        }}
+                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                        placeholder="Role (e.g., Receptionist)"
+                                        disabled={justMeNotifications}
+                                    />
+                                    <Input
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addPhoneRecipient()
+                                            }
+                                        }}
+                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                        placeholder="(555) 123-4567"
+                                        type="tel"
+                                        disabled={justMeNotifications}
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={addPhoneRecipient}
+                                        className="bg-white text-black hover:bg-silver disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={justMeNotifications}
+                                    >
+                                        ADD
+                                    </Button>
+                                </div>
+                            )}
+                            {!justMeNotifications && formData.crm_recipients.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.crm_recipients.map((recipient, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
+                                            <span className="text-white text-sm font-mono">{recipient.label}: {recipient.phone}</span>
+                                            <button type="button" onClick={() => removePhoneRecipient(recipient.label)} className="text-brand hover:text-white transition-colors">
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
