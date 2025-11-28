@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { Layout, Smartphone, Search, Database, Shield, Zap, Lock, Gauge, Globe } from 'lucide-react';
+import { Layout, Smartphone, Search, Database, Shield, Zap, Lock, Gauge, Globe, MessageSquare, Bot } from 'lucide-react';
 
 const SmartWebsites: React.FC = () => {
   return (
@@ -30,6 +30,7 @@ const SmartWebsites: React.FC = () => {
                 { icon: <Search />, label: "SEO Structure", desc: "Rank higher with clean, semantic code." },
                 { icon: <Shield />, label: "Zero Maintenance", desc: "We handle hosting, security, and updates." },
                 { icon: <Database />, label: "Built-In CRM", desc: "Capture and manage every lead automatically." },
+                { icon: <Bot />, label: "AI Messaging Bot", desc: "Trained on your site's data to communicate with and capture leads 24/7." },
                 { icon: <Zap />, label: "Auto-Pilot Follow-Up", desc: "Never lose a lead with automated nurture sequences." },
                 { icon: <Lock />, label: "Universal Integration", desc: "Connects with Stripe, PayPal, Meta, and more." },
                 { icon: <Gauge />, label: "Reputation Engine", desc: "Get more 5-star reviews on autopilot." }
