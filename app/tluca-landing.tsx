@@ -39,8 +39,8 @@ const TLUCALandingPage: React.FC = () => {
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
              {/* Updated Nav Links */}
              <Link href="/" className="hover:text-brand transition-colors">HOME</Link>
-             {['WEBSITES', 'ADS', 'SYSTEMS', 'PRICING'].map((item) => (
-                 <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
+             {['WEBSITES', 'ADS', 'PRICING'].map((item) => (
+                 <a key={item} href={`/${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
              ))}
         </div>
       </nav>
@@ -94,9 +94,8 @@ const TLUCALandingPage: React.FC = () => {
             </div>
             <div className="flex flex-col space-y-2 font-mono text-xs text-gray-400">
                 <span className="text-white mb-2">PAGES</span>
-                <Link href="#websites" className="hover:text-brand transition-colors">WEBSITES</Link>
-                <Link href="#ads" className="hover:text-brand transition-colors">ADS</Link>
-                <Link href="#systems" className="hover:text-brand transition-colors">SYSTEMS</Link>
+                <Link href="/websites" className="hover:text-brand transition-colors">WEBSITES</Link>
+                <Link href="/ads" className="hover:text-brand transition-colors">ADS</Link>
                 <Link href="#pricing" className="hover:text-brand transition-colors">PRICING</Link>
                 <Link href="/privacy" className="hover:text-brand transition-colors">PRIVACY</Link>
                 <Link href="/terms" className="hover:text-brand transition-colors">TERMS</Link>
