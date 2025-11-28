@@ -17,8 +17,8 @@ const PricingPage = () => {
           />
         </Link>
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
-          {['WEBSITES', 'ADS', 'SYSTEMS', 'PRICING'].map((item) => (
-            <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
+          {['WEBSITES', 'ADS', 'PRICING'].map((item) => (
+            <a key={item} href={`/${item.toLowerCase()}`} className="hover:text-brand transition-colors">{item}</a>
           ))}
           <Link href="/onboarding" className="hover:text-brand transition-colors">ONBOARDING</Link>
         </div>
