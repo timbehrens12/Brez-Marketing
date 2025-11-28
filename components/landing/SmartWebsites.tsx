@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { Layout, Smartphone, Search, Database, Shield, Zap, Lock, Gauge, Globe, MessageSquare, Bot } from 'lucide-react';
+import { Layout, Smartphone, Search, Database, Shield, Zap, Lock, Gauge, Globe, MessageSquare, Bot, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 const SmartWebsites: React.FC = () => {
   return (
@@ -45,6 +46,18 @@ const SmartWebsites: React.FC = () => {
                     </div>
                 </div>
               ))}
+           </div>
+
+           {/* Get Started Widget */}
+           <div className="mt-12 pt-8 border-t border-white/10">
+               <Link href="/onboarding">
+                   <button className="group relative px-8 py-4 bg-brand text-white font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-all duration-300">
+                       <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+                           GET STARTED WITH WEBSITES <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                       </span>
+                       <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
+                   </button>
+               </Link>
            </div>
         </div>
 
