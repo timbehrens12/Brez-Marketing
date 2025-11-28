@@ -28,7 +28,8 @@ type OnboardingData = {
   years_in_service: string
   business_type: string
   service_areas: string[]
-
+  crm_recipients: string[]
+  
   // Resources
   logoFile: File | null
   logo_url: string | null
@@ -44,7 +45,7 @@ type OnboardingData = {
 
   // Final
   consent_accepted: boolean
-
+  
   // Hidden/System
   form_id: string
   source: string
@@ -72,7 +73,8 @@ const INITIAL_DATA: OnboardingData = {
   years_in_service: '',
   business_type: '',
   service_areas: [],
-
+  crm_recipients: [],
+  
   // Resources
   logoFile: null,
   logo_url: null,
@@ -88,7 +90,7 @@ const INITIAL_DATA: OnboardingData = {
 
   // Final
   consent_accepted: false,
-
+  
   // Hidden/System
   form_id: 'waas_onboarding_v1',
   source: 'stripe_onboarding_site',
@@ -116,8 +118,9 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [serviceAreaInput, setServiceAreaInput] = useState('')
+  const [crmRecipientInput, setCrmRecipientInput] = useState('')
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
-
+  
   // TESTING MODE - Set to true to only show first step
   const TESTING_MODE = false
 
@@ -142,7 +145,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     // Clear any localStorage remnants
     localStorage.removeItem('tluca-onboarding-draft')
-
+    
     // Reset all state to initial values
     setFormData(INITIAL_DATA)
     setCurrentStep(0)
@@ -165,7 +168,7 @@ export default function OnboardingPage() {
 
   const handleFileUpload = (field: keyof OnboardingData, files: FileList | null, multiple = false) => {
     if (!files || files.length === 0) return
-
+    
     const fileArray = Array.from(files)
     const validFiles = fileArray.filter(f => {
       const isValidSize = f.size <= 10 * 1024 * 1024 // 10MB
@@ -246,6 +249,24 @@ export default function OnboardingPage() {
     updateField('service_areas', formData.service_areas.filter(a => a !== area))
   }
 
+  const addCrmRecipient = () => {
+    const email = crmRecipientInput.trim()
+    if (email && !formData.crm_recipients.includes(email)) {
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (emailRegex.test(email)) {
+        updateField('crm_recipients', [...formData.crm_recipients, email])
+        setCrmRecipientInput('')
+      } else {
+        toast.error('Please enter a valid email address')
+      }
+    }
+  }
+
+  const removeCrmRecipient = (email: string) => {
+    updateField('crm_recipients', formData.crm_recipients.filter(e => e !== email))
+  }
+
   const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData()
@@ -261,15 +282,15 @@ export default function OnboardingPage() {
         console.error('Upload failed:', response.status, errorText)
         throw new Error('Upload failed')
       }
-
+      
       const data = await response.json()
       console.log('✅ Upload successful:', data)
-
+      
       if (!data.secure_url) {
         console.error('❌ No secure_url in response:', data)
         return null
       }
-
+      
       return data.secure_url
     } catch (error) {
       console.error('Cloudinary upload error:', error)
@@ -356,7 +377,7 @@ export default function OnboardingPage() {
         form_id: 'waas_onboarding_v1',
         source: 'stripe_onboarding_site',
         submitted_at: new Date().toISOString(),
-
+        
         // Business Information
         business_name: formData.business_name,
         friendly_business_name: formData.friendly_business_name,
@@ -371,6 +392,7 @@ export default function OnboardingPage() {
         years_in_service: formData.years_in_service,
         business_type: formData.business_type,
         service_areas: formData.service_areas,
+        crm_recipients: formData.crm_recipients,
 
         // Resources
         logo_url: logoUrl || '',
@@ -452,7 +474,7 @@ export default function OnboardingPage() {
         <Link href="/" className="pointer-events-auto group flex items-center gap-2">
             <div className="p-2 bg-white/5 border border-white/10 rounded-full group-hover:border-brand/50 transition-colors">
                 <ArrowLeft size={16} className="text-silver group-hover:text-brand transition-colors"/>
-            </div>
+              </div>
             <span className="font-mono text-xs text-silver group-hover:text-white transition-colors">ABORT SEQUENCE</span>
         </Link>
         
@@ -460,8 +482,8 @@ export default function OnboardingPage() {
              <div className="flex items-center gap-2 text-brand">
                 <div className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse"></div>
                 SYSTEM: ONBOARDING
-             </div>
-        </div>
+            </div>
+            </div>
       </nav>
 
       <main className="pt-32 pb-20 relative z-10 px-4 sm:px-6">
@@ -469,7 +491,7 @@ export default function OnboardingPage() {
             <div className="mb-12 text-center">
                 <h1 className="text-4xl md:text-5xl font-bold mb-4 font-display">SYSTEM CONFIGURATION</h1>
                 <p className="text-silver font-mono text-sm md:text-base">Please provide operational parameters to initialize your deployment.</p>
-            </div>
+      </div>
 
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-8">
                 {/* Honeypot field (hidden) */}
@@ -489,19 +511,19 @@ export default function OnboardingPage() {
                         Business Identity
                     </h2>
                     <div className="grid grid-cols-1 gap-6">
-                        <div>
+                <div>
                             <Label htmlFor="business_name" className="text-silver mb-2 block font-mono text-xs uppercase">Legal Business Name *</Label>
-                            <Input
-                                id="business_name"
-                                value={formData.business_name}
-                                onChange={(e) => updateField('business_name', e.target.value)}
+                  <Input
+                    id="business_name"
+                    value={formData.business_name}
+                    onChange={(e) => updateField('business_name', e.target.value)}
                                 className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
                                 placeholder="e.g. Smith Enterprises LLC"
-                            />
+                  />
                             {errors.business_name && <p className="text-brand text-xs mt-1 font-mono">{errors.business_name}</p>}
-                        </div>
-                        
-                        <div>
+                </div>
+
+                  <div>
                             <Label htmlFor="friendly_business_name" className="text-silver mb-2 block font-mono text-xs uppercase">Friendly/Display Name</Label>
                             <Input
                                 id="friendly_business_name"
@@ -515,29 +537,29 @@ export default function OnboardingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <Label htmlFor="first_name" className="text-silver mb-2 block font-mono text-xs uppercase">Operator First Name *</Label>
-                                <Input
-                                    id="first_name"
-                                    value={formData.first_name}
-                                    onChange={(e) => updateField('first_name', e.target.value)}
+                    <Input
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => updateField('first_name', e.target.value)}
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                />
+                    />
                                 {errors.first_name && <p className="text-brand text-xs mt-1 font-mono">{errors.first_name}</p>}
-                            </div>
-                            <div>
+                  </div>
+                  <div>
                                 <Label htmlFor="last_name" className="text-silver mb-2 block font-mono text-xs uppercase">Operator Last Name *</Label>
-                                <Input
-                                    id="last_name"
-                                    value={formData.last_name}
-                                    onChange={(e) => updateField('last_name', e.target.value)}
+                    <Input
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => updateField('last_name', e.target.value)}
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                />
+                    />
                                 {errors.last_name && <p className="text-brand text-xs mt-1 font-mono">{errors.last_name}</p>}
-                            </div>
-                        </div>
+                  </div>
+                  </div>
 
-                        <div>
+                  <div>
                             <Label htmlFor="ein_number" className="text-silver mb-2 block font-mono text-xs uppercase">EIN Number (Required for A2P) *</Label>
-                            <Input
+                    <Input
                                 id="ein_number"
                                 value={formData.ein_number}
                                 onChange={(e) => updateField('ein_number', e.target.value)}
@@ -545,9 +567,9 @@ export default function OnboardingPage() {
                                 placeholder="XX-XXXXXXX"
                             />
                             {errors.ein_number && <p className="text-brand text-xs mt-1 font-mono">{errors.ein_number}</p>}
-                        </div>
+                      </div>
                     </div>
-                </div>
+                  </div>
 
                 {/* Section 2: Contact & Location */}
                 <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8">
@@ -557,9 +579,9 @@ export default function OnboardingPage() {
                     </h2>
                     <div className="grid grid-cols-1 gap-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
+                  <div>
                                 <Label htmlFor="business_phone" className="text-silver mb-2 block font-mono text-xs uppercase">Business Phone *</Label>
-                                <Input
+                    <Input
                                     id="business_phone"
                                     value={formData.business_phone}
                                     onChange={(e) => updateField('business_phone', formatPhoneNumber(e.target.value))}
@@ -572,18 +594,18 @@ export default function OnboardingPage() {
                                 <Label htmlFor="business_email" className="text-silver mb-2 block font-mono text-xs uppercase">Business Email *</Label>
                                 <Input
                                     id="business_email"
-                                    type="email"
+                      type="email"
                                     value={formData.business_email}
                                     onChange={(e) => updateField('business_email', e.target.value)}
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
                                 />
                                 {errors.business_email && <p className="text-brand text-xs mt-1 font-mono">{errors.business_email}</p>}
-                            </div>
-                        </div>
+                  </div>
+                </div>
 
-                        <div>
+                    <div>
                             <Label htmlFor="business_address" className="text-silver mb-2 block font-mono text-xs uppercase">Business Address *</Label>
-                            <Input
+                      <Input
                                 id="business_address"
                                 value={formData.business_address}
                                 onChange={(e) => updateField('business_address', e.target.value)}
@@ -591,9 +613,9 @@ export default function OnboardingPage() {
                                 placeholder="123 Main St, City, State, ZIP"
                             />
                             {errors.business_address && <p className="text-brand text-xs mt-1 font-mono">{errors.business_address}</p>}
-                        </div>
+                    </div>
 
-                        <div>
+                    <div>
                             <Label htmlFor="time_zone" className="text-silver mb-2 block font-mono text-xs uppercase">Time Zone *</Label>
                             <select
                                 id="time_zone"
@@ -612,7 +634,7 @@ export default function OnboardingPage() {
                             </select>
                             {errors.time_zone && <p className="text-brand text-xs mt-1 font-mono">{errors.time_zone}</p>}
                         </div>
-                    </div>
+                  </div>
                 </div>
 
                 {/* Section 3: Business Intelligence */}
@@ -622,7 +644,7 @@ export default function OnboardingPage() {
                         Business Intelligence
                     </h2>
                     <div className="grid grid-cols-1 gap-6">
-                        <div>
+                <div>
                             <Label htmlFor="services_offered" className="text-silver mb-2 block font-mono text-xs uppercase">Services Offered *</Label>
                             <Textarea
                                 id="services_offered"
@@ -632,25 +654,25 @@ export default function OnboardingPage() {
                                 placeholder="List all major services..."
                             />
                             {errors.services_offered && <p className="text-brand text-xs mt-1 font-mono">{errors.services_offered}</p>}
-                        </div>
+                </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
+                <div>
                                 <Label htmlFor="business_type" className="text-silver mb-2 block font-mono text-xs uppercase">Industry Type</Label>
-                                <select
-                                    id="business_type"
-                                    value={formData.business_type}
-                                    onChange={(e) => updateField('business_type', e.target.value)}
+                  <select
+                    id="business_type"
+                    value={formData.business_type}
+                    onChange={(e) => updateField('business_type', e.target.value)}
                                     className="w-full bg-black/50 border border-white/10 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                                    style={{ colorScheme: 'dark' }}
-                                >
+                    style={{ colorScheme: 'dark' }}
+                  >
                                     <option value="">SELECT INDUSTRY</option>
-                                    {BUSINESS_TYPES.map(type => (
+                    {BUSINESS_TYPES.map(type => (
                                         <option key={type} value={type} className="bg-black">{type}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
+                    ))}
+                  </select>
+                </div>
+                <div>
                                 <Label htmlFor="years_in_service" className="text-silver mb-2 block font-mono text-xs uppercase">Years in Operation</Label>
                                 <Input
                                     id="years_in_service"
@@ -659,8 +681,8 @@ export default function OnboardingPage() {
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
                                     placeholder="e.g. Since 2015"
                                 />
-                            </div>
-                        </div>
+                      </div>
+                </div>
 
                         <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">Service Areas</Label>
@@ -696,6 +718,43 @@ export default function OnboardingPage() {
                                 ))}
                             </div>
                         </div>
+
+                        <div>
+                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">CRM Access Recipients</Label>
+                            <p className="text-gray-400 text-sm mb-3">Additional emails for lead notifications (receptionists, admins, co-owners, etc.)</p>
+                            <div className="flex gap-2 mb-3">
+                                <Input
+                                    value={crmRecipientInput}
+                                    onChange={(e) => setCrmRecipientInput(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            addCrmRecipient()
+                                        }
+                                    }}
+                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                    placeholder="email@business.com"
+                                    type="email"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={addCrmRecipient}
+                                    className="bg-white text-black hover:bg-silver"
+                                >
+                                    ADD
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.crm_recipients.map((email, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
+                                        <span className="text-white text-sm font-mono">{email}</span>
+                                        <button type="button" onClick={() => removeCrmRecipient(email)} className="text-brand hover:text-white transition-colors">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -713,9 +772,9 @@ export default function OnboardingPage() {
                                 { id: 'purchase-new', label: 'New Acquisition', desc: 'Acquire new domain. I retain ownership.' },
                                 { id: 'transfer-existing', label: 'Full Transfer', desc: 'Transfer ownership & hosting to your system.' }
                             ].map((opt) => (
-                                <button
+                          <button
                                     key={opt.id}
-                                    type="button"
+                            type="button"
                                     onClick={() => updateField('domain_option', opt.id)}
                                     className={`px-6 py-4 rounded-lg border transition-all text-left group ${
                                         formData.domain_option === opt.id
@@ -725,18 +784,18 @@ export default function OnboardingPage() {
                                 >
                                     <div className={`font-bold ${formData.domain_option === opt.id ? 'text-brand' : 'text-white group-hover:text-brand transition-colors'}`}>
                                         {opt.label}
-                                    </div>
+                        </div>
                                     <div className="text-silver text-sm mt-1">{opt.desc}</div>
                                 </button>
-                            ))}
-                        </div>
+                      ))}
+                    </div>
                         {errors.domain_option && <p className="text-brand text-xs mt-1 font-mono">{errors.domain_option}</p>}
 
                         {formData.domain_option && (
                             <div className="mt-6 space-y-4 animate-accordion-down">
-                                <div>
+                <div>
                                     <Label htmlFor="desired_domain" className="text-silver mb-2 block font-mono text-xs uppercase">Target Domain URL *</Label>
-                                    <Input
+                  <Input
                                         id="desired_domain"
                                         value={formData.desired_domain}
                                         onChange={(e) => updateField('desired_domain', e.target.value)}
@@ -744,19 +803,19 @@ export default function OnboardingPage() {
                                         placeholder="e.g. mybusiness.com"
                                     />
                                     {errors.desired_domain && <p className="text-brand text-xs mt-1 font-mono">{errors.desired_domain}</p>}
-                                </div>
+                </div>
 
                                 {formData.domain_option === 'already-own' && (
-                                    <div>
+                <div>
                                         <Label htmlFor="current_domain" className="text-silver mb-2 block font-mono text-xs uppercase">Current Domain URL *</Label>
-                                        <Input
+                    <Input
                                             id="current_domain"
                                             value={formData.current_domain}
                                             onChange={(e) => updateField('current_domain', e.target.value)}
                                             className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
                                         />
                                         {errors.current_domain && <p className="text-brand text-xs mt-1 font-mono">{errors.current_domain}</p>}
-                                    </div>
+                </div>
                                 )}
 
                                 {formData.domain_option === 'transfer-existing' && (
@@ -769,13 +828,13 @@ export default function OnboardingPage() {
                                             <div className="bg-black p-3 rounded font-mono text-xs text-brand border border-brand/20">
                                                 ns1.vercel-dns.com<br />
                                                 ns2.vercel-dns.com
-                                            </div>
+                  </div>
                                             <p className="text-xs italic opacity-70">Propagation latency: 24-48 hours.</p>
-                                        </div>
-                                    </div>
+                </div>
+                      </div>
                                 )}
-                            </div>
-                        )}
+                </div>
+                )}
                     </div>
                 </div>
 
@@ -788,7 +847,7 @@ export default function OnboardingPage() {
                     
                     <div className="space-y-8">
                         {/* Logo Upload */}
-                        <div>
+                <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">Brand Logo</Label>
                             <div
                                 className="border border-dashed border-white/20 rounded-lg p-8 text-center hover:border-brand/50 hover:bg-brand/5 transition-all cursor-pointer group"
@@ -815,14 +874,14 @@ export default function OnboardingPage() {
                                             <Upload className="w-10 h-10 mx-auto text-silver group-hover:text-brand transition-colors" />
                                             <p className="text-silver group-hover:text-white">DRAG & DROP or CLICK TO UPLOAD</p>
                                             <p className="text-xs text-gray-500 font-mono">SVG/PNG preferred (Max 10MB)</p>
-                                        </div>
-                                    )}
+                    </div>
+                  )}
                                 </label>
-                            </div>
-                        </div>
+                      </div>
+                  </div>
 
                         {/* Images Upload */}
-                        <div>
+                <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">Project Images (Max 5)</Label>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                                 {formData.imageFiles.map((file, idx) => (
@@ -836,66 +895,66 @@ export default function OnboardingPage() {
                                         <input type="file" accept="image/*" multiple onChange={(e) => handleFileUpload('imageFiles', e.target.files, true)} className="absolute inset-0 opacity-0 cursor-pointer" />
                                         <Upload className="w-6 h-6 text-silver mb-2" />
                                         <span className="text-xs text-silver font-mono">UPLOAD</span>
-                                    </div>
+                  </div>
                                 )}
-                            </div>
-                        </div>
+                  </div>
+                  </div>
 
                         {/* Graphics Upload */}
-                        <div>
+                <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">Additional Graphics (Max 5)</Label>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {formData.graphicFiles.map((file, idx) => (
                                     <div key={idx} className="relative aspect-square bg-black/50 rounded border border-white/10 group overflow-hidden">
                                         <img src={imagePreviews[file.name]} alt={file.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
                                         <button type="button" onClick={() => removeFile('graphicFiles', idx)} className="absolute top-1 right-1 bg-brand text-white p-1 rounded hover:bg-brand-dark transition-colors"><X size={12} /></button>
-                                    </div>
+                      </div>
                                 ))}
                                 {formData.graphicFiles.length < 5 && (
                                     <div className="relative aspect-square bg-white/5 rounded border border-dashed border-white/20 hover:border-brand/50 hover:bg-brand/5 transition-all flex flex-col items-center justify-center cursor-pointer">
                                         <input type="file" accept="image/*" multiple onChange={(e) => handleFileUpload('graphicFiles', e.target.files, true)} className="absolute inset-0 opacity-0 cursor-pointer" />
                                         <Upload className="w-6 h-6 text-silver mb-2" />
                                         <span className="text-xs text-silver font-mono">UPLOAD</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
                     </div>
+                    )}
+                        </div>
+                </div>
+                </div>
                 </div>
 
                 {/* Final Authorization */}
                 <div className="bg-brand/5 border border-brand/20 rounded-lg p-6">
                     <div className="flex items-start gap-4">
-                        <Checkbox
-                            id="consent_accepted"
-                            checked={formData.consent_accepted}
-                            onCheckedChange={(checked) => updateField('consent_accepted', checked)}
+                    <Checkbox
+                      id="consent_accepted"
+                      checked={formData.consent_accepted}
+                      onCheckedChange={(checked) => updateField('consent_accepted', checked)}
                             className="border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white mt-1"
                         />
                         <div>
                             <Label htmlFor="consent_accepted" className="text-white cursor-pointer font-bold">
                                 AUTHORIZE DEPLOYMENT
-                            </Label>
+                    </Label>
                             <p className="text-silver text-sm mt-1">
                                 I verify all provided data is accurate and authorize TLUCA Systems to proceed with the build. I agree to the 
                                 <Link href="/terms" className="text-brand hover:underline mx-1">Terms of Service</Link>
                                 and
                                 <Link href="/privacy" className="text-brand hover:underline mx-1">Privacy Policy</Link>.
                             </p>
-                        </div>
-                    </div>
+                  </div>
+                </div>
                     {errors.consent_accepted && <p className="text-brand text-xs mt-2 font-mono ml-8">{errors.consent_accepted}</p>}
                 </div>
 
                 <div className="pt-6 flex justify-end">
-                    <Button
+              <Button
                         type="submit"
-                        disabled={isSubmitting}
+                  disabled={isSubmitting}
                         className="bg-white text-black hover:bg-brand hover:text-white font-bold text-lg px-8 py-6 rounded-none transition-all disabled:opacity-50 w-full md:w-auto"
-                    >
+                >
                         {isSubmitting ? 'INITIALIZING...' : 'INITIATE SEQUENCE'}
-                    </Button>
-                </div>
+                </Button>
+            </div>
             </form>
         </div>
       </main>
