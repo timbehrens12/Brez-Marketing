@@ -107,7 +107,7 @@ const Results: React.FC = () => {
             <div className="mt-16 pt-8 border-t border-white/10 text-center md:col-span-2">
                 <Link href="/onboarding">
                     <button className="group relative px-8 py-4 bg-brand text-white font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-all duration-300">
-                        <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+                        <span className="relative z-10 flex items-center gap-2 group-hover:text-black transition-colors duration-300">
                             GET STARTED NOW <ChevronRight className="group-hover:translate-x-1 transition-transform" />
                         </span>
                         <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
