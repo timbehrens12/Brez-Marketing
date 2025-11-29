@@ -50,7 +50,7 @@ const AdsPage: React.FC = () => {
       icon: <Facebook className="w-8 h-8 text-brand" />,
       title: 'Meta Ads',
       subtitle: 'DEMAND GENERATION',
-      desc: 'Pattern-interrupt creative that stops the scroll and fills your funnel.',
+      desc: 'Scroll-stopping creative engineered to generate demand.',
       features: [
         'Lead Forms & Messaging',
         'Retargeting Visitors',
@@ -143,8 +143,8 @@ const AdsPage: React.FC = () => {
               },
               {
                 icon: <TrendingUp />,
-                title: "Performance-Based",
-                desc: "We only get paid when you get results. True alignment with your success."
+                title: "Performance-Driven",
+                desc: "Our campaigns are engineered for ROI, not vanity metrics."
               },
               {
                 icon: <BarChart3 />,
@@ -153,8 +153,8 @@ const AdsPage: React.FC = () => {
               },
               {
                 icon: <Award />,
-                title: "Award-Winning",
-                desc: "Recognized by Google, Meta, and industry leaders for campaign excellence."
+                title: "Platform-Recognized",
+                desc: "Built using best practices from top Google & Meta advertisers."
               }
             ].map((item, i) => (
               <motion.div
@@ -381,11 +381,16 @@ const AdsPage: React.FC = () => {
           Stop wasting money on ads that don't convert. Get qualified leads that turn into customers.
         </p>
 
+        <div className="mb-8 text-center">
+          <h3 className="font-display text-xl text-white mb-2">Simple Pricing</h3>
+          <p className="font-mono text-silver/80">Flat monthly fee + your ad spend. No hidden charges.</p>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-6 items-center">
           <Link href="/onboarding">
             <button className="group relative px-10 py-5 bg-brand text-white font-display font-bold text-lg tracking-wider overflow-hidden hover:scale-105 transition-transform duration-300">
               <span className="relative z-10 flex items-center gap-2 group-hover:text-black transition-colors duration-300">
-                START YOUR CAMPAIGN <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                APPLY TO START YOUR CAMPAIGN <ChevronRight className="group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-0" />
             </button>
