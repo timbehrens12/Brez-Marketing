@@ -40,7 +40,7 @@ type OnboardingData = {
   graphic_urls: string[]
 
   // Domain
-  domain_option: 'already-own' | 'purchase-new' | 'transfer-existing' | ''
+  domain_option: 'existing-domain' | 'purchase-new' | 'transfer-existing' | ''
   desired_domain: string
   current_domain: string
 
@@ -344,7 +344,7 @@ export default function OnboardingPage() {
       // Years in service and business type are optional but valuable
       if (!formData.domain_option) newErrors.domain_option = 'Domain option is required'
       if (formData.domain_option && !formData.desired_domain.trim()) newErrors.desired_domain = 'Desired domain is required'
-      if (formData.domain_option === 'already-own' && !formData.current_domain.trim()) newErrors.current_domain = 'Current domain is required'
+      if (formData.domain_option === 'transfer-existing' && !formData.current_domain.trim()) newErrors.current_domain = 'Current domain is required'
       if (!formData.consent_accepted) newErrors.consent_accepted = 'You must accept the terms'
     }
 
@@ -876,9 +876,9 @@ export default function OnboardingPage() {
                         <Label className="text-silver mb-2 block font-mono text-xs uppercase">Configuration Protocol *</Label>
                         <div className="grid grid-cols-1 gap-3">
                             {[
-                                { id: 'already-own', label: 'Existing Domain (Host Only)', desc: 'I own the domain, you handle hosting.' },
-                                { id: 'purchase-new', label: 'New Acquisition', desc: 'Acquire new domain. I retain ownership.' },
-                                { id: 'transfer-existing', label: 'Full Transfer', desc: 'Transfer ownership & hosting to your system.' }
+                                { id: 'existing-domain', label: 'I Already Have a Domain', desc: 'I own a domain and will connect it myself.' },
+                                { id: 'purchase-new', label: 'Purchase New Domain', desc: 'Buy a new domain for me (I will own it).' },
+                                { id: 'transfer-existing', label: 'Transfer My Existing Domain', desc: 'Transfer ownership of my existing domain to you.' }
                             ].map((opt) => (
                           <button
                                     key={opt.id}
@@ -913,7 +913,7 @@ export default function OnboardingPage() {
                                     {errors.desired_domain && <p className="text-brand text-xs mt-1 font-mono">{errors.desired_domain}</p>}
                 </div>
 
-                                {formData.domain_option === 'already-own' && (
+                                {formData.domain_option === 'transfer-existing' && (
                 <div>
                                         <Label htmlFor="current_domain" className="text-silver mb-2 block font-mono text-xs uppercase">Current Domain URL *</Label>
                     <Input
@@ -928,18 +928,12 @@ export default function OnboardingPage() {
 
                                 {formData.domain_option === 'transfer-existing' && (
                                     <div className="bg-brand/5 border border-brand/20 rounded-lg p-4 mt-4">
-                                        <h4 className="text-brand font-bold mb-2 font-mono text-sm uppercase">Transfer Protocol</h4>
+                                        <h4 className="text-brand font-bold mb-2 font-mono text-sm uppercase">Domain Transfer Process</h4>
                                         <div className="text-silver text-sm space-y-2">
-                                            <p>1. Access current registrar (GoDaddy, Namecheap, etc.)</p>
-                                            <p>2. Locate DNS / Name Server settings.</p>
-                                            <p>3. Update Name Servers to:</p>
-                                            <div className="bg-black p-3 rounded font-mono text-xs text-brand border border-brand/20">
-                                                ns1.vercel-dns.com<br />
-                                                ns2.vercel-dns.com
-                  </div>
-                                            <p className="text-xs italic opacity-70">Propagation latency: 24-48 hours.</p>
-                </div>
-                      </div>
+                                            <p>We'll initiate the domain ownership transfer process. You'll receive an email from your current registrar with transfer instructions.</p>
+                                            <p className="text-xs italic opacity-70">Transfer typically takes 5-7 days to complete.</p>
+                                        </div>
+                                    </div>
                                 )}
                 </div>
                 )}
