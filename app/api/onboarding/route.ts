@@ -176,43 +176,42 @@ Submitted: ${submissionTimestamp}
 
         // Format task description with all onboarding data
         const clickupDescription = `
-# 🎉 New Website Build Request
+NEW WEBSITE BUILD REQUEST
 
-## 👤 Client Information
-**Name:** ${fullName}
-**Business:** ${data.business_name}
-**Friendly Name:** ${data.friendly_business_name || 'N/A'}
-**EIN:** ${data.ein_number || 'N/A'}
-**Email:** ${data.business_email}
-**Phone:** ${data.business_phone}
-**Address:** ${data.business_address || 'N/A'}
-**Time Zone:** ${data.time_zone || 'N/A'}
-**Years in Service:** ${data.years_in_service || 'N/A'}
-**Business Type:** ${data.business_type || 'N/A'}
+CLIENT INFORMATION:
+Name: ${fullName}
+Business: ${data.business_name}
+${data.friendly_business_name ? `Friendly Name: ${data.friendly_business_name}` : ''}
+${data.ein_number ? `EIN: ${data.ein_number}` : ''}
+Email: ${data.business_email}
+Phone: ${data.business_phone}
+${data.business_address ? `Address: ${data.business_address}` : ''}
+${data.time_zone ? `Time Zone: ${data.time_zone}` : ''}
+${data.years_in_service ? `Years in Service: ${data.years_in_service}` : ''}
+${data.business_type ? `Business Type: ${data.business_type}` : ''}
 
-## 🛠️ Services Offered
+SERVICES OFFERED:
 ${data.services_offered || 'Not specified'}
 
-## 📍 Service Areas
+SERVICE AREAS:
 ${(data.service_areas || []).join(', ') || 'Not specified'}
 
-## 📞 CRM Contact Recipients
-**Business Owner:** ${data.business_owner_phone || 'Not specified'}
-${(data.crm_recipients || []).length > 0 ? `**Additional Recipients:**\n${data.crm_recipients.map((r: any) => `- ${r.label}: ${r.phone}`).join('\n')}` : ''}
+CRM CONTACT RECIPIENTS:
+Business Owner: ${data.business_owner_phone || 'Not specified'}
+${(data.crm_recipients || []).length > 0 ? `Additional Recipients:\n${data.crm_recipients.map((r: any) => `- ${r.label}: ${r.phone}`).join('\n')}` : ''}
 
-## 🔗 Domain Configuration
-**Domain Option:** ${data.domain_option || 'Not specified'}
-**Desired Domain:** ${data.desired_domain || 'Not specified'}
-${data.current_domain ? `**Current Domain:** ${data.current_domain}` : ''}
+DOMAIN CONFIGURATION:
+Domain Option: ${data.domain_option || 'Not specified'}
+Desired Domain: ${data.desired_domain || 'Not specified'}
+${data.current_domain ? `Current Domain: ${data.current_domain}` : ''}
 
-## 🎨 Digital Assets
-${data.logo_url ? `**Logo:** ${data.logo_url}` : '**Logo:** Not provided'}
-${data.image_urls && data.image_urls.length > 0 ? `**Images (${data.image_urls.length}):**\n${data.image_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Images:** None provided'}
-${data.graphic_urls && data.graphic_urls.length > 0 ? `**Graphics (${data.graphic_urls.length}):**\n${data.graphic_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Graphics:** None provided'}
+DIGITAL ASSETS:
+${data.logo_url ? `Logo: ${data.logo_url}` : 'Logo: Not provided'}
+${data.image_urls && data.image_urls.length > 0 ? `Images (${data.image_urls.length}):\n${data.image_urls.map((url: string) => `- ${url}`).join('\n')}` : 'Images: None provided'}
+${data.graphic_urls && data.graphic_urls.length > 0 ? `Graphics (${data.graphic_urls.length}):\n${data.graphic_urls.map((url: string) => `- ${url}`).join('\n')}` : 'Graphics: None provided'}
 
----
-**Submitted:** ${submissionTimestamp}
-**Consent Accepted:** ${data.consent_accepted ? 'Yes' : 'No'}
+Submitted: ${submissionTimestamp}
+Consent Accepted: ${data.consent_accepted ? 'Yes' : 'No'}
         `.trim()
 
         // Build payload - ClickUp API is picky about field names
