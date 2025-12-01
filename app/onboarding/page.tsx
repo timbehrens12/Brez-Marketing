@@ -24,10 +24,11 @@ type OnboardingData = {
   business_email: string
   business_address: string
   time_zone: string
-  services_offered: string
+  services_offered: string[]
   years_in_service: string
   business_type: string
   service_areas: string[]
+  business_owner_phone: string
   crm_recipients: { label: string; phone: string }[]
   
   // Resources
@@ -69,10 +70,11 @@ const INITIAL_DATA: OnboardingData = {
   business_email: '',
   business_address: '',
   time_zone: '',
-  services_offered: '',
+  services_offered: [],
   years_in_service: '',
   business_type: '',
   service_areas: [],
+  business_owner_phone: '',
   crm_recipients: [],
   
   // Resources
@@ -118,9 +120,10 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreviews, setImagePreviews] = useState<ImagePreviews>({})
   const [serviceAreaInput, setServiceAreaInput] = useState('')
+  const [serviceInput, setServiceInput] = useState('')
   const [phoneLabel, setPhoneLabel] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [justMeNotifications, setJustMeNotifications] = useState(false)
+  const [showAdditionalRecipients, setShowAdditionalRecipients] = useState(false)
   const [operatorCode, setOperatorCode] = useState<string | null>(null)
   
   // TESTING MODE - Set to true to only show first step
@@ -251,6 +254,19 @@ export default function OnboardingPage() {
     updateField('service_areas', formData.service_areas.filter(a => a !== area))
   }
 
+  // Services offered chip management
+  const addService = () => {
+    const service = serviceInput.trim()
+    if (service && !formData.services_offered.includes(service)) {
+      updateField('services_offered', [...formData.services_offered, service])
+      setServiceInput('')
+    }
+  }
+
+  const removeService = (service: string) => {
+    updateField('services_offered', formData.services_offered.filter(s => s !== service))
+  }
+
   const addPhoneRecipient = () => {
     const label = phoneLabel.trim()
     const phone = phoneNumber.trim()
@@ -323,7 +339,8 @@ export default function OnboardingPage() {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.business_email)) newErrors.business_email = 'Invalid email'
       if (!formData.business_address.trim()) newErrors.business_address = 'Business address is required'
       if (!formData.time_zone.trim()) newErrors.time_zone = 'Time zone is required'
-      if (!formData.services_offered.trim()) newErrors.services_offered = 'Services offered is required'
+      if (!formData.services_offered.length) newErrors.services_offered = 'Services offered is required'
+      if (!formData.business_owner_phone.trim()) newErrors.business_owner_phone = 'Business owner phone is required'
       // Years in service and business type are optional but valuable
       if (!formData.domain_option) newErrors.domain_option = 'Domain option is required'
       if (formData.domain_option && !formData.desired_domain.trim()) newErrors.desired_domain = 'Desired domain is required'
@@ -400,10 +417,11 @@ export default function OnboardingPage() {
         business_email: formData.business_email,
         business_address: formData.business_address,
         time_zone: formData.time_zone,
-        services_offered: formData.services_offered,
+        services_offered: formData.services_offered.join(', '),
         years_in_service: formData.years_in_service,
         business_type: formData.business_type,
         service_areas: formData.service_areas,
+        business_owner_phone: formData.business_owner_phone,
         crm_recipients: formData.crm_recipients,
 
         // Resources
@@ -649,24 +667,48 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Section 3: Business Intelligence */}
+                {/* Section 3: Business Information */}
                 <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8">
                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <div className="w-1 h-6 bg-brand rounded-full"></div>
-                        Business Intelligence
+                        Business Information
                     </h2>
                     <div className="grid grid-cols-1 gap-6">
-                <div>
-                            <Label htmlFor="services_offered" className="text-silver mb-2 block font-mono text-xs uppercase">Services Offered *</Label>
-                            <Textarea
-                                id="services_offered"
-                                value={formData.services_offered}
-                                onChange={(e) => updateField('services_offered', e.target.value)}
-                                className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all min-h-[100px]"
-                                placeholder="List all major services..."
-                            />
+                        <div>
+                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">Services Offered *</Label>
+                            <div className="flex gap-2 mb-3">
+                                <Input
+                                    value={serviceInput}
+                                    onChange={(e) => setServiceInput(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            addService()
+                                        }
+                                    }}
+                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                    placeholder="e.g. Residential roofing"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={addService}
+                                    className="bg-white text-black hover:bg-silver"
+                                >
+                                    ADD
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.services_offered.map((service, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
+                                        <span className="text-white text-sm font-mono">{service}</span>
+                                        <button type="button" onClick={() => removeService(service)} className="text-brand hover:text-white transition-colors">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                             {errors.services_offered && <p className="text-brand text-xs mt-1 font-mono">{errors.services_offered}</p>}
-                </div>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -732,70 +774,84 @@ export default function OnboardingPage() {
                         </div>
 
                         <div>
-                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">CRM Access Phone Recipients</Label>
-                            <p className="text-gray-400 text-sm mb-3">Phone numbers for lead notifications (receptionists, admins, co-owners, etc.)</p>
+                            <Label className="text-silver mb-2 block font-mono text-xs uppercase">Lead Notification Recipients</Label>
+                            <p className="text-gray-400 text-sm mb-4">Phone numbers that will receive lead notifications from your CRM system.</p>
 
-                            <div className="flex items-center gap-3 mb-4">
-                                <input
-                                    type="checkbox"
-                                    id="just-me-notifications"
-                                    checked={justMeNotifications}
-                                    onChange={(e) => {
-                                        setJustMeNotifications(e.target.checked)
-                                        if (e.target.checked) {
-                                            // Clear all recipients when "just me" is selected
-                                            updateField('crm_recipients', [])
-                                            setPhoneLabel('')
-                                            setPhoneNumber('')
-                                        }
-                                    }}
-                                    className="w-4 h-4 text-brand bg-gray-100 border-gray-300 rounded focus:ring-brand focus:ring-2"
+                            {/* Business Owner Section - Always Required */}
+                            <div className="mb-6">
+                                <Label htmlFor="business_owner_phone" className="text-silver mb-2 block font-mono text-xs uppercase">Business Owner Phone *</Label>
+                                <Input
+                                    id="business_owner_phone"
+                                    value={formData.business_owner_phone}
+                                    onChange={(e) => updateField('business_owner_phone', formatPhoneNumber(e.target.value))}
+                                    className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                    placeholder="(555) 123-4567"
+                                    type="tel"
                                 />
-                                <label htmlFor="just-me-notifications" className="text-white text-sm font-medium cursor-pointer">
-                                    Just me - only the business owner receives notifications
-                                </label>
+                                {errors.business_owner_phone && <p className="text-brand text-xs mt-1 font-mono">{errors.business_owner_phone}</p>}
                             </div>
-                            {!justMeNotifications && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                                    <Input
-                                        value={phoneLabel}
-                                        onChange={(e) => setPhoneLabel(e.target.value)}
-                                        onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                addPhoneRecipient()
-                                            }
-                                        }}
-                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                        placeholder="Role (e.g., Receptionist)"
-                                        disabled={justMeNotifications}
-                                    />
-                                    <Input
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                addPhoneRecipient()
-                                            }
-                                        }}
-                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                        placeholder="(555) 123-4567"
-                                        type="tel"
-                                        disabled={justMeNotifications}
-                                    />
-                                    <Button
-                                        type="button"
-                                        onClick={addPhoneRecipient}
-                                        className="bg-white text-black hover:bg-silver disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={justMeNotifications}
-                                    >
-                                        ADD
-                                    </Button>
+
+                            {/* Add More Recipients Button */}
+                            <div className="mb-4">
+                                <Button
+                                    type="button"
+                                    onClick={() => setShowAdditionalRecipients(!showAdditionalRecipients)}
+                                    variant="outline"
+                                    className="bg-transparent border-white/20 text-white hover:bg-white/5 hover:border-brand/50"
+                                >
+                                    {showAdditionalRecipients ? 'Hide Additional Recipients' : 'Add More Recipients'}
+                                </Button>
+                                <p className="text-gray-400 text-xs mt-2">Add co-owners, receptionists, or other team members to receive notifications</p>
+                            </div>
+
+                            {/* Additional Recipients Form */}
+                            {showAdditionalRecipients && (
+                                <div className="border border-white/10 rounded-lg p-4 mb-4 bg-black/20">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                                        <Input
+                                            value={phoneLabel}
+                                            onChange={(e) => setPhoneLabel(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault()
+                                                    addPhoneRecipient()
+                                                }
+                                            }}
+                                            className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                            placeholder="Role (e.g., Receptionist)"
+                                        />
+                                        <Input
+                                            value={phoneNumber}
+                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault()
+                                                    addPhoneRecipient()
+                                                }
+                                            }}
+                                            className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                            placeholder="(555) 123-4567"
+                                            type="tel"
+                                        />
+                                        <Button
+                                            type="button"
+                                            onClick={addPhoneRecipient}
+                                            className="bg-white text-black hover:bg-silver"
+                                        >
+                                            ADD
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
-                            {!justMeNotifications && formData.crm_recipients.length > 0 && (
+
+                            {/* Display All Recipients */}
+                            {(formData.business_owner_phone || formData.crm_recipients.length > 0) && (
                                 <div className="flex flex-wrap gap-2">
+                                    {formData.business_owner_phone && (
+                                        <div className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
+                                            <span className="text-white text-sm font-mono">Business Owner: {formData.business_owner_phone}</span>
+                                        </div>
+                                    )}
                                     {formData.crm_recipients.map((recipient, idx) => (
                                         <div key={idx} className="flex items-center gap-2 bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
                                             <span className="text-white text-sm font-mono">{recipient.label}: {recipient.phone}</span>
