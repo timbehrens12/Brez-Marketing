@@ -63,34 +63,59 @@ ${data.graphic_urls && data.graphic_urls.length > 0 ? `Graphics (${data.graphic_
 Submitted: ${submissionTimestamp}
     `.trim()
 
-        // Create/Update Contact in GoHighLevel
-        const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
+        // Debug logging for GHL contact creation
+        console.log('🔍 GHL Contact Data:', {
+          firstName,
+          lastName,
+          fullName,
+          business_email: data.business_email,
+          business_owner_phone: data.business_owner_phone,
+          business_phone: data.business_phone,
+          business_name: data.business_name,
+          business_address: data.business_address,
+          source: data.source
+        })
+
+        const ghlContactPayload = {
+          locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
+          firstName: firstName,
+          lastName: lastName,
+          name: fullName, // GHL might prefer this
+          email: data.business_email,
+          phone: data.business_owner_phone || data.business_phone,
+          companyName: data.business_name,
+          address1: data.business_address,
+          source: data.source || 'stripe_onboarding_site',
+          tags: ['Onboarding', 'Website Build'],
+          customFields: [
+            { key: 'services_offered', value: data.services_offered || '' },
+            { key: 'service_areas', value: (data.service_areas || []).join(', ') },
+            { key: 'business_type', value: data.business_type || '' },
+            { key: 'years_in_service', value: data.years_in_service || '' },
+            { key: 'friendly_business_name', value: data.friendly_business_name || '' },
+            { key: 'ein_number', value: data.ein_number || '' },
+            { key: 'time_zone', value: data.time_zone || '' },
+          ],
+        }
+
+        console.log('🔵 GHL Contact Payload:', JSON.stringify(ghlContactPayload, null, 2))
+
+        const ghlContactResponse = await fetch(`https://rest.gohighLevel.com/v1/contacts/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
-            firstName: firstName,
-            lastName: lastName,
-            email: data.business_email,
-            phone: data.business_owner_phone || data.business_phone,
-            companyName: data.business_name,
-            address1: data.business_address,
-            source: data.source || 'stripe_onboarding_site',
-            tags: ['Onboarding', 'Website Build'],
-            customFields: [
-              { key: 'services_offered', value: data.services_offered || '' },
-              { key: 'service_areas', value: (data.service_areas || []).join(', ') },
-              { key: 'business_type', value: data.business_type || '' },
-              { key: 'years_in_service', value: data.years_in_service || '' },
-              { key: 'friendly_business_name', value: data.friendly_business_name || '' },
-              { key: 'ein_number', value: data.ein_number || '' },
-              { key: 'time_zone', value: data.time_zone || '' },
-            ],
-          }),
+          body: JSON.stringify(ghlContactPayload),
         })
+
+        console.log('🔵 GHL Contact Response Status:', ghlContactResponse.status)
+
+        if (!ghlContactResponse.ok) {
+          const errorText = await ghlContactResponse.text()
+          console.error('❌ GHL Contact Creation Failed:', ghlContactResponse.status, errorText)
+          throw new Error(`GHL Contact creation failed: ${ghlContactResponse.status}`)
+        }
 
         if (ghlContactResponse.ok) {
           const ghlContact = await ghlContactResponse.json()
