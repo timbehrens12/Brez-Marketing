@@ -468,13 +468,13 @@ export default function OnboardingPage() {
               <CheckCircle2 className="w-12 h-12 text-brand" />
             </div>
             <div>
-              <CardTitle className="text-4xl font-bold text-white mb-4 font-display">INITIATION COMPLETE</CardTitle>
+              <CardTitle className="text-4xl font-bold text-white mb-4 font-display">ONBOARDING COMPLETE</CardTitle>
               <CardDescription className="text-gray-400 text-xl leading-relaxed space-y-4 font-mono">
                 <p>
-                  System parameters received. Deployment sequence initiating. You will receive status updates via secure transmission (SMS).
+                  Thank you for submitting your information. Your onboarding is now complete and our team will begin processing your request. You'll receive updates via SMS and email.
                 </p>
                 <p className="text-silver text-lg">
-                  If parameters need adjustment, contact command at {formData.business_email}.
+                  If you need to make any changes to your information, please contact us at {formData.business_email}.
                 </p>
               </CardDescription>
             </div>
@@ -486,7 +486,7 @@ export default function OnboardingPage() {
                 onClick={() => router.push('/')}
                 className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-6 text-lg"
               >
-                RETURN TO BASE
+                RETURN HOME
               </Button>
             </div>
           </CardContent>
@@ -505,13 +505,13 @@ export default function OnboardingPage() {
             <div className="p-2 bg-white/5 border border-white/10 rounded-full group-hover:border-brand/50 transition-colors">
                 <ArrowLeft size={16} className="text-silver group-hover:text-brand transition-colors"/>
               </div>
-            <span className="font-mono text-xs text-silver group-hover:text-white transition-colors">ABORT SEQUENCE</span>
+            <span className="font-mono text-xs text-silver group-hover:text-white transition-colors">CANCEL</span>
         </Link>
         
         <div className="hidden md:flex space-x-8 font-mono text-xs pointer-events-auto">
              <div className="flex items-center gap-2 text-brand">
                 <div className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse"></div>
-                SYSTEM: ONBOARDING
+                ONBOARDING
             </div>
             </div>
       </nav>
@@ -519,8 +519,8 @@ export default function OnboardingPage() {
       <main className="pt-32 pb-20 relative z-10 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
             <div className="mb-12 text-center">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 font-display">SYSTEM CONFIGURATION</h1>
-                <p className="text-silver font-mono text-sm md:text-base">Please provide operational parameters to initialize your deployment.</p>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 font-display">BUSINESS ONBOARDING</h1>
+                <p className="text-silver font-mono text-sm md:text-base">Please provide your business information to get started with your website project.</p>
       </div>
 
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-8">
@@ -1041,7 +1041,7 @@ export default function OnboardingPage() {
                         />
                         <div>
                             <Label htmlFor="consent_accepted" className="text-white cursor-pointer font-bold">
-                                AUTHORIZE DEPLOYMENT
+                                SUBMIT ONBOARDING
                     </Label>
                             <p className="text-silver text-sm mt-1">
                                 I verify all provided data is accurate and authorize TLUCA Systems to proceed with the build. I agree to the 
@@ -1060,7 +1060,7 @@ export default function OnboardingPage() {
                   disabled={isSubmitting}
                         className="bg-white text-black hover:bg-brand hover:text-white font-bold text-lg px-8 py-6 rounded-none transition-all disabled:opacity-50 w-full md:w-auto"
                 >
-                        {isSubmitting ? 'INITIALIZING...' : 'INITIATE SEQUENCE'}
+                        {isSubmitting ? 'SUBMITTING...' : 'COMPLETE ONBOARDING'}
                 </Button>
             </div>
             </form>
