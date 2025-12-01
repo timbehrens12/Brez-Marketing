@@ -25,6 +25,19 @@ export async function POST(req: NextRequest) {
     const fullName = `${firstName} ${lastName}`.trim()
     const submissionTimestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
+    // Debug logging for GHL contact creation
+    console.log('🔍 GHL Contact Data:', {
+      firstName,
+      lastName,
+      fullName,
+      business_email: data.business_email,
+      business_owner_phone: data.business_owner_phone,
+      business_phone: data.business_phone,
+      business_name: data.business_name,
+      business_address: data.business_address,
+      source: data.source
+    })
+
     // Sync to GoHighLevel (if credentials are configured)
     if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
       try {
@@ -87,7 +100,7 @@ Submitted: ${submissionTimestamp}
 
         console.log('🔵 GHL Contact Payload:', JSON.stringify(ghlContactPayload, null, 2))
 
-        const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
+        const ghlContactResponse = await fetch(`https://rest.gohighLevel.com/v1/contacts/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
