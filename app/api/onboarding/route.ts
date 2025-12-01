@@ -25,19 +25,6 @@ export async function POST(req: NextRequest) {
     const fullName = `${firstName} ${lastName}`.trim()
     const submissionTimestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
-    // Debug logging for GHL contact creation
-    console.log('🔍 GHL Contact Data:', {
-      firstName,
-      lastName,
-      fullName,
-      business_email: data.business_email,
-      business_owner_phone: data.business_owner_phone,
-      business_phone: data.business_phone,
-      business_name: data.business_name,
-      business_address: data.business_address,
-      source: data.source
-    })
-
     // Sync to GoHighLevel (if credentials are configured)
     if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
       try {
@@ -77,45 +64,33 @@ Submitted: ${submissionTimestamp}
     `.trim()
 
         // Create/Update Contact in GoHighLevel
-        const ghlContactPayload = {
-          locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
-          firstName: firstName,
-          lastName: lastName,
-          email: data.business_email,
-          phone: data.business_owner_phone || data.business_phone,
-          companyName: data.business_name,
-          address1: data.business_address,
-          source: data.source || 'stripe_onboarding_site',
-          tags: ['Onboarding', 'Website Build'],
-          customFields: [
-            { key: 'services_offered', value: data.services_offered || '' },
-            { key: 'service_areas', value: (data.service_areas || []).join(', ') },
-            { key: 'business_type', value: data.business_type || '' },
-            { key: 'years_in_service', value: data.years_in_service || '' },
-            { key: 'friendly_business_name', value: data.friendly_business_name || '' },
-            { key: 'ein_number', value: data.ein_number || '' },
-            { key: 'time_zone', value: data.time_zone || '' },
-          ],
-        }
-
-        console.log('🔵 GHL Contact Payload:', JSON.stringify(ghlContactPayload, null, 2))
-
-        const ghlContactResponse = await fetch(`https://rest.gohighLevel.com/v1/contacts/`, {
+        const ghlContactResponse = await fetch(`https://rest.gohighlevel.com/v1/contacts/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.GOHIGHLEVEL_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(ghlContactPayload),
+          body: JSON.stringify({
+            locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
+            firstName: firstName,
+            lastName: lastName,
+            email: data.business_email,
+            phone: data.business_owner_phone || data.business_phone,
+            companyName: data.business_name,
+            address1: data.business_address,
+            source: data.source || 'stripe_onboarding_site',
+            tags: ['Onboarding', 'Website Build'],
+            customFields: [
+              { key: 'services_offered', value: data.services_offered || '' },
+              { key: 'service_areas', value: (data.service_areas || []).join(', ') },
+              { key: 'business_type', value: data.business_type || '' },
+              { key: 'years_in_service', value: data.years_in_service || '' },
+              { key: 'friendly_business_name', value: data.friendly_business_name || '' },
+              { key: 'ein_number', value: data.ein_number || '' },
+              { key: 'time_zone', value: data.time_zone || '' },
+            ],
+          }),
         })
-
-        console.log('🔵 GHL Contact Response Status:', ghlContactResponse.status)
-
-        if (!ghlContactResponse.ok) {
-          const errorText = await ghlContactResponse.text()
-          console.error('❌ GHL Contact Creation Failed:', ghlContactResponse.status, errorText)
-          throw new Error(`GHL Contact creation failed: ${ghlContactResponse.status}`)
-        }
 
         if (ghlContactResponse.ok) {
           const ghlContact = await ghlContactResponse.json()
@@ -159,37 +134,25 @@ Submitted: ${submissionTimestamp}
     // Send to GoHighLevel webhook (if configured) - send payload as-is per spec
     if (process.env.GOHIGHLEVEL_WEBHOOK_URL) {
       try {
-        const webhookPayload = {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.business_email,
-          phone: data.business_owner_phone || data.business_phone,
-          companyName: data.business_name,
-          address: data.business_address,
-          source: data.source || 'stripe_onboarding_site',
-
-          // Send all data according to spec (payload already formatted correctly)
-          ...data,
-        }
-
-        console.log('🔵 GHL Webhook Payload:', JSON.stringify(webhookPayload, null, 2))
-
-        const webhookResponse = await fetch(process.env.GOHIGHLEVEL_WEBHOOK_URL, {
+        await fetch(process.env.GOHIGHLEVEL_WEBHOOK_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(webhookPayload),
+          body: JSON.stringify({
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.business_email,
+            phone: data.business_owner_phone || data.business_phone,
+            companyName: data.business_name,
+            address: data.business_address,
+            source: data.source || 'stripe_onboarding_site',
+            
+            // Send all data according to spec (payload already formatted correctly)
+            ...data,
+          }),
         })
-
-        console.log('🔵 GHL Webhook Response Status:', webhookResponse.status)
-
-        if (!webhookResponse.ok) {
-          const errorText = await webhookResponse.text()
-          console.error('❌ GHL Webhook Failed:', webhookResponse.status, errorText)
-        } else {
-          console.log('✅ Sent to GoHighLevel webhook successfully')
-        }
+        console.log('✅ Sent to GoHighLevel webhook')
       } catch (ghlWebhookError) {
         console.error('GoHighLevel webhook error (non-fatal):', ghlWebhookError)
         // Don't fail the whole request if GHL webhook fails

@@ -674,7 +674,7 @@ export default function OnboardingPage() {
                         Business Information
                     </h2>
                     <div className="grid grid-cols-1 gap-6">
-                        <div>
+                <div>
                             <Label className="text-silver mb-2 block font-mono text-xs uppercase">Services Offered *</Label>
                             <div className="flex gap-2 mb-3">
                                 <Input
@@ -708,7 +708,7 @@ export default function OnboardingPage() {
                                 ))}
                             </div>
                             {errors.services_offered && <p className="text-brand text-xs mt-1 font-mono">{errors.services_offered}</p>}
-                        </div>
+                </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -807,39 +807,39 @@ export default function OnboardingPage() {
                             {/* Additional Recipients Form */}
                             {showAdditionalRecipients && (
                                 <div className="border border-white/10 rounded-lg p-4 mb-4 bg-black/20">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                                        <Input
-                                            value={phoneLabel}
-                                            onChange={(e) => setPhoneLabel(e.target.value)}
-                                            onKeyPress={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault()
-                                                    addPhoneRecipient()
-                                                }
-                                            }}
-                                            className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                            placeholder="Role (e.g., Receptionist)"
-                                        />
-                                        <Input
-                                            value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
-                                            onKeyPress={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault()
-                                                    addPhoneRecipient()
-                                                }
-                                            }}
-                                            className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                            placeholder="(555) 123-4567"
-                                            type="tel"
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={addPhoneRecipient}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                                    <Input
+                                        value={phoneLabel}
+                                        onChange={(e) => setPhoneLabel(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addPhoneRecipient()
+                                            }
+                                        }}
+                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                        placeholder="Role (e.g., Receptionist)"
+                                    />
+                                    <Input
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addPhoneRecipient()
+                                            }
+                                        }}
+                                        className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
+                                        placeholder="(555) 123-4567"
+                                        type="tel"
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={addPhoneRecipient}
                                             className="bg-white text-black hover:bg-silver"
-                                        >
-                                            ADD
-                                        </Button>
+                                    >
+                                        ADD
+                                    </Button>
                                     </div>
                                 </div>
                             )}
