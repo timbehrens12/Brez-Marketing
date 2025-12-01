@@ -4,8 +4,8 @@ export async function POST(req: NextRequest) {
   try {
     const data = await req.json()
 
-    // Validate required fields (new spec structure)
-    if (!data.business_name || !data.first_name || !data.last_name || !data.contact_email) {
+    // Validate required fields
+    if (!data.business_name || !data.first_name || !data.last_name || !data.business_email) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -35,45 +35,29 @@ export async function POST(req: NextRequest) {
 📋 BUSINESS INFORMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Business Name: ${data.business_name}
+Friendly Name: ${data.friendly_business_name || 'N/A'}
 Owner: ${fullName}
-Email: ${data.contact_email}
-Phone: ${data.contact_phone}
-City: ${data.business_city}
-State: ${data.business_state}
-Years in Service: ${data.years_in_service}
-Business Type: ${data.business_type}
+EIN: ${data.ein_number || 'N/A'}
+Email: ${data.business_email}
+Phone: ${data.business_phone}
+Address: ${data.business_address || 'N/A'}
+Time Zone: ${data.time_zone || 'N/A'}
 
-Services: ${(data.services_primary || []).join(', ')}
-${data.services_secondary ? `Other Services: ${data.services_secondary}` : ''}
+Services Offered: ${data.services_offered || 'N/A'}
+Years in Service: ${data.years_in_service || 'N/A'}
+Business Type: ${data.business_type || 'N/A'}
+Service Areas: ${(data.service_areas || []).join(', ') || 'N/A'}
 
-Market Type: ${data.market_type}
-Service Areas: ${(data.service_areas || []).join(', ')}
+Business Owner Phone: ${data.business_owner_phone || 'N/A'}
+CRM Recipients: ${(data.crm_recipients || []).map((r: any) => `${r.label}: ${r.phone}`).join(', ') || 'None'}
 
-About: ${data.about_text}
-${data.tagline ? `Tagline: ${data.tagline}` : ''}
+Domain Option: ${data.domain_option || 'N/A'}
+Desired Domain: ${data.desired_domain || 'N/A'}
+${data.current_domain ? `Current Domain: ${data.current_domain}` : ''}
 
-Site Contact:
-Phone: ${data.site_phone}
-Email: ${data.site_email}
-Preferred Contact: ${data.preferred_contact}
-
-Business Hours:
-${data.business_hours ? Object.entries(data.business_hours).map(([day, hours]: [string, any]) => 
-  `  ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
-).join('\n') : '—'}
-
-Social:
-${data.facebook_url ? `Facebook: ${data.facebook_url}` : ''}
-${data.instagram_url ? `Instagram: ${data.instagram_url}` : ''}
-${data.google_profile_url ? `Google Business: ${data.google_profile_url}` : ''}
-
-Domain:
-Has Domain: ${data.has_domain}
-${data.has_domain === 'Yes' ? `Current: ${data.domain_current}` : ''}
-${data.has_domain === 'No' ? `Request Purchase: ${data.request_domain_purchase}` : ''}
-${data.domain_preferences ? `Preferences: ${data.domain_preferences}` : ''}
-
-${data.internal_notes ? `Notes: ${data.internal_notes}` : ''}
+${data.logo_url ? `Logo: ${data.logo_url}` : ''}
+${data.image_urls && data.image_urls.length > 0 ? `Images (${data.image_urls.length}): ${data.image_urls.join(', ')}` : ''}
+${data.graphic_urls && data.graphic_urls.length > 0 ? `Graphics (${data.graphic_urls.length}): ${data.graphic_urls.join(', ')}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Submitted: ${submissionTimestamp}
@@ -90,18 +74,20 @@ Submitted: ${submissionTimestamp}
             locationId: process.env.GOHIGHLEVEL_LOCATION_ID,
             firstName: firstName,
             lastName: lastName,
-            email: data.contact_email,
-            phone: data.contact_phone,
+            email: data.business_email,
+            phone: data.business_owner_phone || data.business_phone,
             companyName: data.business_name,
-            city: data.business_city,
-            state: data.business_state,
-            source: 'stripe_onboarding_site',
+            address1: data.business_address,
+            source: data.source || 'stripe_onboarding_site',
             tags: ['Onboarding', 'Website Build'],
             customFields: [
-              { key: 'services_primary', value: (data.services_primary || []).join(', ') },
+              { key: 'services_offered', value: data.services_offered || '' },
               { key: 'service_areas', value: (data.service_areas || []).join(', ') },
               { key: 'business_type', value: data.business_type || '' },
               { key: 'years_in_service', value: data.years_in_service || '' },
+              { key: 'friendly_business_name', value: data.friendly_business_name || '' },
+              { key: 'ein_number', value: data.ein_number || '' },
+              { key: 'time_zone', value: data.time_zone || '' },
             ],
           }),
         })
@@ -156,13 +142,12 @@ Submitted: ${submissionTimestamp}
           body: JSON.stringify({
             first_name: data.first_name,
             last_name: data.last_name,
-            email: data.contact_email,
-            phone: data.contact_phone,
+            email: data.business_email,
+            phone: data.business_owner_phone || data.business_phone,
             companyName: data.business_name,
-            city: data.business_city,
-            state: data.business_state,
+            address: data.business_address,
             source: data.source || 'stripe_onboarding_site',
-            
+
             // Send all data according to spec (payload already formatted correctly)
             ...data,
           }),
@@ -196,58 +181,38 @@ Submitted: ${submissionTimestamp}
 ## 👤 Client Information
 **Name:** ${fullName}
 **Business:** ${data.business_name}
-**Email:** ${data.contact_email}
-**Phone:** ${data.contact_phone}
-**Location:** ${data.business_city}, ${data.business_state}
-**Years in Service:** ${data.years_in_service}
-**Business Type:** ${data.business_type}
+**Friendly Name:** ${data.friendly_business_name || 'N/A'}
+**EIN:** ${data.ein_number || 'N/A'}
+**Email:** ${data.business_email}
+**Phone:** ${data.business_phone}
+**Address:** ${data.business_address || 'N/A'}
+**Time Zone:** ${data.time_zone || 'N/A'}
+**Years in Service:** ${data.years_in_service || 'N/A'}
+**Business Type:** ${data.business_type || 'N/A'}
 
 ## 🛠️ Services Offered
-**Primary Services:** ${(data.services_primary || []).join(', ')}
-${data.services_secondary ? `**Other Services:** ${data.services_secondary}` : ''}
+${data.services_offered || 'Not specified'}
 
 ## 📍 Service Areas
-**Market Type:** ${data.market_type}
-**Areas Served:** ${(data.service_areas || []).join(', ')}
+${(data.service_areas || []).join(', ') || 'Not specified'}
 
-## 🎨 Branding & Media
+## 📞 CRM Contact Recipients
+**Business Owner:** ${data.business_owner_phone || 'Not specified'}
+${(data.crm_recipients || []).length > 0 ? `**Additional Recipients:**\n${data.crm_recipients.map((r: any) => `- ${r.label}: ${r.phone}`).join('\n')}` : ''}
+
+## 🔗 Domain Configuration
+**Domain Option:** ${data.domain_option || 'Not specified'}
+**Desired Domain:** ${data.desired_domain || 'Not specified'}
+${data.current_domain ? `**Current Domain:** ${data.current_domain}` : ''}
+
+## 🎨 Digital Assets
 ${data.logo_url ? `**Logo:** ${data.logo_url}` : '**Logo:** Not provided'}
-${data.gallery_urls && data.gallery_urls.length > 0 ? `**Gallery Images (${data.gallery_urls.length}):**\n${data.gallery_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Gallery Images:** None provided'}
-${data.brand_colors ? `**Brand Colors:** ${data.brand_colors}` : ''}
-${data.design_constraints ? `**Design Constraints:** ${data.design_constraints}` : ''}
-
-## 📝 About & Messaging
-**About Text:**
-${data.about_text}
-
-${data.tagline ? `**Tagline:** ${data.tagline}` : ''}
-
-## 📞 Site Contact Details
-**Display Phone:** ${data.site_phone}
-**Display Email:** ${data.site_email}
-**Preferred Contact:** ${data.preferred_contact}
-
-**Business Hours:**
-${data.business_hours ? Object.entries(data.business_hours).map(([day, hours]: [string, any]) =>
-  `- ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
-).join('\n') : 'Not provided'}
-
-## 🌐 Social Media & Online Presence
-${data.facebook_url ? `**Facebook:** ${data.facebook_url}` : ''}
-${data.instagram_url ? `**Instagram:** ${data.instagram_url}` : ''}
-${data.google_profile_url ? `**Google Business:** ${data.google_profile_url}` : ''}
-
-## 🔗 Domain Information
-**Has Domain:** ${data.has_domain}
-${data.has_domain === 'Yes' ? `**Current Domain:** ${data.domain_current}` : ''}
-${data.has_domain === 'No' && data.request_domain_purchase === 'Yes' ? `**Purchase Domain:** Yes\n**Domain Preferences:** ${data.domain_preferences || 'None specified'}` : ''}
-
-${data.internal_notes ? `## 📌 Internal Notes\n${data.internal_notes}` : ''}
+${data.image_urls && data.image_urls.length > 0 ? `**Images (${data.image_urls.length}):**\n${data.image_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Images:** None provided'}
+${data.graphic_urls && data.graphic_urls.length > 0 ? `**Graphics (${data.graphic_urls.length}):**\n${data.graphic_urls.map((url: string) => `- ${url}`).join('\n')}` : '**Graphics:** None provided'}
 
 ---
 **Submitted:** ${submissionTimestamp}
-**SMS Consent - Marketing:** ${data.sms_consent_marketing ? 'Yes' : 'No'}
-**SMS Consent - Transactional:** ${data.sms_consent_transactional ? 'Yes' : 'No'}
+**Consent Accepted:** ${data.consent_accepted ? 'Yes' : 'No'}
         `.trim()
 
         // Build payload - ClickUp API is picky about field names
