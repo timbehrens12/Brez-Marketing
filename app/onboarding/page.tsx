@@ -479,7 +479,7 @@ export default function OnboardingPage() {
                   Thank you for submitting your information. Your onboarding is now complete and our team will begin processing your request. You'll receive updates via SMS and email.
                 </p>
                 <p className="text-silver text-lg">
-                  If you need to make any changes to your information, please contact us at help@tlucasystems.com.
+                  If you need to make any changes to your information, please contact us at help@tlucasystems.com or text us at 833-847-1549.
                 </p>
               </CardDescription>
             </div>
