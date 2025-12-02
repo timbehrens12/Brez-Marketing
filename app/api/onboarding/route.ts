@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
     const submissionTimestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
 
     // Sync to GoHighLevel (if credentials are configured)
+    console.log('🔍 GHL Credentials Check:')
+    console.log('🔍 GOHIGHLEVEL_API_KEY present:', !!process.env.GOHIGHLEVEL_API_KEY)
+    console.log('🔍 GOHIGHLEVEL_LOCATION_ID present:', !!process.env.GOHIGHLEVEL_LOCATION_ID)
+
     if (process.env.GOHIGHLEVEL_API_KEY && process.env.GOHIGHLEVEL_LOCATION_ID) {
+      console.log('✅ GHL credentials configured - proceeding with contact creation')
       try {
         // Format email content for GHL notes
     const emailBody = `
@@ -154,9 +159,15 @@ Submitted: ${submissionTimestamp}
         console.error('GoHighLevel sync error (non-fatal):', ghlError)
         // Don't fail the whole request if GHL sync fails
       }
+    } else {
+      console.log('⚠️ GHL credentials not configured - skipping contact creation')
+      console.log('⚠️ Required: GOHIGHLEVEL_API_KEY and GOHIGHLEVEL_LOCATION_ID')
     }
 
     // Send to GoHighLevel webhook (if configured) - send payload as-is per spec
+    console.log('🔍 GHL Webhook Check:')
+    console.log('🔍 GOHIGHLEVEL_WEBHOOK_URL present:', !!process.env.GOHIGHLEVEL_WEBHOOK_URL)
+
     if (process.env.GOHIGHLEVEL_WEBHOOK_URL) {
       try {
         await fetch(process.env.GOHIGHLEVEL_WEBHOOK_URL, {
