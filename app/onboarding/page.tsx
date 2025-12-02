@@ -350,16 +350,21 @@ export default function OnboardingPage() {
 
     setErrors(newErrors)
 
-    // If there are errors, scroll to the first error field
+    // If there are errors, scroll to the first error field with enhanced UX
     if (Object.keys(newErrors).length > 0) {
       const firstErrorField = Object.keys(newErrors)[0]
       setTimeout(() => {
         const element = document.getElementById(firstErrorField)
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          // Scroll to the element with more space above it
+          element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
+          // Add a temporary highlight effect
+          element.classList.add('error-highlight')
+          setTimeout(() => element.classList.remove('error-highlight'), 2000)
+          // Focus the element
           element.focus()
         }
-      }, 100)
+      }, 200)
     }
 
     return Object.keys(newErrors).length === 0
@@ -687,7 +692,7 @@ export default function OnboardingPage() {
                                         }
                                     }}
                                     className="bg-black/50 border-white/10 text-white focus:border-brand/50 focus:ring-brand/20 transition-all"
-                                    placeholder="e.g. Residential roofing"
+                                    placeholder="e.g. Roof repair, Gutter installation, Siding replacement"
                                 />
                                 <Button
                                     type="button"
